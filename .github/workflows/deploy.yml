@@ -30,6 +30,7 @@ jobs:
           version: latest
       - run: supabase link --project-ref "$PROJECT_REF"
       - run: supabase db push
+      - run: supabase secrets set --project-ref "$PROJECT_REF" APP_URL=https://reportnoreport.com/app/
       - run: supabase functions deploy --project-ref "$PROJECT_REF"
 
   vercel:
