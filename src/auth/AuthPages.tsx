@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
-import { btn, Field, input } from '../ui'
+import { btn, Field, Icon, input } from '../ui'
 import { takeReturnTo } from './route'
 
 type Mode = 'signin' | 'forgot' | 'set-password'
@@ -14,7 +14,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
 
   useEffect(() => {
     if (forceSetPassword) return
-    const onHash = () => setMode(modeFromHash())
+    const onHash = () => { setMode(modeFromHash()); setError(''); setNotice('') }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [forceSetPassword])
@@ -43,22 +43,58 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
     location.hash = takeReturnTo()
   }
 
+  const copy = {
+    signin: { title: 'Sign in', help: 'Use the email and password for your firm’s account.', submit: 'Sign in' },
+    forgot: { title: 'Reset your password', help: 'Enter your email and we’ll send you a link to choose a new password.', submit: 'Send reset link' },
+    'set-password': { title: 'Set your password', help: 'Choose a password to finish setting up your account.', submit: 'Save password' },
+  }[mode]
+  const errorId = error ? 'auth-error' : undefined
+  const fieldError = { 'aria-invalid': error ? true : undefined, 'aria-describedby': errorId }
+
   return (
-    <div className="grid min-h-dvh place-items-center bg-zinc-50 p-4 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="mb-1 text-xl font-semibold">{mode === 'signin' ? 'Sign in' : mode === 'forgot' ? 'Reset your password' : 'Set your password'}</h1>
-        <p className="mb-5 text-sm text-zinc-500">{mode === 'signin' ? 'Client accounts for your firm.' : mode === 'forgot' ? 'We’ll email you a reset link.' : 'Choose a password to finish setting up your account.'}</p>
-        <form className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'forgot' ? forgot : setPassword)}>
-          {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete="email" required className={input} /></Field>}
-          {mode !== 'forgot' && <Field label="Password"><input name="password" type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required className={input} /></Field>}
-          {mode === 'set-password' && <Field label="Confirm password"><input name="confirm" type="password" autoComplete="new-password" required className={input} /></Field>}
-          {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
-          {notice && <p className="text-sm text-emerald-700 dark:text-emerald-300" role="status">{notice}</p>}
-          <button className={btn.primary} disabled={busy}>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'forgot' ? 'Send reset link' : 'Save password'}</button>
-        </form>
-        {!forceSetPassword && <p className="mt-4 text-sm">
-          {mode === 'signin' ? <a href="#forgot" className="text-zinc-500 underline">Forgot password?</a> : <a href="#signin" className="text-zinc-500 underline">Back to sign in</a>}
-        </p>}
+    <main className="grid min-h-dvh place-items-center bg-zinc-50 p-4 dark:bg-zinc-950">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-center justify-center gap-2.5">
+          <span className="grid size-9 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"><Icon name="wallet" className="size-5" /></span>
+          <span className="text-sm leading-tight font-semibold">Platform<span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">Client accounts</span></span>
+        </div>
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+          <h1 className="mb-1 text-xl font-semibold">{copy.title}</h1>
+          <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">{copy.help}</p>
+          <form key={mode} className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'forgot' ? forgot : setPassword)}>
+            {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete="email" inputMode="email" autoFocus required className={input} {...(mode === 'forgot' ? fieldError : {})} /></Field>}
+            {mode !== 'forgot' && <PasswordField label="Password" name="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} autoFocus={mode === 'set-password'} describedBy={mode === 'set-password' ? 'pw-rules' : errorId} invalid={!!error} />}
+            {mode === 'set-password' && <>
+              <p id="pw-rules" className="-mt-2 text-xs text-zinc-600 dark:text-zinc-400">At least 8 characters. Use a password you don’t use anywhere else.</p>
+              <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" describedBy={errorId} invalid={!!error} />
+            </>}
+            {error && <p id="auth-error" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
+            {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" role="status">{notice}</p>}
+            <button className={`${btn.primary} ${focusRing} w-full py-2.5`} disabled={busy} aria-busy={busy}>
+              {busy && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
+              {busy ? 'Please wait…' : copy.submit}
+            </button>
+          </form>
+          {!forceSetPassword && <p className="mt-4 text-center text-sm">
+            {mode === 'signin' ? <a href="#forgot" className={linkCls}>Forgot password?</a> : <a href="#signin" className={linkCls}>Back to sign in</a>}
+          </p>}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
+const linkCls = `rounded text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`
+
+function PasswordField({ label, name, autoComplete, autoFocus, describedBy, invalid }: { label: string; name: string; autoComplete: string; autoFocus?: boolean; describedBy?: string; invalid: boolean }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <div className="grid gap-1.5 text-sm">
+      <label htmlFor={name} className="font-medium text-zinc-700 dark:text-zinc-300">{label}</label>
+      <div className="relative">
+        <input id={name} name={name} type={shown ? 'text' : 'password'} autoComplete={autoComplete} autoFocus={autoFocus} required aria-invalid={invalid || undefined} aria-describedby={describedBy} className={`${input} pr-16`} />
+        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`Show ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 rounded-md px-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
       </div>
     </div>
   )
