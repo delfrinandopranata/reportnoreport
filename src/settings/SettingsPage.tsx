@@ -5,6 +5,7 @@ import { useSession } from '../data/session'
 import type { DesignSystem, Firm } from '../data/mappers'
 import { btn, Dialog, Field, Icon, input, ring } from '../ui'
 import { BankAccountsCard } from './BankAccounts'
+import { DEMO } from '../demo/store'
 import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES } from './constants'
 
 const card = 'rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900'
@@ -433,7 +434,7 @@ function DataCard() {
         <h2 id="data-heading" className="font-semibold">
           Data
         </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Your data is stored securely on our servers and backed up daily. Nothing to set up here.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to our servers.' : 'Your data is stored securely on our servers and backed up daily. Nothing to set up here.'}</p>
       </header>
     </section>
   )
