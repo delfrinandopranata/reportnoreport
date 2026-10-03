@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { isSuperAdmin, validateCreateFirm, extendTrialEnd, validateSettings, type ProfileRow } from './rules.ts'
+import { isSuperAdmin, validateCreateFirm, extendTrialEnd, validateSettings, isValidUuid, type ProfileRow } from './rules.ts'
 import { resolveAppUrl } from '../team/rules.ts'
 
 const url = Deno.env.get('SUPABASE_URL')!
@@ -125,6 +125,9 @@ Deno.serve(async (req) => {
     const { error: bankError } = await admin.from('bank_accounts')
       .insert({ firm_id: firm.id, name: 'Client account', is_default: true })
     if (bankError) {
+      await admin.from('profiles').delete().eq('user_id', user.user.id)
+      await admin.auth.admin.deleteUser(user.user.id)
+      await admin.from('firms').delete().eq('id', firm.id)
       console.error('create_firm bank error:', bankError)
       return json(500, { error: 'Something went wrong.' })
     }
@@ -151,7 +154,7 @@ Deno.serve(async (req) => {
   if (action === 'set_status') {
     const firmId = body.firmId
     const status = body.status
-    if (!firmId || typeof firmId !== 'string' || !['active', 'suspended'].includes(String(status))) {
+    if (!isValidUuid(firmId) || !['active', 'suspended'].includes(String(status))) {
       return json(400, { error: 'Invalid request.' })
     }
 
@@ -186,7 +189,7 @@ Deno.serve(async (req) => {
   if (action === 'extend_trial') {
     const firmId = body.firmId
     const days = body.days
-    if (!firmId || typeof firmId !== 'string' || ![7, 14].includes(Number(days))) {
+    if (!isValidUuid(firmId) || ![7, 14].includes(Number(days))) {
       return json(400, { error: 'Invalid request.' })
     }
 
@@ -222,7 +225,7 @@ Deno.serve(async (req) => {
   if (action === 'set_billing') {
     const firmId = body.firmId
     const billing_status = body.billing_status
-    if (!firmId || typeof firmId !== 'string' || !['complimentary', 'trial'].includes(String(billing_status))) {
+    if (!isValidUuid(firmId) || !['complimentary', 'trial'].includes(String(billing_status))) {
       return json(400, { error: 'Invalid request.' })
     }
 
@@ -321,7 +324,7 @@ Deno.serve(async (req) => {
     const from = body.from ? new Date(String(body.from)).toISOString().split('T')[0] : null
     const to = body.to ? new Date(String(body.to)).toISOString().split('T')[0] : null
 
-    if (!firmId || typeof firmId !== 'string' || !['clients', 'balances', 'ledger'].includes(String(view))) {
+    if (!isValidUuid(firmId) || !['clients', 'balances', 'ledger'].includes(String(view))) {
       return json(400, { error: 'Invalid request.' })
     }
 

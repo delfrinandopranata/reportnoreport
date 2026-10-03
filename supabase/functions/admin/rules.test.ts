@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1'
-import { isSuperAdmin, validateCreateFirm, extendTrialEnd, validateSettings, type ProfileRow } from './rules.ts'
+import { isSuperAdmin, validateCreateFirm, extendTrialEnd, validateSettings, isValidUuid, type ProfileRow } from './rules.ts'
 
 Deno.test('isSuperAdmin rejects non-super-admin', () => {
   const profile: ProfileRow = { id: 'p1', firm_id: 'f1', is_super_admin: false }
@@ -26,23 +26,45 @@ Deno.test('validateCreateFirm rejects blank name', () => {
 })
 
 Deno.test('validateCreateFirm rejects invalid email', () => {
-  const error = validateCreateFirm({ name: 'Test Co', owner_email: 'notanemail', currency: 'MYR', start: 'trial' })
+  const error = validateCreateFirm({ name: 'Test Co', owner_name: 'John Doe', owner_email: 'notanemail', currency: 'MYR', start: 'trial' })
   assertEquals(error, 'Enter a valid email address.')
 })
 
 Deno.test('validateCreateFirm rejects invalid currency', () => {
-  const error = validateCreateFirm({ name: 'Test Co', owner_email: 'test@example.com', currency: 'EUR', start: 'trial' })
+  const error = validateCreateFirm({ name: 'Test Co', owner_name: 'John Doe', owner_email: 'test@example.com', currency: 'EUR', start: 'trial' })
   assertEquals(error, 'Choose MYR, SGD or USD.')
 })
 
 Deno.test('validateCreateFirm rejects invalid start', () => {
-  const error = validateCreateFirm({ name: 'Test Co', owner_email: 'test@example.com', currency: 'MYR', start: 'invalid' })
+  const error = validateCreateFirm({ name: 'Test Co', owner_name: 'John Doe', owner_email: 'test@example.com', currency: 'MYR', start: 'invalid' })
   assertEquals(error, 'Choose complimentary or trial.')
 })
 
-Deno.test('validateCreateFirm accepts valid body', () => {
+Deno.test('validateCreateFirm rejects missing owner_name', () => {
   const error = validateCreateFirm({ name: 'Test Co', owner_email: 'test@example.com', currency: 'MYR', start: 'trial' })
+  assertEquals(error, 'Enter the owner name.')
+})
+
+Deno.test('validateCreateFirm rejects blank owner_name', () => {
+  const error = validateCreateFirm({ name: 'Test Co', owner_name: '  ', owner_email: 'test@example.com', currency: 'MYR', start: 'trial' })
+  assertEquals(error, 'Enter the owner name.')
+})
+
+Deno.test('validateCreateFirm accepts valid body', () => {
+  const error = validateCreateFirm({ name: 'Test Co', owner_name: 'John Doe', owner_email: 'test@example.com', currency: 'MYR', start: 'trial' })
   assertEquals(error, null)
+})
+
+Deno.test('isValidUuid accepts valid UUIDs', () => {
+  assertEquals(isValidUuid('0000000a-0000-0000-0000-000000000001'), true)
+  assertEquals(isValidUuid('f47ac10b-58cc-4372-a567-0e02b2c3d479'), true)
+})
+
+Deno.test('isValidUuid rejects invalid UUIDs', () => {
+  assertEquals(isValidUuid('not-a-uuid'), false)
+  assertEquals(isValidUuid('f47ac10b'), false)
+  assertEquals(isValidUuid(''), false)
+  assertEquals(isValidUuid(123), false)
 })
 
 Deno.test('extendTrialEnd from null uses now', () => {

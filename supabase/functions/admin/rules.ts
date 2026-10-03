@@ -10,15 +10,22 @@ export function validateCreateFirm(body: unknown): string | null {
   if (!body || typeof body !== 'object') return 'Invalid request.'
   const b = body as Record<string, unknown>
   const name = b.name
+  const owner_name = b.owner_name
   const email = b.owner_email
   const currency = b.currency
   const start = b.start
 
   if (!name || typeof name !== 'string' || !name.trim()) return 'Enter the firm name.'
+  if (!owner_name || typeof owner_name !== 'string' || !owner_name.trim()) return 'Enter the owner name.'
   if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address.'
   if (!currency || !['MYR', 'SGD', 'USD'].includes(String(currency))) return 'Choose MYR, SGD or USD.'
   if (!start || !['complimentary', 'trial'].includes(String(start))) return 'Choose complimentary or trial.'
   return null
+}
+
+/** Validates UUID format. */
+export function isValidUuid(value: unknown): boolean {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }
 
 /** Extends the trial end date. From a past or null end uses now; from a future end adds days. */
