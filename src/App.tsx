@@ -62,12 +62,12 @@ export default function App() {
     if (!trialNow) return
     // Re-evaluate trial state every minute
     const interval = setInterval(() => {
-      const prevState = trialState(firm, trialNow)
       const nextNow = new Date()
       const nextState = trialState(firm, nextNow)
+      const currentState = trialState(firm, trialNow)
 
       // If trial just ended, invalidate session query to update canWrite
-      if (prevState.kind === 'active' && nextState.kind === 'ended') {
+      if (currentState.kind === 'active' && nextState.kind === 'ended') {
         queryClient.invalidateQueries({ queryKey: ['session'] })
       }
 
@@ -75,10 +75,10 @@ export default function App() {
     }, 60000) // Every minute
 
     return () => clearInterval(interval)
-  }, [firm, trialNow, queryClient])
+  }, [firm, queryClient])
 
   const isDashboard = route.view === 'dashboard'
-  const trial = trialNow ? trialState(firm, trialNow) : { kind: 'none' }
+  const trial: ReturnType<typeof trialState> = trialNow ? trialState(firm, trialNow) : { kind: 'none' as const }
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
@@ -137,7 +137,7 @@ export default function App() {
       </aside>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
-        {trial.kind !== 'none' && !route.clientId && (
+        {trial.kind !== 'none' && (
           <div role="status" className={`mb-6 rounded-lg px-4 py-3 text-sm print:hidden ${
             trial.kind === 'active'
               ? 'border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100'
