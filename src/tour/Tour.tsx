@@ -34,6 +34,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const focusTrapRef = useRef<HTMLDivElement>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; arrowSide: Position }>({
     top: 0,
@@ -100,7 +101,18 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
 
   // Keyboard handling and focus management
   useEffect(() => {
-    if (!open || !dialogRef.current) return
+    if (!open) {
+      // Restore focus when closing
+      if (previouslyFocusedRef.current) {
+        previouslyFocusedRef.current.focus()
+      }
+      return
+    }
+
+    if (!dialogRef.current) return
+
+    // Save the previously focused element when opening
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -181,7 +193,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
         role="dialog"
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`fixed z-50 w-80 rounded-xl bg-white p-4 shadow-2xl outline-none dark:bg-zinc-900 sm:w-96 ${
+        className={`fixed z-50 w-80 rounded-xl bg-white p-4 shadow-2xl outline-none dark:bg-zinc-900 ${
           prefersReducedMotion ? '' : 'animate-in fade-in zoom-in-95'
         }`}
         style={{
