@@ -17,6 +17,43 @@
   }
 }
 
+/* Firm-level design system (brand colour): sidebar mark, primary buttons, active nav, focus ring.
+   Set via [data-design] on <html>, independent of the .dark class. "default" = the plain fallback
+   below, so an unknown/loading firm still renders the original look. Each system carries its own
+   light and dark shade so text/icons on top keep enough contrast against both. */
+:root {
+  --brand-solid: #18181b; /* zinc-900 */
+  --brand-solid-ink: #ffffff;
+}
+:root.dark {
+  --brand-solid: #ffffff;
+  --brand-solid-ink: #18181b; /* zinc-900 */
+}
+:root[data-design="ocean"] {
+  --brand-solid: #2563eb; /* blue-600 */
+  --brand-solid-ink: #ffffff;
+}
+:root[data-design="ocean"].dark {
+  --brand-solid: #3b82f6; /* blue-500 */
+  --brand-solid-ink: #18181b;
+}
+:root[data-design="forest"] {
+  --brand-solid: #047857; /* emerald-700 */
+  --brand-solid-ink: #ffffff;
+}
+:root[data-design="forest"].dark {
+  --brand-solid: #10b981; /* emerald-500 */
+  --brand-solid-ink: #18181b;
+}
+:root[data-design="sunset"] {
+  --brand-solid: #b45309; /* amber-700 */
+  --brand-solid-ink: #ffffff;
+}
+:root[data-design="sunset"].dark {
+  --brand-solid: #f59e0b; /* amber-500 */
+  --brand-solid-ink: #18181b;
+}
+
 body {
   @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
 }
