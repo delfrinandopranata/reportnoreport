@@ -2,6 +2,14 @@ type PgError = { code?: string; message?: string; name?: string }
 const NETWORK = "Couldn't save. Check your connection and try again."
 const NETWORK_NAMES = ['FunctionsFetchError', 'AuthRetryableFetchError']
 
+const STRIPE_MESSAGES: Record<string, string> = {
+  'stripe.not_owner': 'Only the firm owner can make payments.',
+  'stripe.already_paid': 'This firm is already paid.',
+  'stripe.api_error': 'Payment setup failed. Try again or contact support.',
+  'stripe.session_expired': 'Your payment session expired. Start over from the Billing page.',
+  'stripe.webhook_failed': 'Payment confirmation failed. Contact support.',
+}
+
 /** Turns Supabase/Postgres/network failures into a sentence a person can act on. */
 export function toUserMessage(error: unknown, ctx: { writeBlockReason?: string | null } = {}): string {
   if (error instanceof TypeError) return NETWORK
@@ -14,7 +22,12 @@ export function toUserMessage(error: unknown, ctx: { writeBlockReason?: string |
       ? 'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.'
       : "One of the values isn't allowed. Check the form and try again."
   }
-  if (code === 'P0001' && message) return message
+  if (code === 'P0001' && message) {
+    for (const [key, value] of Object.entries(STRIPE_MESSAGES)) {
+      if (message.includes(key)) return value
+    }
+    return message
+  }
   if (code === '42501') {
     return ctx.writeBlockReason ? `Your firm can't make changes right now: ${ctx.writeBlockReason}` : "You don't have permission to do that."
   }
