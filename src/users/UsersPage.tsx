@@ -318,39 +318,44 @@ export function UsersPage() {
     <div className="grid grid-cols-1 gap-6">
       {!canManage && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">{session.can('users.manage') ? (session.writeBlockReason ?? '') : `You’re signed in as ${ROLE_LABEL[me.role]}. Only an owner or admin can change users.`}</p>}
 
-      <div className="flex flex-wrap items-center gap-2 print:hidden">
-        <div className="relative min-w-48 flex-1 sm:max-w-xs">
-          <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" aria-label="Search users" className={`${input} py-1.5 pl-9`} />
-        </div>
-        <select value={role} onChange={(e) => setRole(e.target.value as Role | 'all')} aria-label="Role" className={select}>
-          <option value="all">All roles</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABEL[r]}
-            </option>
-          ))}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value as Status | 'all')} aria-label="Status" className={select}>
-          <option value="all">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
-        {filtersActive && (
-          <button type="button" className={btn.ghost} onClick={() => (setQ(''), setRole('all'), setStatus('all'))}>
-            <Icon name="x" /> Clear filters
-          </button>
-        )}
-        <div className="ml-auto flex items-center gap-2">
+      <div className={`${card} grid gap-4 p-4 print:hidden`}>
+        {/* Actions: Invite user is the one primary action; Columns is a demoted secondary (Fitts's Law) */}
+        <div className="flex items-center justify-end gap-2">
           <button type="button" className={btn.ghost} onClick={() => setDialog('columns')}>
             <Icon name="columns" /> Columns
           </button>
           {canManage && (
             <button type="button" className={btn.primary} onClick={() => setDialog('invite')}>
               <Icon name="plus" /> Invite user
+            </button>
+          )}
+        </div>
+
+        {/* Search + filters: search leads, as is conventional (Jakob's Law) */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <div className="relative min-w-48 flex-1 sm:max-w-xs">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" aria-label="Search users" className={`${input} py-1.5 pl-9`} />
+          </div>
+          <select value={role} onChange={(e) => setRole(e.target.value as Role | 'all')} aria-label="Role" className={select}>
+            <option value="all">All roles</option>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABEL[r]}
+              </option>
+            ))}
+          </select>
+          <select value={status} onChange={(e) => setStatus(e.target.value as Status | 'all')} aria-label="Status" className={select}>
+            <option value="all">All statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+          {filtersActive && (
+            <button type="button" className={`${btn.ghost} ml-auto`} onClick={() => (setQ(''), setRole('all'), setStatus('all'))}>
+              <Icon name="x" /> Clear filters
             </button>
           )}
         </div>
