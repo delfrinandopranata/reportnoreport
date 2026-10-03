@@ -8,6 +8,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>ReportNoReport</title>
+    <script>
+      // Runs before paint to avoid a flash of the wrong theme. The custom `dark` variant
+      // (src/index.css) is class-based only, so the OS default has to be applied here;
+      // useTheme (src/data/queries.ts) overwrites this once the stored preference loads.
+      (function () {
+        try {
+          var cached = localStorage.getItem('theme-bootstrap')
+          var dark = cached === 'dark' || (cached !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+        } catch (e) {}
+      })()
+    </script>
     <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments) }</script>
     <script defer src="/_vercel/insights/script.js"></script>
   </head>

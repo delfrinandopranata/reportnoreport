@@ -33,6 +33,7 @@ export function ClientView({ client: c }: { client: Client }) {
         <Row label="Type">{c.type === 'company' ? 'Company' : 'Individual'}</Row>
         <Row label={c.type === 'company' ? 'Company name' : 'Full name'}>{c.name}</Row>
         <Row label={idLabel(c)}>{c.registrationNo}</Row>
+        <Row label="Client ID">{c.clientCode}</Row>
         <Row label="Industry">{c.industry}</Row>
         <Row label="Website">{website && <a href={website} target="_blank" rel="noreferrer" className={link}>{c.website}</a>}</Row>
         <Row label="Account no.">{<span className="tabular-nums">{accountNo(c.id)}</span>}</Row>
@@ -91,7 +92,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
     }
   }
   const error = (key: keyof ClientErrors) => errors[key] && <span className="text-sm text-red-600 dark:text-red-400" role="alert">{errors[key]}</span>
-  const text = (key: 'registrationNo' | 'industry' | 'website' | 'contact' | 'address1' | 'address2' | 'city', placeholder = '') => (
+  const text = (key: 'registrationNo' | 'clientCode' | 'industry' | 'website' | 'contact' | 'address1' | 'address2' | 'city', placeholder = '') => (
     <input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} className={input} />
   )
 
@@ -118,6 +119,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
             </Field>
           </div>
           <Field label={idLabel(draft)}>{text('registrationNo')}</Field>
+          <Field label="Client ID">{text('clientCode')}</Field>
           <Field label="Industry">{text('industry')}</Field>
           <div className="sm:col-span-2"><Field label="Website">{text('website', 'example.com.my')}</Field></div>
         </section>

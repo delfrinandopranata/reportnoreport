@@ -5,7 +5,7 @@ import { ClientsPage } from './ClientsPage'
 import { ContractsPage } from './contracts/ContractsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { Avatar, btn, Icon, ring, Dialog } from './ui'
+import { Avatar, btn, Icon, ring, Dialog, ThemeToggle } from './ui'
 import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
@@ -13,7 +13,7 @@ import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
 import { Tour } from './tour'
 import { useTour } from './tour/useTour'
-import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
+import { useSampleDataExists, useLoadSampleData, useRemoveSampleData, useTheme } from './data/queries'
 import { sampleControls } from './data/sampleData'
 
 type View = 'dashboard' | 'clients' | 'contracts' | 'users' | 'settings' | 'billing'
@@ -59,6 +59,7 @@ export default function App() {
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
+  const [theme, setTheme] = useTheme()
   const tour = useTour()
   const sampleDataExists = useSampleDataExists()
   const loadSample = useLoadSampleData()
@@ -144,6 +145,7 @@ export default function App() {
         <a href="#users" className={`${ring} ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg lg:hidden`} aria-label={`Signed in as ${profile.name}. Open users`}>
           <Avatar name={profile.name} />
         </a>
+        <ThemeToggle theme={theme} setTheme={setTheme} className="min-h-11 min-w-11 lg:hidden" />
         <button type="button" className={`${btn.ghost} min-h-11 min-w-11 lg:hidden`} onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="logout" /></button>
         <div className="mt-auto hidden items-center gap-2 px-2 lg:flex">
           <Avatar name={profile.name} />
@@ -151,6 +153,7 @@ export default function App() {
             <p className="truncate text-sm font-medium">{profile.name}</p>
             <p className="truncate text-xs text-zinc-500">{firm.name} · {ROLE_LABEL[profile.role]}</p>
           </div>
+          <ThemeToggle theme={theme} setTheme={setTheme} className="shrink-0" />
           <button type="button" className={`${btn.ghost} shrink-0`} onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="logout" /></button>
         </div>
       </aside>

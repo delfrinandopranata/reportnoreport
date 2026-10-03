@@ -12,6 +12,8 @@ export type Client = {
   type: ClientType
   /** SSM no. for companies, NRIC or passport no. for individuals. */
   registrationNo: string
+  /** The firm's own pre-existing client numbering/reference, if any. */
+  clientCode: string
   industry: string
   /** E.164-style, e.g. +60123456789. */
   phone: string
@@ -44,6 +46,7 @@ export function fillClient(c: ClientInput & { id: string; createdAt?: string; up
     email: '',
     type: 'company',
     registrationNo: '',
+    clientCode: '',
     industry: '',
     phone: '',
     website: '',

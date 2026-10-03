@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { clientToRow, parseAmount, rowToClient, rowToLine, sumBalances, toStatement } from './mappers.ts'
 
 const row = {
-  id: 'c1', firm_id: 'f', type: 'company', name: 'Kopi Corner', registration_no: '', industry: '', contact: 'Wei', phone: '+60123',
+  id: 'c1', firm_id: 'f', type: 'company', name: 'Kopi Corner', registration_no: '', client_code: '', industry: '', contact: 'Wei', phone: '+60123',
   email: 'a@b.c', website: '', address1: '', address2: '', postcode: '', city: '', state: '', country: 'Malaysia', status: 'active',
   tags: ['VIP'], assigned_to: null, notes: '', is_sample: false, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z',
   created_by: null, updated_by: null,
@@ -12,6 +12,7 @@ const row = {
 test('rowToClient maps snake_case to the app Client', () => {
   const c = rowToClient(row as never)
   assert.equal(c.registrationNo, '')
+  assert.equal(c.clientCode, '')
   assert.equal(c.assignedUserId, undefined)
   assert.deepEqual(c.tags, ['VIP'])
   // client-since is the viewer's local calendar date, so compute the expectation the same way (timezone-independent)
@@ -21,6 +22,7 @@ test('rowToClient maps snake_case to the app Client', () => {
 
 test('clientToRow only includes fields that were given', () => {
   assert.deepEqual(clientToRow({ name: 'X', assignedUserId: undefined, registrationNo: '123' }), { name: 'X', assigned_to: null, registration_no: '123' })
+  assert.deepEqual(clientToRow({ clientCode: 'ABC-001' }), { client_code: 'ABC-001' })
 })
 
 test('rowToLine maps receipt/payment to in/out', () => {

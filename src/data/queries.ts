@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Client, ClientInput, Kind, StatementLine, Txn } from '../ledger'
 import type { Database, Json } from './database.types'
 import type { Role } from '../users/rules'
+import { resolveTheme, type ThemePreference } from '../theme'
 import { isWriteBlock, toUserMessage } from './errors'
 import {
   clientToRow, firmToRow, rowToBank, rowToClient, rowToContract, rowToLine, rowToMember,
@@ -180,6 +181,24 @@ export function usePreference<T>(key: string, fallback: T): [T, (value: T) => vo
     }, 400)
   }
   return [value, save, loaded]
+}
+
+/** Resolved light/dark theme, backed by the `theme` preference, applied as a `dark` class on <html>. */
+export function useTheme(): [ThemePreference, (value: ThemePreference) => void] {
+  const [pref, setPref] = usePreference<ThemePreference>('theme', 'system')
+  const [prefersDarkOS, setPrefersDarkOS] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches)
+  useEffect(() => {
+    const mql = matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => setPrefersDarkOS(mql.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
+  const theme = resolveTheme(pref, prefersDarkOS)
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    try { localStorage.setItem('theme-bootstrap', theme) } catch { /* private browsing */ }
+  }, [theme])
+  return [pref, setPref]
 }
 
 export function useCreateClient() {

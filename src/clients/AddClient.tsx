@@ -5,7 +5,7 @@ import { btn, Dialog, Field, input } from '../ui'
 import { PhoneField, StatusSelect, TagList } from './fields'
 import { MutationError, Segmented } from './shared'
 
-const BLANK = { type: 'company' as ClientType, name: '', registrationNo: '', phone: '', email: '', contact: '', status: 'active' as ClientStatus, tags: [] as string[] }
+const BLANK = { type: 'company' as ClientType, name: '', registrationNo: '', clientCode: '', phone: '', email: '', contact: '', status: 'active' as ClientStatus, tags: [] as string[] }
 
 /** The essentials only; the full record is edited on the client's page. */
 export function AddClient({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -27,7 +27,7 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
     setErrors(found)
     if (Object.keys(found).length) return
     try {
-      await create.mutateAsync({ ...form, name: form.name.trim(), email: form.email.trim(), contact: form.contact.trim(), registrationNo: form.registrationNo.trim() })
+      await create.mutateAsync({ ...form, name: form.name.trim(), email: form.email.trim(), contact: form.contact.trim(), registrationNo: form.registrationNo.trim(), clientCode: form.clientCode.trim() })
       close()
     } catch {
       // shown below via create.error
@@ -45,6 +45,9 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
         </Field>
         <Field label={company ? 'SSM registration no.' : 'NRIC / passport no.'}>
           <input value={form.registrationNo} onChange={(e) => set('registrationNo', e.target.value)} placeholder="Optional" className={input} />
+        </Field>
+        <Field label="Client ID">
+          <input value={form.clientCode} onChange={(e) => set('clientCode', e.target.value)} placeholder="Optional" className={input} />
         </Field>
         <Field label="Primary contact">
           <input value={form.contact} onChange={(e) => set('contact', e.target.value)} placeholder="Optional" className={input} />

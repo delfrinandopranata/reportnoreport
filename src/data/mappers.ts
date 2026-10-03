@@ -14,7 +14,7 @@ export const AMOUNT_CAP = 10_000_000_000_000 // matches transactions.amount_mino
 export function rowToClient(r: ClientRow): Client {
   return {
     id: r.id, name: r.name, contact: r.contact, email: r.email, createdAt: new Date(r.created_at).toLocaleDateString('en-CA'), updatedAt: r.updated_at,
-    type: r.type, registrationNo: r.registration_no, industry: r.industry, phone: r.phone, website: r.website,
+    type: r.type, registrationNo: r.registration_no, clientCode: r.client_code, industry: r.industry, phone: r.phone, website: r.website,
     address1: r.address1, address2: r.address2, city: r.city, state: r.state, postcode: r.postcode, country: r.country,
     status: r.status, tags: r.tags, assignedUserId: r.assigned_to ?? undefined, notes: r.notes,
   }
@@ -22,7 +22,7 @@ export function rowToClient(r: ClientRow): Client {
 
 const CLIENT_COLUMNS: [keyof Client, keyof ClientRow][] = [
   ['name', 'name'], ['contact', 'contact'], ['email', 'email'], ['type', 'type'], ['registrationNo', 'registration_no'],
-  ['industry', 'industry'], ['phone', 'phone'], ['website', 'website'], ['address1', 'address1'], ['address2', 'address2'],
+  ['clientCode', 'client_code'], ['industry', 'industry'], ['phone', 'phone'], ['website', 'website'], ['address1', 'address1'], ['address2', 'address2'],
   ['city', 'city'], ['state', 'state'], ['postcode', 'postcode'], ['country', 'country'], ['status', 'status'], ['tags', 'tags'],
   ['notes', 'notes'],
 ]
