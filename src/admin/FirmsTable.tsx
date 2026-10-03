@@ -9,6 +9,79 @@ type Firm = AdminListFirmsResponse['firms'][0]
 
 type Action = { type: 'suspend' | 'reactivate' | 'extend' | 'makeComplimentary'; firmId: string; days?: 7 | 14; firmName?: string }
 
+function ActionMenu({ firmId, firmName, firm, onSetConfirmAction, isBusy }: { firmId: string; firmName: string; firm: Firm; onSetConfirmAction: (action: Action) => void; isBusy: boolean }) {
+  const menuRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const [showMenu, setShowMenu] = useState(false)
+
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      if (buttonRef.current?.contains(e.target as Node)) {
+        return // Ignore the button itself
+      }
+      if (menuRef.current?.contains(e.target as Node)) {
+        return // Ignore clicks inside the menu
+      }
+      setShowMenu(false)
+    }
+    if (showMenu) {
+      document.addEventListener('pointerdown', onPointerDown)
+      return () => document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [showMenu])
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setShowMenu(false)
+      buttonRef.current?.focus()
+    }
+  }
+
+  const items = [
+    { label: 'Extend trial by 7 days', action: () => { onSetConfirmAction({ type: 'extend', firmId, days: 7, firmName }); setShowMenu(false) }, danger: false },
+    { label: 'Extend trial by 14 days', action: () => { onSetConfirmAction({ type: 'extend', firmId, days: 14, firmName }); setShowMenu(false) }, danger: false },
+    ...(firm.status === 'active' ? [{ label: 'Suspend', action: () => { onSetConfirmAction({ type: 'suspend', firmId, firmName }); setShowMenu(false) }, danger: true }] : []),
+    ...(firm.status === 'suspended' ? [{ label: 'Reactivate', action: () => { onSetConfirmAction({ type: 'reactivate', firmId, firmName }); setShowMenu(false) }, danger: false }] : []),
+    ...(firm.billing_status === 'trial' ? [{ label: 'Make complimentary', action: () => { onSetConfirmAction({ type: 'makeComplimentary', firmId, firmName }); setShowMenu(false) }, danger: false }] : []),
+  ]
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setShowMenu(!showMenu)}
+        className={`${btn.ghost} !px-2 !py-1 text-xs`}
+        aria-haspopup="menu"
+        aria-expanded={showMenu}
+        aria-label={`Actions for ${firmName}`}
+        disabled={isBusy}
+      >
+        <Icon name="sliders" className="size-3" />
+      </button>
+      {showMenu && (
+        <div className="absolute right-0 top-8 z-50 min-w-max rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800" role="menu" onKeyDown={onKeyDown}>
+          {items.map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              role="menuitem"
+              onClick={item.action}
+              className={`block w-full px-3 py-2 text-left text-xs font-medium rounded transition first:rounded-t last:rounded-b ${
+                item.danger
+                  ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50'
+                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, firmName: string, currency: string) => void }) {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
@@ -128,61 +201,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
     return status
   }
 
-  const ActionMenu = ({ firmId, firmName, firm }: { firmId: string; firmName: string; firm: Firm }) => {
-    const menuRef = useRef<HTMLDivElement>(null)
-    const [showMenu, setShowMenu] = useState(false)
-
-    useEffect(() => {
-      const onClickOutside = (e: MouseEvent) => {
-        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-          setShowMenu(false)
-        }
-      }
-      if (showMenu) document.addEventListener('click', onClickOutside)
-      return () => document.removeEventListener('click', onClickOutside)
-    }, [showMenu])
-
-    const items = [
-      { label: 'Extend trial +7 days', action: () => { setConfirmAction({ type: 'extend', firmId, days: 7, firmName }); setShowMenu(false) }, danger: false },
-      { label: 'Extend trial +14 days', action: () => { setConfirmAction({ type: 'extend', firmId, days: 14, firmName }); setShowMenu(false) }, danger: false },
-      ...(firm.status === 'active' ? [{ label: 'Suspend', action: () => { setConfirmAction({ type: 'suspend', firmId, firmName }); setShowMenu(false) }, danger: true }] : []),
-      ...(firm.status === 'suspended' ? [{ label: 'Reactivate', action: () => { setConfirmAction({ type: 'reactivate', firmId, firmName }); setShowMenu(false) }, danger: false }] : []),
-      ...(firm.billing_status === 'trial' ? [{ label: 'Make complimentary', action: () => { setConfirmAction({ type: 'makeComplimentary', firmId, firmName }); setShowMenu(false) }, danger: false }] : []),
-    ]
-
-    return (
-      <div ref={menuRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setShowMenu(!showMenu)}
-          className={`${btn.ghost} !px-2 !py-1 text-xs`}
-          aria-haspopup="menu"
-          aria-expanded={showMenu}
-          aria-label={`Actions for ${firmName}`}
-        >
-          <Icon name="sliders" className="size-3" />
-        </button>
-        {showMenu && (
-          <div className="absolute right-0 top-8 z-50 min-w-max rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
-            {items.map((item, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={item.action}
-                className={`block w-full px-3 py-2 text-left text-xs font-medium rounded transition first:rounded-t last:rounded-b ${
-                  item.danger
-                    ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50'
-                    : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
+  const isBusy = suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending
 
   return (
     <div className="space-y-4">
@@ -284,7 +303,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                           <Icon name="building" className="size-3" />
                           Support
                         </button>
-                        <ActionMenu firmId={firm.id} firmName={firm.name} firm={firm} />
+                        <ActionMenu firmId={firm.id} firmName={firm.name} firm={firm} onSetConfirmAction={setConfirmAction} isBusy={isBusy} />
                       </div>
                     </td>
                   </tr>
