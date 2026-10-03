@@ -1,0 +1,20 @@
+name: Contract reminders
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    name: Send contract expiry reminders
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - run: |
+          curl --fail -X POST "https://$PROJECT_REF.supabase.co/functions/v1/contract-reminders" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
