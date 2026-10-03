@@ -28,7 +28,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
 
   const signIn = (data: FormData) => supabase.auth.signInWithPassword({ email: String(data.get('email')), password: String(data.get('password')) })
     .then(({ error }) => { if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : error.message); location.hash = takeReturnTo() })
-  const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}/app?flow=set-password` })
+  const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}/app/?flow=set-password` })
     .then(({ error }) => { if (error) throw error; setNotice('If that email has an account, a reset link is on its way.') })
   const setPassword = async (data: FormData) => {
     const password = String(data.get('password'))

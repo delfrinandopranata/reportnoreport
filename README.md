@@ -59,7 +59,7 @@ Go-live checklist (hosted project; the local `config.toml` does not reach it aut
    - Confirm sign up (`confirmation.html`): `Confirm your Platform email address`
    - Change email address (`email_change.html`): `Confirm your new Platform email address`
 4. Authentication > Providers > Email: set OTP expiry to `86400` (24 hours, the hosted maximum).
-5. Authentication > URL Configuration: Site URL = the production app URL; Redirect URLs include `<app-url>/app?flow=set-password` and `<app-url>/**`.
+5. Authentication > URL Configuration: Site URL = the production app URL; Redirect URLs include `<app-url>/app/?flow=set-password` and `<app-url>/**`.
 6. Authentication > Rate Limits: raise the email rate limit from the default.
 7. Send a test invite and check it arrives, the branding renders and the link works.
 
