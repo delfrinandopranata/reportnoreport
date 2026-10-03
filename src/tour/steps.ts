@@ -1,5 +1,5 @@
 import type { Role, Action } from '../users/rules.ts'
-import { can } from '../users/rules.ts'
+import { can, ROLES } from '../users/rules.ts'
 
 export interface TourStep {
   id: string
@@ -43,11 +43,7 @@ export function filterTourStepsByRole(role: Role): TourStep[] {
     if (!step.requiredAction) {
       return true
     }
-    try {
-      return can(role, step.requiredAction)
-    } catch {
-      // Unknown role: only show read-only steps (safe minimal set)
-      return false
-    }
+    // An unknown role (e.g. a stale session) gets only the read-only steps.
+    return ROLES.includes(role) && can(role, step.requiredAction)
   }).map(({ requiredAction: _requiredAction, ...step }) => step)
 }
