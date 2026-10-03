@@ -28,7 +28,7 @@ export type Database = {
                     "account_name": string,"account_no": string,"bank_name": string,"created_at": string,"created_by": string | null,"firm_id": string,"id": string,"is_active": boolean,"is_default": boolean,"is_sample": boolean,"name": string,"updated_at": string,"updated_by": string | null
                   }
                   Insert: {
-                    "account_name"?: string,"account_no"?: string,"bank_name"?: string,"created_at"?: string,"created_by"?: string | null,"firm_id": string,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"is_sample"?: boolean,"name": string,"updated_at"?: string,"updated_by"?: string | null
+                    "account_name"?: string,"account_no"?: string,"bank_name"?: string,"created_at"?: string,"created_by"?: string | null,"firm_id"?: string,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"is_sample"?: boolean,"name": string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
                     "account_name"?: string,"account_no"?: string,"bank_name"?: string,"created_at"?: string,"created_by"?: string | null,"firm_id"?: string,"id"?: string,"is_active"?: boolean,"is_default"?: boolean,"is_sample"?: boolean,"name"?: string,"updated_at"?: string,"updated_by"?: string | null
@@ -66,7 +66,7 @@ isOneToOne: false
                     "address1": string,"address2": string,"assigned_to": string | null,"city": string,"contact": string,"country": string,"created_at": string,"created_by": string | null,"email": string,"firm_id": string,"id": string,"industry": string,"is_sample": boolean,"name": string,"notes": string,"phone": string,"postcode": string,"registration_no": string,"state": string,"status": Database["public"]['Enums']["client_status"],"tags": (string)[],"type": Database["public"]['Enums']["client_type"],"updated_at": string,"updated_by": string | null,"website": string
                   }
                   Insert: {
-                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id": string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name": string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
+                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name": string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
                   }
                   Update: {
                     "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name"?: string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
@@ -149,7 +149,7 @@ isOneToOne: false
                     "amount_minor": number,"bank_account_id": string,"client_id": string,"created_at": string,"created_by": string | null,"date": string,"description": string,"firm_id": string,"id": string,"is_sample": boolean,"kind": Database["public"]['Enums']["txn_kind"],"updated_at": string,"updated_by": string | null
                   }
                   Insert: {
-                    "amount_minor": number,"bank_account_id": string,"client_id": string,"created_at"?: string,"created_by"?: string | null,"date": string,"description"?: string,"firm_id": string,"id"?: string,"is_sample"?: boolean,"kind": Database["public"]['Enums']["txn_kind"],"updated_at"?: string,"updated_by"?: string | null
+                    "amount_minor": number,"bank_account_id": string,"client_id": string,"created_at"?: string,"created_by"?: string | null,"date": string,"description"?: string,"firm_id"?: string,"id"?: string,"is_sample"?: boolean,"kind": Database["public"]['Enums']["txn_kind"],"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
                     "amount_minor"?: number,"bank_account_id"?: string,"client_id"?: string,"created_at"?: string,"created_by"?: string | null,"date"?: string,"description"?: string,"firm_id"?: string,"id"?: string,"is_sample"?: boolean,"kind"?: Database["public"]['Enums']["txn_kind"],"updated_at"?: string,"updated_by"?: string | null
@@ -213,7 +213,77 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "accept_invite":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"assert_manager":
+{ Args: { "p_target": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"email": string,
+"firm_id": string | null,
+"id": string,
+"is_super_admin": boolean,
+"last_active_at": string | null,
+"name": string,
+"role": Database["public"]['Enums']["member_role"],
+"status": Database["public"]['Enums']["member_status"],
+"updated_at": string,
+"updated_by": string | null,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "profiles"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"auth_can":
+{ Args: { "action": string }; Returns: boolean
+                           },
+"auth_firm_id":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"auth_profile_id":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"auth_role":
+{ Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["member_role"]
+                           },
+"change_member_role":
+{ Args: { "p_profile": string,"p_role": Database["public"]['Enums']["member_role"] }; Returns: undefined
+                           },
+"client_balances":
+{ Args: { "p_bank_account"?: string,"p_client"?: string,"p_from": string,"p_to": string }; Returns: {
+              "client_id": string,"closing": number,"last_txn_date": string,"opening": number,"payments": number,"receipts": number,"txn_count": number
+            }[]
+                           },
+"firm_can_write":
+{ Args: { "firm": string }; Returns: boolean
+                           },
+"firm_write_block_reason":
+{ Args: { "firm": string }; Returns: string
+                           },
+"import_transactions":
+{ Args: { "p_dry_run"?: boolean,"p_rows": Json }; Returns: Json
+                           },
+"ledger_lines":
+{ Args: { "p_bank_account"?: string,"p_client"?: string,"p_from": string,"p_per_client"?: boolean,"p_to": string }; Returns: {
+              "amount_minor": number,"balance": number,"bank_account_id": string,"client_id": string,"created_at": string,"date": string,"description": string,"id": string,"kind": Database["public"]['Enums']["txn_kind"],"updated_at": string
+            }[]
+                           },
+"reactivate_member":
+{ Args: { "p_profile": string }; Returns: undefined
+                           },
+"suspend_member":
+{ Args: { "p_profile": string }; Returns: undefined
+                           },
+"touch_last_active":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"transfer_ownership":
+{ Args: { "p_profile": string }; Returns: undefined
+                           }
           }
           Enums: {
             "billing_status": "trial"|"paid"|"complimentary"|"read_only","change_action": "insert"|"update"|"delete"|"support_access"|"billing","client_status": "active"|"inactive"|"archived","client_type": "company"|"individual","firm_source": "self_serve"|"admin","firm_status": "active"|"suspended","member_role": "owner"|"admin"|"accountant"|"viewer","member_status": "active"|"invited"|"suspended","txn_kind": "receipt"|"payment"
