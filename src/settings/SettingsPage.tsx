@@ -3,7 +3,7 @@ import { BillingPage } from './BillingPage'
 import { useLogoUrl, useUpdateFirm, useUploadLogo } from '../data/queries'
 import { useSession } from '../data/session'
 import type { Firm } from '../data/mappers'
-import { btn, Field, Icon, input } from '../ui'
+import { btn, Dialog, Field, Icon, input } from '../ui'
 import { BankAccountsCard } from './BankAccounts'
 import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES } from './constants'
 
@@ -123,9 +123,14 @@ const ORG_KEYS: (keyof Org)[] = ['name', 'tradingName', 'registrationNo', 'sstNo
 /** Uploads straight away: the file goes to storage, then the firm's logo path is updated. */
 function LogoField({ logoPath }: { logoPath: string | null }) {
   const [error, setError] = useState('')
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const upload = useUploadLogo()
   const update = useUpdateFirm()
   const url = useLogoUrl(logoPath)
+  const removeLogo = () => {
+    setConfirmRemove(false)
+    update.mutate({ logoPath: null }, { onError: (e) => setError(e.message) })
+  }
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -149,13 +154,29 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
           <input type="file" accept="image/*" onChange={onFile} disabled={upload.isPending} className="sr-only" />
         </label>
         {logoPath && (
-          <button type="button" className={btn.danger} disabled={update.isPending} onClick={() => update.mutate({ logoPath: null }, { onError: (e) => setError(e.message) })}>
+          <button type="button" className={btn.danger} disabled={update.isPending} onClick={() => setConfirmRemove(true)}>
             {update.isPending ? 'Removing…' : 'Remove logo'}
           </button>
         )}
         <span className="text-zinc-500 dark:text-zinc-400">PNG, JPG, SVG or WebP, up to {LOGO_MAX_BYTES / 1024} KB. Saved as soon as you choose it.</span>
       </div>
       <Err text={error} />
+      <Dialog open={confirmRemove} onClose={() => setConfirmRemove(false)} title="Remove logo">
+        <div className="grid gap-4 text-sm">
+          <p>Remove your logo? It will no longer appear on statements until you upload a new one.</p>
+          <div className="flex justify-end gap-2">
+            <button type="button" className={btn.ghost} onClick={() => setConfirmRemove(false)}>Cancel</button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500"
+              disabled={update.isPending}
+              onClick={removeLogo}
+            >
+              {update.isPending ? 'Removing…' : 'Remove logo'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }
