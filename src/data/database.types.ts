@@ -63,13 +63,13 @@ isOneToOne: false
                   ]
                 },"clients": {
                   Row: {
-                    "address1": string,"address2": string,"assigned_to": string | null,"city": string,"contact": string,"country": string,"created_at": string,"created_by": string | null,"email": string,"firm_id": string,"id": string,"industry": string,"is_sample": boolean,"name": string,"notes": string,"phone": string,"postcode": string,"registration_no": string,"state": string,"status": Database["public"]['Enums']["client_status"],"tags": (string)[],"type": Database["public"]['Enums']["client_type"],"updated_at": string,"updated_by": string | null,"website": string
+                    "address1": string,"address2": string,"assigned_to": string | null,"city": string,"client_code": string,"contact": string,"country": string,"created_at": string,"created_by": string | null,"email": string,"firm_id": string,"id": string,"industry": string,"is_sample": boolean,"name": string,"notes": string,"phone": string,"postcode": string,"registration_no": string,"state": string,"status": Database["public"]['Enums']["client_status"],"tags": (string)[],"type": Database["public"]['Enums']["client_type"],"updated_at": string,"updated_by": string | null,"website": string
                   }
                   Insert: {
-                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name": string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
+                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"client_code"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name": string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
                   }
                   Update: {
-                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name"?: string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
+                    "address1"?: string,"address2"?: string,"assigned_to"?: string | null,"city"?: string,"client_code"?: string,"contact"?: string,"country"?: string,"created_at"?: string,"created_by"?: string | null,"email"?: string,"firm_id"?: string,"id"?: string,"industry"?: string,"is_sample"?: boolean,"name"?: string,"notes"?: string,"phone"?: string,"postcode"?: string,"registration_no"?: string,"state"?: string,"status"?: Database["public"]['Enums']["client_status"],"tags"?: (string)[],"type"?: Database["public"]['Enums']["client_type"],"updated_at"?: string,"updated_by"?: string | null,"website"?: string
                   }
                   Relationships: [
                     {
@@ -286,6 +286,12 @@ isOneToOne: false
                            },
 "reactivate_member":
 { Args: { "p_profile": string }; Returns: undefined
+                           },
+"record_payment":
+{ Args: { "p_firm_id": string,"p_payment_intent_id": string }; Returns: undefined
+                           },
+"record_refund":
+{ Args: { "p_firm_id": string }; Returns: undefined
                            },
 "remove_sample_data":
 { Args: Record<PropertyKey, never>; Returns: undefined

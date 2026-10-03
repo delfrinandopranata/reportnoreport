@@ -191,7 +191,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const balanceRows = useMemo((): ClientBalance[] => {
     const dir = balanceSort.dir === 'asc' ? 1 : -1
     return clients
-      .filter((c) => inScope(c.id) && (!q || `${c.name} ${c.contact} ${c.email} ${c.registrationNo}`.toLowerCase().includes(q)))
+      .filter((c) => inScope(c.id) && (!q || `${c.name} ${c.contact} ${c.email} ${c.registrationNo} ${c.clientCode}`.toLowerCase().includes(q)))
       .map((c) => ({ client: c, soa: toStatement(perClient.get(c.id), []), count: perClient.get(c.id)?.txn_count ?? 0, last: perClient.get(c.id)?.last_txn_date ?? '' }))
       .sort((a, b) => {
         const by = {
@@ -233,6 +233,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     { id: 'assignee', label: 'Assigned member', width: 180, hidden: true, cell: (r) => assigneeName(r.client.assignedUserId) || '—', text: (r) => assigneeName(r.client.assignedUserId) },
     { id: 'phone', label: 'Phone', width: 150, hidden: true, cell: (r) => <span className="tabular-nums">{formatPhone(r.client.phone) || '—'}</span>, text: (r) => formatPhone(r.client.phone) },
     { id: 'registration', label: 'Registration no.', width: 190, hidden: true, cell: (r) => r.client.registrationNo || '—', text: (r) => r.client.registrationNo },
+    { id: 'clientCode', label: 'Client ID', width: 150, hidden: true, cell: (r) => r.client.clientCode || '—', text: (r) => r.client.clientCode },
     { id: 'industry', label: 'Industry', width: 170, hidden: true, cell: (r) => r.client.industry || '—', text: (r) => r.client.industry },
     { id: 'opening', label: 'Opening balance', width: 150, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
     { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{fmt(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
