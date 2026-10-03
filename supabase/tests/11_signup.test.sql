@@ -39,7 +39,7 @@ reset role;
 select is((platform_status()->>'accepting_signups')::boolean, false, 'not accepting at cap');
 
 reset role;
-select ok((select trial_ends_at between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour' from firms where name = 'First Co Sdn Bhd'), 'trial ends after trial_days');
+select is((select row(billing_status::text, trial_ends_at)::text from firms where name = 'First Co Sdn Bhd'), '(complimentary,)', 'new firm is complimentary (free for now) with no trial end');
 
 -- join_waitlist tests
 select throws_ok($$ select join_waitlist('bad', 'X') $$, 'P0001', 'Enter a valid email address.', 'invalid email rejected');
