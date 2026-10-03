@@ -1,15 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { validateClient, type ClientErrors, type ClientStatus, type ClientType } from '../ledger'
-import { useStore } from '../store'
+import { useCreateClient } from '../data/queries'
 import { btn, Dialog, Field, input } from '../ui'
 import { PhoneField, StatusSelect, TagList } from './fields'
-import { Segmented } from './shared'
+import { MutationError, Segmented } from './shared'
 
 const BLANK = { type: 'company' as ClientType, name: '', registrationNo: '', phone: '', email: '', contact: '', status: 'active' as ClientStatus, tags: [] as string[] }
 
 /** The essentials only; the full record is edited on the client's page. */
 export function AddClient({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const addClient = useStore((s) => s.addClient)
+  const create = useCreateClient()
   const [form, setForm] = useState(BLANK)
   const [errors, setErrors] = useState<ClientErrors>({})
   const set = <K extends keyof typeof BLANK>(key: K, value: (typeof BLANK)[K]) => setForm((f) => ({ ...f, [key]: value }))
@@ -18,15 +18,20 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
   const close = () => {
     setForm(BLANK)
     setErrors({})
+    create.reset()
     onClose()
   }
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const found = validateClient({ ...form, postcode: '', country: 'Malaysia' })
     setErrors(found)
     if (Object.keys(found).length) return
-    addClient({ ...form, name: form.name.trim(), email: form.email.trim(), contact: form.contact.trim(), registrationNo: form.registrationNo.trim() })
-    close()
+    try {
+      await create.mutateAsync({ ...form, name: form.name.trim(), email: form.email.trim(), contact: form.contact.trim(), registrationNo: form.registrationNo.trim() })
+      close()
+    } catch {
+      // shown below via create.error
+    }
   }
   const error = (key: keyof ClientErrors) => errors[key] && <span className="text-sm text-red-600 dark:text-red-400" role="alert">{errors[key]}</span>
 
@@ -61,9 +66,10 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
           <span className="font-medium text-zinc-700 dark:text-zinc-300">Tags</span>
           <TagList tags={form.tags} onChange={(v) => set('tags', v)} />
         </div>
+        <MutationError error={create.error} />
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" className={btn.ghost} onClick={close}>Cancel</button>
-          <button className={btn.primary}>Add client</button>
+          <button className={btn.primary} disabled={create.isPending}>{create.isPending ? 'Adding…' : 'Add client'}</button>
         </div>
       </form>
     </Dialog>

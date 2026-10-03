@@ -8,16 +8,18 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test src/*.test.ts"
+    "test": "node --test $(ls src/*.test.ts src/*/*.test.ts | grep -v \"\\.db\\.test\\.ts$\")",
+    "test:db": "node --test src/data/equivalence.db.test.ts",
+    "db:types": "supabase gen types typescript --local > src/data/database.types.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.117.2",
+    "@tanstack/react-query": "^5.104.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "zundo": "^2.3.0",
-    "zustand": "^5.0.15"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

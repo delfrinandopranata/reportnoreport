@@ -113,28 +113,44 @@ export function addTag(tags: string[], raw: string): string[] {
 export type Txn = {
   id: string
   clientId: string
+  bankAccountId: string
   kind: Kind
   amount: number
   date: string
   note: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type Totals = { in: number; out: number; net: number; count: number }
 
-export const CURRENCY = 'MYR'
-const money = new Intl.NumberFormat('en-MY', { style: 'currency', currency: CURRENCY })
-const compact = new Intl.NumberFormat('en-MY', {
-  style: 'currency',
-  currency: CURRENCY,
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
+const moneyCache = new Map<string, { format(cents: number): string; compact(cents: number): string }>()
+
+/** Formatter for one currency, always `<CODE> <number>` (minus first); cached because Intl.NumberFormat is expensive to build. */
+export function makeMoney(currency: string) {
+  const cached = moneyCache.get(currency)
+  if (cached) return cached
+  const make = (opts: Intl.NumberFormatOptions) => {
+    const nf = new Intl.NumberFormat('en-MY', { style: 'currency', currency, currencyDisplay: 'code', ...opts })
+    return (cents: number) => {
+      const parts = nf.formatToParts(cents / 100)
+      const minus = parts.some((p) => p.type === 'minusSign') ? '-' : ''
+      const number = parts.filter((p) => p.type !== 'currency' && p.type !== 'minusSign' && p.type !== 'literal').map((p) => p.value).join('')
+      return `${minus}${currency} ${number}`
+    }
+  }
+  const m = { format: make({}), compact: make({ notation: 'compact', maximumFractionDigits: 1 }) }
+  moneyCache.set(currency, m)
+  return m
+}
 
 /** Short, stable account reference shown on statements. */
 export const accountNo = (clientId: string) => clientId.slice(0, 8).toUpperCase()
 
-export const formatMoney = (cents: number) => money.format(cents / 100)
-export const formatCompact = (cents: number) => compact.format(cents / 100)
+/** @deprecated use useMoney() — kept until every caller reads the firm currency. */
+export const formatMoney = (cents: number) => makeMoney('MYR').format(cents)
+/** @deprecated use useMoney() */
+export const formatCompact = (cents: number) => makeMoney('MYR').compact(cents)
 
 /** Local YYYY-MM-DD. */
 export const today = () => new Date().toLocaleDateString('en-CA')
@@ -289,7 +305,7 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim()))
 }
 
-export type ImportRow = { line: number; clientName: string; kind: Kind; amount: number; date: string; note: string }
+export type ImportRow = { line: number; clientName: string; bankAccount: string; kind: Kind; amount: number; date: string; note: string }
 
 /** YYYY-MM-DD or DD/MM/YYYY (Malaysian convention) → YYYY-MM-DD, or null if it isn't a real date. */
 function readDate(value: string): string | null {
@@ -303,13 +319,20 @@ function readDate(value: string): string | null {
 
 /** Undo the export's formula guard and currency decoration. */
 const text = (value = '') => value.trim().replace(/^'(?=[=+\-@])/, '')
-const amountOf = (value = '') => parseCents(text(value).replace(/^RM\s*/i, ''))
+/** A leading currency code is dropped when it matches the firm's; "RM" means MYR. */
+function readAmount(value: string | undefined, firmCurrency: string): { cents: number | null; foreign?: string } {
+  const raw = text(value)
+  const code = /^(RM|[A-Za-z]{3})\s*/i.exec(raw)?.[1]
+  const iso = code && (code.toUpperCase() === 'RM' ? 'MYR' : code.toUpperCase())
+  if (iso && iso !== firmCurrency) return { cents: null, foreign: iso }
+  return { cents: parseCents(code ? raw.slice(code.length) : raw) }
+}
 
 /**
  * Reads a transactions CSV. Columns are matched by header name (any order, extra columns ignored):
- * Date, Client, Description, and either Receipts / Payments, or Type (Receipt|Payment) + Amount.
+ * Date, Client, Description, optional Bank account, and either Receipts / Payments, or Type (Receipt|Payment) + Amount.
  */
-export function readImport(csv: string): { rows: ImportRow[]; errors: string[] } {
+export function readImport(csv: string, firmCurrency: string): { rows: ImportRow[]; errors: string[] } {
   const [header = [], ...body] = parseCsv(csv)
   const col = new Map(header.map((h, i) => [h.trim().toLowerCase(), i]))
   const at = (cells: string[], name: string) => (col.has(name) ? cells[col.get(name)!] : undefined)
@@ -321,6 +344,12 @@ export function readImport(csv: string): { rows: ImportRow[]; errors: string[] }
   const errors: string[] = []
   body.forEach((cells, i) => {
     const line = i + 2
+    let foreign = ''
+    const amountOf = (value?: string) => {
+      const r = readAmount(value, firmCurrency)
+      foreign ||= r.foreign ?? ''
+      return r.cents
+    }
     const date = readDate(text(at(cells, 'date')))
     const clientName = text(at(cells, 'client'))
     const receipt = text(at(cells, 'receipts')) ? amountOf(at(cells, 'receipts')) : undefined
@@ -333,28 +362,13 @@ export function readImport(csv: string): { rows: ImportRow[]; errors: string[] }
       : payment !== undefined ? ['out', payment]
       : [typed, typed ? amountOf(at(cells, 'amount')) : undefined]
 
+    if (foreign) return void errors.push(`Row ${line}: amount is in ${foreign} but this firm uses ${firmCurrency}.`)
     if (!date) return void errors.push(`Row ${line}: date must be YYYY-MM-DD or DD/MM/YYYY.`)
     if (!clientName) return void errors.push(`Row ${line}: client is empty.`)
     if (receipt !== undefined && payment !== undefined) return void errors.push(`Row ${line}: has both a receipt and a payment — split it into two rows.`)
     if (!kind) return void errors.push(`Row ${line}: needs a receipt or payment amount.`)
     if (!amount) return void errors.push(`Row ${line}: amount must be greater than 0 with up to 2 decimals.`)
-    rows.push({ line, clientName, kind, amount, date, note: text(at(cells, 'description')) })
+    rows.push({ line, clientName, bankAccount: text(at(cells, 'bank account')), kind, amount, date, note: text(at(cells, 'description')) })
   })
   return { rows, errors }
-}
-
-const nameKey = (name: string) => name.trim().toLowerCase()
-const txnKey = (clientId: string, t: Pick<Txn, 'date' | 'kind' | 'amount' | 'note'>) => `${clientId}|${t.date}|${t.kind}|${t.amount}|${t.note}`
-
-/** Matches clients by name (case-insensitive) and skips rows identical to a transaction already on the ledger. */
-export function planImport(rows: ImportRow[], clients: Client[], txns: Txn[]) {
-  const known = new Map(clients.map((c) => [nameKey(c.name), c.id]))
-  const existing = new Set(txns.map((t) => txnKey(t.clientId, t)))
-  // First spelling seen wins when the same new client appears with different casing.
-  const newClients = [...groupBy(rows.filter((r) => !known.has(nameKey(r.clientName))), (r) => nameKey(r.clientName)).values()].map((g) => g[0].clientName.trim())
-  const fresh = rows.filter((r) => {
-    const id = known.get(nameKey(r.clientName))
-    return !id || !existing.has(txnKey(id, r))
-  })
-  return { newClients, rows: fresh, duplicates: rows.length - fresh.length }
 }

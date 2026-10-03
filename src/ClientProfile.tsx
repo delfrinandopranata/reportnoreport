@@ -1,10 +1,12 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { LedgerView } from './ClientsPage'
 import { AssigneeSelect, StatusBadge, StatusSelect, TagList } from './clients/fields'
 import { ClientForm, ClientView } from './clients/ClientInfo'
-import { card, neg, shortDate, useCan, useUserNames } from './clients/shared'
-import { formatMoney, today, totals, type Client } from './ledger'
-import { useStore } from './store'
+import { card, LoadError, MutationError, neg, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
+import { useMoney } from './data/money'
+import { useBalances, useClient, useDeleteClient, useLedger, useUpdateClient } from './data/queries'
+import { useSession } from './data/session'
+import { today, type Client } from './ledger'
 import { Avatar, btn, Icon, TxnForm } from './ui'
 import { CashflowChart } from './widgets'
 
@@ -26,40 +28,48 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab; actions: ReactNode }) {
-  const client = useStore((s) => s.clients.find((c) => c.id === id))
-  const txns = useStore((s) => s.txns)
-  const businessName = useStore((s) => s.businessName)
-  const updateClient = useStore((s) => s.updateClient)
-  const removeClient = useStore((s) => s.removeClient)
-  const canEdit = useCan('clients.edit')
-  const canDelete = useCan('clients.delete')
+export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
+  const { data: client, isPending, error: loadError } = useClient(id)
+  const { firm } = useSession()
+  const money = useMoney()
+  const update = useUpdateClient()
+  const remove = useDeleteClient()
+  const edit = useGate('clients.edit', 'edit clients')
+  const del = useGate('clients.delete', 'delete clients')
+  const canEdit = edit.ok
+  const gateHint = edit.title ?? del.title
   const nameOf = useUserNames()
   const [editing, setEditing] = useState(false)
-  const own = useMemo(() => txns.filter((t) => t.clientId === id), [txns, id])
-  const sum = totals(own)
+  const d = new Date()
+  const { data: own = [] } = useLedger({ from: new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA'), to: today(), clientId: id })
+  const { data: balances } = useBalances({ from: '1900-01-01', to: today(), clientId: id })
+  const net = balances?.[0]?.closing ?? 0
 
+  if (isPending) return <ProfileSkeleton />
+  if (loadError) return <LoadError error={loadError} what="this client" />
   if (!client) {
     return (
       <div className="grid place-items-center gap-3 py-24 text-center">
         <p className="font-medium">This client doesn’t exist any more.</p>
         <div className="flex items-center gap-2">
-          {actions}
           <a href="#clients" className={btn.primary}>Back to clients</a>
         </div>
       </div>
     )
   }
 
-  const patch = (change: Partial<Client>) => updateClient(client.id, change)
+  const patch = (change: Partial<Client>) => update.mutate({ id: client.id, patch: change, loadedUpdatedAt: client.updatedAt })
   const startEdit = () => {
     if (tab !== 'client') location.hash = `clients/${client.id}`
     setEditing(true)
   }
-  const onDelete = () => {
-    if (confirm(`Delete ${client.name} and its ${own.length} ledger entries? You can undo this.`)) {
-      removeClient(client.id)
+  const onDelete = async () => {
+    if (!confirm(`Delete ${client.name} and its ${balances?.[0]?.txn_count ?? 0} ledger entries? This can't be undone.`)) return
+    try {
+      await remove.mutateAsync(client.id)
       location.hash = 'clients'
+    } catch {
+      // shown below via remove.error
     }
   }
   const leaveTab = (e: React.MouseEvent) => {
@@ -74,26 +84,25 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
       key: 'transactions',
       label: 'Transactions',
       href: `#clients/${client.id}/transactions`,
-      headline: <span className={`text-base font-semibold tabular-nums ${neg(sum.net)}`}>{formatMoney(sum.net)}</span>,
+      headline: <span className={`text-base font-semibold tabular-nums ${neg(net)}`}>{money.format(net)}</span>,
     },
   ] as const
   const meta = [client.industry, client.registrationNo, `Client since ${shortDate(client.createdAt)}`].filter(Boolean).join(' · ')
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="flex items-center justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm text-zinc-500">
           <a href="#clients" className="font-medium hover:text-zinc-900 dark:hover:text-white">Clients</a>
           <Icon name="right" className="size-3.5 shrink-0" />
           <span className="truncate text-zinc-900 dark:text-white" aria-current="page">{client.name}</span>
         </nav>
-        {actions}
       </div>
 
       {!onTxns && (
         <div className="hidden items-end justify-between border-b-2 border-zinc-900 pb-3 print:flex">
           <div>
-            <p className="text-lg font-semibold">{businessName}</p>
+            <p className="text-lg font-semibold">{firm.tradingName || firm.name}</p>
             <h1 className="text-xl font-semibold">Client information sheet</h1>
           </div>
           <p className="text-sm text-zinc-600">Printed {shortDate(today())}</p>
@@ -103,7 +112,7 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
       <header className={`${card} grid gap-5 p-5 ${onTxns ? 'print:hidden' : ''}`}>
         <div className="flex flex-wrap items-start gap-4">
           <Avatar name={client.name} size="size-14 text-base" />
-          <div className="mr-auto min-w-0">
+          <div className="min-w-0 flex-1 basis-56">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight break-words">{client.name}</h1>
               <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
@@ -123,30 +132,23 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
             </div>
             <p className="mt-1 text-sm text-zinc-500">{meta}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-1 print:hidden">
-            {canEdit ? (
-              <button type="button" className={btn.ghost} onClick={startEdit} disabled={editing}>
-                <Icon name="pencil" /> Edit
-              </button>
-            ) : (
-              <span title="Your role can’t edit clients"><button type="button" className={btn.ghost} disabled><Icon name="pencil" /> Edit</button></span>
-            )}
+          <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto print:hidden">
+            <button type="button" className={btn.ghost} onClick={startEdit} disabled={!edit.ok || editing} title={edit.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
+              <Icon name="pencil" /> Edit
+            </button>
             <button type="button" className={btn.ghost} onClick={() => print()}>
               <Icon name="printer" /> Print
             </button>
-            {canDelete ? (
-              <button type="button" className={btn.danger} onClick={onDelete}>
-                <Icon name="trash" /> Delete
-              </button>
-            ) : (
-              <span title="Your role can’t delete clients"><button type="button" className={btn.danger} disabled><Icon name="trash" /> Delete</button></span>
-            )}
-            <a href={`#clients/${client.id}/statement`} className={btn.primary}>
+            <button type="button" className={btn.danger} onClick={onDelete} disabled={!del.ok || remove.isPending} title={del.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
+              <Icon name="trash" /> Delete
+            </button>
+            <a href={`#clients/${client.id}/statement`} className={`${btn.primary} max-sm:w-full`}>
               <Icon name="file" /> Statement of account
             </a>
           </div>
         </div>
 
+        {gateHint && <p id="client-gate" className="-mt-2 text-xs text-zinc-500 print:hidden">{gateHint}</p>}
         <div className="grid gap-4 border-t border-zinc-100 pt-4 sm:grid-cols-3 dark:border-zinc-800">
           <Labelled label="Status">
             <StatusSelect status={client.status} onChange={(status) => patch({ status })} disabled={!canEdit} />
@@ -164,10 +166,11 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
             )}
           </Labelled>
         </div>
+        <MutationError error={update.error ?? remove.error} />
         <p className="text-xs text-zinc-500">Last updated on {stamp(client.updatedAt)}</p>
       </header>
 
-      <div role="tablist" aria-label="Client sections" className="-mt-2 flex gap-1 overflow-x-auto border-b border-zinc-200 print:hidden dark:border-zinc-800">
+      <div role="tablist" aria-label="Client sections" className="-mt-2 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 print:hidden dark:border-zinc-800">
         {tabs.map((t) => (
           <a
             key={t.key}
@@ -206,6 +209,27 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
   )
 }
 
+/** Same shape as the loaded page (breadcrumb, header card, tabs) so nothing jumps when data lands. */
+function ProfileSkeleton() {
+  return (
+    <div role="status" aria-label="Loading client" className="grid grid-cols-1 gap-6">
+      <Skeleton className="h-5 w-48" />
+      <div className={`${card} grid gap-5 p-5`}>
+        <div className="flex items-start gap-4">
+          <Skeleton className="size-14 rounded-full" />
+          <div className="grid flex-1 gap-2"><Skeleton className="h-8 w-64 max-w-full" /><Skeleton className="h-4 w-80 max-w-full" /></div>
+        </div>
+        <div className="grid gap-4 border-t border-zinc-100 pt-4 sm:grid-cols-3 dark:border-zinc-800">
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
+        </div>
+      </div>
+      <Skeleton className="h-12 w-72 max-w-full" />
+      <span className="sr-only">Loading…</span>
+    </div>
+  )
+}
+
 function PostTxn({ clientId }: { clientId: string }) {
-  return useCan('transactions.post') ? <TxnForm clientId={clientId} /> : <p className="text-sm text-zinc-500">Your role can’t record transactions.</p>
+  const gate = useGate('transactions.post', 'record transactions')
+  return gate.ok ? <TxnForm clientId={clientId} autoFocus /> : <p className="text-sm text-zinc-500">{gate.title}</p>
 }
