@@ -92,24 +92,29 @@ export function BillingPage() {
 
         {view.kind === 'trial' && (
           <div className="space-y-3">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              {view.daysLeft === 1
-                ? 'You have 1 day left in your trial.'
-                : `You have ${view.daysLeft} days left in your trial.`}
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Ends {view.endsOn}</p>
+            <div className="flex items-start gap-2">
+              <Icon name="check" className="mt-0.5 size-5 shrink-0 text-blue-600 dark:text-blue-300" aria-hidden />
+              <div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                  {view.daysLeft === 1
+                    ? 'You have 1 day left in your trial.'
+                    : `You have ${view.daysLeft} days left in your trial.`}
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Ends {view.endsOn}</p>
+              </div>
+            </div>
             {isOwner && (
               <button
                 type="button"
                 disabled={checkout.isPending}
-                className={btn.primary}
+                className={`${btn.primary} w-full sm:w-auto`}
                 onClick={() => checkout.mutate()}
               >
                 {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
               </button>
             )}
             {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                 {(checkout.error as Error).message}
               </p>
             )}
@@ -118,24 +123,29 @@ export function BillingPage() {
 
         {view.kind === 'ended' && (
           <div className="space-y-3">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Your trial ended on {view.endedOn}.
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Pay RM 10 to keep adding and editing — your data stays viewable and exportable.
-            </p>
+            <div className="flex items-start gap-2">
+              <Icon name="x" className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
+              <div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Your trial ended on {view.endedOn}.
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Pay RM 10 to keep adding and editing — your data stays viewable and exportable.
+                </p>
+              </div>
+            </div>
             {isOwner && (
               <button
                 type="button"
                 disabled={checkout.isPending}
-                className={btn.primary}
+                className={`${btn.primary} w-full sm:w-auto`}
                 onClick={() => checkout.mutate()}
               >
                 {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
               </button>
             )}
             {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                 {(checkout.error as Error).message}
               </p>
             )}
@@ -144,24 +154,29 @@ export function BillingPage() {
 
         {view.kind === 'read_only' && (
           <div className="space-y-3">
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Your account is read-only.
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Payment was refunded or the trial expired. Pay RM 10 to restore write access.
-            </p>
+            <div className="flex items-start gap-2">
+              <Icon name="x" className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
+              <div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                  Your account is read-only.
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Payment was refunded or the trial expired. Pay RM 10 to restore write access.
+                </p>
+              </div>
+            </div>
             {isOwner && (
               <button
                 type="button"
                 disabled={checkout.isPending}
-                className={btn.primary}
+                className={`${btn.primary} w-full sm:w-auto`}
                 onClick={() => checkout.mutate()}
               >
                 {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
               </button>
             )}
             {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                 {(checkout.error as Error).message}
               </p>
             )}
@@ -185,10 +200,15 @@ export function BillingPage() {
 
         {view.kind === 'complimentary' && (
           <div className="space-y-3">
-            <p className="font-medium text-zinc-900 dark:text-white">Complimentary — no payment needed.</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Your firm has complimentary access to ReportNoReport.
-            </p>
+            <div className="flex items-start gap-2">
+              <Icon name="check" className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              <div>
+                <p className="font-medium text-zinc-900 dark:text-white">Complimentary — no payment needed.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Your firm has complimentary access to ReportNoReport.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

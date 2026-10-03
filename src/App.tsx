@@ -170,7 +170,7 @@ export default function App() {
                   </p>
                   {profile.role === 'owner' && (
                     <p className="mt-2 text-xs opacity-90">
-                      <a href="#settings/billing" className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">Pay RM 10</a> to keep using ReportNoReport.
+                      <a href="#settings/billing" className="font-medium underline opacity-100 hover:opacity-75">Pay RM 10</a> to keep using ReportNoReport.
                     </p>
                   )}
                 </div>
