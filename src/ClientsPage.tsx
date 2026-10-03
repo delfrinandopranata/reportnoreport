@@ -18,7 +18,7 @@ import {
 } from './ledger'
 import { AddClient } from './clients/AddClient'
 import { StatusBadge, TagList } from './clients/fields'
-import { card, LoadError, monthLabel, neg, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
+import { card, LoadError, monthLabel, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger, fetchAttachmentsForExport } from './data/queries'
@@ -186,8 +186,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       text: (t) => t.note,
     },
     { id: 'type', label: 'Type', width: 100, hidden: true, cell: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment'), text: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment') },
-    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
-    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
+    { id: 'receipts', label: 'In', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
+    { id: 'payments', label: 'Out', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
     { id: 'balance', label: 'Balance', width: 150, align: 'right', cell: (t) => <span className="font-medium">{money(balances.get(t.id) ?? 0)}</span>, text: (t) => plainAmount(balances.get(t.id) ?? 0) },
   ]
 
@@ -241,8 +241,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     { id: 'clientCode', label: 'Client ID', width: 150, hidden: true, cell: (r) => r.client.clientCode || '—', text: (r) => r.client.clientCode },
     { id: 'industry', label: 'Industry', width: 170, hidden: true, cell: (r) => r.client.industry || '—', text: (r) => r.client.industry },
     { id: 'opening', label: 'Opening balance', width: 150, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
-    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{fmt(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
-    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
+    { id: 'receipts', label: 'In', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{fmt(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
+    { id: 'payments', label: 'Out', width: 140, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
     { id: 'closing', label: 'Closing balance', width: 150, align: 'right', sortKey: 'closing', cell: (r) => <span className="font-semibold">{money(r.soa.closing)}</span>, text: (r) => plainAmount(r.soa.closing) },
     { id: 'count', label: 'Transactions', width: 120, align: 'right', sortKey: 'count', hidden: true, cell: (r) => r.count, text: (r) => String(r.count) },
     { id: 'last', label: 'Last transaction', width: 140, align: 'right', sortKey: 'last', cell: (r) => <span className="text-zinc-500">{r.last ? shortDate(r.last) : '—'}</span>, text: (r) => r.last },
@@ -444,29 +444,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         </div>
         {filterNote.length > 0 && <p className="mt-1 text-sm text-zinc-600">Filtered: {filterNote.join(' · ')}</p>}
       </header>
-
-      {!fixedClientId && <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4 print:grid-cols-4">
-        {(
-          [
-            ['Opening balance', summary.opening, `as at ${shortDate(period.from)}`],
-            ['Total receipts', summary.receipts, isTxns ? plural(summary.lines.filter((l) => l.kind === 'in').length, 'receipt') : 'in this period'],
-            ['Total payments', summary.payments, isTxns ? plural(summary.lines.filter((l) => l.kind === 'out').length, 'payment') : 'in this period'],
-            ['Closing balance', summary.closing, `as at ${shortDate(period.to)}`],
-          ] as const
-        ).map(([label, value, sub]) => (
-          <div key={label} className={`${card} p-4 sm:p-5 print:p-3`}>
-            <dt className="text-sm text-zinc-500">{label}</dt>
-            {loading ? (
-              <dd className="mt-2 grid gap-2" role="status" aria-label="Loading"><Skeleton className="h-7 w-28 sm:h-8" /><Skeleton className="h-4 w-20" /></dd>
-            ) : (
-              <>
-                <dd className={`mt-2 text-base font-semibold tracking-tight tabular-nums sm:text-2xl print:mt-1 print:text-base ${neg(value)}`}>{fmt(value)}</dd>
-                <dd className="mt-1 text-sm text-zinc-500">{sub}</dd>
-              </>
-            )}
-          </div>
-        ))}
-      </dl>}
 
       <div className={`${card} flex flex-wrap items-center gap-2 p-4 print:hidden`}>
         {!fixedClientId && <Segmented<View>
