@@ -7,7 +7,7 @@ import { useMoney } from './data/money'
 import { useBalances, useClient, useDeleteClient, useLedger, useUpdateClient } from './data/queries'
 import { useSession } from './data/session'
 import { today, type Client } from './ledger'
-import { Avatar, btn, Icon, TxnForm } from './ui'
+import { Avatar, btn, Dialog, Icon, TxnForm } from './ui'
 import { CashflowChart } from './widgets'
 
 export type ClientTab = 'client' | 'transactions'
@@ -40,6 +40,8 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const gateHint = edit.title ?? del.title
   const nameOf = useUserNames()
   const [editing, setEditing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState<string | null>(null)
   const d = new Date()
   const { data: own = [] } = useLedger({ from: new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA'), to: today(), clientId: id })
   const { data: balances } = useBalances({ from: '1900-01-01', to: today(), clientId: id })
@@ -64,7 +66,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
     setEditing(true)
   }
   const onDelete = async () => {
-    if (!confirm(`Delete ${client.name} and its ${balances?.[0]?.txn_count ?? 0} ledger entries? This can't be undone.`)) return
+    setConfirmDelete(false)
     try {
       await remove.mutateAsync(client.id)
       location.hash = 'clients'
@@ -72,10 +74,10 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
       // shown below via remove.error
     }
   }
-  const leaveTab = (e: React.MouseEvent) => {
+  const leaveTab = (e: React.MouseEvent, href: string) => {
     if (!editing) return
-    if (confirm('Discard your unsaved changes?')) setEditing(false)
-    else e.preventDefault()
+    e.preventDefault()
+    setConfirmLeave(href)
   }
   const onTxns = tab === 'transactions'
   const tabs = [
@@ -139,7 +141,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             <button type="button" className={btn.ghost} onClick={() => print()}>
               <Icon name="printer" /> Print
             </button>
-            <button type="button" className={btn.danger} onClick={onDelete} disabled={!del.ok || remove.isPending} title={del.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
+            <button type="button" className={btn.danger} onClick={() => setConfirmDelete(true)} disabled={!del.ok || remove.isPending} title={del.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
               <Icon name="trash" /> Delete
             </button>
             <a href={`#clients/${client.id}/statement`} className={`${btn.primary} max-sm:w-full`}>
@@ -177,7 +179,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             href={t.href}
             role="tab"
             aria-selected={tab === t.key}
-            onClick={t.key === tab ? undefined : leaveTab}
+            onClick={t.key === tab ? undefined : (e) => leaveTab(e, t.href)}
             className="-mb-px grid shrink-0 gap-1 border-b-2 border-transparent px-4 py-2.5 text-sm text-zinc-500 transition hover:text-zinc-900 aria-selected:border-zinc-900 aria-selected:text-zinc-900 dark:hover:text-white dark:aria-selected:border-white dark:aria-selected:text-white"
           >
             <span className="font-medium">{t.label}</span>
@@ -205,6 +207,44 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
       ) : (
         <ClientView client={client} />
       )}
+
+      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete client">
+        <div className="grid gap-4 text-sm">
+          <p>Delete {client.name} and its {balances?.[0]?.txn_count ?? 0} ledger entries? This can't be undone.</p>
+          <div className="flex justify-end gap-2">
+            <button type="button" className={btn.ghost} onClick={() => setConfirmDelete(false)}>Cancel</button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500"
+              disabled={remove.isPending}
+              onClick={onDelete}
+            >
+              {remove.isPending ? 'Deleting…' : 'Delete client'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog open={!!confirmLeave} onClose={() => setConfirmLeave(null)} title="Discard changes?">
+        <div className="grid gap-4 text-sm">
+          <p>Discard your unsaved changes?</p>
+          <div className="flex justify-end gap-2">
+            <button type="button" className={btn.ghost} onClick={() => setConfirmLeave(null)}>Cancel</button>
+            <button
+              type="button"
+              className={btn.primary}
+              onClick={() => {
+                const href = confirmLeave
+                setConfirmLeave(null)
+                setEditing(false)
+                if (href) location.hash = href
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(11);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -51,6 +51,11 @@ update firms set trial_ends_at = now() - interval '1 day' where id = '0000000b-0
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
 select throws_like($$ select approve_contract((select id from contracts where title = 'Beta retainer'), true) $$,
   'Your firm can''t make changes right now: %', 'approve is blocked when the firm cannot write');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1'); -- owner@alpha
+select throws_ok($$ insert into contracts (client_id, title, start_date, end_date)
+  values ((select id from clients where name = 'Marina Bay Studio Pte Ltd'), 'Cross-firm attempt', '2026-01-01', '2026-12-31') $$,
+  'P0001', 'Client must belong to the same firm as the contract.', 'cannot create a contract for another firm''s client');
 
 select * from finish();
 rollback;
