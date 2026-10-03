@@ -11,7 +11,10 @@ for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY']) {
   if (!process.env[`VITE_${name}`] && fallback) process.env[`VITE_${name}`] = fallback
 }
 
+// The demo build (scripts/build-demo.sh) only needs the app shell, not the marketing homepage.
+const isDemo = process.env.VITE_DEMO === 'true'
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  build: { rollupOptions: { input: { home: `${root}index.html`, app: `${root}app/index.html` } } },
+  build: { rollupOptions: { input: isDemo ? { app: `${root}app/index.html` } : { home: `${root}index.html`, app: `${root}app/index.html` } } },
 })

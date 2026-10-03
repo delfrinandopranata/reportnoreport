@@ -18,7 +18,7 @@
 /                   → index.html (homepage, public, no sign-in; Plan B)
 /app/               → app/index.html (React app, requires auth; uses hash routes)
                        #signin, #signup, #dashboard, #clients, #settings, #users, #admin
-/demo/              → archived browser-only MVP (from tag demo-local)
+/demo/              → same app as /app/, built with VITE_DEMO=true (no sign-in, no Supabase; src/demo/store.ts)
 ```
 
 **Hash routes** — the app at `/app/` uses client-side routing:
@@ -135,7 +135,7 @@ supabase/
 .env.local (git-ignored)      — real values from `supabase status -o env`
 
 scripts/
-  build-demo.sh               — builds tag demo-local at /demo/ during vite build (Plan B)
+  build-demo.sh               — builds the current tree with VITE_DEMO=true at /demo/ during vite build
 ```
 
 ## Data flow: a read (e.g., fetch clients)
