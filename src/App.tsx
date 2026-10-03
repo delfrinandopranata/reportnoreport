@@ -181,7 +181,7 @@ export default function App() {
                 <Icon name="x" className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium">
-                    Your free trial ended on {trial.endedOn}
+                    {trial.kind === 'ended' ? `Your free trial ended on ${trial.endedOn}` : 'This firm is read-only'}
                     <span className="block text-xs opacity-90 mt-1">Your data is read-only. You can still view, export and print.</span>
                   </p>
                 </div>
