@@ -14,7 +14,7 @@ This checklist describes every step to deploy the Platform to production. The ap
 ### Step 2: Link your local copy to the project
 
 ```bash
-supabase link --project-id <your-project-id>
+supabase link --project-ref <your-project-ref>
 ```
 
 Authenticate when prompted. This enables `supabase db push` and secrets management.
@@ -34,22 +34,21 @@ Confirm the schema is in place:
 ### Step 4: Deploy Edge Functions (team and admin)
 
 ```bash
-supabase functions deploy team --project-id <your-project-id>
-supabase functions deploy admin --project-id <your-project-id>
+supabase functions deploy team
+supabase functions deploy admin
 ```
 
 Verify the functions are listed at: Supabase dashboard › Edge Functions.
 
 ### Step 5: Set Edge Function secrets
 
-In Supabase dashboard › Project Settings › Edge Functions › Secrets, add:
+Set the APP_URL secret from the CLI:
 
-```
-APP_URL = https://<your-domain>/app/
-SUPABASE_SERVICE_ROLE_KEY = <your-service-role-key>
+```bash
+supabase secrets set APP_URL=https://<your-domain>/app/
 ```
 
-(Find the Service Role Key in Supabase dashboard › Project Settings › API › Project API keys › Service role.)
+Supabase automatically injects `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` into Edge Functions; these do not need to be set manually.
 
 ### Step 6: Set up Auth (email, confirmation, redirects)
 
@@ -220,7 +219,7 @@ The public waitlist endpoint (`/api/waitlist`) is rate-limited by Supabase/Verce
 - **Frontend logs:** Vercel dashboard › Deployments › Logs and Runtime Logs
 - **Email delivery:** Resend dashboard › Emails (bounces, opens, clicks)
 
-**Backups:** Supabase provides automated daily backups (free tier keeps 7 days; enterprise keeps 30).
+**Backups:** Supabase provides automated daily backups. See the Supabase dashboard for retention policy.
 
 ## Rolling back a deployment
 
@@ -238,7 +237,7 @@ For Supabase (database migrations):
 
 For Edge Functions:
 
-1. Redeploy from local: `supabase functions deploy <function-name> --project-id <your-project-id>`
+1. Redeploy from local: `supabase functions deploy <function-name>`
 2. Or use Vercel › Deployments › Promote to Production if the bug is in the frontend/API layer
 
 ## Secrets management (critical)
@@ -253,7 +252,7 @@ Secrets:
 - `RESEND_API_KEY` (private; Supabase secret only)
 - `STRIPE_SECRET_KEY` (private; Supabase secret only, Plan C)
 - `STRIPE_WEBHOOK_SECRET` (private; Supabase secret only, Plan C)
-- Supabase `SERVICE_ROLE_KEY` (private; Supabase secret only)
+- Supabase `SERVICE_ROLE_KEY` (private; used in Edge Functions only, never in browser or Vercel)
 - Supabase database password (private; set at project creation)
 - Stripe test/live keys (depends on mode; test keys are safe in repos, live are private)
 
@@ -299,110 +298,7 @@ Services communicate via HTTPS. No server-to-server auth required; the frontend 
 | "Firm not found" for all reads | RLS misconfigured or auth_firm_id() returns null | Check RLS policies in Postgres; verify the user's profile exists |
 | Trial expiry doesn't block writes | firm_can_write() has a bug | Check the logic: `billing_status = 'trial' AND now() < trial_ends_at` |
 | Demo at /demo/ returns 404 | Demo build didn't run or the build script failed | Re-run `pnpm build` and check for errors; check `scripts/build-demo.sh` |
-| Edge Function timeout | Function is too slow or Supabase is down | Check function logs (Supabase › Edge Functions › Logs); increase timeout if needed (default 60s) |
-| Database locked / can't run migrations | Stale connection or migration in progress | Restart Supabase: `supabase stop && supabase start` |
-
-## Future: Plan C and beyond
-
-The deployment checklist above covers Plans A and B. Future plans will add:
-
-- **Plan C:** RM 10 one-time payment via Stripe (requires Stripe account, API keys, webhook secret)
-- **Plan D:** Product tour, Get started checklist, sample data UX
-- **Later sub-projects:** Trust and compliance (audit views, locked periods, bank reconciliation); Client communication (emailed statements, reminders, client portal)
-
-All use the same Supabase and Vercel infrastructure; only new migrations and Edge Functions are needed.
-
-## Production logs and observability
-
-**Not yet set up:** alerting, uptime checks, error tracking, automatic metrics collection.
-
-**Available once live:**
-- **Postgres logs:** Supabase dashboard › Logs (queries, slowest queries, replication)
-- **Auth logs:** Supabase dashboard › Authentication › Auth logs
-- **Edge Function logs:** Supabase dashboard › Edge Functions › Logs (requests, errors)
-- **Frontend logs:** Vercel dashboard › Deployments › Logs and Runtime Logs
-- **Email delivery:** Resend dashboard › Emails (bounces, opens, clicks)
-
-**Backups:** Supabase provides automated daily backups (free tier keeps 7 days; enterprise keeps 30).
-
-## Rolling back a deployment
-
-If a Vercel deployment breaks the app:
-
-1. Go to Vercel › Deployments
-2. Find the last known-good deployment
-3. Click › Promote to Production
-
-For Supabase (database migrations):
-
-1. Migrations are append-only and never rolled back (Postgres best practice)
-2. If a migration introduced a bug, create a new migration that fixes it
-3. Never edit or delete an existing migration
-
-For Edge Functions:
-
-1. Redeploy from local: `supabase functions deploy <function-name> --project-id <your-project-id>`
-2. Or use Vercel › Deployments › Promote to Production if the bug is in the frontend/API layer
-
-## Secrets management (critical)
-
-**Never commit secrets to git.** The following are secrets and must be:
-- Set in environment variables (Vercel, Supabase, local .env files)
-- `.env*.local` files are git-ignored
-- `.env.example` lists variable names only (no values)
-
-Secrets:
-- `VITE_SUPABASE_ANON_KEY` (public, but don't hardcode; use .env)
-- `RESEND_API_KEY` (private; Supabase secret only)
-- `STRIPE_SECRET_KEY` (private; Supabase secret only)
-- `STRIPE_WEBHOOK_SECRET` (private; Supabase secret only)
-- Supabase `SERVICE_ROLE_KEY` (private; Supabase secret only)
-- Supabase database password (private; set at project creation)
-- Stripe test/live keys (depends on mode; test keys are safe in repos, live are private)
-
-Audit: `git log -S '<api-key-fragment>' -- ':(exclude).gitignore'` to find any accidental commits.
-
-## Important: do NOT run `supabase config push` while local SMTP is disabled
-
-The `supabase/config.toml` has `[auth.email.smtp] enabled = false` locally (to avoid real email sends from dev accounts). **If you run `supabase config push` while this is enabled in the local config, it will push the disabled state to your hosted project and turn off SMTP.**
-
-Instead, use the Supabase dashboard to configure SMTP (Auth › SMTP Settings) and set templates manually (Auth › Email Templates).
-
-## Hosting architecture summary
-
-```
-User Browser
-    ↓
-Vercel (frontend)
-    ├→ index.html (/)                  [static page]
-    ├→ app/index.html (/app/)          [React app; hash routes]
-    └→ demo/index.html (/demo/)        [archived MVP]
-    ↓
-Supabase (backend)
-    ├→ PostgreSQL 17 (Singapore)       [data, RLS, computed functions]
-    ├→ Auth (Supabase)                 [user signup, sign-in, password reset]
-    ├→ Edge Functions (Deno)           [team (invites), admin (super-admin ops)]
-    ├→ Storage (S3-compatible)         [firm logos]
-    └→ Logs, Backups
-    ↓
-Resend (email)
-    └→ SMTP server                     [branded emails via Supabase Auth]
-```
-
-Services communicate via HTTPS. No server-to-server auth required; the frontend (via the anon key) is the only client.
-
-**Note:** Stripe is integrated in Plan C (not yet started). The hosting diagram will expand when billing is added.
-
-## Support and troubleshooting
-
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Invites don't arrive | SMTP misconfigured or Resend domain unverified | Check Supabase › SMTP Settings; check Resend › Domains |
-| Users can't sign up (401) | Supabase Auth misconfigured or redirect URLs wrong | Check Auth › URL Configuration includes your domain |
-| "Firm not found" for all reads | RLS misconfigured or auth_firm_id() returns null | Check RLS policies in Postgres; verify the user's profile exists |
-| Trial expiry doesn't block writes | firm_can_write() has a bug | Check the logic: `billing_status = 'trial' AND now() < trial_ends_at` |
-| Demo at /demo/ returns 404 | Demo build didn't run or the build script failed | Re-run `pnpm build` and check for errors; check `scripts/build-demo.sh` |
-| Edge Function timeout | Function is too slow or Supabase is down | Check function logs (Supabase › Edge Functions › Logs); increase timeout if needed (default 60s) |
+| Edge Function timeout | Function is too slow or Supabase is down | Check function logs (Supabase › Edge Functions › Logs) and see the Supabase dashboard for timeout settings |
 | Database locked / can't run migrations | Stale connection or migration in progress | Restart Supabase: `supabase stop && supabase start` |
 
 ## Future: Plan C and beyond
