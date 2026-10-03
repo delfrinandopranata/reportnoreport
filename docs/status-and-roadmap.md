@@ -36,24 +36,29 @@
 
 ---
 
-## Plan B status (in progress on feat/self-serve-console)
+## Plan B status (complete, merged to main)
 
-**Plan B — Homepage, Self-Serve Trial and Super-Admin Console** is in progress. Tasks B1–B8 complete; B9 (documentation and final verification) in progress.
+**Plan B — Homepage, Self-Serve Trial and Super-Admin Console** is complete. Merged to `main` in
+del-skillsunion/platform-internal#2 (merge commit `95e9678`).
 
-### What's done
+### What shipped
 
 - **B1:** App moved to `/app/`, homepage at `/` (2542df5)
 - **B2:** Self-serve firm creation with cap and waitlist (521260d)
-- **B3:** `admin` Edge Function for super-admin operations (f4cf46c)
-- **B4:** Trial banner and read-only state (c3a2cbf)
-- **B5:** Marketing homepage with trial and waitlist form (6f07cea)
-- **B6:** Self-serve sign-up with first-sign-in firm creation (41e7b27)
-- **B7:** Super-admin console UI (firms list, create, actions, platform settings, waitlist view) (915203d)
+- **B3:** `admin` Edge Function for super-admin operations, support access logged (f4cf46c, 26a1c89)
+- **B4:** Self-serve sign-up with first-sign-in firm creation and early-access-full message (41e7b27 … 809876f)
+- **B5:** Marketing homepage with pricing, FAQ and waitlist form (6f07cea … 1d1afe0)
+- **B6:** Trial banner, last-days, ended and read-only states (c3a2cbf … 8c1bb57)
+- **B7:** Super-admin console: firms, actions menu, read-only support view, settings, waitlist (915203d … 3334dcc)
 - **B8:** Demo build script and `/demo/` entry point (392354d)
+- **B9:** Hosted deployment checklist in [operations.md](./operations.md); full verification
+- **Also:** "Statement of account" on the Clients page, built from the table as shown (period, filters,
+  visible columns, grouping with subtotals); "All time" starts at the first transaction (984e8ca … e392241)
 
-### What's in progress
+### Verification at merge
 
-- **B9:** Documentation, verification, final push to main
+`supabase test db` 98 tests · `deno test supabase/functions` 24 · `pnpm test` 91 · `pnpm test:db` ·
+`tsc` clean · `oxlint` 0 errors · `pnpm build` (app + demo) · browser smoke of `/`, `/app/`, `/demo/`.
 
 ### Deferred from Plan B (to Plan C)
 
@@ -77,7 +82,7 @@
 - Refund handling (marks firm read_only)
 - Full E2E test: trial → pay via Stripe → paid state
 
-### Not blocked by anything; can start after Plan B merges to main
+### Not blocked: can start now (Plan B is on main)
 
 **Spec coverage:** Plan C implements §5 item 12 (Pay flow), §6 (Stripe security), §7 item 3 (Stripe E2E testing), §8 (Stripe test mode → live).
 
@@ -132,39 +137,18 @@ These are low-cost fixes that improve the product but are not blockers. Review b
 
 ## How to resume work
 
-### To complete Plan B (B9)
+### To start Plan C
 
-1. **Current branch:** `feat/self-serve-console` (based on main)
-2. **Current state:** B1–B8 complete, B9 documentation and verification in progress
-3. **Remaining:**
-   - Complete B9: hosted deployment checklist in docs, update status pages, verify all tests pass, push to main
-4. **Commands:**
+1. Branch from `main`: `git checkout main && git pull && git checkout -b feat/stripe-billing`
+2. Write the Plan C plan (template: `docs/superpowers/plans/2026-10-03-plan-b-self-serve-console.md`)
+3. Local stack:
    ```bash
    cd /Users/delfrinando/ntucsm/platform-internal
-   git checkout feat/self-serve-console
    supabase start  # local Supabase
    /opt/homebrew/bin/pnpm install
    /opt/homebrew/bin/pnpm dev  # http://localhost:5199/app/
    pnpm test && supabase test db && deno test supabase/functions && pnpm build
    ```
-
-### To start Plan C (Stripe)
-
-1. **Branch:** `feat/stripe-billing` (from main after Plan B merges)
-2. **Prerequisites:**
-   - Stripe account (test and live modes)
-   - API keys and webhook secret
-   - Hosted Supabase project with secrets configured
-3. **Spec reference:** `docs/superpowers/specs/2026-10-03-platform-foundation-design.md` § Pricing, § Errors › Stripe, § Testing item 3
-4. **Tasks:** ~5 tasks (Edge Function, checkout flow, webhook, tests, E2E)
-5. **Create a plan:** `docs/superpowers/plans/2026-10-03-plan-c-stripe-billing.md` (use Plan A/B as templates)
-
-### To start Plan D (onboarding)
-
-1. **Branch:** `feat/onboarding` (from main after Plan B merges)
-2. **No external dependencies**
-3. **Spec reference:** `docs/superpowers/specs/2026-10-03-platform-foundation-design.md` § Onboarding, § Sample data
-4. **Tasks:** ~4 tasks (tour component, checklist, sample data UI, tests)
 
 ---
 
@@ -189,7 +173,7 @@ These are low-cost fixes that improve the product but are not blockers. Review b
 ## CI/CD and deployment strategy
 
 **Local development:**
-- `git checkout feat/self-serve-console` (or appropriate branch)
+- `git checkout <your feature branch>`
 - `supabase start && pnpm dev`
 - `pnpm test`, `supabase test db`, `deno test supabase/functions`
 
@@ -217,7 +201,7 @@ These are low-cost fixes that improve the product but are not blockers. Review b
 
 ## Questions? Next steps?
 
-- **For Plan B continuation:** Check the plan at `docs/superpowers/plans/2026-10-03-plan-b-self-serve-console.md` and the progress ledger at `.superpowers/sdd/2026-10-03-plan-b-self-serve-console/progress.md`
+- **For Plan B history:** See the plan at `docs/superpowers/plans/2026-10-03-plan-b-self-serve-console.md` and the progress ledger at `.superpowers/sdd/2026-10-03-plan-b-self-serve-console/progress.md`
 - **For Plan C/D:** Create a plan document (template: Plan B plan), brief it, dispatch agents
 - **For questions on decisions:** See [decisions.md](./decisions.md) for all rulings with rationale
 - **For architecture:** See [architecture.md](./architecture.md) and [data-model-and-security.md](./data-model-and-security.md)

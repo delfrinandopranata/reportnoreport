@@ -10,7 +10,7 @@ This file states conventions for any Claude session in this repo. **Read [docs/R
 - [docs/data-model-and-security.md](docs/data-model-and-security.md) — tables, RLS, permissions
 - [docs/process.md](docs/process.md) — how work is run (plans, specs, agents, commits)
 
-Current status: Plan A (backend) complete on main; Plan B (self-serve console) in progress on `feat/self-serve-console`.
+Current status: Plan A (backend) and Plan B (self-serve console) complete on main. Next: Plan C (Stripe, RM 10 once).
 
 ## Code conventions
 
@@ -96,7 +96,6 @@ Chrome auto-resolves `*.localhost` to 127.0.0.1; each hostname has its own cooki
 
 **Branches:**
 - `main` — production (never edit locally; only merge)
-- `feat/self-serve-console` — Plan B in progress
 - `feat/stripe-billing` — Plan C (future)
 - Naming: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/` + description + optional Linear ID
 - No `cursor` or `claude` in branch names
