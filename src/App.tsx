@@ -1,13 +1,13 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
 import { ContractsPage } from './contracts/ContractsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { Avatar, btn, Icon, ring, Dialog, ThemeToggle } from './ui'
+import { AccountMenu, Avatar, btn, Icon, ring, Dialog, ThemeToggle } from './ui'
 import { useSession } from './data/session'
-import { ROLE_LABEL } from './users/rules'
+import { can, ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
@@ -35,11 +35,6 @@ const NAV = [
   { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { view: 'clients', label: 'Clients', icon: 'users' },
   { view: 'contracts', label: 'Contract Manager', icon: 'file' },
-] as const
-
-const NAV_OTHERS = [
-  { view: 'users', label: 'Users', icon: 'user' },
-  { view: 'settings', label: 'Settings', icon: 'sliders' },
 ] as const
 
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
@@ -126,38 +121,49 @@ export default function App() {
           </span>
         </div>
         <nav aria-label="Main" className="flex gap-1 lg:flex-col">
-          {[...NAV, ...NAV_OTHERS].map((n, i) => (
-            <Fragment key={n.view}>
-              {i === NAV.length && (
-              <span className="mx-1 w-px self-stretch bg-zinc-200 lg:mx-0 lg:mt-4 lg:mb-1 lg:w-auto lg:self-auto lg:bg-transparent lg:px-3 lg:text-xs lg:font-medium lg:tracking-wide lg:text-zinc-400 lg:uppercase dark:bg-zinc-800">
-                <span className="max-lg:hidden">Others</span>
-              </span>
-              )}
+          {NAV.map((n) => (
             <a
+              key={n.view}
               href={`#${n.view}`}
-              data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : n.view === 'users' ? 'users-and-invites' : n.view === 'settings' ? 'settings-and-billing' : undefined}
+              data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : undefined}
               aria-current={route.view === n.view ? 'page' : undefined}
               className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-[var(--brand-solid)] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
             >
               <Icon name={n.icon} />
               <span className="max-sm:sr-only">{n.label}</span>
             </a>
-            </Fragment>
           ))}
         </nav>
-        <a href="#users" className={`${ring} ml-auto grid min-h-11 min-w-11 place-items-center rounded-lg lg:hidden`} aria-label={`Signed in as ${profile.name}. Open users`}>
-          <Avatar name={profile.name} />
-        </a>
+        <AccountMenu
+          trigger={<Avatar name={profile.name} />}
+          name={profile.name}
+          roleLabel={`${firm.name} · ${ROLE_LABEL[profile.role]}`}
+          showUsers={can(profile.role, 'users.manage')}
+          onSignOut={signOut}
+          align="down"
+          className="ml-auto lg:hidden"
+        />
         <ThemeToggle theme={theme} setTheme={setTheme} className="min-h-11 min-w-11 lg:hidden" />
-        <button type="button" className={`${btn.ghost} min-h-11 min-w-11 lg:hidden`} onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="logout" /></button>
         <div className="mt-auto hidden items-center gap-2 px-2 lg:flex">
-          <Avatar name={profile.name} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{profile.name}</p>
-            <p className="truncate text-xs text-zinc-500">{firm.name} · {ROLE_LABEL[profile.role]}</p>
-          </div>
+          <AccountMenu
+            trigger={
+              <div className="flex min-w-0 items-center gap-2 py-1">
+                <Avatar name={profile.name} />
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-medium">{profile.name}</p>
+                  <p className="truncate text-xs text-zinc-500">{firm.name} · {ROLE_LABEL[profile.role]}</p>
+                </div>
+              </div>
+            }
+            name={profile.name}
+            roleLabel={`${firm.name} · ${ROLE_LABEL[profile.role]}`}
+            showUsers={can(profile.role, 'users.manage')}
+            onSignOut={signOut}
+            align="up"
+            side="left"
+            className="min-w-0 flex-1"
+          />
           <ThemeToggle theme={theme} setTheme={setTheme} className="shrink-0" />
-          <button type="button" className={`${btn.ghost} shrink-0`} onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="logout" /></button>
         </div>
       </aside>
 

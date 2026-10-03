@@ -152,6 +152,77 @@ export function Dialog({ open, onClose, title, children }: { open: boolean; onCl
   )
 }
 
+/** Avatar/name trigger that opens a small menu (Users, Settings, Sign out). Escape and outside-click close it, mirroring Dialog's dismissal. */
+export function AccountMenu({
+  trigger,
+  name,
+  roleLabel,
+  showUsers,
+  onSignOut,
+  align = 'down',
+  side = 'right',
+  className = '',
+}: {
+  trigger: ReactNode
+  name: string
+  roleLabel: string
+  showUsers: boolean
+  onSignOut: () => void
+  align?: 'up' | 'down'
+  side?: 'left' | 'right'
+  className?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [open])
+
+  const itemClass = 'flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+
+  return (
+    <div ref={ref} className={`relative min-w-0 ${className}`}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${name}`} className={`${ring} min-w-0 rounded-lg`}>
+        {trigger}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Account"
+          className={`absolute z-10 w-56 overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ${side === 'left' ? 'left-0' : 'right-0'} ${align === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+        >
+          <div className="px-3 py-2">
+            <p className="truncate text-sm font-medium">{name}</p>
+            <p className="truncate text-xs text-zinc-500">{roleLabel}</p>
+          </div>
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+          {showUsers && (
+            <a role="menuitem" href="#users" data-tour="users-and-invites" onClick={() => setOpen(false)} className={itemClass}>
+              <Icon name="user" /> Users
+            </a>
+          )}
+          <a role="menuitem" href="#settings" data-tour="settings-and-billing" onClick={() => setOpen(false)} className={itemClass}>
+            <Icon name="sliders" /> Settings
+          </a>
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+          <button role="menuitem" type="button" onClick={() => { setOpen(false); onSignOut() }} className={`${itemClass} w-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950`}>
+            <Icon name="logout" /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function KindBadge({ kind }: { kind: Kind }) {
   return (
     <span
