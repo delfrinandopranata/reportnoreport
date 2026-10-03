@@ -231,5 +231,5 @@ function ProfileSkeleton() {
 
 function PostTxn({ clientId }: { clientId: string }) {
   const gate = useGate('transactions.post', 'record transactions')
-  return gate.ok ? <TxnForm clientId={clientId} /> : <p className="text-sm text-zinc-500">{gate.title}</p>
+  return gate.ok ? <TxnForm clientId={clientId} autoFocus /> : <p className="text-sm text-zinc-500">{gate.title}</p>
 }

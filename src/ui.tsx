@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { periodPresets, today, type Kind, type Period } from './ledger'
 import { parseAmount } from './data/mappers'
 import { useMoney } from './data/money'
@@ -36,6 +36,7 @@ const PATHS = {
   person: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
   layout: 'M12 3v18M3 12h18M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2',
   user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+  logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
 }
 
@@ -47,18 +48,21 @@ export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS;
   )
 }
 
+/** Visible keyboard focus in light and dark. */
+export const ring = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
+
 export const btn = {
   primary:
-    'inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-700 disabled:opacity-40 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200',
+    `inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 ${ring} dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200`,
   ghost:
-    'inline-flex items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-30 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white',
+    `inline-flex items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30 ${ring} dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white`,
   danger:
-    'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:pointer-events-none disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950',
+    `inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 ${ring} dark:text-red-400 dark:hover:bg-red-950`,
 }
 
 /** Base field look without a width, for inline controls. */
 export const field =
-  'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-600 dark:focus:ring-white/5'
+  'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/25 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-400 dark:focus:ring-white/30'
 
 export const input = `w-full ${field}`
 
@@ -93,24 +97,30 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 /** Native <dialog>: focus trap, Esc and backdrop for free. */
 export function Dialog({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const id = useId()
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // React drops autoFocus before showModal runs, so honour an opt-in marker here.
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
   return (
     <dialog
       ref={ref}
       onClose={onClose}
+      aria-labelledby={`${id}-title`}
       onClick={(e) => e.target === ref.current && onClose()}
       className={`m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white text-zinc-900 shadow-2xl backdrop:bg-zinc-950/40 backdrop:backdrop-blur-sm dark:bg-zinc-900 dark:text-zinc-100`}
     >
       {open && (
         <div className="flex h-full flex-col">
           <header className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
-            <h2 className="text-base font-semibold">{title}</h2>
-            <button type="button" className={btn.ghost} onClick={onClose} aria-label="Close">
+            <h2 id={`${id}-title`} className="text-base font-semibold">{title}</h2>
+            <button type="button" className={btn.ghost} onClick={onClose} aria-label="Close dialog">
               <Icon name="x" />
             </button>
           </header>
@@ -132,7 +142,7 @@ export function KindBadge({ kind }: { kind: Kind }) {
   )
 }
 
-export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () => void }) {
+export function TxnForm({ clientId, onDone, autoFocus = false }: { clientId?: string; onDone?: () => void; autoFocus?: boolean }) {
   const { data: clients = [] } = useClients()
   const { data: banks = [] } = useBankAccounts()
   const post = usePostTxn()
@@ -141,6 +151,13 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
   const [kind, setKind] = useState<Kind>('in')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const amountRef = useRef<HTMLInputElement>(null)
+  const errorId = useId()
+  const hasForm = active.length > 0 && (!!clientId || clients.length > 0)
+  // Only when the caller asks (dialog/tab), never on page load.
+  useEffect(() => {
+    if (autoFocus && hasForm) amountRef.current?.focus()
+  }, [autoFocus, hasForm])
 
   if (!clientId && clients.length === 0) {
     return <p className="text-sm text-zinc-500">Add a client before recording a transaction.</p>
@@ -176,8 +193,17 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
             type="button"
             role="radio"
             aria-checked={kind === k}
+            tabIndex={kind === k ? 0 : -1}
             onClick={() => setKind(k)}
-            className={`flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition ${
+            onKeyDown={(e) => {
+              if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return
+              e.preventDefault()
+              const next = k === 'in' ? 'out' : 'in'
+              setKind(next)
+              e.currentTarget.parentElement?.querySelector<HTMLElement>(`[data-kind="${next}"]`)?.focus()
+            }}
+            data-kind={k}
+            className={`${ring} flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition ${
               kind === k ? `bg-white shadow-sm dark:bg-zinc-950 ${k === 'in' ? 'text-in' : 'text-out'}` : 'text-zinc-500'
             }`}
           >
@@ -203,7 +229,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label={`Amount (${currency})`}>
-          <input name="amount" inputMode="decimal" placeholder="0.00" className={`${input} tabular-nums`} aria-invalid={!!error} />
+          <input ref={amountRef} name="amount" inputMode="decimal" placeholder="0.00" className={`${input} tabular-nums`} aria-invalid={!!error} aria-describedby={error ? errorId : undefined} />
         </Field>
         <Field label="Transaction date">
           <input name="date" type="date" defaultValue={today()} max={today()} className={input} />
@@ -213,12 +239,12 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
         <input name="note" placeholder={kind === 'in' ? 'e.g. Retainer received' : 'e.g. Supplier invoice INV-1042'} className={input} />
       </Field>
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p id={errorId} className="text-sm text-red-600 dark:text-red-400" role="alert">
           {error}
         </p>
       )}
-      <button className={btn.primary} disabled={post.isPending}>
-        <Icon name={saved ? 'check' : 'plus'} /> {saved ? 'Posted' : kind === 'in' ? 'Post receipt' : 'Post payment'}
+      <button className={btn.primary} disabled={post.isPending} aria-busy={post.isPending}>
+        <Icon name={saved ? 'check' : 'plus'} /> {post.isPending ? 'Posting…' : saved ? 'Posted' : kind === 'in' ? 'Post receipt' : 'Post payment'}
       </button>
     </form>
   )

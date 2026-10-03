@@ -74,9 +74,9 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
           Upload a CSV with columns <b>Date</b>, <b>Client</b>, <b>Description</b>, optional <b>Bank account</b> and <b>Receipts</b> / <b>Payments</b> (or <b>Type</b> + <b>Amount</b>). Dates as YYYY-MM-DD or DD/MM/YYYY. A file exported from this page imports as-is.
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <label className={`${btn.primary} cursor-pointer`}>
+          <label className={`${btn.primary} cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-zinc-900 dark:has-focus-visible:outline-white`}>
             <Icon name="upload" /> Choose CSV file
-            <input type="file" accept=".csv,text/csv" onChange={onFile} className="sr-only" />
+            <input type="file" accept=".csv,text/csv" onChange={onFile} className="sr-only" data-autofocus />
           </label>
           <button type="button" className={btn.ghost} onClick={() => downloadCsv('transactions-template.csv', TEMPLATE)}>
             <Icon name="download" /> Download template
