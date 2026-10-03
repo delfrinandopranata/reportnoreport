@@ -108,6 +108,7 @@ supabase/
     20261003000009_security_hardening.sql — revoke dangerous defaults (public execute on functions)
     20261003000010_client_balances_order.sql — ORDER BY client id for stable paging
     20261004000001_signup.sql           — platform_status(), join_waitlist(), create_firm_for_current_user() (Plan B)
+    20261004000002_support.sql          — support_balances(), support_ledger() (Plan B admin console)
   
   functions/
     team/

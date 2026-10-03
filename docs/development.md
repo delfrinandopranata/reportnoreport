@@ -166,7 +166,7 @@ Uses a single fixture ledger with receipts and payments across two clients. If t
 deno test supabase/functions
 ```
 
-Tests in `supabase/functions/**/*.test.ts` cover Edge Function rules (caller validation, auth checks). Expected: **3/3** (team rules, admin rules, billing rules).
+Tests in `supabase/functions/**/*.test.ts` cover Edge Function rules (caller validation, auth checks). Expected: **2/2** (team rules, admin rules). Billing tests (Plan C) deferred.
 
 ### Type checking and linting
 

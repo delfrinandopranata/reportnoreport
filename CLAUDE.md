@@ -39,7 +39,7 @@ Current status: Plan A (backend) complete on main; Plan B (self-serve console) i
 
 ### Database
 
-- **Schema migrations:** Append-only files in `supabase/migrations/` numbered `20261003000001_…`. Never edit or delete existing migrations. New migrations start at `20261004000011_` (next in sequence)
+- **Schema migrations:** Append-only files in `supabase/migrations/` numbered `20261003000001_…`. Never edit or delete existing migrations. New migrations start at `20261004000003_` (next in sequence after signup and support)
 - **RLS:** Every business table has read and write policies. Read the RLS model in [data-model-and-security.md](docs/data-model-and-security.md); never bypass it
 - **Stored functions:** Created once, idempotent (use `create or replace`). Keep them in migrations; don't create ad-hoc SQL functions
 - **Triggers:** Created in migrations. Use for audit (change_log), invariants (owner uniqueness), and derived columns (updated_at)

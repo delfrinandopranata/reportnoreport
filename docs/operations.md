@@ -53,26 +53,27 @@
      https://<your-domain>/**
      ```
 
-7. **Deploy Edge Functions**
+7. **Deploy Edge Functions (Plan A + B only; Plan C functions added later)**
    - Locally, authenticate with Supabase CLI:
      ```bash
      supabase projects list  # or supabase login
      ```
-   - Deploy each function:
+   - Deploy the existing functions:
      ```bash
      supabase functions deploy team --project-id <your-project-id>
      supabase functions deploy admin --project-id <your-project-id>
-     supabase functions deploy billing-checkout --project-id <your-project-id>
-     supabase functions deploy stripe-webhook --project-id <your-project-id>
      ```
    - Set secrets in Supabase › Project Settings › Edge Functions › Secrets:
      ```
      APP_URL = https://<your-domain>/app/
      SUPABASE_SERVICE_ROLE_KEY = <your-service-role-key>
+     ```
+   - **Plan C (future):** When Stripe billing is implemented, deploy `billing-checkout` and `stripe-webhook` functions and add:
+     ```
      STRIPE_SECRET_KEY = <your-stripe-secret-key>
      STRIPE_WEBHOOK_SECRET = <your-stripe-webhook-secret>
-     STRIPE_PRICE_ID = <your-stripe-price-id>  (Plan C)
-     RESEND_API_KEY = <your-resend-api-key>  (Plan C/D if sending from functions)
+     STRIPE_PRICE_ID = <your-stripe-price-id>
+     RESEND_API_KEY = <your-resend-api-key>  (if needed)
      ```
 
 8. **Verify Postgres functions are callable**
