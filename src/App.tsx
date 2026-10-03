@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
 import { StatementPage } from './Statement'
@@ -8,6 +9,7 @@ import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
+import { trialState } from './trial'
 
 type View = 'dashboard' | 'clients' | 'users' | 'settings'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
@@ -40,6 +42,10 @@ const HEADINGS: Record<View, { title: string; subtitle: string }> = {
 export default function App() {
   const [route, setRoute] = useState(readRoute)
   const [editing, setEditing] = useState(false)
+  const [trialNow, setTrialNow] = useState<Date | null>(null)
+
+  const queryClient = useQueryClient()
+  const { profile, firm, signOut } = useSession()
 
   useEffect(() => {
     const onHash = () => setRoute(readRoute())
@@ -47,8 +53,32 @@ export default function App() {
     return () => removeEventListener('hashchange', onHash)
   }, [])
 
-  const { profile, firm, signOut } = useSession()
+  useEffect(() => {
+    // Initialize the trial timestamp on mount
+    setTrialNow(new Date())
+  }, [])
+
+  useEffect(() => {
+    if (!trialNow) return
+    // Re-evaluate trial state every minute
+    const interval = setInterval(() => {
+      const prevState = trialState(firm, trialNow)
+      const nextNow = new Date()
+      const nextState = trialState(firm, nextNow)
+
+      // If trial just ended, invalidate session query to update canWrite
+      if (prevState.kind === 'active' && nextState.kind === 'ended') {
+        queryClient.invalidateQueries({ queryKey: ['session'] })
+      }
+
+      setTrialNow(nextNow)
+    }, 60000) // Every minute
+
+    return () => clearInterval(interval)
+  }, [firm, trialNow, queryClient])
+
   const isDashboard = route.view === 'dashboard'
+  const trial = trialNow ? trialState(firm, trialNow) : { kind: 'none' }
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
@@ -107,6 +137,24 @@ export default function App() {
       </aside>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
+        {trial.kind !== 'none' && !route.clientId && (
+          <div role="status" className={`mb-6 rounded-lg px-4 py-3 text-sm print:hidden ${
+            trial.kind === 'active'
+              ? 'border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100'
+              : 'border border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100'
+          }`}>
+            {trial.kind === 'active' ? (
+              <div>
+                <p className="font-medium">{trial.daysLeft} days left in your free trial (ends {trial.endsOn}).</p>
+                {profile.role === 'owner' && (
+                  <p className="mt-1 text-xs opacity-90">You'll be able to pay RM 10 to keep using Platform.</p>
+                )}
+              </div>
+            ) : (
+              <p className="font-medium">Your free trial ended on {trial.endedOn}. Your data is read-only — you can still view, export and print.</p>
+            )}
+          </div>
+        )}
         {route.clientId && route.statement ? (
           <StatementPage id={route.clientId} />
         ) : route.clientId ? (
