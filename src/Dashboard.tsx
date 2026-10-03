@@ -86,7 +86,7 @@ function Library() {
   return (
     <div className="mb-6 rounded-2xl border border-dashed border-zinc-300 bg-white/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
       <p className="mb-3 text-sm text-zinc-500">
-        Drag cards by their handle to reorder. Click a block to add it to the dashboard.
+        Drag a widget by its handle to reorder it. Select a widget below to add it to the dashboard.
       </p>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {(Object.keys(WIDGETS) as WidgetType[]).map((type) => (
@@ -139,8 +139,8 @@ export function Dashboard({ editing }: { editing: boolean }) {
       {editing && <Library />}
       {widgets.length === 0 && (
         <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-20 text-center dark:border-zinc-700">
-          <p className="font-medium">Your dashboard is empty</p>
-          <p className="mt-1 text-sm text-zinc-500">{editing ? 'Add a block above.' : 'Click “Edit layout” to add blocks.'}</p>
+          <p className="font-medium">No widgets on this dashboard</p>
+          <p className="mt-1 text-sm text-zinc-500">{editing ? 'Add a widget above.' : 'Select “Edit layout” to add widgets.'}</p>
         </div>
       )}
       <DndContext
