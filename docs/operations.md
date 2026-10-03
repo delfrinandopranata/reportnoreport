@@ -230,7 +230,7 @@ The public waitlist endpoint (`/api/waitlist`) is rate-limited by Supabase/Verce
      ```bash
      stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
      ```
-   - The output will show a `whsec_test_…` secret — copy this to `STRIPE_WEBHOOK_SECRET` in `supabase/functions/.env.local`
+   - The output will show a `whsec_…` secret — copy this to `STRIPE_WEBHOOK_SECRET` in `supabase/functions/.env.local`
 
 5. **Local testing flow:**
    ```bash
@@ -253,7 +253,7 @@ The public waitlist endpoint (`/api/waitlist`) is rate-limited by Supabase/Verce
 3. **Update Supabase Edge Function secrets** (hosted project):
    ```bash
    supabase secrets set STRIPE_SECRET_KEY=sk_live_…
-   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_live_…
+   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_…
    ```
    Secrets are read at request time; no redeploy is needed after updating them.
 
@@ -282,7 +282,7 @@ The webhook handler (`supabase/functions/stripe-webhook/`) subscribes to two Str
 
 - **`charge.refunded`**: Calls the `record_refund(firm_id)` RPC function. Sets the firm's `billing_status` to `read_only`, preventing further writes. Logged in `change_log`.
 
-Both RPCs are idempotent (use row-level locking) and guarded by unique constraints on `stripe_events.event_id` to prevent duplicate processing if Stripe retries a webhook delivery.
+Each Stripe event id is recorded once in `stripe_events` (unique), so a repeated delivery is acknowledged without being processed again. If recording the payment or refund fails, the function releases that event id and returns 500, so Stripe's automatic retry processes it.
 
 ### Refunds and Reactivation
 
