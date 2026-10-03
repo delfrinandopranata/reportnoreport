@@ -43,6 +43,11 @@ export function filterTourStepsByRole(role: Role): TourStep[] {
     if (!step.requiredAction) {
       return true
     }
-    return can(role, step.requiredAction)
+    try {
+      return can(role, step.requiredAction)
+    } catch {
+      // Unknown role: only show read-only steps (safe minimal set)
+      return false
+    }
   }).map(({ requiredAction: _requiredAction, ...step }) => step)
 }

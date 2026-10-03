@@ -52,3 +52,18 @@ test('filterTourStepsByRole: step ordering is stable', () => {
     TOUR_STEP_IDS.HELP,
   ])
 })
+
+test('filterTourStepsByRole: unknown role returns safe minimal set', () => {
+  const steps = filterTourStepsByRole('unknown' as any)
+  assert.equal(steps.length, 5, 'unknown role should see minimal set of read-only steps')
+  assert(steps.some(s => s.id === TOUR_STEP_IDS.DASHBOARD), 'should see dashboard')
+  assert(steps.some(s => s.id === TOUR_STEP_IDS.CLIENTS), 'should see clients')
+  assert(steps.some(s => s.id === TOUR_STEP_IDS.CLIENT_PROFILE), 'should see client profile')
+  assert(steps.some(s => s.id === TOUR_STEP_IDS.STATEMENT), 'should see statement')
+  assert(steps.some(s => s.id === TOUR_STEP_IDS.HELP), 'should see help')
+  assert(!steps.some(s => s.id === TOUR_STEP_IDS.ADD_CLIENT), 'should not see add client')
+  assert(!steps.some(s => s.id === TOUR_STEP_IDS.TRANSACTION), 'should not see transaction')
+  assert(!steps.some(s => s.id === TOUR_STEP_IDS.IMPORT), 'should not see import')
+  assert(!steps.some(s => s.id === TOUR_STEP_IDS.USERS), 'should not see users')
+  assert(!steps.some(s => s.id === TOUR_STEP_IDS.SETTINGS), 'should not see settings')
+})
