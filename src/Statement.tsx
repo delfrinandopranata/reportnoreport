@@ -31,7 +31,7 @@ export function StatementLayout({
   ready,
   children,
 }: {
-  back: { href: string; label: string }
+  back: { href: string; label: string; onClick?: () => void }
   title: string
   firstDate: string
   fileName: (period: Period) => string
@@ -55,7 +55,7 @@ export function StatementLayout({
   return (
     <div className="grid grid-cols-1 gap-6">
       <div className="grid gap-4 print:hidden">
-        <a href={back.href} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+        <a href={back.href} onClick={back.onClick ? (e) => { e.preventDefault(); back.onClick?.() } : undefined} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
           <Icon name="back" /> {back.label}
         </a>
         <header className="flex flex-wrap items-end gap-3">
@@ -332,10 +332,10 @@ type ConsolidatedStatementProps = {
   filterNote: string[]
   mode: 'none' | 'client' | 'month'
   view: 'transactions' | 'balances'
-  txnFooter: Record<string, ReactNode>
-  balanceFooter: Record<string, ReactNode>
   rows: StatementLine[] | any[]
   columns: Column<any>[]
+  txnFooterText: Record<string, string>
+  balanceFooterText: Record<string, string>
 }
 
 export function ConsolidatedStatement({
@@ -347,19 +347,15 @@ export function ConsolidatedStatement({
   filterNote,
   mode,
   view,
-  txnFooter,
-  balanceFooter,
   rows,
   columns,
+  txnFooterText,
+  balanceFooterText,
 }: ConsolidatedStatementProps) {
   const { longDate } = useDates()
 
   const visibleColumns = view === 'transactions' ? txnVisible : balanceVisible
-  const footerRecord: Record<string, string> = {}
-  const footerInput = view === 'transactions' ? txnFooter : balanceFooter
-  Object.entries(footerInput).forEach(([key, value]) => {
-    footerRecord[key] = String(value)
-  })
+  const footerRecord = view === 'transactions' ? txnFooterText : balanceFooterText
 
   const soa = buildConsolidatedStatement({
     view,

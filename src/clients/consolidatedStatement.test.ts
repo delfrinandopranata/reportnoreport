@@ -226,4 +226,41 @@ describe('buildConsolidatedStatement', () => {
 
     strictEqual(result.preparedFrom.includes('Grouped by client'), true)
   })
+
+  test('balances view renders all rows in single section with visible columns', () => {
+    const balanceColumns: Column<any>[] = [
+      { id: 'client', label: 'Client', width: 240, flex: true, cell: (r) => r.name, text: (r) => r.name },
+      { id: 'opening', label: 'Opening', width: 140, align: 'right', cell: (r) => r.opening, text: (r) => String(r.opening) },
+      { id: 'receipts', label: 'Receipts', width: 140, align: 'right', cell: (r) => r.receipts, text: (r) => String(r.receipts) },
+      { id: 'payments', label: 'Payments', width: 140, align: 'right', cell: (r) => r.payments, text: (r) => String(r.payments) },
+      { id: 'closing', label: 'Closing', width: 140, align: 'right', hidden: true, cell: (r) => r.closing, text: (r) => String(r.closing) },
+    ]
+
+    const balanceRows = [
+      { id: 'b1', name: 'Alpha Inc', opening: 1000, receipts: 5000, payments: 2000, closing: 4000 },
+      { id: 'b2', name: 'Beta LLC', opening: 2000, receipts: 3000, payments: 1000, closing: 4000 },
+    ]
+
+    const visibleColumns = balanceColumns.filter((c) => !c.hidden)
+
+    const result = buildConsolidatedStatement({
+      view: 'balances',
+      groups: [],
+      rows: balanceRows,
+      columns: balanceColumns,
+      visibleColumns,
+      footer: { opening: '3000', receipts: '8000', payments: '3000', closing: '8000' },
+      filterNote: [],
+      mode: 'none',
+    })
+
+    strictEqual(result.sections.length, 1)
+    strictEqual(result.sections[0].heading, undefined)
+    strictEqual(result.sections[0].rows.length, 2)
+    // Verify closing column is not rendered (hidden)
+    const firstRow = result.sections[0].rows[0]
+    strictEqual(firstRow.length, 4) // client, opening, receipts, payments (not closing)
+    strictEqual(result.clientCount, 2)
+    strictEqual(result.preparedFrom, 'All clients, no filters')
+  })
 })

@@ -78,26 +78,22 @@ function buildTransactionStatement(input: ConsolidatedStatementInput): Consolida
 }
 
 function buildBalanceStatement(input: ConsolidatedStatementInput): ConsolidatedStatementOutput {
-  const { groups, visibleColumns, footer, filterNote } = input
+  const { rows, visibleColumns, footer, filterNote } = input
 
-  // For balances view, flatten all rows into a single section
-  const allRows: StatementLine[] = []
-  groups.forEach((g) => {
-    allRows.push(...g.rows)
-  })
+  // For balances view, all rows go into a single section
+  const renderedRows = rows.map((row) => visibleColumns.map((col) => col.text(row)))
 
-  const rows = allRows.map((row) => visibleColumns.map((col) => col.text(row)))
-
-  // Get unique client IDs
+  // Get unique client IDs - rows may have 'clientId' or 'id' field
   const clientIds = new Set<string>()
-  allRows.forEach((r) => {
-    clientIds.add(r.clientId)
+  rows.forEach((r: any) => {
+    const id = r.clientId || r.id
+    if (id) clientIds.add(id)
   })
 
   const sections = [
     {
       heading: undefined,
-      rows,
+      rows: renderedRows,
       subtotal: undefined,
     },
   ]

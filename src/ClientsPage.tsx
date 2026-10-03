@@ -348,6 +348,11 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     payments: fmt(totals(txnRows).out),
     balance: money(summary.closing),
   }
+  const txnFooterText: Record<string, string> = {
+    receipts: fmt(totals(txnRows).in),
+    payments: fmt(totals(txnRows).out),
+    balance: fmt(summary.closing),
+  }
   const balanceTotals = balanceRows.reduce(
     (acc, r) => ({ opening: acc.opening + r.soa.opening, receipts: acc.receipts + r.soa.receipts, payments: acc.payments + r.soa.payments, closing: acc.closing + r.soa.closing, count: acc.count + r.count }),
     { opening: 0, receipts: 0, payments: 0, closing: 0, count: 0 },
@@ -358,6 +363,13 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     payments: fmt(balanceTotals.payments),
     closing: money(balanceTotals.closing),
     count: balanceTotals.count,
+  }
+  const balanceFooterText: Record<string, string> = {
+    opening: fmt(balanceTotals.opening),
+    receipts: fmt(balanceTotals.receipts),
+    payments: fmt(balanceTotals.payments),
+    closing: fmt(balanceTotals.closing),
+    count: String(balanceTotals.count),
   }
 
   const loadError = clientsError ?? balancesError ?? ledgerError
@@ -372,7 +384,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   if (soaOpen && !fixedClientId) {
     return (
       <StatementLayout
-        back={{ href: '#clients', label: 'Back to clients' }}
+        back={{ href: '#clients', label: 'Back to clients', onClick: () => setSoaOpen(false) }}
         title="Statement of account"
         firstDate={firstDate}
         fileName={(p) => `Statement of account – ${session.firm.tradingName || session.firm.name} – ${p.from} to ${p.to}`}
@@ -389,10 +401,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           filterNote={filterNote}
           mode={isTxns ? mode : 'none'}
           view={view}
-          txnFooter={txnFooter}
-          balanceFooter={balanceFooter}
           rows={isTxns ? txnRows : (balanceRows as any)}
           columns={isTxns ? txnColumns : (balanceColumns as any)}
+          txnFooterText={txnFooterText}
+          balanceFooterText={balanceFooterText}
         />
       </StatementLayout>
     )
