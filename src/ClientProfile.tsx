@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { LedgerView } from './ClientsPage'
 import { AssigneeSelect, StatusSelect, TagList } from './clients/fields'
-import { ClientAttachments, ClientDetails, ClientForm } from './clients/ClientInfo'
+import { ClientAttachments, ClientDetails, ClientForm, Expandable } from './clients/ClientInfo'
 import { card, LoadError, MutationError, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
 import { useBalances, useClient, useDeleteClient, useUpdateClient } from './data/queries'
 import { useSession } from './data/session'
@@ -157,9 +157,14 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             )}
           </Labelled>
         </div>
-        <ClientDetails client={client} />
+        <Expandable title="Details">
+          <ClientDetails client={client} />
+          <p className="mt-4 text-xs text-zinc-500">Last updated on {stamp(client.updatedAt)}</p>
+        </Expandable>
+        <div className="print:hidden">
+          <Expandable title="Attachments"><ClientAttachments client={client} /></Expandable>
+        </div>
         <MutationError error={update.error ?? remove.error} />
-        <p className="text-xs text-zinc-500">Last updated on {stamp(client.updatedAt)}</p>
       </header>
 
       <div role="tablist" aria-label="Client sections" className="-mt-2 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 print:hidden dark:border-zinc-800">
@@ -188,9 +193,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
         </div>
       ) : editing ? (
         <ClientForm client={client} onDone={() => setEditing(false)} />
-      ) : (
-        <ClientAttachments client={client} />
-      )}
+      ) : null}
 
       <Dialog open={recording} onClose={() => setRecording(false)} title="Record transaction">
         <TxnForm clientId={client.id} autoFocus onDone={() => setRecording(false)} />
