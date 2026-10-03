@@ -284,6 +284,11 @@ isOneToOne: false
 "reactivate_member":
 { Args: { "p_profile": string }; Returns: undefined
                            },
+"support_client_balances":
+{ Args: { "p_firm": string,"p_from": string,"p_to": string }; Returns: {
+              "client_id": string,"closing": number,"last_txn_date": string,"opening": number,"payments": number,"receipts": number,"txn_count": number
+            }[]
+                           },
 "suspend_member":
 { Args: { "p_profile": string }; Returns: undefined
                            },

@@ -7,6 +7,8 @@ import { openedFromSetPasswordLink, supabase } from './supabase'
 import { btn } from '../ui'
 import { AuthPages } from '../auth/AuthPages'
 import { rememberReturnTo } from '../auth/route'
+import { AdminConsole } from '../admin/AdminConsole'
+import { pendingFirmFromMetadata, isEarlyAccessFull } from './signup.ts'
 
 export type Session = {
   userId: string; profile: Member; firm: Firm
@@ -25,10 +27,12 @@ export function useSession(): Session {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined)
   const [settingPassword, setSettingPassword] = useState(openedFromSetPasswordLink)
+  const [creatingFirm, setCreatingFirm] = useState(false)
+  const [firmCreationError, setFirmCreationError] = useState<{ isEarlyAccessFull: boolean; message: string } | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) rememberReturnTo(location.hash) // fresh visit while signed out: come back here after sign-in
+      if (!data.session) rememberReturnTo(location.hash)
       setAuth(data.session)
     })
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -42,7 +46,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const userId = auth?.user.id
   const context = useQuery({
     queryKey: ['session', userId],
-    enabled: !!userId && !settingPassword,
+    enabled: !!userId && !settingPassword && !creatingFirm && !firmCreationError,
     queryFn: async () => {
       const accepted = await supabase.rpc('accept_invite')
       if (accepted.error) throw accepted.error
@@ -50,6 +54,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (touched.error) console.error('touch_last_active failed', touched.error)
       const { data: profile, error } = await supabase.from('profiles').select('*').eq('user_id', userId!).single()
       if (error) throw error
+
+      if (profile.is_super_admin) {
+        return { profile, firm: null, reason: null, isSuperAdmin: true }
+      }
+
+      if (!profile.firm_id) {
+        const pendingFirm = pendingFirmFromMetadata(auth?.user.user_metadata)
+        if (pendingFirm) {
+          setCreatingFirm(true)
+          const { error: createError } = await supabase.rpc('create_firm_for_current_user', {
+            p_firm_name: pendingFirm.firmName,
+            p_currency: pendingFirm.currency,
+            p_person_name: pendingFirm.personName,
+          })
+          setCreatingFirm(false)
+          if (createError) {
+            const isFullError = isEarlyAccessFull(createError)
+            setFirmCreationError({
+              isEarlyAccessFull: isFullError,
+              message: isFullError ? 'Early access is full. You are on the waitlist -- we will email you when a place opens.' : (createError as any).message || 'Something went wrong. Try again.',
+            })
+            throw createError
+          }
+          return { refetch: true }
+        }
+      }
+
       if (!profile.firm_id) return { profile, firm: null, reason: null }
       const { data: firm, error: firmError } = await supabase.from('firms').select('*').eq('id', profile.firm_id).maybeSingle()
       if (firmError) throw firmError
@@ -60,11 +91,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   })
 
   if (auth && settingPassword) return <AuthPages forceSetPassword onPasswordSet={() => setSettingPassword(false)} />
-  if (auth === undefined || (userId && context.isPending)) return <FullPageMessage text="Loading…" />
+  if (auth === undefined || (userId && context.isPending)) return <FullPageMessage text="Loading..." />
   if (!auth) return <AuthPages />
-  if (context.isError) return <FullPageMessage title="We couldn’t load your account" text="Check your connection and try again. If it keeps failing, sign out and back in." action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
-  const { profile, firm, reason } = context.data!
-  if (!firm) return <FullPageMessage title="No access to this firm" text="Your access is suspended, or your firm isn’t set up yet. Contact your firm’s owner." action={() => supabase.auth.signOut()} />
+  if (firmCreationError) {
+    return <FullPageMessage title={firmCreationError.isEarlyAccessFull ? 'Early access is full' : 'Something went wrong'} text={firmCreationError.message} action={() => supabase.auth.signOut()} />
+  }
+  if (context.isError) return <FullPageMessage title="We could not load your account" text="Check your connection and try again. If it keeps failing, sign out and back in." action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
+  const result = context.data!
+  if (result.refetch) return <FullPageMessage text="Setting up your firm..." />
+  if (result.isSuperAdmin) {
+    return <AdminConsole name={result.profile.name} onSignOut={() => supabase.auth.signOut()} />
+  }
+  const { profile, firm, reason } = result
+  if (!firm) return <FullPageMessage title="No access to this firm" text="Your access is suspended, or your firm is not set up yet. Contact your firm owner." action={() => supabase.auth.signOut()} />
 
   const member = rowToMember(profile)
   const session: Session = {
