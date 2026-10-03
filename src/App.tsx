@@ -167,7 +167,7 @@ export default function App() {
         </div>
       </aside>
 
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
+      <main id="main" tabIndex={-1} className="w-full flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:p-0">
         {canViewBanner && (
           <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm print:hidden dark:border-blue-800 dark:bg-blue-950/30">
             <span className="text-blue-900 dark:text-blue-100">You're exploring with sample data</span>
