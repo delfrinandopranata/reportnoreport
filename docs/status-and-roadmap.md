@@ -38,43 +38,26 @@
 
 ## Plan B status (in progress on feat/self-serve-console)
 
-**Plan B — Homepage, Self-Serve Trial and Super-Admin Console** is in progress. Expected completion: this week.
+**Plan B — Homepage, Self-Serve Trial and Super-Admin Console** is in progress. Tasks B1–B8 complete; B9 (documentation and final verification) in progress.
 
 ### What's done
 
-- **B1:** App moved to `/app/`, homepage at `/` ✓
-- **B2:** Sign-up, cap, waitlist functions ✓
-- **B8:** Demo build script ✓
+- **B1:** App moved to `/app/`, homepage at `/` (2542df5)
+- **B2:** Self-serve firm creation with cap and waitlist (521260d)
+- **B3:** `admin` Edge Function for super-admin operations (f4cf46c)
+- **B4:** Trial banner and read-only state (c3a2cbf)
+- **B5:** Marketing homepage with trial and waitlist form (6f07cea)
+- **B6:** Self-serve sign-up with first-sign-in firm creation (41e7b27)
+- **B7:** Super-admin console UI (firms list, create, actions, platform settings, waitlist view) (915203d)
+- **B8:** Demo build script and `/demo/` entry point (392354d)
 
-### What's in progress (as of 2026-10-03 22:00)
+### What's in progress
 
-- **B5:** Homepage (index.html, src/home/home.ts) — marketing page, sign-up button, waitlist form, pricing line
-  - Uncommitted changes: `index.html`, `src/home/home.ts`
-  - Review pending from haiku agent
-  - Plan: fix → merged into B5 completion
-
-### What's next (not yet started)
-
-- **B3:** `admin` Edge Function (super-admin operations: create firm, suspend, extend trial, mark complimentary, support view)
-- **B4:** Sign-up UI (sign-up form, currency select, session context changes for first-sign-in firm creation)
-- **B6:** Trial banner and trial state display (days left, trial expired, read-only warning)
-- **B7:** Super-admin console UI (firms list, create, actions, platform settings, waitlist view)
-- **B9:** Documentation, verification, push to main
-
-### Dependencies and ordering
-
-Tasks B3, B4, B6 can run in parallel (they're independent). B7 needs stubs from B3 + B4. B9 is final.
-
-Estimated timeline (with haiku agents per Plan B execution mode):
-- B3/B4/B6 concurrent: 1 day each + reviews + fixes
-- B7: 1 day (console UI) + review + fixes
-- B9: 1 day (docs + verification) + push
-
-Rough estimate: 5–7 days from 2026-10-03 with 1 agent per task concurrently, reviews in parallel, fixes serial.
+- **B9:** Documentation, verification, final push to main
 
 ### Deferred from Plan B (to Plan C)
 
-- RM 10 payment flow (Stripe Checkout, webhook, payment confirmation)
+- RM 10 one-time payment flow (Stripe Checkout, webhook, payment confirmation)
 - Refund handling (payment refunded → read_only state)
 - Billing history and receipts
 
@@ -149,25 +132,20 @@ These are low-cost fixes that improve the product but are not blockers. Review b
 
 ## How to resume work
 
-### To continue Plan B
+### To complete Plan B (B9)
 
-1. **Current branch:** `feat/self-serve-console` (based on main @ 8a32ccf)
-2. **Current state:** B1 ✓, B2 ✓, B8 ✓, B5 in progress (awaiting review)
-3. **Next steps:**
-   - Review and fix B5 (homepage)
-   - Dispatch B3/B4/B6 in parallel (admin function, sign-up UI, trial banner)
-   - Merge fixes and B3/B4/B6 completions to feat/self-serve-console
-   - B7 (console UI) after B3/B4
-   - B9 (final docs and push to main)
+1. **Current branch:** `feat/self-serve-console` (based on main)
+2. **Current state:** B1–B8 complete, B9 documentation and verification in progress
+3. **Remaining:**
+   - Complete B9: hosted deployment checklist in docs, update status pages, verify all tests pass, push to main
 4. **Commands:**
    ```bash
    cd /Users/delfrinando/ntucsm/platform-internal
    git checkout feat/self-serve-console
-   git log --oneline -10  # see recent commits
-   git status  # check B5 uncommitted changes
    supabase start  # local Supabase
    /opt/homebrew/bin/pnpm install
-   /opt/homebrew/bin/pnpm dev  # browse http://localhost:5199/app/
+   /opt/homebrew/bin/pnpm dev  # http://localhost:5199/app/
+   pnpm test && supabase test db && deno test supabase/functions && pnpm build
    ```
 
 ### To start Plan C (Stripe)

@@ -38,7 +38,9 @@ Seed users (password `password123`): `owner@alpha.test`, `admin@alpha.test`, `ac
 
 ## Deploy
 
-Vercel auto-detects Vite: build `pnpm build`, output `dist`.
+For a complete hosted deployment (Supabase, Vercel, Resend), see [docs/operations.md](docs/operations.md) § Hosted deployment checklist.
+
+Vercel auto-detects Vite: build `pnpm build`, output `dist`. Environment variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be set in Vercel or `.env.local` locally.
 
 ## Users and Settings
 
