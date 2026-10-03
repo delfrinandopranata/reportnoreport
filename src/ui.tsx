@@ -41,6 +41,7 @@ const PATHS = {
   sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
   moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z',
   monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
+  more: 'M12 4.5v1M12 11.5v1M12 18.5v1',
 }
 
 export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS; className?: string }) {
@@ -153,7 +154,64 @@ export function Dialog({ open, onClose, title, children }: { open: boolean; onCl
   )
 }
 
-/** Avatar/name trigger that opens a small menu (Users, Settings, Sign out). Escape and outside-click close it, mirroring Dialog's dismissal. */
+export const menuItemClass = 'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800'
+
+/** Trigger button that opens a dropdown menu. Escape and outside-click close it, mirroring Dialog's dismissal. `children` receives `close`. */
+export function Menu({
+  trigger,
+  triggerLabel,
+  menuLabel,
+  children,
+  align = 'down',
+  side = 'right',
+  className = '',
+  triggerClassName = `${ring} min-w-0 rounded-lg`,
+  width = 'w-56',
+}: {
+  trigger: ReactNode
+  triggerLabel: string
+  menuLabel: string
+  children: (close: () => void) => ReactNode
+  align?: 'up' | 'down'
+  side?: 'left' | 'right'
+  className?: string
+  triggerClassName?: string
+  width?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className={`relative min-w-0 ${className}`}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={triggerLabel} title={triggerLabel} className={triggerClassName}>
+        {trigger}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label={menuLabel}
+          className={`absolute z-10 ${width} overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ${side === 'left' ? 'left-0' : 'right-0'} ${align === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+        >
+          {children(() => setOpen(false))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Avatar/name trigger that opens a small menu (Users, Settings, Sign out). */
 export function AccountMenu({
   trigger,
   name,
@@ -173,54 +231,31 @@ export function AccountMenu({
   side?: 'left' | 'right'
   className?: string
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('mousedown', onClick)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('mousedown', onClick)
-    }
-  }, [open])
-
-  const itemClass = 'flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
-
+  const itemClass = menuItemClass
   return (
-    <div ref={ref} className={`relative min-w-0 ${className}`}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${name}`} className={`${ring} min-w-0 rounded-lg`}>
-        {trigger}
-      </button>
-      {open && (
-        <div
-          role="menu"
-          aria-label="Account"
-          className={`absolute z-10 w-56 overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ${side === 'left' ? 'left-0' : 'right-0'} ${align === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
-        >
+    <Menu trigger={trigger} triggerLabel={`Account menu for ${name}`} menuLabel="Account" align={align} side={side} className={className}>
+      {(close) => (
+        <>
           <div className="px-3 py-2">
             <p className="truncate text-sm font-medium">{name}</p>
             <p className="truncate text-xs text-zinc-500">{roleLabel}</p>
           </div>
           <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
           {showUsers && (
-            <a role="menuitem" href="#users" data-tour="users-and-invites" onClick={() => setOpen(false)} className={itemClass}>
+            <a role="menuitem" href="#users" data-tour="users-and-invites" onClick={close} className={itemClass}>
               <Icon name="user" /> Users
             </a>
           )}
-          <a role="menuitem" href="#settings" data-tour="settings-and-billing" onClick={() => setOpen(false)} className={itemClass}>
+          <a role="menuitem" href="#settings" data-tour="settings-and-billing" onClick={close} className={itemClass}>
             <Icon name="sliders" /> Settings
           </a>
           <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-          <button role="menuitem" type="button" onClick={() => { setOpen(false); onSignOut() }} className={`${itemClass} w-full text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950`}>
+          <button role="menuitem" type="button" onClick={() => { close(); onSignOut() }} className={`${itemClass} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950`}>
             <Icon name="logout" /> Sign out
           </button>
-        </div>
+        </>
       )}
-    </div>
+    </Menu>
   )
 }
 
@@ -369,35 +404,36 @@ export type Sort<K extends string> = { key: K; dir: 'asc' | 'desc' }
 export const nextSort = <K extends string>(sort: Sort<K>, key: K, firstDir: 'asc' | 'desc' = 'asc'): Sort<K> =>
   sort.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstDir }
 
+const CUSTOM = 'custom'
+
 export function PeriodPicker({ period, onChange, firstDate }: { period: Period; onChange: (period: Period) => void; firstDate: string }) {
   const { fyStartMonth } = useSession().firm
+  const presets = periodPresets(firstDate, fyStartMonth)
+  const [custom, setCustom] = useState(false)
+  const matched = presets.find((o) => o.period.from === period.from && o.period.to === period.to)
+  const value = custom || !matched ? CUSTOM : matched.label
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Period">
-        {periodPresets(firstDate, fyStartMonth).map((o) => {
-          const active = o.period.from === period.from && o.period.to === period.to
-          return (
-            <button
-              key={o.label}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange(o.period)}
-              className={`rounded-full border px-3 py-1 text-sm transition ${
-                active
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                  : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'
-              }`}
-            >
-              {o.label}
-            </button>
-          )
-        })}
-      </div>
-      <div className="flex items-center gap-2">
-        <input type="date" aria-label="Period from" value={period.from} max={period.to} onChange={(e) => e.target.value && onChange({ ...period, from: e.target.value })} className={`${field} py-1.5`} />
-        <span className="text-sm text-zinc-400">to</span>
-        <input type="date" aria-label="Period to" value={period.to} min={period.from} max={today()} onChange={(e) => e.target.value && onChange({ ...period, to: e.target.value })} className={`${field} py-1.5`} />
-      </div>
+      <select
+        aria-label="Period"
+        value={value}
+        onChange={(e) => {
+          const next = presets.find((o) => o.label === e.target.value)
+          setCustom(!next)
+          if (next) onChange(next.period)
+        }}
+        className={`${field} py-1.5 pr-8`}
+      >
+        {presets.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
+        <option value={CUSTOM}>Custom range…</option>
+      </select>
+      {value === CUSTOM && (
+        <div className="flex items-center gap-2">
+          <input type="date" aria-label="Period from" value={period.from} max={period.to} onChange={(e) => e.target.value && onChange({ ...period, from: e.target.value })} className={`${field} py-1.5`} />
+          <span className="text-sm text-zinc-400">to</span>
+          <input type="date" aria-label="Period to" value={period.to} min={period.from} max={today()} onChange={(e) => e.target.value && onChange({ ...period, to: e.target.value })} className={`${field} py-1.5`} />
+        </div>
+      )}
     </div>
   )
 }

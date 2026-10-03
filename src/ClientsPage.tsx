@@ -28,7 +28,7 @@ import { ConsolidatedStatement, StatementLayout } from './Statement'
 import { buildSections, countClients, preparedFrom } from './clients/consolidatedStatement'
 import { AttachmentsButton } from './attachments/Attachments'
 import { downloadCsv, downloadZip, ImportDialog } from './transfer'
-import { Avatar, btn, Icon, input, KindBadge, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
+import { Avatar, btn, Icon, input, KindBadge, Menu, menuItemClass, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
 import { Empty } from './widgets'
 
 type View = 'transactions' | 'balances'
@@ -67,7 +67,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const [bankAccountId, setBankAccountId] = useState<string>()
   // Default to every client: inactive and archived clients can still hold client money.
   const [status, setStatus] = useState<ClientStatus | 'all'>('all')
-  const [debitOnly, setDebitOnly] = useState(false)
   const [type, setType] = useLocalState<TypeFilter>('clients.type', 'all')
   const [storedMode, setMode] = useLocalState<GroupMode>('clients.group', 'none')
   const [storedSort, setTxnSort] = useLocalState<Sort<TxnSort>>('clients.txnSort', { key: 'date', dir: 'desc' })
@@ -107,19 +106,18 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   }, isTxns)
   const balanceRows_ = balanceData ?? []
   const perClient = useMemo(() => new Map(balanceRows_.map((r) => [r.client_id, r])), [balanceData]) // eslint-disable-line react-hooks/exhaustive-deps
-  const closingOf = (id: string) => perClient.get(id)?.closing ?? 0
   const inScope = (id: string) =>
-    (clientId === 'all' || id === clientId) && (!!fixedClientId || status === 'all' || statuses.get(id) === status) && (!debitOnly || closingOf(id) < 0)
+    (clientId === 'all' || id === clientId) && (!!fixedClientId || status === 'all' || statuses.get(id) === status)
 
   // Accounting scope = client filters + period. Search and type only narrow what's listed.
-  const scoped = useMemo(() => lines.filter((t) => inScope(t.clientId)), [lines, clientId, debitOnly, perClient, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
-  const summary = useMemo(() => ({ ...sumBalances(balanceRows_.filter((r) => inScope(r.client_id))), lines: scoped }), [balanceData, scoped, clientId, debitOnly, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
+  const scoped = useMemo(() => lines.filter((t) => inScope(t.clientId)), [lines, clientId, perClient, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
+  const summary = useMemo(() => ({ ...sumBalances(balanceRows_.filter((r) => inScope(r.client_id))), lines: scoped }), [balanceData, scoped, clientId, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------- Transactions view ---------- */
 
   // The server's running balance spans the whole ledger scope, so it only matches the listed rows
-  // when nothing narrows them: no search, type, status or debit filter (unless one client is picked).
-  const wholeScope = clientId !== 'all' || (status === 'all' && !debitOnly)
+  // when nothing narrows them: no search, type or status filter (unless one client is picked).
+  const wholeScope = clientId !== 'all' || status === 'all'
   const showBalance = txnSort.key === 'date' && type === 'all' && !q && wholeScope
   const balances = useMemo(() => new Map(lines.map((l) => [l.id, l.balance])), [lines])
 
@@ -212,7 +210,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         }[balanceSort.key]
         return by * dir || a.client.name.localeCompare(b.client.name)
       })
-  }, [clients, perClient, q, balanceSort, period, clientId, debitOnly, status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [clients, perClient, q, balanceSort, period, clientId, status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const balanceColumns: Column<ClientBalance, BalanceSort>[] = [
     {
@@ -261,12 +259,11 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
   /* ---------- Actions ---------- */
 
-  const filtersActive = !!q || clientFilter !== 'all' || status !== 'all' || debitOnly || (isTxns && type !== 'all')
+  const filtersActive = !!q || clientFilter !== 'all' || status !== 'all' || (isTxns && type !== 'all')
   const clearFilters = () => {
     setQuery('')
     setClientId('all')
     setStatus('all')
-    setDebitOnly(false)
     setType('all')
   }
   const resetPaging = () => setLimit(PAGE)
@@ -304,7 +301,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const filterNote = [
     clientFilter !== 'all' && nameOf(clientFilter),
     status !== 'all' && `${STATUS_LABEL[status].toLowerCase()} clients`,
-    debitOnly && 'debit balances only',
     isTxns && type !== 'all' && (type === 'in' ? 'receipts only' : 'payments only'),
     q && `search “${query.trim()}”`,
     isTxns && mode !== 'none' && `grouped by ${mode}`,
@@ -472,44 +468,122 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         ))}
       </dl>}
 
-      <div className={`${card} grid gap-4 p-4 print:hidden`}>
-        {/* View + actions: Add client is the one primary action, kept visually dominant; Import/Export/Print/SOA are a demoted, equally-weighted secondary cluster (Fitts's Law) */}
-        <div className="flex flex-wrap items-center gap-2">
-          {!fixedClientId && <Segmented<View>
-            label="View"
-            value={view}
-            onChange={(v) => {
-              setView(v)
+      <div className={`${card} flex flex-wrap items-center gap-2 p-4 print:hidden`}>
+        {!fixedClientId && <Segmented<View>
+          label="View"
+          value={view}
+          onChange={(v) => {
+            setView(v)
+            resetPaging()
+          }}
+          options={[
+            ['balances', 'Balances'],
+            ['transactions', 'Transactions'],
+          ]}
+        />}
+        <div className="relative w-full sm:w-48">
+          <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
               resetPaging()
             }}
-            options={[
-              ['balances', 'Balances'],
-              ['transactions', 'Transactions'],
-            ]}
-          />}
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-0.5 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-800">
-              {!fixedClientId && (
-                <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} aria-label="Import" aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('import')}>
-                  <Icon name="upload" /> <span className="max-sm:sr-only">Import</span>
-                </button>
-              )}
-              <label className="flex items-center gap-1.5 px-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <input type="checkbox" checked={includeAttachments} onChange={(e) => setIncludeAttachments(e.target.checked)} className="accent-zinc-900" />
-                Include attachments
+            placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
+            aria-label="Search"
+            className={`${input} py-1.5 pl-9`}
+          />
+        </div>
+        <PeriodPicker
+          period={period}
+          onChange={(p) => {
+            setPeriod(p)
+            resetPaging()
+          }}
+          firstDate={firstDate}
+        />
+        {!fixedClientId && (
+          <>
+            <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={`${select} sm:w-36`}>
+              <option value="all">All clients</option>
+              {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={`${select} sm:w-36`}>
+              <option value="all">All bank accounts</option>
+              {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={`${select} sm:w-36`}>
+              {CLIENT_STATUSES.map((st) => (
+                <option key={st} value={st}>{STATUS_LABEL[st]}</option>
+              ))}
+              <option value="all">All statuses</option>
+            </select>
+          </>
+        )}
+
+        <div className="flex basis-full flex-wrap items-center gap-2">
+          {isTxns && (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-sm whitespace-nowrap text-zinc-500">Type</span>
+                <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'In'], ['out', 'Out']]} />
+              </div>
+              <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
+                Group by
+                <select
+                  value={mode}
+                  onChange={(e) => {
+                    setMode(e.target.value as GroupMode)
+                    setCollapsed(new Set())
+                  }}
+                  className={select}
+                >
+                  <option value="none">None</option>
+                  {!fixedClientId && <option value="client">Client</option>}
+                  <option value="month">Month</option>
+                </select>
               </label>
-              <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount || exporting} aria-label="Export" title={rowsCount ? 'Export' : 'Nothing to export'}>
-                <Icon name="download" /> <span className="max-sm:sr-only">{exporting ? 'Exporting…' : 'Export'}</span>
-              </button>
-              <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
-                <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
-              </button>
-              {!fixedClientId && (
-                <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} aria-label="Statement of account" title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
-                  <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
-                </button>
+            </>
+          )}
+          {filtersActive && (
+            <button type="button" className={btn.ghost} onClick={clearFilters}>
+              <Icon name="x" /> Clear filters
+            </button>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <Menu
+              trigger={<Icon name="more" />}
+              triggerLabel="More actions"
+              menuLabel="More actions"
+              triggerClassName={`${btn.ghost} px-2`}
+            >
+              {(close) => (
+                <>
+                  {!fixedClientId && (
+                    <button role="menuitem" type="button" className={menuItemClass} disabled={!post.ok} title={post.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => { close(); setDialog('import') }}>
+                      <Icon name="upload" /> Import
+                    </button>
+                  )}
+                  <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); exportCsv() }} disabled={!rowsCount || exporting} title={rowsCount ? 'Export' : 'Nothing to export'}>
+                    <Icon name="download" /> {exporting ? 'Exporting…' : 'Export'}
+                  </button>
+                  <label role="menuitemcheckbox" aria-checked={includeAttachments} className={`${menuItemClass} cursor-pointer`}>
+                    <input type="checkbox" checked={includeAttachments} onChange={(e) => setIncludeAttachments(e.target.checked)} className="accent-zinc-900" />
+                    Include attachments
+                  </label>
+                  <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); print() }} disabled={!rowsCount} title={rowsCount ? 'Print' : 'Nothing to print'}>
+                    <Icon name="printer" /> Print
+                  </button>
+                </>
               )}
-            </div>
+            </Menu>
+            {!fixedClientId && (
+              <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
+                <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
+              </button>
+            )}
             {!fixedClientId && (
               <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
                 <Icon name="plus" /> Add client
@@ -517,111 +591,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             )}
           </div>
         </div>
-        {gateHint && <p id="ledger-gate" className="text-xs text-zinc-500">{gateHint}</p>}
-        {exportError && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{exportError}</p>}
-
-        {/* Period: quick presets + custom range, kept as one cluster (Miller's Law) */}
-        <div className="grid gap-1.5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <span className="text-xs font-medium text-zinc-500">Period</span>
-          <PeriodPicker
-            period={period}
-            onChange={(p) => {
-              setPeriod(p)
-              resetPaging()
-            }}
-            firstDate={firstDate}
-          />
-        </div>
-
-        {/* Search + filters: search leads, as is conventional (Jakob's Law) */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <div className="relative w-full sm:w-64">
-            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                resetPaging()
-              }}
-              placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
-              aria-label="Search"
-              className={`${input} py-1.5 pl-9`}
-            />
-          </div>
-          {!fixedClientId && (
-            <>
-              <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={select}>
-                <option value="all">All clients</option>
-                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={select}>
-                <option value="all">All bank accounts</option>
-                {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-              <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={select}>
-                {CLIENT_STATUSES.map((st) => (
-                  <option key={st} value={st}>{STATUS_LABEL[st]}</option>
-                ))}
-                <option value="all">All statuses</option>
-              </select>
-            </>
-          )}
-        </div>
-
-        {/* Debit toggle / type filter / group-by: three distinct kinds of decision, visually separated (Hick's Law) */}
-        {(!fixedClientId || isTxns) && (
-          <div className="flex flex-wrap items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            {!fixedClientId && (
-              <button
-                type="button"
-                aria-pressed={debitOnly}
-                onClick={() => setDebitOnly(!debitOnly)}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${debitOnly ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}
-              >
-                Debit balances only
-              </button>
-            )}
-            {isTxns && (
-              <>
-                {!fixedClientId && <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm whitespace-nowrap text-zinc-500">Type</span>
-                  <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'In'], ['out', 'Out']]} />
-                </div>
-                <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />
-                <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
-                  Group by
-                  <select
-                    value={mode}
-                    onChange={(e) => {
-                      setMode(e.target.value as GroupMode)
-                      setCollapsed(new Set())
-                    }}
-                    className={select}
-                  >
-                    <option value="none">None</option>
-                    {!fixedClientId && <option value="client">Client</option>}
-                    <option value="month">Month</option>
-                  </select>
-                </label>
-              </>
-            )}
-            {filtersActive && (
-              <button type="button" className={`${btn.ghost} ml-auto`} onClick={clearFilters}>
-                <Icon name="x" /> Clear filters
-              </button>
-            )}
-          </div>
-        )}
-        {!(!fixedClientId || isTxns) && filtersActive && (
-          <div className="flex border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            <button type="button" className={`${btn.ghost} ml-auto`} onClick={clearFilters}>
-              <Icon name="x" /> Clear filters
-            </button>
-          </div>
-        )}
+        {gateHint && <p id="ledger-gate" className="basis-full text-xs text-zinc-500">{gateHint}</p>}
+        {exportError && <p className="basis-full text-sm text-red-600 dark:text-red-400" role="alert">{exportError}</p>}
       </div>
 
       <div className={`${card} overflow-hidden print:overflow-visible print:rounded-none print:border-0`}>
@@ -629,7 +600,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           <span className="font-medium">{isTxns ? plural(txnRows.length, 'transaction') : plural(balanceRows.length, 'client')}</span>
           <span className="text-zinc-500">{shortDate(period.from)} – {shortDate(period.to)}</span>
           {removeTxn.error && <span className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</span>}
-          {isTxns && !showBalance && <span className="basis-full text-xs text-zinc-500">Running balance shows when sorted by date with no search, type, status or debit filter, unless one client is selected.</span>}
+          {isTxns && !showBalance && <span className="basis-full text-xs text-zinc-500">Running balance shows when sorted by date with no search, type or status filter, unless one client is selected.</span>}
           <div className="ml-auto flex items-center gap-1">
             {isTxns && mode !== 'none' && groups.length > 0 && (
               <button type="button" className={`${btn.ghost} py-1`} onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)))}>
