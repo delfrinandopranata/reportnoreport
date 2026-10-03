@@ -19,7 +19,7 @@ const readRoute = (): Route => {
   const hashPart = location.hash.slice(1).split('?')[0]
   const [view, clientId, sub] = hashPart.split('/')
   if (view === 'users') return { view, clientId: null, statement: false }
-  if (view === 'settings' && sub === 'billing') return { view: 'billing', clientId: null, statement: false }
+  if (view === 'settings' && clientId === 'billing') return { view: 'billing', clientId: null, statement: false }
   if (view === 'settings') return { view, clientId: null, statement: false }
   if (view === 'clients') return { view, clientId: clientId ?? null, statement: sub === 'statement', tab: sub === 'transactions' ? 'transactions' : 'client' }
   // '#statement' was the old consolidated page; it now lives on Clients.
