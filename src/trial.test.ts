@@ -32,14 +32,18 @@ test('trialState: null trialEndsAt with trial status returns none', () => {
 
 test('trialState: 13.2 days left returns 14 days', () => {
   // Trial ends on 2026-10-16T19:12:00Z (13.2 days from now)
-  // In Malaysia timezone (UTC+8), this becomes 2026-10-17T03:12:00 local
+  // Compute expected date in local timezone to avoid TZ-dependent test
+  const endDate = new Date('2026-10-16T19:12:00Z')
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const expectedDate = `${endDate.getDate()} ${monthNames[endDate.getMonth()]} ${endDate.getFullYear()}`
+
   const firm = { billingStatus: 'trial' as const, trialEndsAt: '2026-10-16T19:12:00Z' }
   const now = new Date('2026-10-03T12:00:00Z')
   const result = trialState(firm, now)
   assert.deepEqual(result, {
     kind: 'active',
     daysLeft: 14,
-    endsOn: '17 Oct 2026'
+    endsOn: expectedDate
   })
 })
 
