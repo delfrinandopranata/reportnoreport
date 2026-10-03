@@ -59,7 +59,7 @@ Hosted Supabase Auth emails (invite, confirmation, password reset, email change)
 Go-live checklist (hosted project; the local `config.toml` does not reach it automatically):
 
 1. Resend: add your sending domain and verify it (SPF and DKIM DNS records), then create an API key with sending access.
-2. Supabase dashboard > Authentication > SMTP Settings: enable custom SMTP with host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `no-reply@mail.<your-domain>`, sender name `ReportNoReport`.
+2. Supabase dashboard > Authentication > SMTP Settings: enable custom SMTP with host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `noreply@reportnoreport.com`, sender name `ReportNoReport`.
 3. Authentication > Email Templates: paste each file from `supabase/templates/` with its subject (same as `config.toml`):
    - Invite user (`invite.html`): `You've been invited to ReportNoReport`
    - Reset password (`recovery.html`): `Reset your ReportNoReport password`
@@ -81,5 +81,5 @@ Never commit the API key. `supabase/.env.example` lists the variable names; real
 The `team` function builds invite links from the `APP_URL` secret. Locally, copy `supabase/functions/.env.example` to `supabase/functions/.env.local` (git-ignored). On the hosted project, set it to the production app URL; without it the function refuses to send invites:
 
 ```bash
-supabase secrets set APP_URL=https://<app-host>
+supabase secrets set APP_URL=https://reportnoreport.com/app/
 ```

@@ -2,7 +2,7 @@ import '../index.css'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../data/database.types'
 
-const CONTACT_EMAIL = 'hello@example.com'
+const CONTACT_EMAIL = 'hello@reportnoreport.com'
 
 /** Initialize year in footer. */
 document.getElementById('year')!.textContent = new Date().getFullYear().toString()
