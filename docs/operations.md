@@ -151,13 +151,13 @@ After deployment, verify:
 2. **Sign-up works:**
    - Go to https://<your-domain>/app/#signup
    - Enter firm name, currency, email, password
-   - Check email for verification link (Mailosaur inbox if using the test sink)
+   - Check your email for verification link (Resend dashboard › Emails for production; Mailpit at http://127.0.0.1:54324 for local)
    - Verify email and sign in
    - Dashboard loads
 3. **Trial banner shows:** "14 days left in your trial" (or your configured trial length)
 4. **Email works:**
    - Invite a team member from Users › Invite
-   - Check your email (Resend inbox or Mailosaur)
+   - Check your email (Resend dashboard › Emails for production; Mailpit at http://127.0.0.1:54324 for local)
    - Follow link, set password, sign in
 5. **Sample data loads** (Settings › Data › Load sample data)
 6. **Export works:** Clients › Transactions › Export to CSV
