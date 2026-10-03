@@ -1,14 +1,27 @@
 begin;
-select plan(8);
+select plan(10);
 
 select throws_ok(
   $$ update profiles set firm_id = '0000000a-0000-0000-0000-000000000001' where user_id = '00000000-0000-0000-0000-0000000000f1' $$,
   '23514', null, 'super admin cannot belong to a firm');
 
-select throws_ok(
+-- A firm may deliberately record an underpayment/overpayment/correction as a negative
+-- or zero amount — only the magnitude cap (overflow protection, not a business rule) is
+-- still enforced.
+select lives_ok(
+  $$ insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date)
+     values ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-0000000000c1', '0000000a-0000-0000-0000-0000000000ba', 'receipt', -500, current_date) $$,
+  'a negative amount is allowed');
+
+select lives_ok(
   $$ insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date)
      values ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-0000000000c1', '0000000a-0000-0000-0000-0000000000ba', 'receipt', 0, current_date) $$,
-  '23514', null, 'amount must be positive');
+  'a zero amount is allowed');
+
+select throws_ok(
+  $$ insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date)
+     values ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-0000000000c1', '0000000a-0000-0000-0000-0000000000ba', 'receipt', 10000000000001, current_date) $$,
+  '23514', null, 'amount still cannot exceed the magnitude cap');
 
 select throws_ok(
   $$ update profiles set email = 'OWNER@ALPHA.TEST' where user_id = '00000000-0000-0000-0000-0000000000b1' $$,

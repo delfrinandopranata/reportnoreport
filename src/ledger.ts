@@ -158,13 +158,19 @@ export const formatCompact = (cents: number) => makeMoney('MYR').compact(cents)
 /** Local YYYY-MM-DD. */
 export const today = () => new Date().toLocaleDateString('en-CA')
 
-/** "1,234.5" → 123450. Returns null for anything that isn't a positive amount with ≤2 decimals. */
+/**
+ * "1,234.5" → 123450. Negative and zero are valid (a firm may record an underpayment,
+ * overpayment or correction as a negative receipt/payment) — only the number format is
+ * validated here, never its sign or size as a "business rule". Returns null for anything
+ * that isn't a plain amount with ≤2 decimals.
+ */
 export function parseCents(input: string): number | null {
   const clean = input.replace(/[,\s]/g, '')
-  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(clean)
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(clean)
   if (!match) return null
-  const cents = Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'))
-  return cents > 0 ? cents : null
+  const [, sign, whole, frac] = match
+  const cents = Number(whole) * 100 + Number((frac ?? '').padEnd(2, '0'))
+  return sign ? -cents : cents
 }
 
 export function totals(txns: Txn[]): Totals {
