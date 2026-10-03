@@ -154,12 +154,12 @@ export default function App() {
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
         {canViewBanner && (
-          <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm print:hidden dark:border-blue-900 dark:bg-blue-950">
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm print:hidden dark:border-blue-800 dark:bg-blue-950/30">
             <span className="text-blue-900 dark:text-blue-100">You're exploring with sample data</span>
             {canRemove && (
               <button
                 onClick={() => setShowRemoveConfirm(true)}
-                className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                className={`${ring} text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}
               >
                 Remove
               </button>
@@ -172,8 +172,8 @@ export default function App() {
           onClose={() => setShowRemoveConfirm(false)}
           title="Remove sample data?"
         >
-          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
-          <div className="flex gap-2">
+          <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button className={btn.ghost} onClick={() => setShowRemoveConfirm(false)}>Cancel</button>
             <button
               className={btn.primary}

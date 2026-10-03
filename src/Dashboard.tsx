@@ -91,7 +91,7 @@ function Card({ widget, editing, state = 'idle', drag, layout, sampleDataExists 
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</h2>
           {showSampleLabel && (
-            <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
               Includes sample data
             </span>
           )}

@@ -19,12 +19,12 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
 
   return (
     <div
-      className="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+      className="rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
       role="region"
       aria-labelledby="checklist-title"
     >
-      <div className="flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 dark:border-zinc-800 sm:gap-4 sm:px-6">
-        <h2 id="checklist-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="flex items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800 sm:gap-4 sm:px-6">
+        <h2 id="checklist-title" className="text-base font-semibold text-zinc-900 dark:text-white">
           Get started
         </h2>
         <button
@@ -36,7 +36,7 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
         </button>
       </div>
 
-      <div className="px-4 py-3 sm:px-6">
+      <div className="px-5 py-4 sm:px-6">
         <div
           id={progressId}
           className="mb-4 text-sm text-zinc-600 dark:text-zinc-400"

@@ -193,7 +193,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
         role="dialog"
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`fixed z-50 w-80 rounded-xl bg-white p-4 shadow-2xl outline-none dark:bg-zinc-900 ${
+        className={`fixed z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl outline-none dark:border-zinc-800 dark:bg-zinc-900 ${
           prefersReducedMotion ? '' : 'animate-in fade-in zoom-in-95'
         }`}
         style={{
@@ -205,7 +205,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
         {/* Content */}
         <div
           ref={focusTrapRef}
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-4"
         >
           <div>
             <h2
@@ -214,7 +214,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
             >
               {step.title}
             </h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
               {step.description}
             </p>
           </div>
@@ -225,31 +225,31 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
           </div>
 
           {/* Button group */}
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-1">
             <button
               type="button"
               onClick={onPrev}
               disabled={currentIndex === 0}
               aria-label={`Go to previous step${currentIndex === 0 ? ' (disabled)' : ''}`}
-              className={`${btn.ghost} flex-1 text-xs sm:text-sm`}
+              className={`${btn.ghost} flex-1 px-2.5 py-2 text-xs sm:text-sm`}
             >
-              <Icon name="back" className="size-3 sm:size-4" />
+              <Icon name="back" className="size-3.5" />
               <span className="hidden sm:inline">Back</span>
             </button>
 
             {/* The last step finishes the tour (recorded as done), so it is never disabled. */}
-            <button type="button" onClick={onNext} className={`${btn.primary} flex-1 text-xs sm:text-sm`}>
-              {currentIndex === totalSteps - 1 ? 'Done' : <>Next <Icon name="right" className="size-3 sm:size-4" /></>}
+            <button type="button" onClick={onNext} className={`${btn.primary} flex-1 px-2.5 py-2 text-xs sm:text-sm`}>
+              {currentIndex === totalSteps - 1 ? 'Done' : <>Next <Icon name="right" className="size-3.5" /></>}
             </button>
 
             <button
               type="button"
               onClick={onSkip}
               aria-label="Skip tour"
-              className={`${btn.ghost} text-xs sm:text-sm`}
+              className={`${btn.ghost} px-2.5 py-2 text-xs sm:text-sm`}
               title="Skip tour (Esc)"
             >
-              <Icon name="x" className="size-4" />
+              <Icon name="x" className="size-3.5" />
             </button>
           </div>
         </div>
