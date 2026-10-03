@@ -78,14 +78,6 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
     },
   ] as const
   const meta = [client.industry, client.registrationNo, `Client since ${shortDate(client.createdAt)}`].filter(Boolean).join(' · ')
-  const lastDate = own.reduce((max, t) => (t.date > max ? t.date : max), '')
-
-  const stats = [
-    { label: 'Client balance', value: formatMoney(sum.net), negative: sum.net < 0 },
-    { label: 'Total receipts', value: formatMoney(sum.in) },
-    { label: 'Total payments', value: formatMoney(sum.out) },
-    { label: 'Transactions', value: String(sum.count), sub: lastDate ? `Last posted ${shortDate(lastDate)}` : 'None posted' },
-  ]
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -193,15 +185,6 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
 
       {onTxns ? (
         <div className="grid gap-6">
-          <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4 print:hidden">
-            {stats.map((s) => (
-              <div key={s.label} className={`${card} p-5`}>
-                <dt className="text-sm text-zinc-500">{s.label}</dt>
-                <dd className={`mt-2 text-lg font-semibold tracking-tight tabular-nums sm:text-2xl ${s.negative ? 'text-red-600 dark:text-red-400' : ''}`}>{s.value}</dd>
-                {s.sub && <dd className="mt-1 text-sm text-zinc-500">{s.sub}</dd>}
-              </div>
-            ))}
-          </dl>
           <div className="grid items-start gap-6 lg:grid-cols-3 print:hidden">
             <section className={`${card} min-w-0 p-5 lg:col-span-2`}>
               <h2 className="mb-4 text-sm font-medium text-zinc-500">Cash flow</h2>

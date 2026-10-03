@@ -441,7 +441,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                 setQuery(e.target.value)
                 resetPaging()
               }}
-              placeholder={isTxns ? 'Search description or client' : 'Search name, contact or email'}
+              placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
               aria-label="Search"
               className={`${input} py-1.5 pl-9`}
             />

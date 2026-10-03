@@ -74,7 +74,7 @@ function StatementLayout({
 function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string; meta: [string, string][] }) {
   const businessName = useStore((s) => s.businessName)
   const o = useSettings()
-  const address = [o.address1, o.address2, [o.postcode, o.city].filter(Boolean).join(' '), o.state, o.country !== 'Malaysia' ? o.country : ''].filter(Boolean)
+  const address = [o.address1, o.address2, [o.postcode, o.city].filter(Boolean).join(' '), o.state !== o.city ? o.state : '', o.country !== 'Malaysia' ? o.country : ''].filter(Boolean)
   const reg = o.showRegNo ? [o.ssmNo && `Reg. no. ${o.ssmNo}`, o.sstNo && `SST no. ${o.sstNo}`].filter(Boolean) : []
   return (
     <header className="flex items-start justify-between gap-6 border-b-2 border-zinc-900 pb-5">

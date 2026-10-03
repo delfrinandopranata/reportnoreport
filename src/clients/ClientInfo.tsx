@@ -8,7 +8,7 @@ import { card, shortDate, useUserNames } from './shared'
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className={`${card} min-w-0 p-5 print:break-inside-avoid`}>
     <h2 className="mb-4 text-sm font-medium text-zinc-500">{title}</h2>
-    <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">{children}</div>
+    <div className="grid items-start gap-x-6 gap-y-4 sm:grid-cols-2">{children}</div>
   </section>
 )
 
