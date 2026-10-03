@@ -55,6 +55,9 @@ export default function App() {
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
   const [theme, setTheme] = useTheme()
+  useEffect(() => {
+    document.documentElement.setAttribute('data-design', firm.designSystem)
+  }, [firm.designSystem])
   const tour = useTour()
   const sampleDataExists = useSampleDataExists()
   const loadSample = useLoadSampleData()
@@ -110,7 +113,7 @@ export default function App() {
       </a>
       <aside className="flex items-center print:hidden gap-1 border-b border-zinc-200 bg-white px-4 py-3 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:border-r lg:border-b-0 lg:px-3 lg:py-5 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mr-3 flex items-center gap-2.5 lg:mr-0 lg:mb-6 lg:px-2">
-          <span className="grid size-8 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+          <span className="grid size-8 place-items-center rounded-lg bg-[var(--brand-solid)] text-[var(--brand-solid-ink)]">
             <Icon name="wallet" />
           </span>
           <span className="hidden text-sm leading-tight font-semibold sm:block">
@@ -124,7 +127,7 @@ export default function App() {
               href={`#${n.view}`}
               data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : undefined}
               aria-current={route.view === n.view ? 'page' : undefined}
-              className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-white aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
+              className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-[var(--brand-solid)] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
             >
               <Icon name={n.icon} />
               <span className="max-sm:sr-only">{n.label}</span>

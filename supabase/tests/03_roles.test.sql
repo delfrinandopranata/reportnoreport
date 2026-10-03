@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(10);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -11,6 +11,7 @@ end $$;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a3'); -- viewer
 select throws_ok($$ insert into clients (name) values ('V') $$, '42501', null, 'viewer cannot add clients');
 select is_empty($$ update firms set trading_name = 'x' returning id $$, 'viewer cannot edit settings');
+select is_empty($$ update firms set design_system = 'ocean' returning id $$, 'viewer cannot change design system');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2'); -- accountant
 select lives_ok($$ insert into clients (name) values ('Acct Co') $$, 'accountant can add clients (firm_id defaults)');
@@ -23,6 +24,7 @@ select is_empty($$ update firms set trading_name = 'x' returning id $$, 'account
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a4'); -- admin
 select isnt_empty($$ update firms set trading_name = 'Alpha' returning id $$, 'admin can edit settings');
+select isnt_empty($$ update firms set design_system = 'forest' returning id $$, 'admin can change design system (firm_can_write)');
 select ok(not auth_can('billing.pay'), 'admin cannot pay');
 
 select * from finish();

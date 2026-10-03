@@ -51,8 +51,8 @@ export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS;
   )
 }
 
-/** Visible keyboard focus in light and dark. */
-export const ring = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
+/** Visible keyboard focus in light and dark; colour follows the firm's design system. */
+export const ring = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-solid)]'
 
 const THEME_CYCLE = { light: 'dark', dark: 'system', system: 'light' } as const
 const THEME_ICON = { light: 'sun', dark: 'moon', system: 'monitor' } as const
@@ -74,7 +74,7 @@ export function ThemeToggle({ theme, setTheme, className = '' }: { theme: keyof 
 
 export const btn = {
   primary:
-    `inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 ${ring} dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200`,
+    `inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--brand-solid)] px-3.5 py-2 text-sm font-medium text-[var(--brand-solid-ink)] shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 ${ring}`,
   ghost:
     `inline-flex items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30 ${ring} dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white`,
   danger:
