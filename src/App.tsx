@@ -84,6 +84,7 @@ export default function App() {
         <a href="#users" className="ml-auto lg:hidden" aria-label={`Signed in as ${profile.name}. Open users`}>
           <Avatar name={profile.name} />
         </a>
+        <button type="button" className={`${btn.ghost} lg:hidden`} onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="x" /></button>
         <div className="mt-auto hidden items-center gap-2 px-2 lg:flex">
           <Avatar name={profile.name} />
           <div className="min-w-0 flex-1">

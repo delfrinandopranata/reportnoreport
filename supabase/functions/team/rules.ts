@@ -11,3 +11,9 @@ export function decide(actor: Member, target: Member | null, action: TeamAction)
   if (target.role === 'owner') return 'Only the owner can change the owner.'
   return null
 }
+
+/** Invite links need APP_URL; only a local stack may fall back to the dev server. */
+export function resolveAppUrl(appUrl: string | undefined, supabaseUrl: string): string | null {
+  if (appUrl) return appUrl
+  return /^https?:\/\/(localhost|127\.0\.0\.1|kong)(:|\/|$)/.test(supabaseUrl) ? 'http://localhost:5199' : null
+}

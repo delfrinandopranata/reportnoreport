@@ -77,7 +77,7 @@ test('readImport round-trips an export and reports bad rows', () => {
     ['2026-02-30', 'Kopi Corner', '', '', '', '5', '', ''],
     ['2026-09-04', 'Kopi Corner', '', '', '', '5', '6', ''],
   ])
-  const { rows, errors } = readImport(csv)
+  const { rows, errors } = readImport(csv, 'MYR')
   assert.deepEqual(rows.map((r) => [r.date, r.kind, r.amount, r.note]), [
     ['2026-09-01', 'in', 123450, '=SUM(A1)'],
     ['2026-09-03', 'out', 1000, 'Fees'],
@@ -85,18 +85,27 @@ test('readImport round-trips an export and reports bad rows', () => {
   assert.equal(errors.length, 2)
   assert.match(errors[0], /Row 4: date/)
   assert.match(errors[1], /Row 5: has both/)
-  assert.match(readImport('Date,Description\n2026-01-01,x').errors[0], /Missing columns: client, receipts/)
+  assert.match(readImport('Date,Description\n2026-01-01,x', 'MYR').errors[0], /Missing columns: client, receipts/)
 })
 
 test('readImport reads an optional bank account column', () => {
-  const { rows } = readImport('Date,Client,Bank account,Receipts\n2026-09-01,Kopi,CIMB escrow,10')
+  const { rows } = readImport('Date,Client,Bank account,Receipts\n2026-09-01,Kopi,CIMB escrow,10', 'MYR')
   assert.equal(rows[0].bankAccount, 'CIMB escrow')
 })
 
-test('readImport accepts a leading ISO currency code on amounts', () => {
-  const { rows, errors } = readImport('Date,Client,Receipts,Payments\n2026-09-01,Kopi,"MYR 1,250.00",\n2026-09-02,Kopi,,sgd10\n2026-09-03,Kopi,RM 5,')
+test('readImport accepts the firm currency code on amounts', () => {
+  const { rows, errors } = readImport('Date,Client,Receipts,Payments\n2026-09-01,Kopi,"MYR 1,250.00",\n2026-09-02,Kopi,,myr10\n2026-09-03,Kopi,rm 5,', 'MYR')
   assert.deepEqual(errors, [])
   assert.deepEqual(rows.map((r) => r.amount), [125000, 1000, 500])
+})
+
+test('readImport rejects amounts in another currency', () => {
+  const head = 'Date,Client,Receipts\n'
+  const a = readImport(head + '2026-09-01,Kopi,5\n2026-09-02,Kopi,SGD 10', 'MYR')
+  assert.deepEqual(a.errors, ['Row 3: amount is in SGD but this firm uses MYR.'])
+  assert.equal(a.rows.length, 1)
+  assert.deepEqual(readImport(head + '2026-09-01,Kopi,RM 5', 'SGD').errors, ['Row 2: amount is in MYR but this firm uses SGD.'])
+  assert.equal(readImport(head + '2026-09-01,Kopi,SGD 5', 'SGD').rows[0].amount, 500)
 })
 
 test('fillClient defaults an old record and keeps what it has', () => {

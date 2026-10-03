@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { readImport, toCsv, today, type ImportRow } from './ledger'
 import { useMoney } from './data/money'
+import { useSession } from './data/session'
 import { useImport, type ImportPayloadRow } from './data/queries'
 import { btn, Dialog, Icon } from './ui'
 
@@ -25,6 +26,7 @@ const toPayload = (rows: ImportRow[]): ImportPayloadRow[] =>
 
 export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const money = useMoney()
+  const { firm } = useSession()
   const importRows = useImport()
   const [plan, setPlan] = useState<Plan | null>(null)
   const [done, setDone] = useState('')
@@ -40,7 +42,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     e.target.value = ''
     if (!file) return
     setDone('')
-    const { rows, errors } = readImport(await file.text())
+    const { rows, errors } = readImport(await file.text(), firm.currency)
     const base = { rows, errors, fileName: file.name }
     if (!rows.length) return setPlan({ ...base, preview: null, serverError: '' })
     try {

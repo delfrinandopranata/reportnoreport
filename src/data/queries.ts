@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Client, ClientInput, Kind, StatementLine, Txn } from '../ledger'
 import type { Database, Json } from './database.types'
 import type { Role } from '../users/rules'
-import { toUserMessage } from './errors'
+import { isWriteBlock, toUserMessage } from './errors'
 import {
   clientToRow, firmToRow, rowToBank, rowToClient, rowToLine, rowToMember,
   type BalanceRow, type BankAccount, type Firm, type LedgerRow, type Member,
@@ -19,10 +19,25 @@ type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['publ
 
 export type ImportPayloadRow = { line: number; client_name: string; bank_account: string | null; kind: 'receipt' | 'payment'; amount_minor: number; date: string; description: string }
 
-/** Throws a person-readable Error so components can show error.message directly. */
+/**
+ * Throws a person-readable Error so components can show error.message directly.
+ * On a write denial the cached session may be stale (trial ended, role changed), so it is
+ * refreshed and the CURRENT block reason is fetched for the message. Always `await` or `return` it.
+ */
 function useFail() {
-  const { writeBlockReason } = useSession()
-  return (error: unknown): never => { throw new Error(toUserMessage(error, { writeBlockReason })) }
+  const { writeBlockReason, firm, userId } = useSession()
+  const qc = useQueryClient()
+  return async (error: unknown): Promise<never> => {
+    let reason = writeBlockReason
+    if (isWriteBlock(error)) {
+      void qc.invalidateQueries({ queryKey: ['session', userId] })
+      if ((error as { code?: string }).code === '42501') {
+        const fresh = await supabase.rpc('firm_write_block_reason', { firm: firm.id })
+        if (!fresh.error) reason = fresh.data as string | null
+      }
+    }
+    throw new Error(toUserMessage(error, { writeBlockReason: reason }))
+  }
 }
 
 function useKeys() {
@@ -162,7 +177,7 @@ export function usePostTxn() {
   const invalidate = useInvalidateFirm(); const fail = useFail()
   return useMutation({ mutationFn: async (t: { clientId: string; bankAccountId: string; kind: Kind; amount: number; date: string; note: string }) => {
     const { error } = await supabase.from('transactions').insert({ client_id: t.clientId, bank_account_id: t.bankAccountId, kind: t.kind === 'in' ? 'receipt' : 'payment', amount_minor: t.amount, date: t.date, description: t.note })
-    if (error) fail(error)
+    if (error) await fail(error)
   }, onSuccess: invalidate })
 }
 
@@ -177,7 +192,7 @@ export function useUpdateTxn() {
     if (patch.bankAccountId) row.bank_account_id = patch.bankAccountId
     const { data, error } = await supabase.from('transactions').update(row).eq('id', id).select('id')
     if (error) return fail(error)
-    if (!data.length) fail({ code: '42501' })
+    if (!data.length) await fail({ code: '42501' })
   }, onSuccess: invalidate })
 }
 
@@ -203,7 +218,7 @@ export function useUpdateFirm() {
   return useMutation({ mutationFn: async (patch: Partial<Firm>) => {
     const { data, error } = await supabase.from('firms').update(firmToRow(patch)).eq('id', firm.id).select('id')
     if (error) return fail(error)
-    if (!data.length) fail({ code: '42501' })
+    if (!data.length) await fail({ code: '42501' })
   }, onSuccess: () => qc.invalidateQueries({ queryKey: ['session'] }) })
 }
 
@@ -240,11 +255,11 @@ export function useSaveBank() {
     if (b.id) {
       const { data, error } = await supabase.from('bank_accounts').update({ ...row, ...(b.isDefault !== undefined && { is_default: b.isDefault }) }).eq('id', b.id).select('id')
       if (error) return fail(error)
-      if (!data.length) fail({ code: '42501' })
+      if (!data.length) await fail({ code: '42501' })
       return
     }
     const { error } = await supabase.from('bank_accounts').insert({ ...row, name: b.name!, is_default: !!b.isDefault })
-    if (error) fail(error)
+    if (error) await fail(error)
   }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.banks }) })
 }
 
@@ -259,7 +274,7 @@ async function callTeam(body: object): Promise<void> {
 
 export function useTeam() {
   const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
-  const call = async (p: PromiseLike<{ error: unknown }>) => { const { error } = await p; if (error) fail(error) }
+  const call = async (p: PromiseLike<{ error: unknown }>) => { const { error } = await p; if (error) await fail(error) }
   const done = { onSuccess: () => qc.invalidateQueries({ queryKey: keys.members }) }
   return {
     invite: useMutation({ mutationFn: (v: { name: string; email: string; role: Exclude<Role, 'owner'> }) => callTeam({ action: 'invite', ...v }), ...done }),

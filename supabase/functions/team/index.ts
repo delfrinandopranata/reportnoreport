@@ -1,9 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { decide, type Member, type Role } from './rules.ts'
+import { decide, resolveAppUrl, type Member, type Role } from './rules.ts'
 
 const url = Deno.env.get('SUPABASE_URL')!
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5199'
+const appUrl = resolveAppUrl(Deno.env.get('APP_URL'), url)
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
@@ -14,6 +14,10 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST') return json(405, { error: 'Use POST.' })
 
+  if (!appUrl) {
+    console.error('APP_URL is not set; refusing to send invite links.')
+    return json(500, { error: 'Invites are not configured yet. Contact support.' })
+  }
   const admin = createClient(url, serviceKey)
   const jwt = req.headers.get('Authorization')?.replace(/^Bearer /, '')
   const { data: auth } = await admin.auth.getUser(jwt ?? '')

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { toUserMessage } from './errors.ts'
+import { isWriteBlock, toUserMessage } from './errors.ts'
 
 test('RLS denials explain a blocked firm', () => {
   assert.equal(
@@ -37,4 +37,11 @@ test('check violations are specific', () => {
     'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.',
   )
   assert.equal(toUserMessage({ code: '23514', message: 'violates check constraint "x"' }), "One of the values isn't allowed. Check the form and try again.")
+})
+
+test('isWriteBlock spots RLS denials and the server block message only', () => {
+  assert.equal(isWriteBlock({ code: '42501' }), true)
+  assert.equal(isWriteBlock({ code: 'P0001', message: "Your firm can't make changes right now: Trial ended." }), true)
+  assert.equal(isWriteBlock({ code: 'P0001', message: 'Row 3: bad.' }), false)
+  assert.equal(isWriteBlock('x'), false)
 })

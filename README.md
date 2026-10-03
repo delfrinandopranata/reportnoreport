@@ -9,7 +9,7 @@ Client accounts MVP: record receipts and payments per client, track client funds
 ```bash
 brew install supabase/tap/supabase deno
 pnpm install
-supabase start            # local Postgres, Auth, Storage, Inbucket (emails) at http://127.0.0.1:54324
+supabase start            # local Postgres, Auth, Storage, Mailpit (emails) at http://127.0.0.1:54324
 supabase db reset         # migrations + seed
 cp .env.example .env.local  # then paste ANON_KEY from `supabase status`
 pnpm dev
@@ -71,8 +71,8 @@ Never commit the API key. `supabase/.env.example` lists the variable names; real
 
 ## Edge Function secrets
 
-The `team` function builds invite links from the `APP_URL` secret. Locally it is set in `supabase/functions/.env.local`. For the hosted project set it to the production app URL:
+The `team` function builds invite links from the `APP_URL` secret. Locally, copy `supabase/functions/.env.example` to `supabase/functions/.env.local` (git-ignored). On the hosted project, set it to the production app URL; without it the function refuses to send invites:
 
 ```bash
-supabase secrets set APP_URL=https://<your-app-url>
+supabase secrets set APP_URL=https://<app-host>
 ```

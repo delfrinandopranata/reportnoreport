@@ -319,13 +319,20 @@ function readDate(value: string): string | null {
 
 /** Undo the export's formula guard and currency decoration. */
 const text = (value = '') => value.trim().replace(/^'(?=[=+\-@])/, '')
-const amountOf = (value = '') => parseCents(text(value).replace(/^(?:RM|[A-Za-z]{3})\s*/, ''))
+/** A leading currency code is dropped when it matches the firm's; "RM" means MYR. */
+function readAmount(value: string | undefined, firmCurrency: string): { cents: number | null; foreign?: string } {
+  const raw = text(value)
+  const code = /^(RM|[A-Za-z]{3})\s*/i.exec(raw)?.[1]
+  const iso = code && (code.toUpperCase() === 'RM' ? 'MYR' : code.toUpperCase())
+  if (iso && iso !== firmCurrency) return { cents: null, foreign: iso }
+  return { cents: parseCents(code ? raw.slice(code.length) : raw) }
+}
 
 /**
  * Reads a transactions CSV. Columns are matched by header name (any order, extra columns ignored):
  * Date, Client, Description, optional Bank account, and either Receipts / Payments, or Type (Receipt|Payment) + Amount.
  */
-export function readImport(csv: string): { rows: ImportRow[]; errors: string[] } {
+export function readImport(csv: string, firmCurrency: string): { rows: ImportRow[]; errors: string[] } {
   const [header = [], ...body] = parseCsv(csv)
   const col = new Map(header.map((h, i) => [h.trim().toLowerCase(), i]))
   const at = (cells: string[], name: string) => (col.has(name) ? cells[col.get(name)!] : undefined)
@@ -337,6 +344,12 @@ export function readImport(csv: string): { rows: ImportRow[]; errors: string[] }
   const errors: string[] = []
   body.forEach((cells, i) => {
     const line = i + 2
+    let foreign = ''
+    const amountOf = (value?: string) => {
+      const r = readAmount(value, firmCurrency)
+      foreign ||= r.foreign ?? ''
+      return r.cents
+    }
     const date = readDate(text(at(cells, 'date')))
     const clientName = text(at(cells, 'client'))
     const receipt = text(at(cells, 'receipts')) ? amountOf(at(cells, 'receipts')) : undefined
@@ -349,6 +362,7 @@ export function readImport(csv: string): { rows: ImportRow[]; errors: string[] }
       : payment !== undefined ? ['out', payment]
       : [typed, typed ? amountOf(at(cells, 'amount')) : undefined]
 
+    if (foreign) return void errors.push(`Row ${line}: amount is in ${foreign} but this firm uses ${firmCurrency}.`)
     if (!date) return void errors.push(`Row ${line}: date must be YYYY-MM-DD or DD/MM/YYYY.`)
     if (!clientName) return void errors.push(`Row ${line}: client is empty.`)
     if (receipt !== undefined && payment !== undefined) return void errors.push(`Row ${line}: has both a receipt and a payment — split it into two rows.`)

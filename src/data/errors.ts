@@ -22,3 +22,9 @@ export function toUserMessage(error: unknown, ctx: { writeBlockReason?: string |
   if (code === 'PGRST116') return 'That record no longer exists.'
   return 'Something went wrong. Try again.'
 }
+
+/** True when the server refused a write because of the firm's state or the person's role, so cached session context may be stale. */
+export const isWriteBlock = (error: unknown): boolean => {
+  const { code, message } = (typeof error === 'object' && error !== null ? error : {}) as PgError
+  return code === '42501' || (code === 'P0001' && !!message?.includes("can't make changes"))
+}

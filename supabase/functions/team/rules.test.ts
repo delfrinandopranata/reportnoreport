@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1'
-import { decide, type Member } from './rules.ts'
+import { decide, resolveAppUrl, type Member } from './rules.ts'
 
 const owner: Member = { id: 'o', firmId: 'f', role: 'owner', status: 'active' }
 const admin: Member = { id: 'a', firmId: 'f', role: 'admin', status: 'active' }
@@ -19,4 +19,11 @@ Deno.test('nobody removes themselves or the owner (except nobody)', () => {
 
 Deno.test('targets must be in the same firm', () => {
   assertEquals(decide(owner, otherFirm, 'remove'), 'That person is not in your firm.')
+})
+
+Deno.test('APP_URL falls back only on a local stack', () => {
+  assertEquals(resolveAppUrl('https://app.x', 'https://p.supabase.co'), 'https://app.x')
+  assertEquals(resolveAppUrl(undefined, 'http://127.0.0.1:54321'), 'http://localhost:5199')
+  assertEquals(resolveAppUrl(undefined, 'http://kong:8000'), 'http://localhost:5199')
+  assertEquals(resolveAppUrl(undefined, 'https://p.supabase.co'), null)
 })
