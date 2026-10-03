@@ -47,7 +47,7 @@
 | `src/Dashboard.tsx` / `src/settings/Settings.tsx` | Add help menu (?) button; tour replay and checklist reopening | D4 |
 | `src/checklist/Checklist.tsx` | Checklist UI: 4 items, self-tick display, skip/dismiss buttons | D7 |
 | `src/checklist/useChecklist.ts` | Hook: checklist state, item conditions, event listeners for auto-tick | D8 |
-| `src/data/sample.ts` | Pure logic: sample data payload (clients, bank account, transactions) | D5 |
+| (none) | Pure logic: sample data payload (clients, bank account, transactions) | D5 |
 | `src/Dashboard.tsx` | Add "Load sample data" button to Dashboard or hero area | D5 |
 | `src/App.tsx` | Add sample data banner at the top; remove button; confirmation dialog | D6 |
 | `src/data/queries.ts` | Add `useLoadSampleData()` and `useRemoveSampleData()` hooks | D5, D6 |
@@ -67,7 +67,7 @@
 - Security: Both functions use `SECURITY INVOKER`, explicitly check `auth_can('settings.manage')` and `firm_can_write(auth_firm_id())`, act only on the current firm. Grants: execute revoked from `public`, `anon`, and `authenticated`; callable only via RPC with authenticated role checks.
 
 - [ ] **Step 1:** Write the migration file `supabase/migrations/20261006000001_onboarding.sql` with:
-  - SQL function `load_sample_data()`: SECURITY INVOKER; checks `auth_can('settings.manage')` and `firm_can_write(auth_firm_id())` and raises if not authorized. Inserts exactly one bank account named "Sample account" (is_default, is_active, is_sample all true). Inserts 8 sample clients reusing seed data names (Kopi Corner Sdn Bhd, Harbourline Logistics Sdn Bhd, LIM Boon Hock & Associates, Equity Legal Sdn Bhd, etc.) with realistic stakeholder-focused descriptions (retainer, escrow, court fees, stamp duty, filing fees, retention sum, etc.). Inserts ~150 transactions across 6 months using `firm.currency` (not hard-coded MYR). All rows set `is_sample = true`, `created_at = now()`, `updated_at = now()`, `created_by = auth.uid()`, `updated_by = auth.uid()`. Idempotence: early return if `exists (select 1 from clients where firm_id = auth_firm_id() and is_sample)`.
+  - SQL function `load_sample_data()`: SECURITY INVOKER; checks `auth_can('settings.manage')` and `firm_can_write(auth_firm_id())` and raises if not authorized. Inserts exactly one bank account named "Sample account" (is_active and is_sample true, is_default FALSE — never take over the firm's real default account). Inserts 8 sample clients reusing seed data names (Kopi Corner Sdn Bhd, Harbourline Logistics Sdn Bhd, LIM Boon Hock & Associates, Equity Legal Sdn Bhd, etc.) with realistic stakeholder-focused descriptions (retainer, escrow, court fees, stamp duty, filing fees, retention sum, etc.). Inserts ~150 transactions across 6 months using `firm.currency` (not hard-coded MYR). All rows set `is_sample = true`, `created_at = now()`, `updated_at = now()`, `created_by = auth.uid()`, `updated_by = auth.uid()`. Idempotence: early return if `exists (select 1 from clients where firm_id = auth_firm_id() and is_sample)`.
   - SQL function `remove_sample_data()`: SECURITY INVOKER; same authorization checks as load. Deletes in reverse order: transactions, then clients, then bank_accounts, all with `is_sample = true` and `firm_id = auth_firm_id()`. Raises an error if any non-sample transaction still references a sample client (check via EXISTS with the current firm).
   - Grant: `execute` revoked from `public`, `anon`, and `authenticated`; callable only via authenticated RPC.
   - All queries use `auth_firm_id()` to isolate to the current firm.
@@ -420,36 +420,12 @@
 
 ### Task D5: Sample data loading UI and integration
 
-**Files:** Create `src/data/sample.ts`. Modify `src/data/queries.ts`, `src/Dashboard.tsx`.
+**Files:** Modify `src/data/queries.ts`, `src/Dashboard.tsx`. (No TypeScript copy of the sample data: the SQL function `load_sample_data()` is the single source.)
 
 **Interfaces — produces:**
 - `useLoadSampleData(): { mutate: () => Promise<void>; loading: boolean; error: Error | null }` — hook that calls the `load_sample_data()` RPC and invalidates affected queries.
-- Sample data payload (bank account, clients, transactions) is defined in `src/data/sample.ts` for reference and testing; the actual load happens via SQL.
 
-- [ ] **Step 1:** Create `src/data/sample.ts` with sample data definitions:
-  ```ts
-  export const SAMPLE_BANK_ACCOUNT = {
-    name: 'Sample account',
-    bank_name: 'Example Bank',
-    account_name: 'Sample Account',
-    account_no: '123456789',
-  }
-  
-  export const SAMPLE_CLIENTS = [
-    { name: 'Acme Corp', type: 'company' as const, registration_no: 'ABC123' },
-    { name: 'Tech Startup Ltd', type: 'company' as const, registration_no: 'TECH456' },
-    { name: 'Creative Agency', type: 'company' as const, registration_no: 'CRT789' },
-    { name: 'Logistics Hub', type: 'company' as const, registration_no: 'LOG012' },
-    { name: 'Retail Store', type: 'company' as const, registration_no: 'RET345' },
-    { name: 'Service Providers', type: 'company' as const, registration_no: 'SVC678' },
-    { name: 'Consulting Group', type: 'company' as const, registration_no: 'CON901' },
-    { name: 'Manufacturing Ltd', type: 'company' as const, registration_no: 'MFG234' },
-  ]
-  
-  export const SAMPLE_TRANSACTION_COUNT = 150
-  ```
-
-- [ ] **Step 2:** Add `useLoadSampleData()` to `src/data/queries.ts`:
+- [ ] **Step 1:** Add `useLoadSampleData()` to `src/data/queries.ts`:
   ```ts
   export function useLoadSampleData() {
     const { firm } = useSession()
@@ -492,7 +468,7 @@
 
 - [ ] **Step 5:** Commit:
   ```bash
-  git add src/data/sample.ts src/data/queries.ts src/Dashboard.tsx
+  git add src/data/queries.ts src/Dashboard.tsx
   git commit -m "feat: add sample data loading UI"
   ```
 
