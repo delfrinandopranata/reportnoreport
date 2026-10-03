@@ -126,7 +126,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const groups = useMemo(() => {
     const chrono = new Map(summary.lines.map((l, i) => [l.id, i]))
     const closingOf = (list: StatementLine[]) =>
-      showBalance ? balances.get(list.reduce((last, l) => ((chrono.get(l.id) ?? 0) > (chrono.get(last.id) ?? 0) ? l : last)).id) : undefined
+      showBalance && list.length ? balances.get(list.reduce((last, l) => ((chrono.get(l.id) ?? 0) > (chrono.get(last.id) ?? 0) ? l : last)).id) : undefined
     const build = (key: string, label: string, rows: StatementLine[]) => {
       const sum = totals(rows)
       return { key, label, rows, receipts: sum.in, payments: sum.out, closing: closingOf(rows) }
