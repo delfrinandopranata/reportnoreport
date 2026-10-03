@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { btn, Avatar, Icon, ring } from '../ui'
+import { btn, Avatar, Dialog, Icon, ring } from '../ui'
 import { callAdmin, type AdminListFirmsResponse } from './api'
 import { formatDate } from '../settings/constants'
 import { trialState } from '../trial'
@@ -202,6 +202,12 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
   }
 
   const isBusy = suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending
+  const confirmTitle = confirmAction && (
+    confirmAction.type === 'suspend' ? `Suspend ${confirmAction.firmName}?`
+    : confirmAction.type === 'reactivate' ? `Reactivate ${confirmAction.firmName}?`
+    : confirmAction.type === 'extend' ? `Extend trial for ${confirmAction.firmName}?`
+    : `Make ${confirmAction.firmName} complimentary?`
+  )
 
   return (
     <div className="space-y-4">
@@ -320,22 +326,16 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
         </div>
       )}
 
-      {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm dark:bg-zinc-950/50">
-          <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <h3 className="mb-1 text-base font-semibold">
-              {confirmAction.type === 'suspend' && `Suspend ${confirmAction.firmName}?`}
-              {confirmAction.type === 'reactivate' && `Reactivate ${confirmAction.firmName}?`}
-              {confirmAction.type === 'extend' && `Extend trial for ${confirmAction.firmName}?`}
-              {confirmAction.type === 'makeComplimentary' && `Make ${confirmAction.firmName} complimentary?`}
-            </h3>
-            <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">
+      <Dialog open={!!confirmAction} onClose={() => setConfirmAction(null)} title={confirmTitle ?? ''}>
+        {confirmAction && (
+          <div className="grid gap-4 text-sm">
+            <p className="text-zinc-600 dark:text-zinc-400">
               {confirmAction.type === 'suspend' && "Members can't sign in until you reactivate it."}
               {confirmAction.type === 'reactivate' && 'Members will regain access to the firm.'}
               {confirmAction.type === 'extend' && `Trial will be extended by ${confirmAction.days} days.`}
               {confirmAction.type === 'makeComplimentary' && 'The trial will remain free indefinitely.'}
             </p>
-            <div className="flex gap-3">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmAction(null)}
@@ -351,7 +351,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                   else if (confirmAction.type === 'extend') extendTrial.mutate({ firmId: confirmAction.firmId, days: confirmAction.days! })
                   else if (confirmAction.type === 'makeComplimentary') makeComplimentary.mutate(confirmAction.firmId)
                 }}
-                className={confirmAction.type === 'suspend' ? btn.danger : btn.primary}
+                className={confirmAction.type === 'suspend' ? 'inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500' : btn.primary}
                 disabled={suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending}
                 aria-busy={suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending}
               >
@@ -359,8 +359,8 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Dialog>
     </div>
   )
 }

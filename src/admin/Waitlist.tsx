@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { btn, Icon } from '../ui'
+import { btn, Dialog, Icon } from '../ui'
 import { callAdmin, type AdminListWaitlistResponse } from './api'
 import { formatDate } from '../settings/constants'
 
@@ -96,33 +96,30 @@ export function Waitlist() {
         )}
       </div>
 
-      {copyConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm dark:bg-zinc-950/50">
-          <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <h3 className="mb-1 text-base font-semibold">Copy waitlist emails?</h3>
-            <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">
-              {entries.length} email{entries.length !== 1 ? 's' : ''} will be copied to your clipboard, separated by commas.
-            </p>
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setCopyConfirm(false)} className={btn.ghost}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  copy.mutate()
-                  setCopyConfirm(false)
-                }}
-                className={btn.primary}
-                disabled={copy.isPending}
-                aria-busy={copy.isPending}
-              >
-                {copy.isPending ? 'Copying…' : 'Copy'}
-              </button>
-            </div>
+      <Dialog open={copyConfirm} onClose={() => setCopyConfirm(false)} title="Copy waitlist emails?">
+        <div className="grid gap-4 text-sm">
+          <p className="text-zinc-600 dark:text-zinc-400">
+            {entries.length} email{entries.length !== 1 ? 's' : ''} will be copied to your clipboard, separated by commas.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => setCopyConfirm(false)} className={btn.ghost}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                copy.mutate()
+                setCopyConfirm(false)
+              }}
+              className={btn.primary}
+              disabled={copy.isPending}
+              aria-busy={copy.isPending}
+            >
+              {copy.isPending ? 'Copying…' : 'Copy'}
+            </button>
           </div>
         </div>
-      )}
+      </Dialog>
     </div>
   )
 }

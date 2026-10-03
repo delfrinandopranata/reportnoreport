@@ -1,5 +1,7 @@
 # ReportNoReport
 
+![CI](https://github.com/delfrinandopranata/reportnoreport/actions/workflows/ci.yml/badge.svg)
+
 Report without complicated reporting — client-money ledgers and statements for professional firms.
 
 Repository: https://github.com/delfrinandopranata/reportnoreport
