@@ -102,41 +102,47 @@ rollback;
 File: `supabase/migrations/20261005000001_billing.sql`
 
 ```sql
+-- Called ONLY by the stripe-webhook Edge Function (service role). Postgres grants EXECUTE to PUBLIC by
+-- default, which would let any signed-in user mark their own firm paid — so revoke it explicitly.
 create or replace function record_payment(p_firm_id uuid, p_payment_intent_id text) returns void
 language plpgsql security definer set search_path = public as $$
+declare v_before billing_status;
 begin
+  select billing_status into v_before from firms where id = p_firm_id for update;
+  if not found then raise exception 'Firm not found.'; end if;
   update firms
-  set billing_status = 'paid',
-      paid_at = now(),
-      stripe_payment_intent_id = p_payment_intent_id,
-      updated_at = now()
+  set billing_status = 'paid', paid_at = now(), stripe_payment_intent_id = p_payment_intent_id
   where id = p_firm_id;
-  
-  insert into change_log (firm_id, table_name, row_id, action, before, after, at)
-  select p_firm_id, 'firms', p_firm_id, 'billing'::change_action, 
-         jsonb_build_object('billing_status', 'trial'), 
-         jsonb_build_object('billing_status', 'paid'),
-         now();
+  insert into change_log (firm_id, table_name, row_id, action, before, after)
+  values (p_firm_id, 'firms', p_firm_id, 'billing',
+          jsonb_build_object('billing_status', v_before),
+          jsonb_build_object('billing_status', 'paid', 'stripe_payment_intent_id', p_payment_intent_id));
 end $$;
 
 create or replace function record_refund(p_firm_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
+declare v_before billing_status;
 begin
-  update firms
-  set billing_status = 'read_only',
-      updated_at = now()
-  where id = p_firm_id;
-  
-  insert into change_log (firm_id, table_name, row_id, action, before, after, at)
-  select p_firm_id, 'firms', p_firm_id, 'billing'::change_action,
-         jsonb_build_object('billing_status', 'paid'),
-         jsonb_build_object('billing_status', 'read_only'),
-         now();
+  select billing_status into v_before from firms where id = p_firm_id for update;
+  if not found then raise exception 'Firm not found.'; end if;
+  update firms set billing_status = 'read_only' where id = p_firm_id;
+  insert into change_log (firm_id, table_name, row_id, action, before, after)
+  values (p_firm_id, 'firms', p_firm_id, 'billing',
+          jsonb_build_object('billing_status', v_before),
+          jsonb_build_object('billing_status', 'read_only'));
 end $$;
 
+revoke execute on function record_payment(uuid, text) from public, anon, authenticated;
+revoke execute on function record_refund(uuid) from public, anon, authenticated;
 grant execute on function record_payment(uuid, text) to service_role;
 grant execute on function record_refund(uuid) to service_role;
 ```
+
+pgTAP (in `supabase/tests/13_billing.test.sql`) MUST include, as an authenticated firm owner:
+`select throws_ok($$ select record_payment(auth_firm_id(), 'pi_x') $$, '42501')` and the same for `record_refund`,
+plus: as service_role, record_payment flips `trial`→`paid` and writes one change_log row whose `before` is `trial`;
+record_refund flips `paid`→`read_only`; `firm_write_block_reason` then returns 'This firm is read-only.'
+(`updated_at` is set by the existing `stamp` trigger — do not set it by hand.)
 
 - [ ] **Step 3: Update src/data/errors.ts with Stripe messages**
 
@@ -983,7 +989,7 @@ Create or update with:
 
 ### Webhook Deployment
 
-**Local:** Tested via `stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook` (covered in task C7).
+**Local:** Tested via `stripe listen --forward-to localhost:54421/functions/v1/stripe-webhook` (covered in task C7).
 
 **Production:** Deploy with:
 ```bash
