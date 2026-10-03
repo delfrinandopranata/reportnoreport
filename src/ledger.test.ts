@@ -5,10 +5,13 @@ import { addTag, fillClient, formatPhone, joinPhone, splitPhone, validateClient,
 const txn = (clientId: string, kind: Txn['kind'], amount: number, date: string): Txn => ({
   id: `${clientId}-${date}-${amount}`,
   clientId,
+  bankAccountId: 'b',
   kind,
   amount,
   date,
   note: '',
+  createdAt: '',
+  updatedAt: '',
 })
 
 test('parseCents avoids float rounding and rejects bad input', () => {

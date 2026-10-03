@@ -15,7 +15,7 @@ type Actions = {
   addClient: (client: ClientInput) => void
   updateClient: (id: string, patch: Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>) => void
   removeClient: (id: string) => void
-  addTxn: (txn: Omit<Txn, 'id'>) => void
+  addTxn: (txn: Omit<Txn, 'id' | 'bankAccountId' | 'createdAt' | 'updatedAt'>) => void
   importLedger: (clients: Client[], txns: Txn[]) => void
   removeTxn: (id: string) => void
   addWidget: (type: WidgetType, span: Span) => void
@@ -84,6 +84,9 @@ function demoData(): Data {
       const make = (kind: Kind, notes: string[], base: number) => ({
         id: uid(),
         clientId: c.id,
+        bankAccountId: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         kind,
         amount: Math.round((base * scale * (0.5 + rand())) / 10) * 1000,
         date: dayOf(monthsAgo),
@@ -112,7 +115,7 @@ export const useStore = create<Data & Actions>()(
           set((s) => ({ clients: s.clients.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c)) })),
         removeClient: (id) =>
           set((s) => ({ clients: s.clients.filter((c) => c.id !== id), txns: s.txns.filter((t) => t.clientId !== id) })),
-        addTxn: (txn) => set((s) => ({ txns: [...s.txns, { ...txn, id: uid() }] })),
+        addTxn: (txn) => set((s) => ({ txns: [...s.txns, { ...txn, id: uid(), bankAccountId: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }] })),
         // One set() so a whole import is a single undo step.
         importLedger: (clients, txns) => set((s) => ({ clients: [...s.clients, ...clients], txns: [...s.txns, ...txns] })),
         removeTxn: (id) => set((s) => ({ txns: s.txns.filter((t) => t.id !== id) })),

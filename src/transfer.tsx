@@ -47,6 +47,9 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     const added: Txn[] = plan.rows.map((r) => ({
       id: crypto.randomUUID(),
       clientId: ids.get(r.clientName.trim().toLowerCase())!,
+      bankAccountId: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       kind: r.kind,
       amount: r.amount,
       date: r.date,

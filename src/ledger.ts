@@ -113,28 +113,37 @@ export function addTag(tags: string[], raw: string): string[] {
 export type Txn = {
   id: string
   clientId: string
+  bankAccountId: string
   kind: Kind
   amount: number
   date: string
   note: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type Totals = { in: number; out: number; net: number; count: number }
 
-export const CURRENCY = 'MYR'
-const money = new Intl.NumberFormat('en-MY', { style: 'currency', currency: CURRENCY })
-const compact = new Intl.NumberFormat('en-MY', {
-  style: 'currency',
-  currency: CURRENCY,
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
+const moneyCache = new Map<string, { format(cents: number): string; compact(cents: number): string }>()
+
+/** Formatter for one currency; cached because Intl.NumberFormat is expensive to build. */
+export function makeMoney(currency: string) {
+  const cached = moneyCache.get(currency)
+  if (cached) return cached
+  const full = new Intl.NumberFormat('en-MY', { style: 'currency', currency })
+  const short = new Intl.NumberFormat('en-MY', { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 })
+  const m = { format: (cents: number) => full.format(cents / 100), compact: (cents: number) => short.format(cents / 100) }
+  moneyCache.set(currency, m)
+  return m
+}
 
 /** Short, stable account reference shown on statements. */
 export const accountNo = (clientId: string) => clientId.slice(0, 8).toUpperCase()
 
-export const formatMoney = (cents: number) => money.format(cents / 100)
-export const formatCompact = (cents: number) => compact.format(cents / 100)
+/** @deprecated use useMoney() — kept until every caller reads the firm currency. */
+export const formatMoney = (cents: number) => makeMoney('MYR').format(cents)
+/** @deprecated use useMoney() */
+export const formatCompact = (cents: number) => makeMoney('MYR').compact(cents)
 
 /** Local YYYY-MM-DD. */
 export const today = () => new Date().toLocaleDateString('en-CA')
