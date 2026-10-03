@@ -656,8 +656,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                   <button type="button" className={btn.primary} onClick={clearFilters}><Icon name="x" /> Clear filters</button>
                 ) : !fixedClientId && clients.length === 0 ? (
                   <div className="flex flex-wrap justify-center gap-2">
-                    <button type="button" className={btn.primary} disabled={!editClients.ok} onClick={() => setDialog('add')}><Icon name="plus" /> Add client</button>
-                    <button type="button" className={btn.ghost} disabled={!post.ok} onClick={() => setDialog('import')}><Icon name="upload" /> Import CSV</button>
+                    <button type="button" className={btn.primary} disabled={!editClients.ok} onClick={() => setDialog('add')} data-tour="add-client"><Icon name="plus" /> Add client</button>
+                    <button type="button" className={btn.ghost} disabled={!post.ok} onClick={() => setDialog('import')} data-tour="import-export"><Icon name="upload" /> Import CSV</button>
                   </div>
                 ) : undefined
               }

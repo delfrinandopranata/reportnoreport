@@ -14,7 +14,12 @@ export function toUserMessage(error: unknown, ctx: { writeBlockReason?: string |
       ? 'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.'
       : "One of the values isn't allowed. Check the form and try again."
   }
-  if (code === 'P0001' && message) return message
+  if (code === 'P0001' && message) {
+    if (message.includes('cannot remove sample data with non-sample transactions')) {
+      return 'Some of your own transactions are recorded against sample clients. Move or delete those first.'
+    }
+    return message
+  }
   if (code === '42501') {
     return ctx.writeBlockReason ? `Your firm can't make changes right now: ${ctx.writeBlockReason}` : "You don't have permission to do that."
   }

@@ -53,7 +53,7 @@ export function StatementLayout({
   }, [docTitle])
 
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-6" data-tour="statement">
       <div className="grid gap-4 print:hidden">
         <a href={back.href} onClick={back.onClick ? (e) => { e.preventDefault(); back.onClick?.() } : undefined} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
           <Icon name="back" /> {back.label}

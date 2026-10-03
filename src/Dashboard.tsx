@@ -11,9 +11,13 @@ import {
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
-import { usePreference } from './data/queries'
+import { usePreference, useSampleDataExists, useLoadSampleData } from './data/queries'
 import { btn, Icon } from './ui'
 import { WIDGETS } from './widgets'
+import { sampleControls } from './data/sampleData'
+import { useSession } from './data/session'
+import { Checklist } from './checklist'
+import { useChecklist } from './checklist/useChecklist'
 
 export type WidgetType = 'net' | 'in' | 'out' | 'clients' | 'cashflow' | 'balances' | 'recent' | 'quick-add'
 export type Span = 1 | 2 | 4
@@ -60,9 +64,10 @@ const SPAN_LABEL: Record<Span, string> = { 1: 'Small', 2: 'Medium', 4: 'Full wid
 
 type Drag = Pick<ReturnType<typeof useSortable>, 'attributes' | 'listeners' | 'setActivatorNodeRef'>
 
-function Card({ widget, editing, state = 'idle', drag, layout }: { widget: Widget; editing: boolean; state?: 'idle' | 'placeholder' | 'overlay'; drag?: Drag; layout: Layout }) {
+function Card({ widget, editing, state = 'idle', drag, layout, sampleDataExists }: { widget: Widget; editing: boolean; state?: 'idle' | 'placeholder' | 'overlay'; drag?: Drag; layout: Layout; sampleDataExists: boolean }) {
   const { removeWidget, resizeWidget } = layout
   const { title, Component } = WIDGETS[widget.type]
+  const showSampleLabel = sampleDataExists && ['net', 'in', 'out', 'clients'].includes(widget.type)
   const look = {
     overlay: 'h-full rotate-1 border-zinc-300 shadow-2xl dark:border-zinc-700',
     placeholder: 'border-dashed border-zinc-300 opacity-40 dark:border-zinc-700',
@@ -83,7 +88,14 @@ function Card({ widget, editing, state = 'idle', drag, layout }: { widget: Widge
             <Icon name="grip" className="size-4 [stroke-width:3]" />
           </button>
         )}
-        <h2 className="truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</h2>
+          {showSampleLabel && (
+            <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+              Includes sample data
+            </span>
+          )}
+        </div>
         {editing && (
           <div className="ml-auto flex items-center">
             <button
@@ -109,14 +121,14 @@ function Card({ widget, editing, state = 'idle', drag, layout }: { widget: Widge
   )
 }
 
-function SortableCard({ widget, editing, layout }: { widget: Widget; editing: boolean; layout: Layout }) {
+function SortableCard({ widget, editing, layout, sampleDataExists }: { widget: Widget; editing: boolean; layout: Layout; sampleDataExists: boolean }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.id,
     disabled: !editing,
   })
   return (
     <section ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={SPAN[widget.span]}>
-      <Card widget={widget} editing={editing} layout={layout} state={isDragging ? 'placeholder' : 'idle'} drag={{ attributes, listeners, setActivatorNodeRef }} />
+      <Card widget={widget} editing={editing} layout={layout} sampleDataExists={sampleDataExists} state={isDragging ? 'placeholder' : 'idle'} drag={{ attributes, listeners, setActivatorNodeRef }} />
     </section>
   )
 }
@@ -154,6 +166,13 @@ export function Dashboard({ editing }: { editing: boolean }) {
   const layout = useLayout()
   const { widgets, moveWidget } = layout
   const [activeId, setActiveId] = useState<string | null>(null)
+  const { profile } = useSession()
+  const sampleDataExists = useSampleDataExists()
+  const loadSample = useLoadSampleData()
+  const { canImport } = sampleControls(profile.role, sampleDataExists)
+  const loadSampleErrorMsg = loadSample.error instanceof Error ? loadSample.error.message : (loadSample.error ? String(loadSample.error) : '')
+  const checklist = useChecklist()
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -177,10 +196,30 @@ export function Dashboard({ editing }: { editing: boolean }) {
   return (
     <>
       {editing && <Library addWidget={layout.addWidget} />}
+      {checklist.open && (
+        <div className="mb-6">
+          <Checklist
+            items={checklist.items}
+            onSkip={checklist.onSkip}
+            onRestore={checklist.onRestore}
+            onDismiss={checklist.onDismiss}
+          />
+        </div>
+      )}
       {widgets.length === 0 && (
         <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-16 text-center dark:border-zinc-700">
           <p className="font-medium">No widgets on this dashboard</p>
-          <p className="mt-1 max-w-sm px-4 text-sm text-zinc-500">{editing ? 'Select a widget above to add it.' : 'Select “Edit layout” at the top of the page to add widgets.'}</p>
+          <p className="mt-1 max-w-sm px-4 text-sm text-zinc-500">{editing ? 'Select a widget above to add it.' : 'Select "Edit layout" at the top of the page to add widgets.'}</p>
+          {canImport && (
+            <button
+              className={`${btn.primary} mt-4`}
+              onClick={() => loadSample.mutate()}
+              disabled={loadSample.isPending}
+            >
+              {loadSample.isPending ? 'Loading...' : 'Import sample data'}
+            </button>
+          )}
+          {!!loadSample.error && <div className="text-red-600 dark:text-red-400 mt-2 text-sm">{loadSampleErrorMsg}</div>}
         </div>
       )}
       <DndContext
@@ -194,12 +233,12 @@ export function Dashboard({ editing }: { editing: boolean }) {
         <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {widgets.map((w) => (
-              <SortableCard key={w.id} widget={w} editing={editing} layout={layout} />
+              <SortableCard key={w.id} widget={w} editing={editing} layout={layout} sampleDataExists={sampleDataExists} />
             ))}
           </div>
         </SortableContext>
         <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
-          {active && <Card widget={active} editing state="overlay" layout={layout} />}
+          {active && <Card widget={active} editing state="overlay" layout={layout} sampleDataExists={sampleDataExists} />}
         </DragOverlay>
       </DndContext>
     </>

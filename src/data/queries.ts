@@ -52,6 +52,7 @@ function useKeys() {
     banks: ['firm', firm.id, 'banks'] as const,
     members: ['firm', firm.id, 'members'] as const,
     firstTxn: (clientId?: string) => ['firm', firm.id, 'firstTxn', clientId ?? 'all'] as const,
+    sampleDataExists: ['firm', firm.id, 'sample-data-exists'] as const,
   }
 }
 
@@ -128,13 +129,18 @@ export function useMembers() {
   } })
 }
 
-export function usePreference<T>(key: string, fallback: T): [T, (value: T) => void] {
+/** Returns [value, save, loaded]: `loaded` is false until the stored value (or its absence) is known. */
+export function usePreference<T>(key: string, fallback: T): [T, (value: T) => void, boolean] {
   const { profile } = useSession()
   const [value, setValue] = useState<T>(fallback)
+  const [loaded, setLoaded] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     supabase.from('user_preferences').select('value').eq('profile_id', profile.id).eq('key', key).maybeSingle()
-      .then(({ data }) => { if (data) setValue(data.value as T) })
+      .then(({ data }) => {
+        if (data) setValue(data.value as T)
+        setLoaded(true)
+      })
   }, [profile.id, key])
   const save = (next: T) => {
     setValue(next)
@@ -146,7 +152,7 @@ export function usePreference<T>(key: string, fallback: T): [T, (value: T) => vo
       })
     }, 400)
   }
-  return [value, save]
+  return [value, save, loaded]
 }
 
 export function useCreateClient() {
@@ -223,6 +229,115 @@ export function useImport() {
     const { data, error } = await supabase.rpc('import_transactions', { p_rows: rows, p_dry_run: dryRun })
     return error ? fail(error) : (data as { transactions: number; clients: number; duplicates: number })
   }, onSuccess: (_d, v) => { if (!v.dryRun) invalidate() } })
+}
+
+export function useSampleDataExists() {
+  const keys = useKeys(); const fail = useFail()
+  const { data: exists = false } = useQuery({
+    queryKey: keys.sampleDataExists,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('is_sample', true)
+        .limit(1)
+      if (error) return fail(error)
+      return (data?.length ?? 0) > 0
+    },
+  })
+  return exists
+}
+
+export function useClientsCount(isSample: boolean) {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'clients-count', isSample],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .eq('is_sample', isSample)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
+export function useTransactionsCount(isSample: boolean) {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'transactions-count', isSample],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .eq('is_sample', isSample)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
+export function useMembersCount() {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'members-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .in('status', ['active', 'invited'])
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
+export function useLoadSampleData() {
+  const { firm } = useSession()
+  const qc = useQueryClient()
+  const fail = useFail()
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('load_sample_data')
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+    },
+    onError: fail,
+  })
+}
+
+export function useRemoveSampleData() {
+  const { firm } = useSession()
+  const qc = useQueryClient()
+  const fail = useFail()
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('remove_sample_data')
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+    },
+    onError: fail,
+  })
 }
 
 export function useUpdateFirm() {

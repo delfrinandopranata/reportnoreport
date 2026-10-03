@@ -109,7 +109,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
         </div>
       )}
 
-      <header className={`${card} grid gap-5 p-5 ${onTxns ? 'print:hidden' : ''}`}>
+      <header className={`${card} grid gap-5 p-5 ${onTxns ? 'print:hidden' : ''}`} data-tour="client-profile">
         <div className="flex flex-wrap items-start gap-4">
           <Avatar name={client.name} size="size-14 text-base" />
           <div className="min-w-0 flex-1 basis-56">
@@ -193,7 +193,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
               <h2 className="mb-4 text-sm font-medium text-zinc-500">Cash flow</h2>
               <CashflowChart txns={own} />
             </section>
-            <section className={`${card} p-5`}>
+            <section className={`${card} p-5`} data-tour="record-transaction">
               <h2 className="mb-4 text-sm font-medium text-zinc-500">Record transaction</h2>
               <PostTxn clientId={client.id} />
             </section>

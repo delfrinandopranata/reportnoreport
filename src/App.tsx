@@ -4,12 +4,16 @@ import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { Avatar, btn, Icon, ring } from './ui'
+import { Avatar, btn, Icon, ring, Dialog } from './ui'
 import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
+import { Tour } from './tour'
+import { useTour } from './tour/useTour'
+import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
+import { sampleControls } from './data/sampleData'
 
 type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
@@ -47,9 +51,16 @@ export default function App() {
   const [route, setRoute] = useState(readRoute)
   const [editing, setEditing] = useState(false)
   const [trialCheckTime, setTrialCheckTime] = useState<Date | null>(null)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
+  const tour = useTour()
+  const sampleDataExists = useSampleDataExists()
+  const loadSample = useLoadSampleData()
+  const removeSample = useRemoveSampleData()
+  const { canImport, canRemove, canViewBanner } = sampleControls(profile.role, sampleDataExists)
+  const removeSampleErrorMsg = removeSample.error instanceof Error ? removeSample.error.message : (removeSample.error ? String(removeSample.error) : '')
 
   useEffect(() => {
     const onHash = () => setRoute(readRoute())
@@ -117,6 +128,7 @@ export default function App() {
               )}
             <a
               href={`#${n.view}`}
+              data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : n.view === 'users' ? 'users-and-invites' : n.view === 'settings' ? 'settings-and-billing' : undefined}
               aria-current={route.view === n.view ? 'page' : undefined}
               className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-white aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
             >
@@ -141,6 +153,42 @@ export default function App() {
       </aside>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
+        {canViewBanner && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm print:hidden dark:border-blue-800 dark:bg-blue-950/30">
+            <span className="text-blue-900 dark:text-blue-100">You're exploring with sample data</span>
+            {canRemove && (
+              <button
+                onClick={() => setShowRemoveConfirm(true)}
+                className={`${ring} text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+
+        <Dialog
+          open={showRemoveConfirm}
+          onClose={() => setShowRemoveConfirm(false)}
+          title="Remove sample data?"
+        >
+          <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button className={btn.ghost} onClick={() => setShowRemoveConfirm(false)}>Cancel</button>
+            <button
+              className={btn.primary}
+              onClick={async () => {
+                await removeSample.mutateAsync()
+                setShowRemoveConfirm(false)
+              }}
+              disabled={removeSample.isPending}
+            >
+              {removeSample.isPending ? 'Removing…' : 'Remove sample data'}
+            </button>
+          </div>
+          {!!removeSample.error && <div className="text-red-600 dark:text-red-400 mt-3 text-sm">{removeSampleErrorMsg}</div>}
+        </Dialog>
+
         {trial.kind !== 'none' && (
           <div
             role={trial.kind === 'active' ? 'status' : 'region'}
@@ -200,6 +248,21 @@ export default function App() {
             <h1 className="text-2xl font-semibold tracking-tight">{HEADINGS[route.view].title}</h1>
             <p className="text-sm text-zinc-500">{HEADINGS[route.view].subtitle}</p>
           </div>
+          <button type="button" className={`${btn.ghost}`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
+            <Icon name="search" />
+          </button>
+          {isDashboard && canImport && (
+            <button
+              type="button"
+              className={`${btn.ghost}`}
+              onClick={() => loadSample.mutate()}
+              disabled={loadSample.isPending}
+              title="Import sample data"
+            >
+              <Icon name="plus" />
+              <span className="hidden sm:inline">Import sample</span>
+            </button>
+          )}
           {isDashboard && (
             <button type="button" className={editing ? btn.primary : `${btn.ghost} border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900`} onClick={() => setEditing(!editing)}>
               <Icon name={editing ? 'check' : 'layout'} />
@@ -211,6 +274,18 @@ export default function App() {
           </>
         )}
       </main>
+
+      {tour.open && tour.currentStep && (
+        <Tour
+          open={tour.open}
+          step={tour.currentStep}
+          currentIndex={tour.currentIndex}
+          totalSteps={tour.steps.length}
+          onNext={tour.onNext}
+          onPrev={tour.onPrev}
+          onSkip={tour.onSkip}
+        />
+      )}
     </div>
   )
 }
