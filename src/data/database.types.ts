@@ -23,7 +23,44 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "bank_accounts": {
+            "attachments": {
+                  Row: {
+                    "client_id": string | null,"created_at": string,"created_by": string,"firm_id": string,"id": string,"mime_type": string,"original_name": string,"size_bytes": number,"storage_path": string,"transaction_id": string | null
+                  }
+                  Insert: {
+                    "client_id"?: string | null,"created_at"?: string,"created_by"?: string,"firm_id"?: string,"id"?: string,"mime_type": string,"original_name": string,"size_bytes": number,"storage_path": string,"transaction_id"?: string | null
+                  }
+                  Update: {
+                    "client_id"?: string | null,"created_at"?: string,"created_by"?: string,"firm_id"?: string,"id"?: string,"mime_type"?: string,"original_name"?: string,"size_bytes"?: number,"storage_path"?: string,"transaction_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "attachments_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "attachments_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "attachments_firm_id_fkey"
+      columns: ["firm_id"]
+isOneToOne: false
+      referencedRelation: "firms"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "attachments_transaction_id_fkey"
+      columns: ["transaction_id"]
+isOneToOne: false
+      referencedRelation: "transactions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"bank_accounts": {
                   Row: {
                     "account_name": string,"account_no": string,"bank_name": string,"created_at": string,"created_by": string | null,"firm_id": string,"id": string,"is_active": boolean,"is_default": boolean,"is_sample": boolean,"name": string,"updated_at": string,"updated_by": string | null
                   }

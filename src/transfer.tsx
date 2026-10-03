@@ -2,13 +2,30 @@ import { useState, type ChangeEvent } from 'react'
 import { readImport, toCsv, today, type ImportRow } from './ledger'
 import { useMoney } from './data/money'
 import { useSession } from './data/session'
-import { useImport, type ImportPayloadRow } from './data/queries'
+import { useImport, type Attachment, type ImportPayloadRow } from './data/queries'
 import { btn, Dialog, Icon } from './ui'
+import { createZip } from './zip'
 
 /** BOM so Excel opens UTF-8 (e.g. client names with accents) correctly. */
 export function downloadCsv(fileName: string, rows: string[][]) {
   const url = URL.createObjectURL(new Blob([`﻿${toCsv(rows)}`], { type: 'text/csv;charset=utf-8' }))
   Object.assign(document.createElement('a'), { href: url, download: fileName }).click()
+  URL.revokeObjectURL(url)
+}
+
+/** CSV plus every attachment's file, bundled as one ZIP. Duplicate file names (two attachments
+ * both called "receipt.pdf") are disambiguated with a numeric suffix so neither is overwritten. */
+export async function downloadZip(zipFileName: string, csvFileName: string, csvRows: string[][], attachments: { attachment: Attachment; data: Blob }[]) {
+  const files = [{ name: csvFileName, data: new TextEncoder().encode(`﻿${toCsv(csvRows)}`) }]
+  const seen = new Map<string, number>()
+  for (const { attachment, data } of attachments) {
+    const count = (seen.get(attachment.originalName) ?? 0) + 1
+    seen.set(attachment.originalName, count)
+    const name = count === 1 ? attachment.originalName : attachment.originalName.replace(/(\.[^.]*)?$/, (ext) => `-${count}${ext}`)
+    files.push({ name: `attachments/${name}`, data: new Uint8Array(await data.arrayBuffer()) })
+  }
+  const url = URL.createObjectURL(createZip(files))
+  Object.assign(document.createElement('a'), { href: url, download: zipFileName }).click()
   URL.revokeObjectURL(url)
 }
 

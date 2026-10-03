@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
+import { Attachments } from '../attachments/Attachments'
 import { useUpdateClient } from '../data/queries'
 import { Avatar, btn, Field, input } from '../ui'
 import { AssigneeSelect, PhoneField, StatusBadge, StatusSelect, TagList } from './fields'
@@ -62,6 +63,10 @@ export function ClientView({ client: c }: { client: Client }) {
         <Row label="Tags" wide>{c.tags.length > 0 && <TagList tags={c.tags} />}</Row>
         <Row label="Notes" wide>{c.notes && <span className="whitespace-pre-wrap">{c.notes}</span>}</Row>
       </Section>
+      <section className={`${card} min-w-0 p-5 print:hidden lg:col-span-2`}>
+        <h2 className="mb-4 text-sm font-medium text-zinc-500">Attachments</h2>
+        <Attachments clientId={c.id} />
+      </section>
     </div>
   )
 }
