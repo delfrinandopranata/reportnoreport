@@ -1,3 +1,4 @@
+import { formatDate } from './constants.ts'
 import { trialState } from '../trial.ts'
 
 export type BillingViewState =
@@ -28,7 +29,7 @@ export function billingView(
   }
 
   if (firm.billingStatus === 'paid') {
-    return { kind: 'paid', paidOn: firm.paidAt ? new Date(firm.paidAt).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' }) : 'recently' }
+    return { kind: 'paid', paidOn: firm.paidAt ? formatDate(new Date(firm.paidAt).toLocaleDateString('en-CA'), 'text') : 'recently' }
   }
 
   if (firm.billingStatus === 'complimentary') {

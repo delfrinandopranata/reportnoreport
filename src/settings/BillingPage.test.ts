@@ -98,3 +98,12 @@ test('billingView: handles paid without paidAt timestamp', () => {
     assert.equal(view.paidOn, 'recently')
   }
 })
+
+test('paid date is the local calendar day, not the UTC one', () => {
+  // 17:30 UTC on 3 Oct is 4 Oct in Kuala Lumpur; compare with the same local conversion.
+  const paidAt = '2026-10-03T17:30:00Z'
+  const view = billingView({ billingStatus: 'paid', paidAt, trialEndsAt: null } as never, true, new Date('2026-10-04T00:00:00Z'))
+  const local = new Date(paidAt)
+  const expected = local.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][local.getMonth()] + ' ' + local.getFullYear()
+  assert.equal(view.kind === 'paid' && view.paidOn, expected)
+})

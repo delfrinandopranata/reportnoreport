@@ -9,7 +9,6 @@ import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
-import { BillingPage } from './settings/BillingPage'
 import { trialState } from './trial'
 
 type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
@@ -208,7 +207,7 @@ export default function App() {
             </button>
           )}
         </header>
-        {route.view === 'billing' ? <BillingPage /> : route.view === 'users' ? <UsersPage /> : route.view === 'settings' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
+        {route.view === 'users' ? <UsersPage /> : route.view === 'settings' || route.view === 'billing' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
           </>
         )}
       </main>

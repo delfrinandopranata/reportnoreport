@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '../data/session'
 import { useCheckoutSession, useFirmBilling } from '../data/queries'
-import { makeMoney } from '../ledger'
 import { btn, Icon } from '../ui'
 import { billingView } from './billing'
 
@@ -56,19 +55,18 @@ export function BillingPage() {
     return () => clearInterval(interval)
   }, [isPaying, pollingStartTime, firm.id, queryClient])
 
-  const showSuccess = isPaying && pollingStartTime !== null
+  // Once the webhook has marked the firm paid, the paid view replaces the 'confirming' notice.
+  const showSuccess = isPaying && pollingStartTime !== null && view.kind !== 'paid'
   const showPollingTimeout = isPaying && pollingStartTime !== null && elapsed > 30000
 
-  const moneyFormatter = makeMoney(firm.currency).format
-
   return (
-    <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="billing-heading">
+    <section id="billing" ref={(el) => { if (el && location.hash.startsWith('#settings/billing')) el.scrollIntoView({ block: 'start' }) }} className="scroll-mt-4 rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="billing-heading">
       <header className="flex flex-wrap items-start gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
         <div className="min-w-0 flex-1 basis-64">
           <h2 id="billing-heading" className="font-semibold">
             Billing
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your subscription and payment status.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your licence and payment status.</p>
         </div>
       </header>
 
@@ -200,12 +198,12 @@ export function BillingPage() {
           </div>
         )}
 
-        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+        {view.kind !== 'paid' && view.kind !== 'complimentary' && (<div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
           <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wide mb-2">Pricing</p>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Free for 14 days. Then {moneyFormatter(1000)}, once.
+            Free for 14 days. Then RM 10, once.
           </p>
-        </div>
+        </div>)}
       </div>
     </section>
   )

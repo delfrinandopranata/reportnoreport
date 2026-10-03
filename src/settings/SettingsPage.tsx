@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type ReactNode } from 'react'
+import { BillingPage } from './BillingPage'
 import { useLogoUrl, useUpdateFirm, useUploadLogo } from '../data/queries'
 import { useSession } from '../data/session'
 import type { Firm } from '../data/mappers'
@@ -380,6 +381,7 @@ export function SettingsPage() {
   const disabledReason = s.can('settings.manage') && s.canWrite ? null : (s.writeBlockReason ?? "Your role can't change settings")
   return (
     <div className="grid max-w-3xl grid-cols-1 gap-6">
+      <BillingPage />
       <OrganisationCard disabledReason={disabledReason} />
       <BankAccountsCard />
       <StatementsCard disabledReason={disabledReason} />
