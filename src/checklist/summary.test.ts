@@ -79,3 +79,35 @@ test('summarise: all states identical', () => {
   assert.equal(summary.doneItems.length, 0)
   assert.equal(summary.skippedItems.length, 0)
 })
+
+test('summarise: all items done', () => {
+  const items: ChecklistItem[] = [
+    { id: '1', title: 'Complete profile', description: '', href: '#', state: 'done' },
+    { id: '2', title: 'Invite team', description: '', href: '#', state: 'done' },
+    { id: '3', title: 'Add client', description: '', href: '#', state: 'done' },
+    { id: '4', title: 'Record transaction', description: '', href: '#', state: 'done' },
+  ]
+
+  const summary = summarise(items)
+  assert.equal(summary.doneCount, 4)
+  assert.equal(summary.totalCount, 4)
+  assert.equal(summary.todoItems.length, 0)
+  assert.equal(summary.doneItems.length, 4)
+  assert.equal(summary.skippedItems.length, 0)
+})
+
+test('summarise: all items skipped', () => {
+  const items: ChecklistItem[] = [
+    { id: '1', title: 'Complete profile', description: '', href: '#', state: 'skipped' },
+    { id: '2', title: 'Invite team', description: '', href: '#', state: 'skipped' },
+    { id: '3', title: 'Add client', description: '', href: '#', state: 'skipped' },
+    { id: '4', title: 'Record transaction', description: '', href: '#', state: 'skipped' },
+  ]
+
+  const summary = summarise(items)
+  assert.equal(summary.doneCount, 0)
+  assert.equal(summary.totalCount, 4)
+  assert.equal(summary.todoItems.length, 0)
+  assert.equal(summary.doneItems.length, 0)
+  assert.equal(summary.skippedItems.length, 4)
+})

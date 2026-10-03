@@ -67,6 +67,7 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
               <button
                 onClick={() => onSkip(item.id)}
                 className={`${ring} ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+                aria-label={`Skip "${item.title}"`}
               >
                 Skip
               </button>
