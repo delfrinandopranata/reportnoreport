@@ -29,7 +29,9 @@
 2. **Tour steps differ by role; owner/admin see more steps than viewer.** A viewer calling the tour-step-filter function with `role: 'viewer'` gets fewer steps than an owner with the same function. Test: D3 unit test on role-based step filtering.
 3. **Checklist items tick only when real conditions are met.** A user who loads sample data should NOT tick "Add client" until a non-sample client is created; removing sample data doesn't untick items. Test: D8 logic and D11 browser verification.
 4. **Sample data removal never deletes non-sample rows.** A user adds a real client, then loads sample data with 8 clients, then removes sample data — the real client is still there. Test: D1 pgTAP for referential integrity.
-5. **Sample data banner disappears when the last sample row is removed.** After removal, the page should not show "You're exploring with sample data" even if the request for sample rows returns empty. Test: D6 and D11 browser verification.
+5. **Sample data isolation by firm.** Two owners in different firms can each load their own sample data independently; one firm's sample rows are never visible to the other firm's owner. Test: D1 pgTAP Test 4 (firm B's sample data isolated from firm A).
+6. **Sample data security.** A viewer calling `load_sample_data()` is denied (auth_can check, not generic RLS 42501). A read-only firm calling `load_sample_data()` is denied (firm_can_write check). Test: D1 pgTAP Tests 3 and 5.
+7. **Sample data banner and totals labelling.** While sample data exists, the banner is visible on every page, and Dashboard/Clients totals are labelled as including sample data. After removal, the banner and labels vanish. Test: D11 step 10 browser verification.
 
 ---
 
@@ -49,7 +51,7 @@
 | `src/Dashboard.tsx` | Add "Load sample data" button to Dashboard or hero area | D5 |
 | `src/App.tsx` | Add sample data banner at the top; remove button; confirmation dialog | D6 |
 | `src/data/queries.ts` | Add `useLoadSampleData()` and `useRemoveSampleData()` hooks | D5, D6 |
-| `supabase/tests/12_onboarding.test.sql` | pgTAP: sample data load/remove, referential integrity, `is_sample` filtering | D9 |
+| `supabase/tests/14_onboarding.test.sql` | pgTAP: sample data load/remove, referential integrity, `is_sample` filtering, role checks, firm isolation, read-only denial | D9 |
 | `src/**/*.test.ts` | Unit tests: tour step filtering by role, checklist item conditions, sample data payload | D10 |
 | `README.md` | Update local setup section to note `d.localhost:5202` and sample data testing | D11 |
 
@@ -60,15 +62,15 @@
 **Files:** Create `supabase/migrations/20261006000001_onboarding.sql`. Regenerate `src/data/database.types.ts`.
 
 **Interfaces — produces (frozen):**
-- `load_sample_data() returns void` — Owner/Admin only; idempotent (no-op if already loaded); inserts one sample bank account, 8 sample clients, and ~150 sample transactions across 6 months with `is_sample = true`. Sets all created/updated timestamps and the current user as creator.
-- `remove_sample_data() returns void` — Owner/Admin only; deletes all rows with `is_sample = true` across transactions, clients, and bank_accounts (in that order to respect foreign keys). Fails if any non-sample transaction references a sample client.
-- Grants: `load_sample_data` and `remove_sample_data` are revoked from `anon` and `authenticated` and callable only via RLS (role check in schema).
+- `load_sample_data() returns void` — Owner/Admin only (enforced via `auth_can('settings.manage') and firm_can_write(auth_firm_id())`); idempotent (no-op if already loaded); inserts one sample bank account, 8 sample clients reusing seed data names (Kopi Corner Sdn Bhd, Harbourline Logistics Sdn Bhd, etc.), and ~150 sample transactions across 6 months with `is_sample = true`. All rows reference `auth_firm_id()` only. Sets all created/updated timestamps to `now()` and creator to `auth.uid()`.
+- `remove_sample_data() returns void` — Owner/Admin only (same checks); deletes all rows with `is_sample = true` across transactions, clients, and bank_accounts (in that order to respect foreign keys). Raises an error if any non-sample transaction still references a sample client.
+- Security: Both functions use `SECURITY INVOKER`, explicitly check `auth_can('settings.manage')` and `firm_can_write(auth_firm_id())`, act only on the current firm. Grants: execute revoked from `public`, `anon`, and `authenticated`; callable only via RPC with authenticated role checks.
 
 - [ ] **Step 1:** Write the migration file `supabase/migrations/20261006000001_onboarding.sql` with:
-  - SQL function `load_sample_data()`: inserts exactly one bank account named "Sample account" (default, active, sample), 8 clients with realistic names (e.g., "Acme Corp", "Tech Startup Ltd"), and ~150 transactions. Use `now()` for timestamps, `auth.uid()` for creator. All inserted rows have `is_sample = true`. Transactions span dates from `now() - interval '180 days'` to `now() - interval '30 days'` distributed across months. Amounts vary (e.g., 50000 to 5000000 minor units in MYR).
-  - SQL function `remove_sample_data()`: deletes in reverse order (transactions with `is_sample`, then clients with `is_sample`, then bank_accounts with `is_sample`). Raises an error if any non-sample transaction still references a sample client at delete time (check via EXISTS subquery).
-  - RLS policy: both functions callable only by `auth_role() in ('owner', 'admin')`.
-  - Idempotence: `load_sample_data()` checks `not exists (select 1 from clients where is_sample limit 1)` and returns early if already loaded (no error, silent no-op).
+  - SQL function `load_sample_data()`: SECURITY INVOKER; checks `auth_can('settings.manage')` and `firm_can_write(auth_firm_id())` and raises if not authorized. Inserts exactly one bank account named "Sample account" (is_default, is_active, is_sample all true). Inserts 8 sample clients reusing seed data names (Kopi Corner Sdn Bhd, Harbourline Logistics Sdn Bhd, LIM Boon Hock & Associates, Equity Legal Sdn Bhd, etc.) with realistic stakeholder-focused descriptions (retainer, escrow, court fees, stamp duty, filing fees, retention sum, etc.). Inserts ~150 transactions across 6 months using `firm.currency` (not hard-coded MYR). All rows set `is_sample = true`, `created_at = now()`, `updated_at = now()`, `created_by = auth.uid()`, `updated_by = auth.uid()`. Idempotence: early return if `exists (select 1 from clients where firm_id = auth_firm_id() and is_sample)`.
+  - SQL function `remove_sample_data()`: SECURITY INVOKER; same authorization checks as load. Deletes in reverse order: transactions, then clients, then bank_accounts, all with `is_sample = true` and `firm_id = auth_firm_id()`. Raises an error if any non-sample transaction still references a sample client (check via EXISTS with the current firm).
+  - Grant: `execute` revoked from `public`, `anon`, and `authenticated`; callable only via authenticated RPC.
+  - All queries use `auth_firm_id()` to isolate to the current firm.
 
 - [ ] **Step 2:** Verify the migration file is valid SQL:
   ```bash
@@ -84,16 +86,18 @@
   Expected: `database.types.ts` now includes `load_sample_data` and `remove_sample_data` in the RPC return types.
 
 - [ ] **Step 4:** Write pgTAP test setup (to run in Step D9):
-  Create `supabase/tests/12_onboarding.test.sql` with:
+  Create `supabase/tests/14_onboarding.test.sql` with:
   - Test 1: `load_sample_data()` as owner → rows exist with `is_sample = true` (count: 1 bank account, 8 clients, ~150 transactions). Second call is idempotent (same counts).
   - Test 2: `remove_sample_data()` as owner → `is_sample` rows are gone; non-sample rows remain. (Verify via select count).
-  - Test 3: Calling `load_sample_data()` as viewer → 403 error (RLS denial).
-  - Test 4: Non-sample transaction references sample client → `remove_sample_data()` raises error.
+  - Test 3: Calling `load_sample_data()` as viewer → error (auth_can check fails, not generic RLS 42501).
+  - Test 4: Calling `load_sample_data()` as owner in firm B when firm A has sample data → firm B has its own sample set; firm A's untouched (isolation via auth_firm_id()).
+  - Test 5: A firm marked `billing_status = 'read_only'` calls `load_sample_data()` → error (firm_can_write check fails).
+  - Test 6: Non-sample transaction references sample client → `remove_sample_data()` raises error with clear message.
 
 - [ ] **Step 5:** Commit the migration:
   ```bash
-  git add supabase/migrations/20261006000001_onboarding.sql supabase/tests/12_onboarding.test.sql src/data/database.types.ts
-  git commit -m "feat: add sample data load/remove RPCs"
+  git add supabase/migrations/20261006000001_onboarding.sql supabase/tests/14_onboarding.test.sql src/data/database.types.ts
+  git commit -m "feat: add sample data load/remove RPCs with security checks"
   ```
 
 ---
@@ -351,7 +355,7 @@
   }
   ```
 
-- [ ] **Step 2:** Modify `src/App.tsx` to integrate the tour:
+- [ ] **Step 2:** Modify `src/App.tsx` to integrate the tour (call `useTour()` in the main App component and render the Tour component when `tour.open`):
   ```tsx
   import { Tour } from './tour'
   import { useTour } from './tour/useTour'
@@ -1007,7 +1011,7 @@
   ```
 
 - [ ] **Step 2:** Open the app in the in-app Browser pane at `http://d.localhost:5202/app/` and sign in as an owner:
-  - Email: `owner@test.test` (or use an existing owner in the seed)
+  - Email: `owner@alpha.test` (seed user)
   - Password: `password123`
   - Expected: App loads; on first sign-in, the tour should open with Step 1 of 10.
 
@@ -1048,7 +1052,7 @@
   - Verify the real client added in Step D6 is still present.
 
 - [ ] **Step 8:** Test role-based tour:
-  - Sign in as a viewer (if available in seed).
+  - Sign out and sign in as a viewer: `viewer@alpha.test` / `password123`.
   - Verify the tour opens on first sign-in with fewer steps (e.g., 5 steps for viewer instead of 10 for owner).
   - Verify steps like "Users and invites" and "Settings and billing" are not in the tour.
 
@@ -1056,9 +1060,15 @@
   - Check the in-app Browser pane's console (F12 or read_console_messages).
   - Expected: No errors or warnings related to tour, checklist, or sample data.
 
-- [ ] **Step 10:** Commit final notes (no code changes):
+- [ ] **Step 10:** Verify sample data is visible and labelled throughout the app:
+  - With sample data loaded, check that the banner "You're exploring with sample data · **Remove**" is visible on every page (Dashboard, Clients, Statement, etc.).
+  - On the Dashboard and Clients pages, verify that totals, balances, and transaction counts are visibly labelled or noted as "including sample data" (e.g., a small note below the totals, or a highlight on the sample transactions in the list).
+  - After removing sample data, confirm the banner disappears and totals update to show only real data.
+  - **Note for implementation:** D5 (Sample data loading) and D6 (Sample data removal/banner) must ensure that the banner is rendered at the top level (in `App.tsx`) and persists across all sub-pages. The Dashboard and Clients pages must label sample data in totals; the exact presentation (note, icon, highlight) is a design decision — defer to the figma/design.md spec or default to a small "(includes sample data)" note below each total.
+
+- [ ] **Step 11:** Commit final notes (no code changes):
   ```bash
-  git log --oneline | head -10  # verify recent commits for D1-D10
+  git log --oneline | head -15  # verify recent commits for D1-D10
   ```
 
 ---
