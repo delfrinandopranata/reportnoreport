@@ -4,7 +4,7 @@ import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { Avatar, btn, Icon, ring } from './ui'
+import { Avatar, btn, Icon, ring, Dialog } from './ui'
 import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
@@ -12,6 +12,8 @@ import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
 import { Tour } from './tour'
 import { useTour } from './tour/useTour'
+import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
+import { sampleControls } from './data/sampleData'
 
 type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
@@ -49,10 +51,16 @@ export default function App() {
   const [route, setRoute] = useState(readRoute)
   const [editing, setEditing] = useState(false)
   const [trialCheckTime, setTrialCheckTime] = useState<Date | null>(null)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
   const tour = useTour()
+  const sampleDataExists = useSampleDataExists()
+  const loadSample = useLoadSampleData()
+  const removeSample = useRemoveSampleData()
+  const { canImport, canRemove, canViewBanner } = sampleControls(profile.role, sampleDataExists)
+  const removeSampleErrorMsg = removeSample.error instanceof Error ? removeSample.error.message : (removeSample.error ? String(removeSample.error) : '')
 
   useEffect(() => {
     const onHash = () => setRoute(readRoute())
@@ -145,6 +153,42 @@ export default function App() {
       </aside>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:max-w-none print:p-0">
+        {canViewBanner && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm print:hidden dark:border-blue-900 dark:bg-blue-950">
+            <span className="text-blue-900 dark:text-blue-100">You're exploring with sample data</span>
+            {canRemove && (
+              <button
+                onClick={() => setShowRemoveConfirm(true)}
+                className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+
+        <Dialog
+          open={showRemoveConfirm}
+          onClose={() => setShowRemoveConfirm(false)}
+          title="Remove sample data?"
+        >
+          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
+          <div className="flex gap-2">
+            <button className={btn.ghost} onClick={() => setShowRemoveConfirm(false)}>Cancel</button>
+            <button
+              className={btn.primary}
+              onClick={async () => {
+                await removeSample.mutateAsync()
+                setShowRemoveConfirm(false)
+              }}
+              disabled={removeSample.isPending}
+            >
+              {removeSample.isPending ? 'Removing…' : 'Remove sample data'}
+            </button>
+          </div>
+          {!!removeSample.error && <div className="text-red-600 dark:text-red-400 mt-3 text-sm">{removeSampleErrorMsg}</div>}
+        </Dialog>
+
         {trial.kind !== 'none' && (
           <div
             role={trial.kind === 'active' ? 'status' : 'region'}
@@ -207,6 +251,18 @@ export default function App() {
           <button type="button" className={`${btn.ghost}`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
             <Icon name="search" />
           </button>
+          {isDashboard && canImport && (
+            <button
+              type="button"
+              className={`${btn.ghost}`}
+              onClick={() => loadSample.mutate()}
+              disabled={loadSample.isPending}
+              title="Import sample data"
+            >
+              <Icon name="plus" />
+              <span className="hidden sm:inline">Import sample</span>
+            </button>
+          )}
           {isDashboard && (
             <button type="button" className={editing ? btn.primary : `${btn.ghost} border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900`} onClick={() => setEditing(!editing)}>
               <Icon name={editing ? 'check' : 'layout'} />

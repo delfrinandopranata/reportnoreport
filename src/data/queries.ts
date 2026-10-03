@@ -52,6 +52,7 @@ function useKeys() {
     banks: ['firm', firm.id, 'banks'] as const,
     members: ['firm', firm.id, 'members'] as const,
     firstTxn: (clientId?: string) => ['firm', firm.id, 'firstTxn', clientId ?? 'all'] as const,
+    sampleDataExists: ['firm', firm.id, 'sample-data-exists'] as const,
   }
 }
 
@@ -228,6 +229,60 @@ export function useImport() {
     const { data, error } = await supabase.rpc('import_transactions', { p_rows: rows, p_dry_run: dryRun })
     return error ? fail(error) : (data as { transactions: number; clients: number; duplicates: number })
   }, onSuccess: (_d, v) => { if (!v.dryRun) invalidate() } })
+}
+
+export function useSampleDataExists() {
+  const keys = useKeys(); const fail = useFail()
+  const { data: exists = false } = useQuery({
+    queryKey: keys.sampleDataExists,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_sample', true)
+      if (error) return fail(error)
+      return (data?.length ?? 0) > 0
+    },
+  })
+  return exists
+}
+
+export function useLoadSampleData() {
+  const { firm } = useSession()
+  const qc = useQueryClient()
+  const fail = useFail()
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('load_sample_data')
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+    },
+    onError: fail,
+  })
+}
+
+export function useRemoveSampleData() {
+  const { firm } = useSession()
+  const qc = useQueryClient()
+  const fail = useFail()
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('remove_sample_data')
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
+      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+    },
+    onError: fail,
+  })
 }
 
 export function useUpdateFirm() {
