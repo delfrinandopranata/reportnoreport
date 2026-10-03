@@ -28,7 +28,6 @@ export function useSession(): Session {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined)
   const [settingPassword, setSettingPassword] = useState(openedFromSetPasswordLink)
-  const [firmCreationError, setFirmCreationError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -56,7 +55,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (profileError) throw profileError
 
       let currentProfile = profile
-      if (!currentProfile) {
+      if (shouldCreateFirm(profile, auth?.user.user_metadata)) {
         const pendingFirm = pendingFirmFromMetadata(auth?.user.user_metadata)
         if (pendingFirm) {
           const { error: createError } = await supabase.rpc('create_firm_for_current_user', {
@@ -101,13 +100,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   if (auth && settingPassword) return <AuthPages forceSetPassword onPasswordSet={() => setSettingPassword(false)} />
   if (auth === undefined || (userId && context.isPending)) return <FullPageMessage text="Loading..." />
   if (!auth) return <AuthPages />
-  if (firmCreationError) {
-    const isFullError = isEarlyAccessFull(new Error(firmCreationError))
-    return <FullPageMessage title={isFullError ? 'Early access is full' : 'Something went wrong'} text={firmCreationError} action={() => supabase.auth.signOut()} />
-  }
   if (context.isError) {
     const err = context.error
-    const msg = toUserMessage(err, { context: 'session.load' })
+    const msg = toUserMessage(err)
     const isFullError = isEarlyAccessFull(err)
     if (isFullError) {
       return <FullPageMessage title="Early access is full" text={msg} action={() => supabase.auth.signOut()} />
