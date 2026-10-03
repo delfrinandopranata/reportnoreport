@@ -227,7 +227,7 @@ export function KindBadge({ kind }: { kind: Kind }) {
   return (
     <span
       className={`grid size-8 shrink-0 place-items-center rounded-full ${kind === 'in' ? 'bg-in/10 text-in' : 'bg-out/10 text-out'}`}
-      aria-label={kind === 'in' ? 'Receipt' : 'Payment'}
+      aria-label={kind === 'in' ? 'In' : 'Out'}
     >
       <Icon name={kind} />
     </span>
@@ -299,7 +299,7 @@ export function TxnForm({ clientId, onDone, autoFocus = false }: { clientId?: st
               kind === k ? `bg-white shadow-sm dark:bg-zinc-950 ${k === 'in' ? 'text-in' : 'text-out'}` : 'text-zinc-500'
             }`}
           >
-            <Icon name={k} className="size-3.5" /> {k === 'in' ? 'Receipt' : 'Payment'}
+            <Icon name={k} className="size-3.5" /> {k === 'in' ? 'In' : 'Out'}
           </button>
         ))}
       </div>

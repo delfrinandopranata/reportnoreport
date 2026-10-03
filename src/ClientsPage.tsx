@@ -588,7 +588,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                 {!fixedClientId && <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />}
                 <div className="flex items-center gap-2">
                   <span className="text-sm whitespace-nowrap text-zinc-500">Type</span>
-                  <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'Receipts'], ['out', 'Payments']]} />
+                  <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'In'], ['out', 'Out']]} />
                 </div>
                 <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />
                 <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
