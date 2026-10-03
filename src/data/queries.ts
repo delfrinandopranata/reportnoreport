@@ -300,3 +300,52 @@ export function useTeam() {
 }
 
 export type { Member, StatementLine }
+
+export function useCheckoutSession() {
+  const { profile } = useSession()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!profile?.id) throw new Error('Not signed in')
+      const session = await supabase.auth.getSession()
+      const jwt = session.data.session?.access_token
+      if (!jwt) throw new Error('No session token')
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/billing-checkout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        throw new Error(data.error ?? 'Checkout failed')
+      }
+
+      const data = await res.json() as { url: string }
+      return data.url
+    },
+    onSuccess: (url) => {
+      window.location.assign(url)
+    },
+  })
+}
+
+export function useFirmBilling() {
+  const { firm } = useSession()
+
+  return useQuery({
+    queryKey: ['firm', firm?.id, 'billing'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('firms')
+        .select('billing_status, trial_ends_at, paid_at')
+        .eq('id', firm.id)
+        .single()
+      if (error) throw error
+      return data as { billing_status: string; trial_ends_at: string | null; paid_at: string | null }
+    },
+    enabled: !!firm?.id,
+    refetchInterval: 2000,
+  })
+}

@@ -11,12 +11,15 @@ import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
 
-type View = 'dashboard' | 'clients' | 'users' | 'settings'
+type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
 
 const readRoute = (): Route => {
-  const [view, clientId, sub] = location.hash.slice(1).split('/')
-  if (view === 'users' || view === 'settings') return { view, clientId: null, statement: false }
+  const hashPart = location.hash.slice(1).split('?')[0]
+  const [view, clientId, sub] = hashPart.split('/')
+  if (view === 'users') return { view, clientId: null, statement: false }
+  if (view === 'settings' && clientId === 'billing') return { view: 'billing', clientId: null, statement: false }
+  if (view === 'settings') return { view, clientId: null, statement: false }
   if (view === 'clients') return { view, clientId: clientId ?? null, statement: sub === 'statement', tab: sub === 'transactions' ? 'transactions' : 'client' }
   // '#statement' was the old consolidated page; it now lives on Clients.
   return view === 'statement' ? { view: 'clients', clientId: null, statement: false } : { view: 'dashboard', clientId: null, statement: false }
@@ -35,8 +38,9 @@ const NAV_OTHERS = [
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all client accounts.' },
   clients: { title: 'Clients', subtitle: 'Client accounts, balances and every receipt and payment, in one ledger.' },
-  users: { title: 'Users', subtitle: 'Who has access to your business’s accounts, and what each role can do.' },
-  settings: { title: 'Settings', subtitle: 'Your organisation’s details, bank accounts and statement options.' },
+  users: { title: 'Users', subtitle: 'Who has access to your business\'s accounts, and what each role can do.' },
+  settings: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
+  billing: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
 }
 
 export default function App() {
@@ -165,7 +169,9 @@ export default function App() {
                     <span className="block text-xs opacity-90">(ends {trial.endsOn})</span>
                   </p>
                   {profile.role === 'owner' && (
-                    <p className="mt-2 text-xs opacity-90">You'll be able to pay RM 10 to keep using ReportNoReport.</p>
+                    <p className="mt-2 text-xs opacity-90">
+                      <a href="#settings/billing" className="font-medium underline opacity-100 hover:opacity-75">Pay RM 10</a> to keep using ReportNoReport.
+                    </p>
                   )}
                 </div>
               </>
@@ -175,7 +181,7 @@ export default function App() {
                 <Icon name="x" className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium">
-                    Your free trial ended on {trial.endedOn}
+                    {trial.kind === 'ended' ? `Your free trial ended on ${trial.endedOn}` : 'This firm is read-only'}
                     <span className="block text-xs opacity-90 mt-1">Your data is read-only. You can still view, export and print.</span>
                   </p>
                 </div>
@@ -201,7 +207,7 @@ export default function App() {
             </button>
           )}
         </header>
-        {route.view === 'users' ? <UsersPage /> : route.view === 'settings' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
+        {route.view === 'users' ? <UsersPage /> : route.view === 'settings' || route.view === 'billing' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
           </>
         )}
       </main>
