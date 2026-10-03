@@ -2,8 +2,8 @@ import { useState, type ChangeEvent, type ReactNode } from 'react'
 import { BillingPage } from './BillingPage'
 import { useLogoUrl, useUpdateFirm, useUploadLogo } from '../data/queries'
 import { useSession } from '../data/session'
-import type { Firm } from '../data/mappers'
-import { btn, Dialog, Field, Icon, input } from '../ui'
+import type { DesignSystem, Firm } from '../data/mappers'
+import { btn, Dialog, Field, Icon, input, ring } from '../ui'
 import { BankAccountsCard } from './BankAccounts'
 import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES } from './constants'
 
@@ -279,6 +279,48 @@ function OrganisationCard({ disabledReason }: { disabledReason: string | null })
   )
 }
 
+const DESIGN_SYSTEMS: { key: DesignSystem; label: string; swatch: string }[] = [
+  { key: 'default', label: 'Default', swatch: 'bg-zinc-900' },
+  { key: 'ocean', label: 'Ocean', swatch: 'bg-blue-600' },
+  { key: 'forest', label: 'Forest', swatch: 'bg-emerald-700' },
+  { key: 'sunset', label: 'Sunset', swatch: 'bg-amber-700' },
+]
+
+/** Firm-wide brand colour (sidebar mark, primary buttons, active nav, focus ring) — same for everyone in the firm,
+ * unlike each person's own light/dark theme choice. Saves immediately, like the logo. */
+function DesignSystemCard({ disabledReason }: { disabledReason: string | null }) {
+  const { firm } = useSession()
+  const update = useUpdateFirm()
+  return (
+    <section className={card} aria-labelledby="design-system-heading">
+      <header className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+        <h2 id="design-system-heading" className="font-semibold">
+          Design system
+        </h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">The brand colour everyone in your firm sees, separate from each person's own light/dark theme.</p>
+      </header>
+      <div className="flex flex-wrap gap-3 p-5" role="radiogroup" aria-label="Design system">
+        {DESIGN_SYSTEMS.map((d) => (
+          <button
+            key={d.key}
+            type="button"
+            role="radio"
+            aria-checked={firm.designSystem === d.key}
+            disabled={!!disabledReason || update.isPending}
+            onClick={() => update.mutate({ designSystem: d.key })}
+            className={`${ring} flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              firm.designSystem === d.key ? 'border-zinc-900 dark:border-white' : 'border-zinc-200 hover:border-zinc-400 dark:border-zinc-700'
+            }`}
+          >
+            <span className={`size-4 shrink-0 rounded-full ${d.swatch}`} aria-hidden />
+            {d.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 type Stmt = Pick<Firm, 'statementNote' | 'discrepancyDays' | 'showRegistrationOnStatement'>
 const STMT_KEYS: (keyof Stmt)[] = ['statementNote', 'discrepancyDays', 'showRegistrationOnStatement']
 
@@ -404,6 +446,7 @@ export function SettingsPage() {
     <div className="grid max-w-3xl grid-cols-1 gap-6">
       <BillingPage />
       <OrganisationCard disabledReason={disabledReason} />
+      <DesignSystemCard disabledReason={disabledReason} />
       <BankAccountsCard />
       <StatementsCard disabledReason={disabledReason} />
       <RegionalCard disabledReason={disabledReason} />
