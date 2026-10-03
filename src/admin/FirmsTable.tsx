@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { btn, Avatar } from '../ui'
 import { callAdmin, type AdminListFirmsResponse } from './api'
+import { formatDate } from '../settings/constants'
+import { trialState } from '../trial'
 
 type Firm = AdminListFirmsResponse['firms'][0]
 
@@ -95,16 +97,36 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
   )
 
   const getBillingLabel = useMemo(() => (f: Firm) => {
-    if (f.billing_status === 'trial' && f.trial_ends_at) {
-      const ends = new Date(f.trial_ends_at)
-      const daysLeft = Math.ceil((ends.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      return daysLeft > 0 ? `Trial: ${daysLeft}d` : 'Trial ended'
+    const state = trialState(
+      { billingStatus: f.billing_status, trialEndsAt: f.trial_ends_at },
+      now,
+    )
+    if (state.kind === 'active') {
+      return `Trial: ${state.daysLeft}d`
+    }
+    if (state.kind === 'ended') {
+      return 'Trial ended'
     }
     if (f.billing_status === 'paid' && f.paid_at) {
-      return `Paid: ${new Date(f.paid_at).toLocaleDateString()}`
+      return `Paid: ${formatDate(f.paid_at, 'text')}`
     }
-    return f.billing_status === 'complimentary' ? 'Complimentary' : 'Read-only'
+    if (f.billing_status === 'complimentary') {
+      return 'Complimentary'
+    }
+    return 'Read-only'
   }, [now])
+
+  const getSourceLabel = (source: string) => {
+    if (source === 'self_serve') return 'Self-serve'
+    if (source === 'admin') return 'Admin'
+    return source
+  }
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'active') return 'Active'
+    if (status === 'suspended') return 'Suspended'
+    return status
+  }
 
   return (
     <div className="space-y-4">
@@ -153,7 +175,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                     </div>
                   </td>
                   <td className="px-4 py-3">{firm.currency}</td>
-                  <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400 capitalize">{firm.source}</td>
+                  <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">{getSourceLabel(firm.source)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-block rounded px-2 py-1 text-xs font-medium ${
@@ -162,13 +184,13 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                           : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200'
                       }`}
                     >
-                      {firm.status}
+                      {getStatusLabel(firm.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs">{getBillingLabel(firm)}</td>
                   <td className="px-4 py-3">{firm.members}</td>
                   <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                    {new Date(firm.created_at).toLocaleDateString()}
+                    {formatDate(firm.created_at, 'text')}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
@@ -215,7 +237,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                           className={`${btn.ghost} !px-2 !py-1 text-xs`}
                           disabled={makeComplimentary.isPending}
                         >
-                          Comp
+                          Make complimentary
                         </button>
                       )}
                     </div>

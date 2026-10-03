@@ -6,8 +6,18 @@ import { makeMoney } from '../ledger'
 import { today, type Period } from '../ledger'
 
 type SupportClient = { client_id: string; name: string }
-type SupportBalance = { client_id: string; client_name: string; balance_minor: number }
+type SupportBalance = {
+  client_id: string
+  client_name: string
+  opening: number
+  receipts: number
+  payments: number
+  closing: number
+  txn_count: number
+  last_txn_date: string | null
+}
 type SupportLedgerLine = {
+  id: string
   date: string
   client_id: string
   client_name: string
@@ -146,15 +156,29 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
               <div className="text-sm text-zinc-600 dark:text-zinc-400">No balances in this period</div>
             )}
             {balances.data?.balances && balances.data.balances.length > 0 && (
-              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {balances.data.balances.map((b) => (
-                  <div key={b.client_id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <span className="text-sm font-medium">{b.client_name}</span>
-                    <span className={`text-sm font-mono ${b.balance_minor < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                      {money.format(b.balance_minor)}
-                    </span>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
+                      <th className="px-4 py-2 text-left font-medium">Client</th>
+                      <th className="px-4 py-2 text-right font-medium">Opening</th>
+                      <th className="px-4 py-2 text-right font-medium">Receipts</th>
+                      <th className="px-4 py-2 text-right font-medium">Payments</th>
+                      <th className="px-4 py-2 text-right font-medium">Closing</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {balances.data.balances.map((b) => (
+                      <tr key={b.client_id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
+                        <td className="px-4 py-2 text-sm font-medium">{b.client_name}</td>
+                        <td className="px-4 py-2 text-right font-mono text-sm">{money.format(b.opening)}</td>
+                        <td className="px-4 py-2 text-right font-mono text-sm text-green-600 dark:text-green-400">{money.format(b.receipts)}</td>
+                        <td className="px-4 py-2 text-right font-mono text-sm text-red-600 dark:text-red-400">{money.format(b.payments)}</td>
+                        <td className="px-4 py-2 text-right font-mono text-sm font-medium">{money.format(b.closing)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -204,8 +228,8 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
                     </tr>
                   </thead>
                   <tbody>
-                    {ledger.data.ledger.map((line, i) => (
-                      <tr key={i} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
+                    {ledger.data.ledger.map((line) => (
+                      <tr key={line.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
                         <td className="px-4 py-2 text-xs text-zinc-600 dark:text-zinc-400">{new Date(line.date).toLocaleDateString()}</td>
                         <td className="px-4 py-2 text-sm font-medium">{line.client_name}</td>
                         <td className="px-4 py-2">

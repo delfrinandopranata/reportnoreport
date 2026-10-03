@@ -342,12 +342,18 @@ Deno.serve(async (req) => {
         console.error('support/clients error:', error)
         return json(500, { error: 'Something went wrong.' })
       }
-      await admin.from('change_log').insert({
+      const { error: logError } = await admin.from('change_log').insert({
         firm_id: firmId,
+        table_name: 'clients',
+        row_id: firmId,
         action: 'support_access',
         after: { view: 'clients', from, to },
         actor: callerRow?.id,
       })
+      if (logError) {
+        console.error('support/clients log error:', logError)
+        return json(500, { error: 'Something went wrong.' })
+      }
       return json(200, { clients })
     }
 
@@ -363,20 +369,38 @@ Deno.serve(async (req) => {
         console.error('support/balances error:', error)
         return json(500, { error: 'Something went wrong.' })
       }
-      await admin.from('change_log').insert({
+      // Fetch client names
+      const clientIds = (balances ?? []).map((b: { client_id: string }) => b.client_id)
+      const { data: clients } = await admin.from('clients').select('id, name').in('id', clientIds)
+      const clientNames = new Map<string, string>()
+      ;(clients ?? []).forEach((c: { id: string; name: string }) => {
+        clientNames.set(c.id, c.name)
+      })
+      // Attach client names to balances
+      const balancesWithNames = (balances ?? []).map((b: { client_id: string; [key: string]: unknown }) => ({
+        ...b,
+        client_name: clientNames.get(b.client_id) ?? 'Unknown',
+      }))
+      const { error: logError } = await admin.from('change_log').insert({
         firm_id: firmId,
+        table_name: 'clients',
+        row_id: firmId,
         action: 'support_access',
         after: { view: 'balances', from, to },
         actor: callerRow?.id,
       })
-      return json(200, { balances })
+      if (logError) {
+        console.error('support/balances log error:', logError)
+        return json(500, { error: 'Something went wrong.' })
+      }
+      return json(200, { balances: balancesWithNames })
     }
 
     if (view === 'ledger') {
       const ledgerFrom = from ?? '2000-01-01'
       const ledgerTo = to ?? new Date().toISOString().split('T')[0]
       const { data: ledger, error } = await admin.from('transactions')
-        .select('id, client_id, bank_account_id, kind, amount_minor, date, description, created_at, updated_at')
+        .select('id, client_id, bank_account_id, kind, amount_minor, date, description, created_at, updated_at, clients(name)')
         .eq('firm_id', firmId)
         .gte('date', ledgerFrom)
         .lte('date', ledgerTo)
@@ -386,13 +410,24 @@ Deno.serve(async (req) => {
         console.error('support/ledger error:', error)
         return json(500, { error: 'Something went wrong.' })
       }
-      await admin.from('change_log').insert({
+      // Flatten the clients join
+      const flatLedger = (ledger ?? []).map((line: { clients?: { name: string } | null; [key: string]: unknown }) => ({
+        ...line,
+        client_name: (line.clients as { name: string } | null)?.name ?? 'Unknown',
+      }))
+      const { error: logError } = await admin.from('change_log').insert({
         firm_id: firmId,
+        table_name: 'transactions',
+        row_id: firmId,
         action: 'support_access',
         after: { view: 'ledger', from, to },
         actor: callerRow?.id,
       })
-      return json(200, { ledger })
+      if (logError) {
+        console.error('support/ledger log error:', logError)
+        return json(500, { error: 'Something went wrong.' })
+      }
+      return json(200, { ledger: flatLedger })
     }
   }
 
