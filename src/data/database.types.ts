@@ -86,6 +86,43 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"contracts": {
+                  Row: {
+                    "client_id": string,"created_at": string,"created_by": string,"end_date": string,"firm_id": string,"id": string,"notes": string,"reminder_sent_at": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"start_date": string,"status": string,"title": string,"updated_at": string
+                  }
+                  Insert: {
+                    "client_id": string,"created_at"?: string,"created_by"?: string,"end_date": string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"start_date": string,"status"?: string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "client_id"?: string,"created_at"?: string,"created_by"?: string,"end_date"?: string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"start_date"?: string,"status"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contracts_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contracts_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contracts_firm_id_fkey"
+      columns: ["firm_id"]
+isOneToOne: false
+      referencedRelation: "firms"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contracts_reviewed_by_fkey"
+      columns: ["reviewed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"firms": {
                   Row: {
                     "address1": string,"address2": string,"billing_status": Database["public"]['Enums']["billing_status"],"city": string,"country": string,"created_at": string,"created_by": string | null,"currency": string,"date_format": string,"discrepancy_days": number,"email": string,"fy_start_month": number,"id": string,"logo_path": string | null,"name": string,"paid_at": string | null,"phone": string,"postcode": string,"registration_no": string,"show_registration_on_statement": boolean,"source": Database["public"]['Enums']["firm_source"],"sst_no": string,"state": string,"statement_note": string,"status": Database["public"]['Enums']["firm_status"],"stripe_checkout_session_id": string | null,"stripe_customer_id": string | null,"stripe_payment_intent_id": string | null,"trading_name": string,"trial_ends_at": string | null,"updated_at": string,"updated_by": string | null,"website": string
@@ -216,6 +253,9 @@ isOneToOne: false
             "accept_invite":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"approve_contract":
+{ Args: { "p_approve": boolean,"p_contract": string }; Returns: undefined
+                           },
 "assert_manager":
 { Args: { "p_target": string }; Returns: {
               "created_at": string,
@@ -286,6 +326,12 @@ isOneToOne: false
                            },
 "reactivate_member":
 { Args: { "p_profile": string }; Returns: undefined
+                           },
+"record_payment":
+{ Args: { "p_firm_id": string,"p_payment_intent_id": string }; Returns: undefined
+                           },
+"record_refund":
+{ Args: { "p_firm_id": string }; Returns: undefined
                            },
 "remove_sample_data":
 { Args: Record<PropertyKey, never>; Returns: undefined

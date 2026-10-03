@@ -5,8 +5,8 @@ import type { Database, Json } from './database.types'
 import type { Role } from '../users/rules'
 import { isWriteBlock, toUserMessage } from './errors'
 import {
-  clientToRow, firmToRow, rowToBank, rowToClient, rowToLine, rowToMember,
-  type BalanceRow, type BankAccount, type Firm, type LedgerRow, type Member,
+  clientToRow, firmToRow, rowToBank, rowToClient, rowToContract, rowToLine, rowToMember,
+  type BalanceRow, type BankAccount, type Contract, type Firm, type LedgerRow, type Member,
 } from './mappers'
 import { classifyEmptyUpdate, ConflictError } from './conflict.ts'
 import { useSession } from './session'
@@ -51,6 +51,7 @@ function useKeys() {
     recent: (n: number) => ['firm', firm.id, 'recent', n] as const,
     banks: ['firm', firm.id, 'banks'] as const,
     members: ['firm', firm.id, 'members'] as const,
+    contracts: ['firm', firm.id, 'contracts'] as const,
     firstTxn: (clientId?: string) => ['firm', firm.id, 'firstTxn', clientId ?? 'all'] as const,
     sampleDataExists: ['firm', firm.id, 'sample-data-exists'] as const,
   }
@@ -128,6 +129,32 @@ export function useMembers() {
     return rows.map(rowToMember)
   } })
 }
+
+export function useContracts() {
+  const keys = useKeys(); const fail = useFail()
+  return useQuery({ queryKey: keys.contracts, queryFn: async () => {
+    const rows = await fetchAll((from, to) => supabase.from('contracts').select('*').order('end_date').order('id').range(from, to)).catch(fail)
+    return rows.map(rowToContract)
+  } })
+}
+
+export function useCreateContract() {
+  const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
+  return useMutation({ mutationFn: async (input: { clientId: string; title: string; startDate: string; endDate: string }) => {
+    const { error } = await supabase.from('contracts').insert({ client_id: input.clientId, title: input.title, start_date: input.startDate, end_date: input.endDate })
+    if (error) await fail(error)
+  }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.contracts }) })
+}
+
+export function useApproveContract() {
+  const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
+  return useMutation({ mutationFn: async ({ id, approve }: { id: string; approve: boolean }) => {
+    const { error } = await supabase.rpc('approve_contract', { p_contract: id, p_approve: approve })
+    if (error) await fail(error)
+  }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.contracts }) })
+}
+
+export type { Contract }
 
 /** Returns [value, save, loaded]: `loaded` is false until the stored value (or its absence) is known. */
 export function usePreference<T>(key: string, fallback: T): [T, (value: T) => void, boolean] {

@@ -425,3 +425,6 @@ enabled = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.contract-reminders]
+verify_jwt = false

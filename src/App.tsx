@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
+import { ContractsPage } from './contracts/ContractsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
 import { Avatar, btn, Icon, ring, Dialog } from './ui'
@@ -15,13 +16,14 @@ import { useTour } from './tour/useTour'
 import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
 import { sampleControls } from './data/sampleData'
 
-type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
+type View = 'dashboard' | 'clients' | 'contracts' | 'users' | 'settings' | 'billing'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
 
 const readRoute = (): Route => {
   const hashPart = location.hash.slice(1).split('?')[0]
   const [view, clientId, sub] = hashPart.split('/')
   if (view === 'users') return { view, clientId: null, statement: false }
+  if (view === 'contracts') return { view, clientId: null, statement: false }
   if (view === 'settings' && clientId === 'billing') return { view: 'billing', clientId: null, statement: false }
   if (view === 'settings') return { view, clientId: null, statement: false }
   if (view === 'clients') return { view, clientId: clientId ?? null, statement: sub === 'statement', tab: sub === 'transactions' ? 'transactions' : 'client' }
@@ -32,6 +34,7 @@ const readRoute = (): Route => {
 const NAV = [
   { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { view: 'clients', label: 'Clients', icon: 'users' },
+  { view: 'contracts', label: 'Contract Manager', icon: 'file' },
 ] as const
 
 const NAV_OTHERS = [
@@ -42,6 +45,7 @@ const NAV_OTHERS = [
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all clients.' },
   clients: { title: 'Clients', subtitle: 'Client balances and every receipt and payment, in one ledger.' },
+  contracts: { title: 'Contract Manager', subtitle: 'Contracts with your clients, their review status and renewal dates.' },
   users: { title: 'Users', subtitle: 'Who has access to your business\'s accounts, and what each role can do.' },
   settings: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
   billing: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
@@ -269,7 +273,7 @@ export default function App() {
             </button>
           )}
         </header>
-        {route.view === 'users' ? <UsersPage /> : route.view === 'settings' || route.view === 'billing' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
+        {route.view === 'users' ? <UsersPage /> : route.view === 'contracts' ? <ContractsPage /> : route.view === 'settings' || route.view === 'billing' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
           </>
         )}
       </main>
