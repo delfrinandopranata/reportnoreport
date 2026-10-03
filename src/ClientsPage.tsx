@@ -21,10 +21,11 @@ import { StatusBadge, TagList } from './clients/fields'
 import { card, LoadError, monthLabel, neg, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
-import { useBalances, useBankAccounts, useClients, useDeleteTxn, useLedger } from './data/queries'
+import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger } from './data/queries'
 import { useSession } from './data/session'
 import { ColumnHeader, ColumnsDialog, useTableLayout, type Column } from './table'
 import { ConsolidatedStatement, StatementLayout } from './Statement'
+import { buildSections, countClients, preparedFrom } from './clients/consolidatedStatement'
 import { downloadCsv, ImportDialog } from './transfer'
 import { Avatar, btn, Icon, input, KindBadge, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
 import { Empty } from './widgets'
@@ -55,7 +56,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const assigneeName = useUserNames()
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
   const nameOf = (id: string) => names.get(id) ?? 'Unknown client'
-  const firstDate = clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), today())
+  const firstTxn = useFirstTxnDate(fixedClientId).data
+  const firstDate = clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), firstTxn && firstTxn < today() ? firstTxn : today())
 
   const [view, setView] = useLocalState<View>('clients.view', 'balances')
   const [period, setPeriod] = useState<Period>(() => periodPresets(firstDate, fyStartMonth)[3].period)
@@ -348,11 +350,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     payments: fmt(totals(txnRows).out),
     balance: money(summary.closing),
   }
-  const txnFooterText: Record<string, string> = {
-    receipts: fmt(totals(txnRows).in),
-    payments: fmt(totals(txnRows).out),
-    balance: fmt(summary.closing),
-  }
   const balanceTotals = balanceRows.reduce(
     (acc, r) => ({ opening: acc.opening + r.soa.opening, receipts: acc.receipts + r.soa.receipts, payments: acc.payments + r.soa.payments, closing: acc.closing + r.soa.closing, count: acc.count + r.count }),
     { opening: 0, receipts: 0, payments: 0, closing: 0, count: 0 },
@@ -363,13 +360,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     payments: fmt(balanceTotals.payments),
     closing: money(balanceTotals.closing),
     count: balanceTotals.count,
-  }
-  const balanceFooterText: Record<string, string> = {
-    opening: fmt(balanceTotals.opening),
-    receipts: fmt(balanceTotals.receipts),
-    payments: fmt(balanceTotals.payments),
-    closing: fmt(balanceTotals.closing),
-    count: String(balanceTotals.count),
   }
 
   const loadError = clientsError ?? balancesError ?? ledgerError
@@ -392,20 +382,29 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         setPeriod={setPeriod}
         ready={true}
       >
-        <ConsolidatedStatement
-          period={period}
-          summary={summary}
-          groups={isTxns ? groups : [{ key: 'all', label: '', rows: [], receipts: 0, payments: 0, closing: undefined }]}
-          txnVisible={txnVisible}
-          balanceVisible={balanceVisible}
-          filterNote={filterNote}
-          mode={isTxns ? mode : 'none'}
-          view={view}
-          rows={isTxns ? txnRows : (balanceRows as any)}
-          columns={isTxns ? txnColumns : (balanceColumns as any)}
-          txnFooterText={txnFooterText}
-          balanceFooterText={balanceFooterText}
-        />
+        {isTxns ? (
+          <ConsolidatedStatement
+            period={period}
+            summary={summary}
+            columns={txnVisible}
+            sections={buildSections(groups, mode, fmt)}
+            total={txnFooter}
+            preparedFrom={preparedFrom(filterNote, mode)}
+            clientCount={countClients(txnRows.map((r) => r.clientId))}
+            rowKey={(r) => r.id}
+          />
+        ) : (
+          <ConsolidatedStatement
+            period={period}
+            summary={summary}
+            columns={balanceVisible}
+            sections={[{ key: 'all', rows: balanceRows }]}
+            total={balanceFooter}
+            preparedFrom={preparedFrom(filterNote, 'none')}
+            clientCount={balanceRows.length}
+            rowKey={(r) => r.client.id}
+          />
+        )}
       </StatementLayout>
     )
   }
