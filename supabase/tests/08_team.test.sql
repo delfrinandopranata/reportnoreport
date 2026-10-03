@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(7);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -24,6 +24,12 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1'); -- owner
 select lives_ok($$ select transfer_ownership((select id from profiles where email = 'admin@alpha.test')) $$, 'owner transfers ownership');
 reset role;
 select is((select role::text from profiles where email = 'owner@alpha.test'), 'admin', 'previous owner becomes admin');
+
+reset role;
+update firms set trial_ends_at = now() - interval '1 day' where id = '0000000b-0000-0000-0000-000000000001';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1'); -- beta owner, expired trial
+select throws_like($$ select transfer_ownership('00000000-0000-0000-0000-000000000099') $$,
+  'Your firm can''t make changes right now: %', 'expired firm cannot transfer ownership');
 
 select * from finish();
 rollback;
