@@ -1,6 +1,6 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { verify } from './verify.ts'
-import { getEventAction } from './rules.ts'
+import { getEventAction, type EventAction } from './rules.ts'
 
 const url = Deno.env.get('SUPABASE_URL')
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -8,6 +8,16 @@ const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
 if (!url || !serviceKey) {
   throw new Error('Missing environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
+}
+
+async function releaseEventOnFailure(
+  admin: SupabaseClient,
+  eventId: string
+): Promise<void> {
+  const { error } = await admin.from('stripe_events').delete().eq('event_id', eventId)
+  if (error) {
+    console.error(`Failed to release event ${eventId} on RPC failure:`, error.code)
+  }
 }
 
 Deno.serve(async (req) => {
@@ -50,31 +60,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey)
 
-  // Check idempotency: has this event been processed?
-  const { data: existing, error: selectError } = await admin
-    .from('stripe_events')
-    .select('event_id')
-    .eq('event_id', event.id)
-    .single()
-
-  if (selectError && selectError.code !== 'PGRST116') {
-    // PGRST116 = no rows found (expected)
-    console.error('Error checking event idempotency:', selectError.code)
-    return new Response(JSON.stringify({ error: 'Database error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  if (existing) {
-    // Already processed; return success (idempotent)
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  // Record the event for idempotency
+  // Record the event for idempotency (unique constraint guards against duplicates)
   const { error: insertError } = await admin.from('stripe_events').insert({
     event_id: event.id,
     type: event.type,
@@ -82,7 +68,7 @@ Deno.serve(async (req) => {
   })
 
   if (insertError) {
-    // Duplicate event_id (unique constraint) = another request already inserted it
+    // Duplicate event_id (unique constraint) = another request already processed it
     if (insertError.code === '23505') {
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
@@ -107,6 +93,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Failed to record payment:', error.code)
+      await releaseEventOnFailure(admin, event.id)
       return new Response(JSON.stringify({ error: 'Failed to record payment' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -122,6 +109,7 @@ Deno.serve(async (req) => {
 
     if (lookupError) {
       console.error('Failed to look up firm for refund:', lookupError.code)
+      await releaseEventOnFailure(admin, event.id)
       return new Response(JSON.stringify({ error: 'Failed to process refund' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -136,6 +124,7 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error('Failed to record refund:', error.code)
+        await releaseEventOnFailure(admin, event.id)
         return new Response(JSON.stringify({ error: 'Failed to record refund' }), {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
