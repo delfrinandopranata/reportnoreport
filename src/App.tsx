@@ -1,19 +1,25 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useStore as useZustand } from 'zustand'
-import { ClientProfile, Clients } from './Clients'
-import { ConsolidatedStatementPage, StatementPage } from './Statement'
+import { ClientProfile, type ClientTab } from './ClientProfile'
+import { ClientsPage } from './ClientsPage'
+import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
 import { useStore } from './store'
-import { btn, Icon } from './ui'
+import { Avatar, btn, Icon } from './ui'
+import { SettingsPage } from './settings/SettingsPage'
+import { UsersPage } from './users/UsersPage'
+import { ViewingAs } from './users/ViewingAs'
+import { useCurrentUser } from './users/store'
 
-type Route = { view: 'dashboard' | 'clients'; clientId: string | null; statement: boolean }
+type View = 'dashboard' | 'clients' | 'users' | 'settings'
+type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
 
 const readRoute = (): Route => {
   const [view, clientId, sub] = location.hash.slice(1).split('/')
-  if (view === 'clients' && clientId === 'statement') return { view, clientId: null, statement: true }
-  return view === 'clients'
-    ? { view, clientId: clientId ?? null, statement: sub === 'statement' }
-    : { view: 'dashboard', clientId: null, statement: false }
+  if (view === 'users' || view === 'settings') return { view, clientId: null, statement: false }
+  if (view === 'clients') return { view, clientId: clientId ?? null, statement: sub === 'statement', tab: sub === 'transactions' ? 'transactions' : 'client' }
+  // '#statement' was the old consolidated page; it now lives on Clients.
+  return view === 'statement' ? { view: 'clients', clientId: null, statement: false } : { view: 'dashboard', clientId: null, statement: false }
 }
 
 function History() {
@@ -50,6 +56,18 @@ const NAV = [
   { view: 'clients', label: 'Clients', icon: 'users' },
 ] as const
 
+const NAV_OTHERS = [
+  { view: 'users', label: 'Users', icon: 'user' },
+  { view: 'settings', label: 'Settings', icon: 'sliders' },
+] as const
+
+const HEADINGS: Record<View, { title: string; subtitle: string }> = {
+  dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all client accounts.' },
+  clients: { title: 'Clients', subtitle: 'Client accounts, balances and every receipt and payment, in one ledger.' },
+  users: { title: 'Users', subtitle: 'Who has access to your business’s accounts, and what each role can do.' },
+  settings: { title: 'Settings', subtitle: 'Your organisation’s details, statement options and data backups.' },
+}
+
 export default function App() {
   const [route, setRoute] = useState(readRoute)
   const [editing, setEditing] = useState(false)
@@ -62,6 +80,8 @@ export default function App() {
   }, [])
 
   const isDashboard = route.view === 'dashboard'
+  const isAdminPage = route.view === 'users' || route.view === 'settings'
+  const me = useCurrentUser()
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
@@ -76,16 +96,22 @@ export default function App() {
           </span>
         </div>
         <nav className="flex gap-1 lg:flex-col">
-          {NAV.map((n) => (
+          {[...NAV, ...NAV_OTHERS].map((n, i) => (
+            <Fragment key={n.view}>
+              {i === NAV.length && (
+              <span className="mx-1 w-px self-stretch bg-zinc-200 lg:mx-0 lg:mt-4 lg:mb-1 lg:w-auto lg:self-auto lg:bg-transparent lg:px-3 lg:text-xs lg:font-medium lg:tracking-wide lg:text-zinc-400 lg:uppercase dark:bg-zinc-800">
+                <span className="max-lg:hidden">Others</span>
+              </span>
+              )}
             <a
-              key={n.view}
               href={`#${n.view}`}
               aria-current={route.view === n.view ? 'page' : undefined}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-white"
             >
               <Icon name={n.icon} />
-              {n.label}
+              <span className="max-sm:sr-only">{n.label}</span>
             </a>
+            </Fragment>
           ))}
         </nav>
         <button
@@ -95,25 +121,25 @@ export default function App() {
         >
           Load sample data
         </button>
+        <a href="#users" className="ml-auto lg:hidden" aria-label={`Viewing as ${me.name}. Open users`}>
+          <Avatar name={me.name} />
+        </a>
+        <ViewingAs className="mt-3 hidden border-t border-zinc-100 pt-3 lg:grid dark:border-zinc-800" />
       </aside>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 print:max-w-none print:p-0">
-        {route.statement && !route.clientId ? (
-          <ConsolidatedStatementPage />
-        ) : route.clientId && route.statement ? (
+        {route.clientId && route.statement ? (
           <StatementPage id={route.clientId} />
         ) : route.clientId ? (
-          <ClientProfile id={route.clientId} actions={<History />} />
+          <ClientProfile key={route.clientId} id={route.clientId} tab={route.tab ?? 'client'} actions={<History />} />
         ) : (
           <>
-        <header className="mb-6 flex flex-wrap items-center gap-3">
+        <header className="mb-6 flex flex-wrap items-center gap-3 print:hidden">
           <div className="mr-auto">
-            <h1 className="text-2xl font-semibold tracking-tight">{isDashboard ? 'Dashboard' : 'Clients'}</h1>
-            <p className="text-sm text-zinc-500">
-              {isDashboard ? 'Receipts, payments and funds held across all client accounts.' : 'Client accounts and the funds held on their behalf.'}
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">{HEADINGS[route.view].title}</h1>
+            <p className="text-sm text-zinc-500">{HEADINGS[route.view].subtitle}</p>
           </div>
-          <History />
+          {!isAdminPage && <History />}
           {isDashboard && (
             <button type="button" className={editing ? btn.primary : `${btn.ghost} border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900`} onClick={() => setEditing(!editing)}>
               <Icon name={editing ? 'check' : 'layout'} />
@@ -121,7 +147,7 @@ export default function App() {
             </button>
           )}
         </header>
-        {isDashboard ? <Dashboard editing={editing} /> : <Clients />}
+        {route.view === 'users' ? <UsersPage /> : route.view === 'settings' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
           </>
         )}
       </main>

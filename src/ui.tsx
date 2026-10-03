@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { parseCents, today, type Kind } from './ledger'
+import { parseCents, periodPresets, today, type Kind, type Period } from './ledger'
+import { useSettings } from './settings/store'
 import { useStore } from './store'
 
 const PATHS = {
   grip: 'M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01',
   x: 'M18 6 6 18M6 6l12 12',
   back: 'm15 18-6-6 6-6',
+  up: 'm18 15-6-6-6 6',
+  down: 'm6 9 6 6 6-6',
+  right: 'm9 18 6-6-6-6',
+  download: 'M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5',
+  upload: 'M12 3v12M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5',
+  columns: 'M9 3v18M15 3v18M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   redo: 'm15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13',
   plus: 'M5 12h14M12 5v14',
@@ -21,7 +28,15 @@ const PATHS = {
   printer: 'M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z',
   wallet: 'M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5M16 14h.01',
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3',
+  phone:
+    'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z',
+  mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
+  pencil: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+  building: 'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18ZM6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4',
+  person: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
   layout: 'M12 3v18M3 12h18M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2',
+  user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+  sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
 }
 
 export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS; className?: string }) {
@@ -41,8 +56,11 @@ export const btn = {
     'inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950',
 }
 
-export const input =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-600 dark:focus:ring-white/5'
+/** Base field look without a width, for inline controls. */
+export const field =
+  'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-600 dark:focus:ring-white/5'
+
+export const input = `w-full ${field}`
 
 const AVATAR_TONES = [
   'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
@@ -171,7 +189,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
         </Field>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (SGD)">
+        <Field label="Amount (RM)">
           <input name="amount" inputMode="decimal" placeholder="0.00" className={`${input} tabular-nums`} aria-invalid={!!error} />
         </Field>
         <Field label="Transaction date">
@@ -190,5 +208,64 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
         <Icon name={saved ? 'check' : 'plus'} /> {saved ? 'Posted' : kind === 'in' ? 'Post receipt' : 'Post payment'}
       </button>
     </form>
+  )
+}
+
+/** Per-viewer UI preference (view options, not data). Falls back silently when storage is unavailable. */
+export function useLocalState<T>(key: string, initial: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key)
+      return raw ? (JSON.parse(raw) as T) : initial
+    } catch {
+      return initial
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch {
+      // Storage blocked (private mode): the preference just isn't remembered.
+    }
+  }, [key, value])
+  return [value, setValue] as const
+}
+
+export type Sort<K extends string> = { key: K; dir: 'asc' | 'desc' }
+
+/** Same column flips direction; a new column starts at its natural direction. */
+export const nextSort = <K extends string>(sort: Sort<K>, key: K, firstDir: 'asc' | 'desc' = 'asc'): Sort<K> =>
+  sort.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstDir }
+
+export function PeriodPicker({ period, onChange, firstDate }: { period: Period; onChange: (period: Period) => void; firstDate: string }) {
+  const fyStartMonth = useSettings((s) => s.fyStartMonth)
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Period">
+        {periodPresets(firstDate, fyStartMonth).map((o) => {
+          const active = o.period.from === period.from && o.period.to === period.to
+          return (
+            <button
+              key={o.label}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(o.period)}
+              className={`rounded-full border px-3 py-1 text-sm transition ${
+                active
+                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
+                  : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'
+              }`}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex items-center gap-2">
+        <input type="date" aria-label="Period from" value={period.from} max={period.to} onChange={(e) => e.target.value && onChange({ ...period, from: e.target.value })} className={`${field} py-1.5`} />
+        <span className="text-sm text-zinc-400">to</span>
+        <input type="date" aria-label="Period to" value={period.to} min={period.from} max={today()} onChange={(e) => e.target.value && onChange({ ...period, to: e.target.value })} className={`${field} py-1.5`} />
+      </div>
+    </div>
   )
 }

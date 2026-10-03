@@ -27,3 +27,12 @@ body {
     background: white;
   }
 }
+
+/* Wide ledgers print landscape; statements keep the portrait A4 default. */
+@page landscape {
+  size: A4 landscape;
+  margin: 10mm;
+}
+.print-landscape {
+  page: landscape;
+}

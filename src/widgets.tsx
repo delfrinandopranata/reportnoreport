@@ -39,7 +39,7 @@ function ClientsKpi() {
   return (
     <div className="flex items-end justify-between gap-3">
       <div>
-        <p className="text-2xl font-semibold tracking-tight tabular-nums">{clients.length}</p>
+        <p className="text-2xl font-semibold tracking-tight tabular-nums">{clients.filter((c) => c.status === 'active').length}</p>
         <p className="mt-1 text-sm text-zinc-500">{overdrawn ? `${overdrawn} in debit balance` : 'No debit balances'}</p>
       </div>
       <span className="grid size-10 place-items-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -171,7 +171,7 @@ function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) 
             <p className="truncate text-sm font-medium">{names?.get(t.clientId) ?? (t.note || (t.kind === 'in' ? 'Receipt' : 'Payment'))}</p>
             <p className="truncate text-xs text-zinc-500">
               {names && t.note ? `${t.note} · ` : ''}
-              {new Date(`${t.date}T00:00`).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {new Date(`${t.date}T00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
           <span className={`text-sm font-medium tabular-nums ${t.kind === 'in' ? 'text-in' : ''}`}>
