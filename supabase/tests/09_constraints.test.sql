@@ -38,7 +38,7 @@ select is(
 select is(
   (select count(*)::int from change_log where table_name = 'transactions' and action = 'delete'
      and (before->>'client_id') = '0000000a-0000-0000-0000-0000000000c1'),
-  4, 'change_log keeps the deleted transaction rows');
+  6, 'change_log keeps the deleted transaction rows (4 fixture + the 2 negative/zero ones above)');
 
 update clients set created_at = '2000-01-01', created_by = '00000000-0000-0000-0000-0000000000a1'
  where id = '0000000a-0000-0000-0000-0000000000c2';
