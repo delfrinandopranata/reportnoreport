@@ -8,17 +8,18 @@ export type { TourState }
 
 export function useTour() {
   const { profile, firm } = useSession()
-  const [pref, setPref] = usePreference<TourState>('tour', { status: 'not_started', step: 0 })
+  const [pref, setPref, loaded] = usePreference<TourState>('tour', { status: 'not_started', step: 0 })
   const [open, setOpen] = useState(false)
 
   const steps = filterTourStepsByRole(profile.role)
   const currentStep = steps[pref.step]
 
+  // Wait for the stored state: before it loads, the fallback says 'not_started' for everyone.
   useEffect(() => {
-    if (shouldAutoStart(pref, !!firm)) {
+    if (loaded && shouldAutoStart(pref, !!firm)) {
       setOpen(true)
     }
-  }, [pref, firm])
+  }, [loaded, pref, firm])
 
   const onNext = () => {
     if (pref.step < steps.length - 1) {

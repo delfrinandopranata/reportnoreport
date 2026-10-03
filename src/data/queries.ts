@@ -128,13 +128,18 @@ export function useMembers() {
   } })
 }
 
-export function usePreference<T>(key: string, fallback: T): [T, (value: T) => void] {
+/** Returns [value, save, loaded]: `loaded` is false until the stored value (or its absence) is known. */
+export function usePreference<T>(key: string, fallback: T): [T, (value: T) => void, boolean] {
   const { profile } = useSession()
   const [value, setValue] = useState<T>(fallback)
+  const [loaded, setLoaded] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     supabase.from('user_preferences').select('value').eq('profile_id', profile.id).eq('key', key).maybeSingle()
-      .then(({ data }) => { if (data) setValue(data.value as T) })
+      .then(({ data }) => {
+        if (data) setValue(data.value as T)
+        setLoaded(true)
+      })
   }, [profile.id, key])
   const save = (next: T) => {
     setValue(next)
@@ -146,7 +151,7 @@ export function usePreference<T>(key: string, fallback: T): [T, (value: T) => vo
       })
     }, 400)
   }
-  return [value, save]
+  return [value, save, loaded]
 }
 
 export function useCreateClient() {

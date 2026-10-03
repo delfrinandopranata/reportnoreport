@@ -237,15 +237,9 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
               <span className="hidden sm:inline">Back</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={currentIndex === totalSteps - 1}
-              aria-label={`Go to next step${currentIndex === totalSteps - 1 ? ' (disabled)' : ''}`}
-              className={`${btn.primary} flex-1 text-xs sm:text-sm`}
-            >
-              <span className="hidden sm:inline">Next</span>
-              <Icon name="right" className="size-3 sm:size-4" />
+            {/* The last step finishes the tour (recorded as done), so it is never disabled. */}
+            <button type="button" onClick={onNext} className={`${btn.primary} flex-1 text-xs sm:text-sm`}>
+              {currentIndex === totalSteps - 1 ? 'Done' : <>Next <Icon name="right" className="size-3 sm:size-4" /></>}
             </button>
 
             <button
