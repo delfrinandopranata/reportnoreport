@@ -1,23 +1,24 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ColumnHeader, ColumnsDialog, useTableLayout, type Column } from '../table'
 import { Avatar, btn, Dialog, Field, Icon, input, nextSort, field, type Sort } from '../ui'
-import { formatDate } from '../settings/store'
+import type { Member } from '../data/mappers'
+import { useMembers, useTeam } from '../data/queries'
+import { useSession } from '../data/session'
+import { formatDate } from '../settings/constants'
 import { RoleBadge, STATUS_LABEL, StatusBadge } from './badges'
-import { ACTIONS, can, canManageUser, ROLE_LABEL, ROLE_SUMMARY, ROLES, type Role, type Status, type User } from './rules'
-import { useCurrentUser, useUsers } from './store'
-import { ViewingAs } from './ViewingAs'
+import { ACTIONS, can, isValidEmail, ROLE_LABEL, ROLE_SUMMARY, ROLES, type Role, type Status } from './rules'
 
 const card = 'rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900'
 const ASSIGNABLE = ROLES.filter((r) => r !== 'owner')
 const STATUSES: Status[] = ['active', 'invited', 'suspended']
 type SortKey = 'name' | 'email' | 'role' | 'status' | 'active'
 
-function lastActive(user: User): string {
+function lastActive(user: Member, dateFormat: 'text' | 'numeric'): string {
   if (!user.lastActiveAt) return user.status === 'invited' ? 'Not signed in yet' : 'Never'
   const days = Math.floor((Date.now() - new Date(user.lastActiveAt).getTime()) / 86_400_000)
   if (days < 1) return 'Today'
   if (days === 1) return 'Yesterday'
-  return days < 14 ? `${days} days ago` : formatDate(user.lastActiveAt.slice(0, 10))
+  return days < 14 ? `${days} days ago` : formatDate(user.lastActiveAt.slice(0, 10), dateFormat)
 }
 
 const Err = ({ text }: { text: string }) =>
@@ -28,19 +29,25 @@ const Err = ({ text }: { text: string }) =>
   ) : null
 
 function InviteDialog({ open, onClose, onInvited }: { open: boolean; onClose: () => void; onInvited: (name: string) => void }) {
-  const invite = useUsers((s) => s.invite)
+  const { invite } = useTeam()
   const [error, setError] = useState('')
   const close = () => {
     setError('')
     onClose()
   }
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    const name = String(data.get('name'))
-    const message = invite({ name, email: String(data.get('email')), role: String(data.get('role')) as Role })
-    if (message) return setError(message)
-    onInvited(name.trim())
+    const name = String(data.get('name')).trim()
+    const email = String(data.get('email')).trim()
+    if (!name) return setError('Enter their full name.')
+    if (!isValidEmail(email)) return setError('Enter a valid email address.')
+    try {
+      await invite.mutateAsync({ name, email, role: String(data.get('role')) as Exclude<Role, 'owner'> })
+    } catch (err) {
+      return setError((err as Error).message)
+    }
+    onInvited(name)
     close()
   }
   return (
@@ -61,35 +68,42 @@ function InviteDialog({ open, onClose, onInvited }: { open: boolean; onClose: ()
             ))}
           </select>
         </Field>
-        <p className="text-sm text-zinc-500">The invitation email is sent once the backend is connected. Until then the person is listed as invited.</p>
+        <p className="text-sm text-zinc-500">They'll get an email with a link to set their password. The link works for 24 hours; you can resend it from Manage.</p>
         <Err text={error} />
         <div className="flex justify-end gap-2">
           <button type="button" className={btn.ghost} onClick={close}>
             Cancel
           </button>
-          <button className={btn.primary}>Add invitation</button>
+          <button className={btn.primary} disabled={invite.isPending}>Send invitation</button>
         </div>
       </form>
     </Dialog>
   )
 }
 
-function ManageDialog({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const target = useUsers((s) => s.users.find((u) => u.id === id))
-  const { setRole, suspend, reactivate, remove, transferOwnership } = useUsers.getState()
+function ManageDialog({ id, members, onClose }: { id: string | null; members: Member[]; onClose: () => void }) {
+  const target = members.find((u) => u.id === id)
+  const team = useTeam()
   const [confirming, setConfirming] = useState<'remove' | 'transfer' | null>(null)
   const [error, setError] = useState('')
-  const me = useCurrentUser()
+  const [info, setInfo] = useState('')
+  const { profile: me } = useSession()
   const close = () => {
     setConfirming(null)
     setError('')
     onClose()
   }
-  const run = (action: () => string | null, closeAfter = false) => {
-    const message = action()
+  const run = async (action: () => Promise<unknown>, closeAfter = false, message = '') => {
     setConfirming(null)
-    setError(message ?? '')
-    if (!message && closeAfter) close()
+    setInfo('')
+    try {
+      await action()
+      setError('')
+      if (closeAfter) close()
+      else setInfo(message)
+    } catch (err) {
+      setError((err as Error).message)
+    }
   }
 
   return (
@@ -108,7 +122,7 @@ function ManageDialog({ id, onClose }: { id: string | null; onClose: () => void 
           </div>
 
           <Field label="Role">
-            <select value={target.role} onChange={(e) => run(() => setRole(target.id, e.target.value as Role))} className={input}>
+            <select value={target.role} onChange={(e) => run(() => team.changeRole.mutateAsync({ profileId: target.id, role: e.target.value as Role }))} className={input}>
               {ASSIGNABLE.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABEL[r]}
@@ -119,6 +133,7 @@ function ManageDialog({ id, onClose }: { id: string | null; onClose: () => void 
           </Field>
 
           <Err text={error} />
+          {info && <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{info}</p>}
 
           {confirming ? (
             <div className="grid gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -131,7 +146,7 @@ function ManageDialog({ id, onClose }: { id: string | null; onClose: () => void 
                 <button type="button" className={btn.ghost} onClick={() => setConfirming(null)}>
                   Cancel
                 </button>
-                <button type="button" className={confirming === 'remove' ? `${btn.danger} border border-red-200 dark:border-red-900` : btn.primary} onClick={() => run(() => (confirming === 'remove' ? remove(target.id) : transferOwnership(target.id)), true)}>
+                <button type="button" className={confirming === 'remove' ? `${btn.danger} border border-red-200 dark:border-red-900` : btn.primary} onClick={() => run(() => (confirming === 'remove' ? team.remove : team.transferOwnership).mutateAsync(target.id), true)}>
                   {confirming === 'remove' ? 'Remove user' : 'Transfer ownership'}
                 </button>
               </div>
@@ -139,12 +154,17 @@ function ManageDialog({ id, onClose }: { id: string | null; onClose: () => void 
           ) : (
             <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
               {target.status === 'suspended' ? (
-                <button type="button" className={btn.ghost} onClick={() => run(() => reactivate(target.id))}>
+                <button type="button" className={btn.ghost} onClick={() => run(() => team.reactivate.mutateAsync(target.id))}>
                   Reactivate
                 </button>
-              ) : (
-                <button type="button" className={btn.ghost} onClick={() => run(() => suspend(target.id))}>
+              ) : target.status === 'active' ? (
+                <button type="button" className={btn.ghost} onClick={() => run(() => team.suspend.mutateAsync(target.id))}>
                   Suspend
+                </button>
+              ) : null}
+              {target.status === 'invited' && (
+                <button type="button" className={btn.ghost} onClick={() => run(() => team.resend.mutateAsync(target.id), false, 'Invitation resent. The new link works for 24 hours.')}>
+                  Resend invite
                 </button>
               )}
               {me.role === 'owner' && target.status === 'active' && (
@@ -220,9 +240,11 @@ function RolesPanel() {
 }
 
 export function UsersPage() {
-  const users = useUsers((s) => s.users)
-  const me = useCurrentUser()
-  const canManage = can(me.role, 'users.manage')
+  const { data: users = [], isPending, error: loadError } = useMembers()
+  const session = useSession()
+  const me = session.profile
+  const dateFormat = session.firm.dateFormat
+  const canManage = session.can('users.manage') && session.canWrite
   const [q, setQ] = useState('')
   const [role, setRole] = useState<Role | 'all'>('all')
   const [status, setStatus] = useState<Status | 'all'>('all')
@@ -231,7 +253,7 @@ export function UsersPage() {
   const [managing, setManaging] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
 
-  const columns: Column<User, SortKey>[] = [
+  const columns: Column<Member, SortKey>[] = [
     {
       id: 'name',
       label: 'Name',
@@ -252,14 +274,14 @@ export function UsersPage() {
     { id: 'email', label: 'Email', width: 230, sortKey: 'email', cell: (u) => <span className="text-zinc-600 dark:text-zinc-400">{u.email}</span>, text: (u) => u.email },
     { id: 'role', label: 'Role', width: 120, sortKey: 'role', cell: (u) => <RoleBadge role={u.role} />, text: (u) => ROLE_LABEL[u.role] },
     { id: 'status', label: 'Status', width: 120, sortKey: 'status', cell: (u) => <StatusBadge status={u.status} />, text: (u) => STATUS_LABEL[u.status] },
-    { id: 'active', label: 'Last active', width: 150, sortKey: 'active', cell: (u) => <span className="text-zinc-500">{lastActive(u)}</span>, text: lastActive },
+    { id: 'active', label: 'Last active', width: 150, sortKey: 'active', cell: (u) => <span className="text-zinc-500">{lastActive(u, dateFormat)}</span>, text: (u) => lastActive(u, dateFormat) },
     {
       id: 'actions',
       label: 'Actions',
       width: 120,
       align: 'right',
       cell: (u) =>
-        canManageUser(me, u) ? (
+        canManage && u.id !== me.id && u.role !== 'owner' ? (
           <button type="button" className={`${btn.ghost} py-1`} onClick={() => setManaging(u.id)} aria-label={`Manage ${u.name}`}>
             Manage
           </button>
@@ -274,7 +296,7 @@ export function UsersPage() {
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    const key = (u: User) => (sort.key === 'role' ? ROLES.indexOf(u.role) : sort.key === 'active' ? (u.lastActiveAt ?? '') : u[sort.key])
+    const key = (u: Member) => (sort.key === 'role' ? ROLES.indexOf(u.role) : sort.key === 'active' ? (u.lastActiveAt ?? '') : u[sort.key])
     const dir = sort.dir === 'asc' ? 1 : -1
     return users
       .filter((u) => (role === 'all' || u.role === role) && (status === 'all' || u.status === status) && (!needle || `${u.name} ${u.email}`.toLowerCase().includes(needle)))
@@ -289,16 +311,7 @@ export function UsersPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className={`${card} grid gap-4 p-5 sm:grid-cols-[1fr_auto] sm:items-start`}>
-        <div className="grid gap-1 text-sm">
-          <p className="font-medium">Sign-in isn’t connected yet</p>
-          <p className="text-zinc-500">
-            Everyone listed here is set up and previewed on this device. Real sign-in and separation of each business’s data arrive when the backend is connected. Use “Viewing as” to see what each role can see and do.
-          </p>
-          {!canManage && <p className="font-medium text-amber-700 dark:text-amber-400">You’re viewing as {ROLE_LABEL[me.role]}. Only an owner or admin can change users.</p>}
-        </div>
-        <ViewingAs className="sm:w-60" />
-      </div>
+      {!canManage && <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{session.can('users.manage') ? (session.writeBlockReason ?? '') : `You’re signed in as ${ROLE_LABEL[me.role]}. Only an owner or admin can change users.`}</p>}
 
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <div className="relative min-w-48 flex-1 sm:max-w-xs">
@@ -348,7 +361,11 @@ export function UsersPage() {
         <div className="border-b border-zinc-100 px-5 py-3 text-sm font-medium dark:border-zinc-800">
           {rows.length} {rows.length === 1 ? 'user' : 'users'}
         </div>
-        {rows.length ? (
+        {isPending ? (
+          <p className="p-6 text-center text-sm text-zinc-500">Loading…</p>
+        ) : loadError ? (
+          <p role="alert" className="p-6 text-center text-sm text-red-600">{loadError.message}</p>
+        ) : rows.length ? (
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-sm" style={{ minWidth }}>
               <colgroup>
@@ -383,8 +400,8 @@ export function UsersPage() {
 
       <RolesPanel />
 
-      <InviteDialog open={dialog === 'invite'} onClose={() => setDialog(null)} onInvited={(name) => setNotice(`${name} was added as invited. Their email invitation is sent once the backend is connected.`)} />
-      <ManageDialog key={managing} id={managing} onClose={() => setManaging(null)} />
+      <InviteDialog open={dialog === 'invite'} onClose={() => setDialog(null)} onInvited={(name) => setNotice(`${name} was invited. They'll get an email to set their password.`)} />
+      <ManageDialog key={managing} id={managing} members={users} onClose={() => setManaging(null)} />
       <ColumnsDialog open={dialog === 'columns'} onClose={() => setDialog(null)} table={table} />
     </div>
   )

@@ -1,11 +1,10 @@
 import { useState, type ChangeEvent, type ReactNode } from 'react'
-import { useStore } from '../store'
-import { fillClient } from '../ledger'
-import { can } from '../users/rules'
-import { useCurrentUser, useUsers } from '../users/store'
+import { useLogoUrl, useUpdateFirm, useUploadLogo } from '../data/queries'
+import { useSession } from '../data/session'
+import type { Firm } from '../data/mappers'
 import { btn, Field, Icon, input } from '../ui'
-import { makeBackup, parseBackup, type Backup } from './backup'
-import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES, useSettings, type DateFormat, type Settings } from './store'
+import { BankAccountsCard } from './BankAccounts'
+import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES } from './constants'
 
 const card = 'rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900'
 
@@ -30,7 +29,7 @@ function EditableCard<T>({
   title,
   blurb,
   value,
-  canEdit,
+  disabledReason,
   view,
   form,
   onSave,
@@ -38,20 +37,21 @@ function EditableCard<T>({
   title: string
   blurb: string
   value: T
-  canEdit: boolean
+  /** Null when editing is allowed; otherwise the tooltip explaining why not. */
+  disabledReason: string | null
   view: (v: T) => ReactNode
   form: (draft: T, set: (patch: Partial<T>) => void) => ReactNode
-  /** Returns an error message, or null when saved. */
-  onSave: (draft: T) => string | null
+  /** Resolves to an error message, or null when saved. */
+  onSave: (draft: T) => Promise<string | null>
 }) {
   const [draft, setDraft] = useState<T | null>(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const id = title.toLowerCase().replace(/\W+/g, '-')
 
-  const save = () => {
+  const save = async () => {
     if (!draft) return
-    const message = onSave(draft)
+    const message = await onSave(draft).catch((e: Error) => e.message)
     if (message) return setError(message)
     setDraft(null)
     setError('')
@@ -73,8 +73,8 @@ function EditableCard<T>({
             Saved
           </span>
         )}
-        {canEdit && !draft && (
-          <button type="button" className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => (setDraft(value), setError(''))}>
+        {!draft && (
+          <button type="button" disabled={!!disabledReason} title={disabledReason ?? undefined} className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => (setDraft(value), setError(''))}>
             Edit
           </button>
         )}
@@ -108,32 +108,39 @@ function EditableCard<T>({
 
 const Grid = ({ children }: { children: ReactNode }) => <div className="grid gap-4 sm:grid-cols-2">{children}</div>
 
-type Org = Pick<Settings, 'tradingName' | 'ssmNo' | 'sstNo' | 'phone' | 'email' | 'website' | 'address1' | 'address2' | 'postcode' | 'city' | 'state' | 'country' | 'logo'> & { legalName: string }
+type Org = Pick<Firm, 'name' | 'tradingName' | 'registrationNo' | 'sstNo' | 'phone' | 'email' | 'website' | 'address1' | 'address2' | 'postcode' | 'city' | 'state' | 'country'>
+const ORG_KEYS: (keyof Org)[] = ['name', 'tradingName', 'registrationNo', 'sstNo', 'phone', 'email', 'website', 'address1', 'address2', 'postcode', 'city', 'state', 'country']
 
-function LogoField({ logo, onChange }: { logo: string; onChange: (logo: string) => void }) {
+/** Uploads straight away: the file goes to storage, then the firm's logo path is updated. */
+function LogoField({ logoPath }: { logoPath: string | null }) {
   const [error, setError] = useState('')
-  const onFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const upload = useUploadLogo()
+  const update = useUpdateFirm()
+  const url = useLogoUrl(logoPath)
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
     if (!file.type.startsWith('image/')) return setError('Choose an image file (PNG, JPG, SVG or WebP).')
     if (file.size > LOGO_MAX_BYTES) return setError(`That logo is ${Math.round(file.size / 1024)} KB. The limit is ${LOGO_MAX_BYTES / 1024} KB, so choose a smaller image.`)
-    const reader = new FileReader()
-    reader.onload = () => (setError(''), onChange(String(reader.result)))
-    reader.onerror = () => setError('That file couldn’t be read. Try again.')
-    reader.readAsDataURL(file)
+    setError('')
+    try {
+      await upload.mutateAsync(file)
+    } catch (err) {
+      setError((err as Error).message)
+    }
   }
   return (
     <div className="grid gap-2 text-sm">
       <span className="font-medium text-zinc-700 dark:text-zinc-300">Logo (optional)</span>
       <div className="flex flex-wrap items-center gap-3">
-        {logo && <img src={logo} alt="Logo preview" className="max-h-14 max-w-40 rounded border border-zinc-200 bg-white object-contain p-1 dark:border-zinc-700" />}
+        {url && <img src={url} alt="Logo preview" className="max-h-14 max-w-40 rounded border border-zinc-200 bg-white object-contain p-1 dark:border-zinc-700" />}
         <label className={`${btn.ghost} cursor-pointer border border-zinc-200 dark:border-zinc-800`}>
-          <Icon name="upload" /> {logo ? 'Replace' : 'Upload image'}
-          <input type="file" accept="image/*" onChange={onFile} className="sr-only" />
+          <Icon name="upload" /> {upload.isPending ? 'Uploading…' : logoPath ? 'Replace' : 'Upload image'}
+          <input type="file" accept="image/*" onChange={onFile} disabled={upload.isPending} className="sr-only" />
         </label>
-        {logo && (
-          <button type="button" className={btn.danger} onClick={() => onChange('')}>
+        {logoPath && (
+          <button type="button" className={btn.danger} onClick={() => update.mutate({ logoPath: null }, { onError: (e) => setError(e.message) })}>
             Remove
           </button>
         )}
@@ -144,24 +151,34 @@ function LogoField({ logo, onChange }: { logo: string; onChange: (logo: string) 
   )
 }
 
-function OrganisationCard({ canEdit }: { canEdit: boolean }) {
-  const legalName = useStore((s) => s.businessName)
-  const setBusinessName = useStore((s) => s.setBusinessName)
-  const s = useSettings()
-  const value: Org = { legalName, tradingName: s.tradingName, ssmNo: s.ssmNo, sstNo: s.sstNo, phone: s.phone, email: s.email, website: s.website, address1: s.address1, address2: s.address2, postcode: s.postcode, city: s.city, state: s.state, country: s.country, logo: s.logo }
+/** Writes only the fields that changed. */
+function useSaveDiff<T extends Partial<Firm>>(keys: (keyof T)[], current: T) {
+  const update = useUpdateFirm()
+  return async (d: T) => {
+    const diff = Object.fromEntries(keys.filter((k) => d[k] !== current[k]).map((k) => [k, d[k]])) as Partial<Firm>
+    if (Object.keys(diff).length) await update.mutateAsync(diff)
+    return null
+  }
+}
+
+function OrganisationCard({ disabledReason }: { disabledReason: string | null }) {
+  const { firm } = useSession()
+  const logoUrl = useLogoUrl(firm.logoPath)
+  const value = Object.fromEntries(ORG_KEYS.map((k) => [k, firm[k]])) as Org
+  const save = useSaveDiff(ORG_KEYS, value)
 
   return (
     <EditableCard<Org>
       title="Organisation"
       blurb="Who you are. Shown at the top of every statement."
       value={value}
-      canEdit={canEdit}
+      disabledReason={disabledReason}
       view={(v) => (
         <>
-          <Row label="Logo" value={v.logo && <img src={v.logo} alt="Logo" className="max-h-14 max-w-40 object-contain" />} />
-          <Row label="Legal name" value={v.legalName} />
+          <Row label="Logo" value={logoUrl && <img src={logoUrl} alt="Logo" className="max-h-14 max-w-40 object-contain" />} />
+          <Row label="Legal name" value={v.name} />
           <Row label="Trading name" value={v.tradingName} />
-          <Row label="SSM registration no." value={v.ssmNo} />
+          <Row label="SSM registration no." value={v.registrationNo} />
           <Row label="SST no." value={v.sstNo} />
           <Row label="Phone" value={v.phone} />
           <Row label="Email" value={v.email} />
@@ -171,16 +188,16 @@ function OrganisationCard({ canEdit }: { canEdit: boolean }) {
       )}
       form={(d, set) => (
         <>
-          <LogoField logo={d.logo} onChange={(logo) => set({ logo })} />
+          <LogoField logoPath={firm.logoPath} />
           <Grid>
             <Field label="Legal name">
-              <input value={d.legalName} onChange={(e) => set({ legalName: e.target.value })} className={input} />
+              <input value={d.name} onChange={(e) => set({ name: e.target.value })} className={input} />
             </Field>
             <Field label="Trading name">
               <input value={d.tradingName} onChange={(e) => set({ tradingName: e.target.value })} className={input} />
             </Field>
             <Field label="SSM registration no.">
-              <input value={d.ssmNo} onChange={(e) => set({ ssmNo: e.target.value })} placeholder="e.g. 202401012345 (1234567-A)" className={input} />
+              <input value={d.registrationNo} onChange={(e) => set({ registrationNo: e.target.value })} placeholder="e.g. 202401012345 (1234567-A)" className={input} />
             </Field>
             <Field label="SST no. (optional)">
               <input value={d.sstNo} onChange={(e) => set({ sstNo: e.target.value })} className={input} />
@@ -222,38 +239,34 @@ function OrganisationCard({ canEdit }: { canEdit: boolean }) {
           </Grid>
         </>
       )}
-      onSave={(d) => {
-        if (!d.legalName.trim()) return 'Enter the legal name.'
+      onSave={async (d) => {
+        if (!d.name.trim()) return 'Enter the legal name.'
         if (d.email.trim() && !/^\S+@\S+\.\S+$/.test(d.email.trim())) return 'Enter a valid email address.'
         if (d.postcode.trim() && !/^\d{5}$/.test(d.postcode.trim())) return 'Enter a 5-digit postcode.'
-        const { legalName: name, ...rest } = d
-        setBusinessName(name.trim())
-        s.update(Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, typeof v === 'string' && k !== 'logo' ? v.trim() : v])))
-        return null
+        return save(Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v.trim()])) as Org)
       }}
     />
   )
 }
 
-type Stmt = Pick<Settings, 'statementNote' | 'discrepancyDays' | 'showRegNo' | 'bankName' | 'bankAccountName' | 'bankAccountNo'>
+type Stmt = Pick<Firm, 'statementNote' | 'discrepancyDays' | 'showRegistrationOnStatement'>
+const STMT_KEYS: (keyof Stmt)[] = ['statementNote', 'discrepancyDays', 'showRegistrationOnStatement']
 
-function StatementsCard({ canEdit }: { canEdit: boolean }) {
-  const s = useSettings()
-  const value: Stmt = { statementNote: s.statementNote, discrepancyDays: s.discrepancyDays, showRegNo: s.showRegNo, bankName: s.bankName, bankAccountName: s.bankAccountName, bankAccountNo: s.bankAccountNo }
+function StatementsCard({ disabledReason }: { disabledReason: string | null }) {
+  const { firm } = useSession()
+  const value = Object.fromEntries(STMT_KEYS.map((k) => [k, firm[k]])) as Stmt
+  const save = useSaveDiff(STMT_KEYS, value)
   return (
     <EditableCard<Stmt>
       title="Statements"
-      blurb="The footer, registration details and bank account printed on statements."
+      blurb="The footer and registration details printed on statements."
       value={value}
-      canEdit={canEdit}
+      disabledReason={disabledReason}
       view={(v) => (
         <>
           <Row label="Footer note" value={v.statementNote.replace('{days}', String(v.discrepancyDays))} />
           <Row label="Discrepancy period" value={`${v.discrepancyDays} days`} />
-          <Row label="Registration no." value={v.showRegNo ? 'Shown on statements' : 'Hidden'} />
-          <Row label="Bank" value={v.bankName} />
-          <Row label="Account name" value={v.bankAccountName} />
-          <Row label="Account no." value={v.bankAccountNo} />
+          <Row label="Registration no." value={v.showRegistrationOnStatement ? 'Shown on statements' : 'Hidden'} />
         </>
       )}
       form={(d, set) => (
@@ -272,48 +285,38 @@ function StatementsCard({ canEdit }: { canEdit: boolean }) {
               <input type="number" min={1} max={365} value={d.discrepancyDays} onChange={(e) => set({ discrepancyDays: Number(e.target.value) })} className={input} />
             </Field>
             <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input type="checkbox" checked={d.showRegNo} onChange={(e) => set({ showRegNo: e.target.checked })} className="size-4 accent-zinc-900" />
+              <input type="checkbox" checked={d.showRegistrationOnStatement} onChange={(e) => set({ showRegistrationOnStatement: e.target.checked })} className="size-4 accent-zinc-900" />
               Show registration no. on statements
             </label>
           </Grid>
-          <Grid>
-            <Field label="Bank name">
-              <input value={d.bankName} onChange={(e) => set({ bankName: e.target.value })} placeholder="e.g. Maybank" className={input} />
-            </Field>
-            <Field label="Account name">
-              <input value={d.bankAccountName} onChange={(e) => set({ bankAccountName: e.target.value })} className={input} />
-            </Field>
-            <Field label="Account no.">
-              <input value={d.bankAccountNo} inputMode="numeric" onChange={(e) => set({ bankAccountNo: e.target.value })} className={input} />
-            </Field>
-          </Grid>
-          <p className="text-sm text-zinc-500">Bank details appear on statements once an account number is set.</p>
         </>
       )}
-      onSave={(d) => {
+      onSave={async (d) => {
         if (!d.statementNote.trim()) return 'Enter a footer note.'
         if (!Number.isInteger(d.discrepancyDays) || d.discrepancyDays < 1 || d.discrepancyDays > 365) return 'Enter a whole number of days from 1 to 365.'
-        s.update({ ...d, statementNote: d.statementNote.trim(), bankName: d.bankName.trim(), bankAccountName: d.bankAccountName.trim(), bankAccountNo: d.bankAccountNo.trim() })
-        return null
+        return save({ ...d, statementNote: d.statementNote.trim() })
       }}
     />
   )
 }
 
-type Regional = Pick<Settings, 'dateFormat' | 'fyStartMonth'>
-const DATE_LABEL: Record<DateFormat, string> = { text: '3 Oct 2026', numeric: '03/10/2026' }
+type Regional = Pick<Firm, 'dateFormat' | 'fyStartMonth'>
+const REGIONAL_KEYS: (keyof Regional)[] = ['dateFormat', 'fyStartMonth']
+const DATE_LABEL: Record<Firm['dateFormat'], string> = { text: '3 Oct 2026', numeric: '03/10/2026' }
 
-function RegionalCard({ canEdit }: { canEdit: boolean }) {
-  const s = useSettings()
+function RegionalCard({ disabledReason }: { disabledReason: string | null }) {
+  const { firm } = useSession()
+  const value: Regional = { dateFormat: firm.dateFormat, fyStartMonth: firm.fyStartMonth }
+  const save = useSaveDiff(REGIONAL_KEYS, value)
   return (
     <EditableCard<Regional>
       title="Regional"
       blurb="Currency and how dates and the financial year are shown."
-      value={{ dateFormat: s.dateFormat, fyStartMonth: s.fyStartMonth }}
-      canEdit={canEdit}
+      value={value}
+      disabledReason={disabledReason}
       view={(v) => (
         <>
-          <Row label="Currency" value="Malaysian Ringgit (MYR, RM)" />
+          <Row label="Currency" value={firm.currency} />
           <Row label="Date format" value={DATE_LABEL[v.dateFormat]} />
           <Row label="Financial year starts" value={MONTHS[v.fyStartMonth - 1]} />
         </>
@@ -321,12 +324,13 @@ function RegionalCard({ canEdit }: { canEdit: boolean }) {
       form={(d, set) => (
         <>
           <Field label="Currency">
-            <input value="Malaysian Ringgit (MYR, RM)" readOnly aria-readonly className={`${input} bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50`} />
+            <input value={firm.currency} readOnly aria-readonly className={`${input} bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50`} />
+            <span className="text-zinc-500">Set when your firm was created. It can't change once transactions exist.</span>
           </Field>
           <Grid>
             <Field label="Date format">
-              <select value={d.dateFormat} onChange={(e) => set({ dateFormat: e.target.value as DateFormat })} className={input}>
-                {(Object.keys(DATE_LABEL) as DateFormat[]).map((k) => (
+              <select value={d.dateFormat} onChange={(e) => set({ dateFormat: e.target.value as Firm['dateFormat'] })} className={input}>
+                {(Object.keys(DATE_LABEL) as Firm['dateFormat'][]).map((k) => (
                   <option key={k} value={k}>
                     {DATE_LABEL[k]}
                   </option>
@@ -345,121 +349,34 @@ function RegionalCard({ canEdit }: { canEdit: boolean }) {
           </Grid>
         </>
       )}
-      onSave={(d) => (s.update(d), null)}
+      onSave={save}
     />
   )
 }
 
-function DataCard({ canEdit }: { canEdit: boolean }) {
-  const [pending, setPending] = useState<{ fileName: string; backup: Backup } | null>(null)
-  const [error, setError] = useState('')
-  const [done, setDone] = useState('')
-
-  const exportBackup = () => {
-    const { businessName, clients, txns, widgets } = useStore.getState()
-    const { users, currentUserId } = useUsers.getState()
-    const settings = readStoredSettings()
-    const backup = makeBackup({ main: { businessName, clients, txns, widgets }, users: { users, currentUserId }, settings })
-    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
-    Object.assign(document.createElement('a'), { href: url, download: `platform-backup-${backup.exportedAt.slice(0, 10)}.json` }).click()
-    URL.revokeObjectURL(url)
-    setDone('Backup downloaded. Keep it somewhere safe: it contains all client and team data.')
-    setError('')
-  }
-
-  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setDone('')
-    const result = parseBackup(await file.text())
-    if (!result.ok) return (setPending(null), setError(result.error))
-    setError('')
-    setPending({ fileName: file.name, backup: result.backup })
-  }
-
-  const restore = () => {
-    if (!pending) return
-    const { main, users, settings } = pending.backup
-    useStore.setState({ businessName: main.businessName, clients: main.clients.map((c) => fillClient(c)), txns: main.txns, widgets: main.widgets as ReturnType<typeof useStore.getState>['widgets'] })
-    // A restore is a deliberate reset, so it isn't an undo step.
-    useStore.temporal.getState().clear()
-    useUsers.getState().replaceAll(users.users, users.currentUserId)
-    useSettings.getState().replaceAll(settings)
-    setPending(null)
-    setDone('Backup restored.')
-  }
-
-  const b = pending?.backup
+function DataCard() {
   return (
     <section className={card} aria-labelledby="data-heading">
-      <header className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+      <header className="px-5 py-4">
         <h2 id="data-heading" className="font-semibold">
           Data
         </h2>
-        <p className="text-sm text-zinc-500">Back up everything on this device (clients, transactions, team and settings), or restore from a backup file.</p>
+        <p className="text-sm text-zinc-500">Your data is stored securely on our servers and backed up daily.</p>
       </header>
-      <div className="grid gap-4 p-5 text-sm">
-        {canEdit ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className={btn.primary} onClick={exportBackup}>
-              <Icon name="download" /> Export backup
-            </button>
-            <label className={`${btn.ghost} cursor-pointer border border-zinc-200 dark:border-zinc-800`}>
-              <Icon name="upload" /> Restore from file
-              <input type="file" accept=".json,application/json" onChange={onFile} className="sr-only" />
-            </label>
-          </div>
-        ) : (
-          <p className="text-zinc-500">Only an owner or admin can export or restore data.</p>
-        )}
-        {done && (
-          <p className="rounded-lg bg-emerald-50 p-3 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" role="status">
-            {done}
-          </p>
-        )}
-        <Err text={error} />
-        {b && (
-          <div className="grid gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="font-medium">
-              {pending.fileName} <span className="font-normal text-zinc-500">exported {b.exportedAt.slice(0, 10)}</span>
-            </p>
-            <p>
-              Contains {b.main.clients.length} clients, {b.main.txns.length} transactions and {b.users.users.length} team members.{' '}
-              <b>Restoring replaces all current data on this device and can’t be undone.</b>
-            </p>
-            <div className="flex justify-end gap-2">
-              <button type="button" className={btn.ghost} onClick={() => setPending(null)}>
-                Cancel
-              </button>
-              <button type="button" className={btn.primary} onClick={restore}>
-                Replace data and restore
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </section>
   )
 }
 
-/** Only the persisted fields, never the store's action functions. */
-function readStoredSettings(): Settings {
-  const s = useSettings.getState()
-  const { update: _u, replaceAll: _r, ...data } = s
-  return data
-}
-
 export function SettingsPage() {
-  const me = useCurrentUser()
-  const canEdit = can(me.role, 'settings.manage')
+  const s = useSession()
+  const disabledReason = s.can('settings.manage') && s.canWrite ? null : (s.writeBlockReason ?? "Your role can't change settings")
   return (
     <div className="grid max-w-3xl grid-cols-1 gap-6">
-      {!canEdit && <p className="text-sm font-medium text-amber-700 dark:text-amber-400">You’re viewing as a {me.role}. Only an owner or admin can edit settings.</p>}
-      <OrganisationCard canEdit={canEdit} />
-      <StatementsCard canEdit={canEdit} />
-      <RegionalCard canEdit={canEdit} />
-      <DataCard canEdit={canEdit} />
+      <OrganisationCard disabledReason={disabledReason} />
+      <BankAccountsCard />
+      <StatementsCard disabledReason={disabledReason} />
+      <RegionalCard disabledReason={disabledReason} />
+      <DataCard />
     </div>
   )
 }
