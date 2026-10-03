@@ -147,8 +147,8 @@ function FullPageMessage({ text, title, action, retry }: { text: string; title?:
   return (
     <main className="grid min-h-dvh place-items-center bg-zinc-50 p-4 dark:bg-zinc-950">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs dark:border-zinc-800 dark:bg-zinc-900" role="alert">
-        <h1 className="mb-1 text-lg font-semibold">{title}</h1>
-        <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">{text}</p>
+        <h1 className="mb-2 text-lg font-semibold leading-snug">{title}</h1>
+        <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">{text}</p>
         <div className="grid gap-2">
           {retry && <button type="button" onClick={retry} className={`${btn.primary} ${ring}`}>Try again</button>}
           {action && <button type="button" onClick={action} className={`${retry ? btn.ghost : btn.primary} ${ring}`}>Sign out</button>}

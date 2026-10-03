@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
 import { btn, Field, Icon, input } from '../ui'
 import { takeReturnTo } from './route'
@@ -12,6 +12,8 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [platformStatus, setPlatformStatus] = useState<{ accepting_signups: boolean } | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const firstErrorRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (forceSetPassword || mode !== 'signup') return
@@ -23,7 +25,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
 
   useEffect(() => {
     if (forceSetPassword) return
-    const onHash = () => { setMode(modeFromHash()); setError(''); setNotice('') }
+    const onHash = () => { setMode(modeFromHash()); setError(''); setNotice(''); firstErrorRef.current = null }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [forceSetPassword])
@@ -32,7 +34,17 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
     e.preventDefault()
     setBusy(true)
     setError('')
-    try { await fn(new FormData(e.currentTarget)) } catch (err) { setError(err instanceof Error ? err.message : 'Something went wrong. Try again.') } finally { setBusy(false) }
+    firstErrorRef.current = null
+    try { await fn(new FormData(e.currentTarget)) } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Try again.'
+      setError(msg)
+      // Focus on first form field to draw attention to errors
+      const firstInput = formRef.current?.querySelector<HTMLInputElement | HTMLSelectElement>('input, select')
+      if (firstInput) {
+        firstInput.focus()
+        firstErrorRef.current = firstInput as HTMLInputElement
+      }
+    } finally { setBusy(false) }
   }
 
   const signIn = (data: FormData) => supabase.auth.signInWithPassword({ email: String(data.get('email')), password: String(data.get('password')) })
@@ -53,12 +65,12 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
       if (error.message === 'User already registered') throw new Error('An account with that email already exists. Sign in instead.')
       throw error
     }
-    setNotice(`Check your email -- we sent a link to ${String(data.get('email'))} to verify your address.`)
+    setNotice(`Check your email — we've sent a link to ${String(data.get('email'))} to verify your address.`)
   }
   const joinWaitlist = async (data: FormData) => {
     const { error } = await supabase.rpc('join_waitlist', { p_email: String(data.get('email')), p_firm_name: String(data.get('firm_name')) })
     if (error) throw error
-    setNotice('You are on the list. We will email you when a place opens.')
+    setNotice("You're on the waitlist. We'll email you when a place opens.")
   }
   const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}/app/?flow=set-password` })
     .then(({ error }) => { if (error) throw error; setNotice('If that email has an account, a reset link is on its way.') })
@@ -92,15 +104,15 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
           <span className="text-sm leading-tight font-semibold">Platform<span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">Client accounts</span></span>
         </div>
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-          <h1 className="mb-1 text-xl font-semibold">{copy.title}</h1>
-          <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">{copy.help}</p>
+          <h1 className="mb-2 text-xl font-semibold leading-snug">{copy.title}</h1>
+          <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">{copy.help}</p>
           {mode === 'signup' && platformStatus && !platformStatus.accepting_signups ? (
-            <form key={mode} className="grid gap-4" noValidate onSubmit={(e) => run(e, joinWaitlist)}>
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">Early access is full. Join the waitlist to be notified when a place opens.</p>
+            <form key={mode} ref={formRef} className="grid gap-4" noValidate onSubmit={(e) => run(e, joinWaitlist)}>
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">Early access is full. Join the waitlist to be notified when a place opens.</p>
               <Field label="Your email"><input name="email" type="email" autoComplete="email" inputMode="email" autoFocus required className={input} {...fieldError} /></Field>
               <Field label="Firm name"><input name="firm_name" type="text" autoComplete="organization" required className={input} {...fieldError} /></Field>
-              {error && <p id="auth-error" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
-              {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" role="status">{notice}</p>}
+              {error && <p id="auth-error" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
+              {notice && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200" role="status">{notice}</p>}
               <button className={`${btn.primary} ${focusRing} w-full py-2.5`} disabled={busy} aria-busy={busy}>
                 {busy && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
                 {busy ? 'Please wait...' : 'Join waitlist'}
@@ -108,26 +120,28 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
               <p className="text-center text-sm"><a href="#signin" className={linkCls}>Already have an account? Sign in</a></p>
             </form>
           ) : (
-            <form key={mode} className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'signup' ? signUp : mode === 'forgot' ? forgot : setPassword)}>
+            <form key={mode} ref={formRef} className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'signup' ? signUp : mode === 'forgot' ? forgot : setPassword)}>
               {mode === 'signup' && <>
                 <Field label="Firm name"><input name="firm_name" type="text" autoComplete="organization" autoFocus required className={input} {...fieldError} /></Field>
-                <Field label="Currency">
-                  <select name="currency" defaultValue="MYR" required className={input}>
+                <div className="grid gap-1.5">
+                  <label htmlFor="currency" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Currency</label>
+                  <select id="currency" name="currency" defaultValue="MYR" required className={input}>
                     <option value="MYR">MYR (Malaysia)</option>
                     <option value="SGD">SGD (Singapore)</option>
                     <option value="USD">USD (United States)</option>
                   </select>
-                </Field>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Your firm's currency cannot be changed later.</p>
+                </div>
                 <Field label="Your name"><input name="name" type="text" autoComplete="name" required className={input} {...fieldError} /></Field>
               </>}
               {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete={mode === 'signup' ? 'email' : 'email'} inputMode="email" autoFocus={mode !== 'signup'} required className={input} {...(mode === 'forgot' ? fieldError : {})} /></Field>}
               {mode !== 'forgot' && <PasswordField label="Password" name="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} autoFocus={mode === 'set-password'} describedBy={mode === 'set-password' ? ['pw-rules', errorId].filter(Boolean).join(' ') : errorId} invalid={!!error} />}
               {(mode === 'signup' || mode === 'set-password') && <>
-                <p id="pw-rules" className="-mt-2 text-xs text-zinc-600 dark:text-zinc-400">At least 8 characters. Use a password you do not use anywhere else.</p>
+                <p id="pw-rules" className="text-xs text-zinc-600 dark:text-zinc-400">At least 8 characters. Use a password you do not use anywhere else.</p>
                 <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" describedBy={errorId} invalid={!!error} />
               </>}
-              {error && <p id="auth-error" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
-              {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" role="status">{notice}</p>}
+              {error && <p id="auth-error" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
+              {notice && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200" role="status">{notice}</p>}
               <button className={`${btn.primary} ${focusRing} w-full py-2.5`} disabled={busy} aria-busy={busy}>
                 {busy && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
                 {busy ? 'Please wait...' : copy.submit}
@@ -153,7 +167,7 @@ function PasswordField({ label, name, autoComplete, autoFocus, describedBy, inva
       <label htmlFor={name} className="font-medium text-zinc-700 dark:text-zinc-300">{label}</label>
       <div className="relative">
         <input id={name} name={name} type={shown ? 'text' : 'password'} autoComplete={autoComplete} autoFocus={autoFocus} required aria-invalid={invalid || undefined} aria-describedby={describedBy} className={`${input} pr-16`} />
-        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 rounded-md px-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
+        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 px-2.5 rounded px-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
       </div>
     </div>
   )
