@@ -38,6 +38,9 @@ const PATHS = {
   user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
+  sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
+  moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z',
+  monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
 }
 
 export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS; className?: string }) {
@@ -50,6 +53,24 @@ export function Icon({ name, className = 'size-4' }: { name: keyof typeof PATHS;
 
 /** Visible keyboard focus in light and dark. */
 export const ring = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
+
+const THEME_CYCLE = { light: 'dark', dark: 'system', system: 'light' } as const
+const THEME_ICON = { light: 'sun', dark: 'moon', system: 'monitor' } as const
+
+/** Cycles light -> dark -> system -> light. Visible to every role, no permission gate. */
+export function ThemeToggle({ theme, setTheme, className = '' }: { theme: keyof typeof THEME_CYCLE; setTheme: (value: keyof typeof THEME_CYCLE) => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      className={`${btn.ghost} ${className}`}
+      onClick={() => setTheme(THEME_CYCLE[theme])}
+      aria-label={`Theme: ${theme}. Click to switch.`}
+      title={`Theme: ${theme}`}
+    >
+      <Icon name={THEME_ICON[theme]} />
+    </button>
+  )
+}
 
 export const btn = {
   primary:
