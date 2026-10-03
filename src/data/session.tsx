@@ -10,6 +10,7 @@ import { AuthPages } from '../auth/AuthPages'
 import { rememberReturnTo } from '../auth/route'
 import { AdminConsole } from '../admin/AdminConsole'
 import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm, earlyAccessMessage } from './signup.ts'
+import { DEMO, getStore } from '../demo/store'
 
 export type Session = {
   userId: string; profile: Member; firm: Firm
@@ -25,7 +26,22 @@ export function useSession(): Session {
   return s
 }
 
+/** No sign-in, no Supabase: the demo persona is always the firm owner, with write access, from a demo store kept in localStorage. */
+function DemoSessionProvider({ children }: { children: ReactNode }) {
+  const store = getStore()
+  const session: Session = {
+    userId: store.profile.userId, profile: store.profile, firm: store.firm,
+    can: (a) => roleCan(store.profile.role, a), canWrite: true, writeBlockReason: null,
+    signOut: async () => {},
+  }
+  return <Ctx.Provider value={session}>{children}</Ctx.Provider>
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
+  return DEMO ? <DemoSessionProvider>{children}</DemoSessionProvider> : <RealSessionProvider>{children}</RealSessionProvider>
+}
+
+function RealSessionProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined)
   const [settingPassword, setSettingPassword] = useState(openedFromSetPasswordLink)
 

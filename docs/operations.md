@@ -119,13 +119,7 @@ The three entry points (`vercel.json` rules):
 - `GET /app/` → serves `dist/app/index.html` (React app, requires sign-in)
 - `GET /demo/` → serves `dist/demo/index.html` (demo build, public; see note below)
 
-**Demo build note:** The `/demo/` endpoint serves a browser-only build from the `demo-local` git tag. Before deploying to production, create this tag locally pointing to a known-good commit:
-```bash
-git tag demo-local <commit-sha>
-git push origin tag demo-local
-```
-
-The build script `scripts/build-demo.sh` will then include a demo build in the next production deployment. (For now, `/demo/` may 404 until the tag exists.)
+**Demo build note:** `/demo/` is the same app as `/app/`, built from the current commit with `VITE_DEMO=true` (`scripts/build-demo.sh`, run as part of `pnpm build`). That flag makes `SessionProvider` skip Supabase auth and use an in-memory/localStorage demo session and data store (`src/demo/store.ts`) instead, so the demo always reflects whatever is on `main` — no tag to keep up to date.
 
 ### Step 10: Create the super-admin profile
 
