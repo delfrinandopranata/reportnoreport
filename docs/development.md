@@ -144,9 +144,7 @@ Tests in `supabase/tests/*.test.sql` cover:
 - **09_constraints.test.sql** — change_log schema and trigger coverage
 - **11_signup.test.sql** — cap, waitlist, create_firm_for_current_user
 
-Expected: **78 pgTAP** (or close to it; count may vary with Plan C/D migrations).
-
-If any test fails, check the error message and the migration that introduced the function. The tests are designed to be declarative: read the test name to understand what it's checking.
+All tests should pass. If any test fails, check the error message and the migration that introduced the function. The tests are designed to be declarative: read the test name to understand what it's checking.
 
 ### Equivalence test (browser maths vs SQL)
 
@@ -166,7 +164,7 @@ Uses a single fixture ledger with receipts and payments across two clients. If t
 deno test supabase/functions
 ```
 
-Tests in `supabase/functions/**/*.test.ts` cover Edge Function rules (caller validation, auth checks). Expected: **2/2** (team rules, admin rules). Billing tests (Plan C) deferred.
+Tests in `supabase/functions/**/*.test.ts` cover Edge Function rules (caller validation, auth checks). All tests should pass. Billing tests (Plan C) deferred.
 
 ### Type checking and linting
 

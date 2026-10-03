@@ -30,7 +30,7 @@
 
 **Plan D** (onboarding): product tour on first sign-in, "Get started" checklist, loadable sample data.
 
-**Plan E** (future): trust and compliance (audit, locked periods, reconciliation); client communication (emailed statements, client portal).
+**Later sub-projects** (not yet planned): Trust and compliance (audit views, locked periods, bank reconciliation); Client communication (emailed statements, reminders, client portal).
 
 ## Key constraints
 
@@ -46,7 +46,7 @@
 | Task | File / Command |
 |------|---|
 | Run locally | `supabase start && pnpm dev` (see [development.md](./development.md) §Daily) |
-| Run tests | `pnpm test` (unit), `supabase test db` (pgTAP), `pnpm test:db` (equivalence), `deno test supabase/functions` (Edge Functions) |
+| Run tests | `pnpm test` (unit), `supabase test db` (database), `pnpm test:db` (equivalence), `deno test supabase/functions` (Edge Functions) |
 | Regenerate DB types | `supabase gen types typescript --local > src/data/database.types.ts` |
 | View API docs | Supabase Studio: `http://127.0.0.1:54323` |
 | Check mailbox | Mailpit: `http://127.0.0.1:54324` |

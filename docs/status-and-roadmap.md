@@ -13,10 +13,10 @@
 - Server-computed balances and ledgers via SQL functions
 - Team invites, role changes, suspensions via `team` Edge Function
 - Change log for audit trail
-- All 78 pgTAP tests passing
-- All unit tests passing (Node.js `--test`)
+- pgTAP tests passing (database schema, isolation, roles, invariants, writes, ledger, import, team, signup)
+- Unit tests passing (Node.js `--test`)
 - Browser equivalence test passing (Postgres functions = browser maths)
-- All Edge Function tests passing (Deno)
+- Edge Function tests passing (Deno)
 - Email via Resend SMTP (branded templates for invite, recovery, confirmation, email_change)
 - Typecheck and lint clean (oxlint, TypeScript)
 
@@ -120,18 +120,13 @@ Rough estimate: 5–7 days from 2026-10-03 with 1 agent per task concurrently, r
 
 ---
 
-## Plan E (future: trust and compliance)
+## Later sub-projects (not yet planned)
 
-**Plan E — Audit, Locked Periods, Bank Reconciliation** adds financial controls.
+**Spec §1 sub-project map lists two areas for future work:**
+- Trust and compliance: audit views, locked periods, bank reconciliation
+- Client communication: emailed statements, reminders, client portal
 
-### To do
-
-- **Audit view:** Settings › Audit › change_log table (firm_id, table_name, before/after, actor, timestamp)
-- **Locked periods:** Settings › Periods › select range → lock (prevent edits in that range)
-- **Bank reconciliation:** Import bank statement, match to ledger, surface discrepancies
-- **Compliance reports:** For regulatory filings (likely out of scope for MVP)
-
-### Not on the roadmap unless requested; deferred until Plan D is live
+These require a separate planning phase and are deferred until demand justifies them.
 
 ---
 
@@ -195,16 +190,21 @@ These are low-cost fixes that improve the product but are not blockers. Review b
 
 ---
 
-## Metrics and monitoring
+## Logs and observability
 
-Once live, track:
+**Not yet set up:** alerting, uptime checks, error tracking, metrics collection, dashboards.
 
-- **Sign-ups:** `select count(*) from firms where source = 'self_serve'`
-- **Active firms:** `select count(*) from firms where status = 'active' and billing_status in ('trial', 'paid', 'complimentary')`
-- **Trial → Paid conversion:** `select count(*) from firms where billing_status = 'paid'` / trial count
-- **Team size:** `select avg(team_count) from (select firm_id, count(*) as team_count from profiles where status = 'active' group by firm_id) t`
-- **Average transaction volume:** `select avg(txn_count) from (select firm_id, count(*) as txn_count from transactions group by firm_id) t`
-- **Help requests:** Monitor Mailosaur/email support inbox and feedback channels
+**Available once live:**
+- **Postgres logs:** Supabase dashboard › Logs (queries, slowest queries, replication)
+- **Auth logs:** Supabase dashboard › Authentication › Auth logs
+- **Edge Function logs:** Supabase dashboard › Edge Functions › Logs (requests, errors)
+- **Frontend logs:** Vercel dashboard › Deployments › Logs and Runtime Logs
+- **Email delivery:** Resend dashboard › Emails (open rates, bounces, clicks)
+
+**Metrics you can query post-launch:**
+- `select count(*) from firms where source = 'self_serve'` — self-serve sign-ups
+- `select count(*) from firms where status = 'active'` — active firms
+- `select count(*) from profiles where status = 'active'` — active users per firm
 
 ---
 

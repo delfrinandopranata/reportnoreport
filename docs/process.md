@@ -169,7 +169,7 @@ All must pass before a task is marked done. Failures block the commit.
 
 **On production deployment:**
 - Smoke tests: [operations.md](./operations.md) § Go-live smoke tests
-- Monitor: Vercel logs, Supabase logs, email delivery (Resend), payments (Stripe)
+- Monitor: Vercel logs, Supabase logs, email delivery (Resend), and (once Plan C is live) Stripe payments
 
 ## Decision-making and rulings
 
@@ -211,21 +211,17 @@ Rulings are recorded in the progress ledger during execution, then moved to [dec
 
 Sketch notes (whiteboarding, brainstorms, discussions) live in planning documents or PR threads, not in committed files. They're ephemeral; capture insights in the spec or decisions, then discard the sketches.
 
-## Pairing and reviews
+## Reviews
 
-**Implementer + Reviewer pairing:**
-- Implementer reads the task, builds it, self-reviews the diff, commits
-- Reviewer (a separate agent or person) reads the code and spec, writes findings
-- Implementer receives findings, fixes, commits, marks task done
-- Re-reviewer (scoped; usually the original reviewer) verifies the fixes
+**Review workflow (Haiku agents, Plan B onwards):**
+- **Implementer** (Haiku): reads the task, builds it, self-reviews the diff, commits
+- **Independent reviewer** (separate Haiku): reads the code and spec, sends findings to the implementer via SendMessage
+- **Implementer** (Haiku): receives fix requests, implements fixes, commits
+- **Scoped re-review** (Haiku): verifies the fixes are correct
 
-This prevents tunnel vision and catches logic bugs early.
+**The rule:** No commit without a self-review of the diff. No PR merge without a code review.
 
-**Across plans:**
-- Plan A was reviewed by one senior code reviewer + QA + UI/UX (parallel), then one fix wave
-- Plan B uses per-task reviews (faster feedback)
-
-**The rule:** No commit without a self-review of the diff. No PR merge without a code review. No release without smoke tests.
+**Plan A (completed):** Used one final review stage (senior code reviewer + QA + UI/UX in parallel) after all tasks, then one fix wave. This project later switched to per-task reviews (Plan B onwards) for faster feedback.
 
 ## Handoff and continuity
 

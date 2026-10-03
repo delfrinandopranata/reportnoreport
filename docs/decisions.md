@@ -74,9 +74,6 @@
 | Multi-currency firms (MYR + SGD in one) | D3 revision or new rule | Schema, balances, reports |
 | Per-seat pricing (team size matters) | D7 revision | Billing, plan tiers |
 | Recurring billing (monthly/yearly) | D7 revision | Stripe setup, renewal logic |
-| Locked periods (no edit after period closed) | New; Plan E | change_log retention, write gates |
-| Bank reconciliation (match statements to ledger) | New; Plan E | Reconciliation UI, bank import |
-| Client communication (emailed statements, portal) | New; Plan E | Email templating, client access |
 | Two-factor authentication | New; optional | Auth complexity |
 | Single sign-on (SSO / OAuth) | New; optional | Supabase external providers |
 | Custom domains per firm | New; optional | DNS, multi-tenancy, SSL |

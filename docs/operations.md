@@ -172,26 +172,18 @@ After deployment, verify:
    - Check the firms list updates
 10. **Cap works:** Set platform_settings firm_cap to 2, create 2 self-serve firms, verify the 3rd bounces to waitlist
 
-## Production monitoring and maintenance
+## Production logs and observability
 
-### Regular checks
+**Not yet set up:** alerting, uptime checks, error tracking, automatic metrics collection.
 
-- **Storage quota:** Supabase › Storage › see logo bucket size
-- **Database size:** Supabase › Logs › Slowest queries
-- **Auth user count:** Supabase › Authentication › Users
-- **Email delivery:** Resend › Analytics (bounces, opens, clicks)
-- **Error logs:** Vercel › Deployments › see build/runtime errors
+**Available once live:**
+- **Postgres logs:** Supabase dashboard › Logs (queries, slowest queries, replication)
+- **Auth logs:** Supabase dashboard › Authentication › Auth logs
+- **Edge Function logs:** Supabase dashboard › Edge Functions › Logs (requests, errors)
+- **Frontend logs:** Vercel dashboard › Deployments › Logs and Runtime Logs
+- **Email delivery:** Resend dashboard › Emails (bounces, opens, clicks)
 
-### Backups
-
-- **Supabase** provides automated daily backups (free tier keeps 7 days; enterprise keeps 30)
-- To manually backup: `supabase db pull` (requires CLI authentication)
-
-### Scaling considerations
-
-- **1000+ self-serve firms:** Increase `platform_settings.firm_cap` (or remove the cap entirely)
-- **Very large periods (1 year+ of transactions):** Ledger queries will page in 1000-row chunks (auto, via `paging.ts`); consider archiving old data or adding date filtering to the UI
-- **Concurrent signups at cap:** The `create_firm_for_current_user` function holds a row lock on `platform_settings` while counting self-serve firms; this prevents two sign-ups from exceeding the cap, but adds 10–100ms latency under load. Not a concern for early access.
+**Backups:** Supabase provides automated daily backups (free tier keeps 7 days; enterprise keeps 30).
 
 ## Rolling back a deployment
 
@@ -203,14 +195,14 @@ If a Vercel deployment breaks the app:
 
 For Supabase (database migrations):
 
-1. Migrations are append-only and never rolled back in Postgres (this is a best practice)
-2. If a migration introduced a bug, create a new migration that fixes it (e.g., `20261005000001_fix_bug.sql`)
+1. Migrations are append-only and never rolled back (Postgres best practice)
+2. If a migration introduced a bug, create a new migration that fixes it
 3. Never edit or delete an existing migration
 
 For Edge Functions:
 
-1. Vercel › Deployments › Promote to Production (same as above)
-2. Or redeploy locally: `supabase functions deploy <function-name>`
+1. Redeploy from local: `supabase functions deploy <function-name> --project-id <your-project-id>`
+2. Or use Vercel › Deployments › Promote to Production if the bug is in the frontend/API layer
 
 ## Secrets management (critical)
 
@@ -249,19 +241,17 @@ Vercel (frontend)
 Supabase (backend)
     ├→ PostgreSQL 17 (Singapore)       [data, RLS, computed functions]
     ├→ Auth (Supabase)                 [user signup, sign-in, password reset]
-    ├→ Edge Functions (Deno)           [team, admin, billing, stripe-webhook]
+    ├→ Edge Functions (Deno)           [team (invites), admin (super-admin ops)]
     ├→ Storage (S3-compatible)         [firm logos]
-    └→ Logs, Monitoring, Backups
+    └→ Logs, Backups
     ↓
 Resend (email)
-    └→ SMTP server                     [branded emails]
-    ↓
-Stripe (payments, Plan C)
-    ├→ Checkout Sessions              [payment flows]
-    └→ Webhooks                        [payment confirmation]
+    └→ SMTP server                     [branded emails via Supabase Auth]
 ```
 
-All three services (Vercel, Supabase, Stripe, Resend) communicate via HTTPS. No server-to-server auth required; the frontend is the only client.
+Services communicate via HTTPS. No server-to-server auth required; the frontend (via the anon key) is the only client.
+
+**Note:** Stripe is integrated in Plan C (not yet started). The hosting diagram will expand when billing is added.
 
 ## Support and troubleshooting
 
@@ -275,12 +265,12 @@ All three services (Vercel, Supabase, Stripe, Resend) communicate via HTTPS. No 
 | Edge Function timeout | Function is too slow or Supabase is down | Check function logs (Supabase › Edge Functions › Logs); increase timeout if needed (default 60s) |
 | Database locked / can't run migrations | Stale connection or migration in progress | Restart Supabase: `supabase stop && supabase start` |
 
-## Future: Plan C (Stripe), Plan D (onboarding), Plan E (compliance)
+## Future: Plan C and beyond
 
 The deployment checklist above covers Plans A and B. Future plans will add:
 
-- **Plan C:** RM 10 one-time payment via Stripe (webhook verification, refund handling)
-- **Plan D:** Product tour (in-house), Get started checklist, sample data
-- **Plan E:** Audit views, locked periods, bank reconciliation
+- **Plan C:** RM 10 one-time payment via Stripe (requires Stripe account, API keys, webhook secret)
+- **Plan D:** Product tour, Get started checklist, sample data UX
+- **Later sub-projects:** Trust and compliance (audit views, locked periods, bank reconciliation); Client communication (emailed statements, reminders, client portal)
 
 All use the same Supabase and Vercel infrastructure; only new migrations and Edge Functions are needed.
