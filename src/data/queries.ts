@@ -248,6 +248,60 @@ export function useSampleDataExists() {
   return exists
 }
 
+export function useClientsCount(isSample: boolean) {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'clients-count', isSample],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('clients')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .eq('is_sample', isSample)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
+export function useTransactionsCount(isSample: boolean) {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'transactions-count', isSample],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .eq('is_sample', isSample)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
+export function useMembersCount() {
+  const { firm } = useSession()
+  const keys = useKeys()
+  const { data = 0 } = useQuery({
+    queryKey: [...keys.all, 'members-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('firm_id', firm.id)
+        .in('status', ['active', 'invited'])
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  return data
+}
+
 export function useLoadSampleData() {
   const { firm } = useSession()
   const qc = useQueryClient()

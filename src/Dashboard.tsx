@@ -16,6 +16,8 @@ import { btn, Icon } from './ui'
 import { WIDGETS } from './widgets'
 import { sampleControls } from './data/sampleData'
 import { useSession } from './data/session'
+import { Checklist } from './checklist'
+import { useChecklist } from './checklist/useChecklist'
 
 export type WidgetType = 'net' | 'in' | 'out' | 'clients' | 'cashflow' | 'balances' | 'recent' | 'quick-add'
 export type Span = 1 | 2 | 4
@@ -169,6 +171,7 @@ export function Dashboard({ editing }: { editing: boolean }) {
   const loadSample = useLoadSampleData()
   const { canImport } = sampleControls(profile.role, sampleDataExists)
   const loadSampleErrorMsg = loadSample.error instanceof Error ? loadSample.error.message : (loadSample.error ? String(loadSample.error) : '')
+  const checklist = useChecklist()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -193,6 +196,16 @@ export function Dashboard({ editing }: { editing: boolean }) {
   return (
     <>
       {editing && <Library addWidget={layout.addWidget} />}
+      {checklist.open && (
+        <div className="mb-6">
+          <Checklist
+            items={checklist.items}
+            onSkip={checklist.onSkip}
+            onRestore={checklist.onRestore}
+            onDismiss={checklist.onDismiss}
+          />
+        </div>
+      )}
       {widgets.length === 0 && (
         <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-16 text-center dark:border-zinc-700">
           <p className="font-medium">No widgets on this dashboard</p>
