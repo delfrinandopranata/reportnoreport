@@ -4,11 +4,12 @@ import type { Session as AuthSession } from '@supabase/supabase-js'
 import { can as roleCan, type Action } from '../users/rules'
 import { rowToFirm, rowToMember, type Firm, type Member } from './mappers'
 import { openedFromSetPasswordLink, supabase } from './supabase'
+import { toUserMessage } from './errors'
 import { btn } from '../ui'
 import { AuthPages } from '../auth/AuthPages'
 import { rememberReturnTo } from '../auth/route'
 import { AdminConsole } from '../admin/AdminConsole'
-import { pendingFirmFromMetadata, isEarlyAccessFull } from './signup.ts'
+import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm } from './signup.ts'
 
 export type Session = {
   userId: string; profile: Member; firm: Firm
@@ -27,8 +28,7 @@ export function useSession(): Session {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined)
   const [settingPassword, setSettingPassword] = useState(openedFromSetPasswordLink)
-  const [creatingFirm, setCreatingFirm] = useState(false)
-  const [firmCreationError, setFirmCreationError] = useState<{ isEarlyAccessFull: boolean; message: string } | null>(null)
+  const [firmCreationError, setFirmCreationError] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,48 +46,55 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const userId = auth?.user.id
   const context = useQuery({
     queryKey: ['session', userId],
-    enabled: !!userId && !settingPassword && !creatingFirm && !firmCreationError,
+    enabled: !!userId && !settingPassword,
     queryFn: async () => {
       const accepted = await supabase.rpc('accept_invite')
       if (accepted.error) throw accepted.error
       const touched = await supabase.rpc('touch_last_active')
       if (touched.error) console.error('touch_last_active failed', touched.error)
-      const { data: profile, error } = await supabase.from('profiles').select('*').eq('user_id', userId!).single()
-      if (error) throw error
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', userId!).maybeSingle()
+      if (profileError) throw profileError
 
-      if (profile.is_super_admin) {
-        return { profile, firm: null, reason: null, isSuperAdmin: true }
-      }
-
-      if (!profile.firm_id) {
+      let currentProfile = profile
+      if (!currentProfile) {
         const pendingFirm = pendingFirmFromMetadata(auth?.user.user_metadata)
         if (pendingFirm) {
-          setCreatingFirm(true)
           const { error: createError } = await supabase.rpc('create_firm_for_current_user', {
             p_firm_name: pendingFirm.firmName,
             p_currency: pendingFirm.currency,
             p_person_name: pendingFirm.personName,
           })
-          setCreatingFirm(false)
           if (createError) {
-            const isFullError = isEarlyAccessFull(createError)
-            const serverMsg = (createError as { message?: string })?.message || ''
-            setFirmCreationError({
-              isEarlyAccessFull: isFullError,
-              message: isFullError ? 'Early access is full. You are on the waitlist -- we will email you when a place opens.' : `Could not create firm. ${serverMsg}`.trim(),
-            })
+            if (isEarlyAccessFull(createError)) {
+              const email = auth?.user.email
+              if (email) {
+                const { error: joinError } = await supabase.rpc('join_waitlist', {
+                  p_email: email,
+                  p_firm_name: pendingFirm.firmName,
+                })
+                if (joinError) console.error('join_waitlist failed', joinError)
+              }
+            }
             throw createError
           }
-          return { refetch: true }
+          const { data: newProfile, error: reloadError } = await supabase.from('profiles').select('*').eq('user_id', userId!).maybeSingle()
+          if (reloadError) throw reloadError
+          currentProfile = newProfile
+          if (!currentProfile) throw new Error('Profile creation failed')
         }
       }
 
-      if (!profile.firm_id) return { profile, firm: null, reason: null }
-      const { data: firm, error: firmError } = await supabase.from('firms').select('*').eq('id', profile.firm_id).maybeSingle()
+      if (!currentProfile) return { profile: null, firm: null, reason: null, isSuperAdmin: false }
+      if (currentProfile.is_super_admin) {
+        return { profile: currentProfile, firm: null, reason: null, isSuperAdmin: true }
+      }
+
+      if (!currentProfile.firm_id) return { profile: currentProfile, firm: null, reason: null, isSuperAdmin: false }
+      const { data: firm, error: firmError } = await supabase.from('firms').select('*').eq('id', currentProfile.firm_id).maybeSingle()
       if (firmError) throw firmError
-      const { data: reason, error: reasonError } = await supabase.rpc('firm_write_block_reason', { firm: profile.firm_id })
+      const { data: reason, error: reasonError } = await supabase.rpc('firm_write_block_reason', { firm: currentProfile.firm_id })
       if (reasonError) throw reasonError
-      return { profile, firm, reason: reason as string | null }
+      return { profile: currentProfile, firm, reason: reason as string | null, isSuperAdmin: false }
     },
   })
 
@@ -95,13 +102,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   if (auth === undefined || (userId && context.isPending)) return <FullPageMessage text="Loading..." />
   if (!auth) return <AuthPages />
   if (firmCreationError) {
-    return <FullPageMessage title={firmCreationError.isEarlyAccessFull ? 'Early access is full' : 'Something went wrong'} text={firmCreationError.message} action={() => supabase.auth.signOut()} />
+    const isFullError = isEarlyAccessFull(new Error(firmCreationError))
+    return <FullPageMessage title={isFullError ? 'Early access is full' : 'Something went wrong'} text={firmCreationError} action={() => supabase.auth.signOut()} />
   }
-  if (context.isError) return <FullPageMessage title="We could not load your account" text="Check your connection and try again. If it keeps failing, sign out and back in." action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
+  if (context.isError) {
+    const err = context.error
+    const msg = toUserMessage(err, { context: 'session.load' })
+    const isFullError = isEarlyAccessFull(err)
+    if (isFullError) {
+      return <FullPageMessage title="Early access is full" text={msg} action={() => supabase.auth.signOut()} />
+    }
+    return <FullPageMessage title="We could not load your account" text={msg} action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
+  }
   const result = context.data!
-  if (result.refetch) return <FullPageMessage text="Setting up your firm..." />
   if (result.isSuperAdmin) {
-    return <AdminConsole name={result.profile.name} onSignOut={() => supabase.auth.signOut()} />
+    return <AdminConsole name={result.profile!.name} onSignOut={() => supabase.auth.signOut()} />
   }
   const { profile, firm, reason } = result
   if (!firm) return <FullPageMessage title="No access to this firm" text="Your access is suspended, or your firm is not set up yet. Contact your firm owner." action={() => supabase.auth.signOut()} />

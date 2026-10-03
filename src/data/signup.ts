@@ -20,3 +20,10 @@ export function isEarlyAccessFull(error: unknown): boolean {
   const { message } = error as { message?: unknown }
   return typeof message === 'string' && message.includes('EARLY_ACCESS_FULL')
 }
+
+/** Decide whether to create a firm for a user. Returns true if profile is null or has no firm_id and metadata has pending firm data. */
+export function shouldCreateFirm(profile: unknown, metadata: unknown): boolean {
+  if (!profile) return !!pendingFirmFromMetadata(metadata)
+  const prof = profile as { firm_id?: unknown }
+  return !prof.firm_id && !!pendingFirmFromMetadata(metadata)
+}

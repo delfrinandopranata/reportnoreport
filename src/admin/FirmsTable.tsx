@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { btn, Avatar } from '../ui'
 import { callAdmin, type AdminListFirmsResponse } from './api'
 
 type Firm = AdminListFirmsResponse['firms'][0]
 
-type Action = { type: 'suspend' | 'reactivate' | 'extend'; firmId: string; days?: 7 | 14 }
+type Action = { type: 'suspend' | 'reactivate' | 'extend' | 'makeComplimentary'; firmId: string; days?: 7 | 14 }
 
 export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, firmName: string, currency: string) => void }) {
   const qc = useQueryClient()
@@ -69,6 +69,23 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
     },
   })
 
+  const makeComplimentary = useMutation({
+    mutationFn: async (firmId: string) => {
+      setActionError(null)
+      try {
+        await callAdmin('set_billing', { firmId, billing_status: 'complimentary' })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Failed to make complimentary'
+        setActionError({ firmId, message: msg })
+        throw err
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'firms'] })
+      setConfirmAction(null)
+    },
+  })
+
   const firms = list.data?.firms ?? []
   const filtered = firms.filter(
     (f) =>
@@ -76,10 +93,11 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
       f.currency.toLowerCase().includes(search.toLowerCase()),
   )
 
+  const now = useMemo(() => new Date(), [])
+
   const getBillingLabel = (f: Firm) => {
     if (f.billing_status === 'trial' && f.trial_ends_at) {
       const ends = new Date(f.trial_ends_at)
-      const now = new Date()
       const daysLeft = Math.ceil((ends.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       return daysLeft > 0 ? `Trial: ${daysLeft}d` : 'Trial ended'
     }
@@ -192,6 +210,15 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                       >
                         +14d
                       </button>
+                      {firm.billing_status === 'trial' && (
+                        <button
+                          onClick={() => setConfirmAction({ type: 'makeComplimentary', firmId: firm.id })}
+                          className={`${btn.ghost} !px-2 !py-1 text-xs`}
+                          disabled={makeComplimentary.isPending}
+                        >
+                          Comp
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -214,11 +241,13 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
               {confirmAction.type === 'suspend' && 'Suspend firm?'}
               {confirmAction.type === 'reactivate' && 'Reactivate firm?'}
               {confirmAction.type === 'extend' && `Extend trial by ${confirmAction.days} days?`}
+              {confirmAction.type === 'makeComplimentary' && 'Make firm complimentary?'}
             </h3>
             <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">
               {confirmAction.type === 'suspend' && 'The firm owner will see a suspension message and cannot make changes.'}
               {confirmAction.type === 'reactivate' && 'The firm will be active again.'}
               {confirmAction.type === 'extend' && 'Trial end date will be extended.'}
+              {confirmAction.type === 'makeComplimentary' && 'The trial will end and the firm will be free forever.'}
             </p>
             <div className="flex gap-3">
               <button
@@ -234,11 +263,12 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                   if (confirmAction.type === 'suspend') suspend.mutate(confirmAction.firmId)
                   else if (confirmAction.type === 'reactivate') reactivate.mutate(confirmAction.firmId)
                   else if (confirmAction.type === 'extend') extendTrial.mutate({ firmId: confirmAction.firmId, days: confirmAction.days! })
+                  else if (confirmAction.type === 'makeComplimentary') makeComplimentary.mutate(confirmAction.firmId)
                 }}
                 className={confirmAction.type === 'suspend' ? btn.danger : btn.primary}
-                disabled={suspend.isPending || reactivate.isPending || extendTrial.isPending}
+                disabled={suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending}
               >
-                {suspend.isPending || reactivate.isPending || extendTrial.isPending ? 'Working...' : 'Confirm'}
+                {suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending ? 'Working...' : 'Confirm'}
               </button>
             </div>
           </div>

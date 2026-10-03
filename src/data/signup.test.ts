@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
-import { pendingFirmFromMetadata, isEarlyAccessFull } from './signup.ts'
+import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm } from './signup.ts'
 
 test('pendingFirmFromMetadata: returns null when meta is null', () => {
   const result = pendingFirmFromMetadata(null)
@@ -115,4 +115,42 @@ test('isEarlyAccessFull: returns true when EARLY_ACCESS_FULL is in message text'
   const error = { code: 'P0001', message: 'Something happened: EARLY_ACCESS_FULL' }
   const result = isEarlyAccessFull(error)
   assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns false when profile exists and has firm_id', () => {
+  const profile = { firm_id: '123' }
+  const metadata = { firm_name: 'Test Co', currency: 'MYR', name: 'John Doe' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns false when profile is null and no metadata', () => {
+  const result = shouldCreateFirm(null, null)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns false when profile is null and metadata is incomplete', () => {
+  const metadata = { firm_name: 'Test Co' }
+  const result = shouldCreateFirm(null, metadata)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns true when profile is null and metadata is complete', () => {
+  const metadata = { firm_name: 'Test Co', currency: 'MYR', name: 'John Doe' }
+  const result = shouldCreateFirm(null, metadata)
+  assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns true when profile exists without firm_id and metadata is complete', () => {
+  const profile = { firm_id: null }
+  const metadata = { firm_name: 'Test Co', currency: 'SGD', name: 'Jane Smith' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns false when profile exists without firm_id but metadata is incomplete', () => {
+  const profile = { firm_id: null }
+  const metadata = { firm_name: 'Test Co', name: 'Jane Smith' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, false)
 })
