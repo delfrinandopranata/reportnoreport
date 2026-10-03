@@ -238,8 +238,9 @@ export function useSampleDataExists() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('is_sample', true)
+        .limit(1)
       if (error) return fail(error)
       return (data?.length ?? 0) > 0
     },
