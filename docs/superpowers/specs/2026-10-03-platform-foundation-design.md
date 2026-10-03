@@ -23,6 +23,7 @@ Turn the browser-only client-money MVP into a multi-tenant SaaS that any firm ca
 | D7 | Pricing | RM 10 one-time payment per firm via Stripe Checkout (card or FPX); unlocks the firm permanently |
 | D8 | Trial end | 14 days; if unpaid the firm becomes read-only (view, export, print) until paid |
 | D9 | Launch cap | At most 5 self-serve firms (early access); configurable by the super-admin; then a waitlist |
+| D11 | Email delivery | Resend (resend.com): Supabase Auth emails via Resend SMTP; later app emails via the Resend API from Edge Functions; local development keeps Mailpit |
 | D10 | Onboarding | Auto product tour on first sign-in; skippable "Get started" checklist; loadable and removable sample data |
 
 ### Sub-project map
@@ -47,7 +48,8 @@ Turn the browser-only client-money MVP into a multi-tenant SaaS that any firm ca
     - `admin` — super-admin operations (create firm, invite owner, suspend, extend trial, mark complimentary, support view, settings).
     - `billing-checkout` — creates a Stripe Checkout Session for the caller's firm (Owner only).
     - `stripe-webhook` — verifies Stripe signatures and records payments and refunds.
-- **Secrets** (Supabase function secrets): `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (RM 10 one-time price).
+- **Secrets** (Supabase function secrets): `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (RM 10 one-time price), `RESEND_API_KEY`.
+- **Email:** Supabase Auth sends sign-up verification, invite and password-reset emails through Resend SMTP (`smtp.resend.com:465`, user `resend`, password = Resend API key) from a verified sending domain, using branded templates in `supabase/templates/`. Local development uses Mailpit (no real sends).
 - **Browser state:** only per-viewer UI conveniences. Dashboard layout, table layouts, tour progress and checklist state live in `user_preferences` on the server.
 
 ### Tenancy
