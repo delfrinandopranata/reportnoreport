@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
 import { Attachments } from '../attachments/Attachments'
 import { useUpdateClient } from '../data/queries'
-import { btn, Field, input } from '../ui'
+import { btn, Field, Icon, input } from '../ui'
 import { AssigneeSelect, PhoneField, StatusSelect, TagList } from './fields'
 import { card, MutationError, shortDate } from './shared'
 
@@ -37,19 +37,27 @@ export function ClientDetails({ client: c }: { client: Client }) {
     { label: 'Notes', value: c.notes && <span className="whitespace-pre-wrap">{c.notes}</span>, wide: true },
   ]
   return (
-    <dl className="grid gap-x-6 gap-y-4 border-t border-zinc-100 pt-4 sm:grid-cols-2 lg:grid-cols-3 dark:border-zinc-800">
+    <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
       {rows.filter((r) => r.value).map((r) => <Row key={r.label} label={r.label} wide={r.wide}>{r.value}</Row>)}
     </dl>
   )
 }
 
-export function ClientAttachments({ client: c }: { client: Client }) {
+/** A collapsible header section; native <details> keeps keyboard and screen-reader behaviour for free. */
+export function Expandable({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={`${card} min-w-0 p-5 print:hidden`}>
-      <h2 className="mb-4 text-sm font-medium text-zinc-500">Attachments</h2>
-      <Attachments clientId={c.id} />
-    </section>
+    <details className="group border-t border-zinc-100 pt-4 dark:border-zinc-800">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md text-sm font-medium text-zinc-700 [&::-webkit-details-marker]:hidden dark:text-zinc-300">
+        {title}
+        <Icon name="down" className="size-4 text-zinc-400 transition group-open:rotate-180" />
+      </summary>
+      <div className="mt-4">{children}</div>
+    </details>
   )
+}
+
+export function ClientAttachments({ client: c }: { client: Client }) {
+  return <Attachments clientId={c.id} />
 }
 
 type Draft = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>
