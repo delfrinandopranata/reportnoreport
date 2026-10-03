@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
       return json(500, { error: 'Payment setup failed. Try again or contact support.' })
     }
     const sessionData = await sessionResp.json() as { id: string; url: string }
-    await admin.from('firms').update({ stripe_checkout_session_id: sessionData.id }).eq('id', firm.id)
+    const { error } = await admin.from('firms').update({ stripe_checkout_session_id: sessionData.id }).eq('id', firm.id)
+    if (error) console.error('Failed to save checkout session:', error.code)
     return json(200, { url: sessionData.url })
   } catch (err) {
     console.error('Checkout error:', err)
