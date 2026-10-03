@@ -4,10 +4,12 @@ import { toStatement } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClient, useLedger, useLogoUrl } from './data/queries'
 import { useSession } from './data/session'
-import { accountNo, periodPresets, today, type Client, type Period, type Statement } from './ledger'
+import { accountNo, periodPresets, today, type Client, type Period, type Statement, type StatementLine } from './ledger'
 import { formatDate } from './settings/constants'
 import { LoadError, Skeleton } from './clients/shared'
+import { buildConsolidatedStatement } from './clients/consolidatedStatement'
 import { btn, Icon, PeriodPicker } from './ui'
+import type { Column } from './table'
 
 function useDates() {
   const { dateFormat } = useSession().firm
@@ -19,7 +21,7 @@ const num = `${cell} text-right whitespace-nowrap tabular-nums`
 const neg = (value: number) => (value < 0 ? 'text-red-700' : '')
 
 /** Period controls, issuer, print button and the A4 paper wrapper shared by every statement. */
-function StatementLayout({
+export function StatementLayout({
   back,
   title,
   firstDate,
@@ -311,5 +313,214 @@ function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: C
               </p>
             </DocFooter>
           </>
+  )
+}
+
+type ConsolidatedStatementProps = {
+  period: Period
+  summary: Statement
+  groups: Array<{
+    key: string
+    label: string
+    rows: StatementLine[]
+    receipts: number
+    payments: number
+    closing?: number
+  }>
+  txnVisible: Column<any>[]
+  balanceVisible: Column<any>[]
+  filterNote: string[]
+  mode: 'none' | 'client' | 'month'
+  view: 'transactions' | 'balances'
+  txnFooter: Record<string, ReactNode>
+  balanceFooter: Record<string, ReactNode>
+  rows: StatementLine[] | any[]
+  columns: Column<any>[]
+}
+
+export function ConsolidatedStatement({
+  period,
+  summary,
+  groups,
+  txnVisible,
+  balanceVisible,
+  filterNote,
+  mode,
+  view,
+  txnFooter,
+  balanceFooter,
+  rows,
+  columns,
+}: ConsolidatedStatementProps) {
+  const { longDate } = useDates()
+
+  const visibleColumns = view === 'transactions' ? txnVisible : balanceVisible
+  const footerRecord: Record<string, string> = {}
+  const footerInput = view === 'transactions' ? txnFooter : balanceFooter
+  Object.entries(footerInput).forEach(([key, value]) => {
+    footerRecord[key] = String(value)
+  })
+
+  const soa = buildConsolidatedStatement({
+    view,
+    groups,
+    rows,
+    columns,
+    visibleColumns,
+    footer: footerRecord,
+    filterNote,
+    mode,
+  })
+
+  return (
+    <>
+      <DocHeader
+        title="Statement of Account"
+        subtitle="Consolidated client account statement"
+        meta={[['Clients', String(soa.clientCount)]]}
+      />
+      <section className="grid grid-cols-2 gap-6 py-6">
+        <div>
+          <Label>Statement period</Label>
+          <p className="font-semibold">{longDate(period.from)} – {longDate(period.to)}</p>
+        </div>
+        <div>
+          <Label>Prepared from</Label>
+          <p className="font-semibold text-sm">{soa.preparedFrom}</p>
+        </div>
+      </section>
+      <Summary {...summary} />
+      {view === 'transactions' ? (
+        <>
+          {soa.sections.map((section, i) => (
+            <table key={i} className="mb-8 w-full table-fixed print:break-inside-avoid">
+              <colgroup>
+                {visibleColumns.map((c) => (
+                  <col key={c.id} style={{ width: c.flex ? undefined : '150px' }} />
+                ))}
+              </colgroup>
+              {section.heading && (
+                <thead>
+                  <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600 font-semibold">
+                    <th className={`${cell} font-medium`} colSpan={visibleColumns.length}>
+                      {section.heading}
+                    </th>
+                  </tr>
+                </thead>
+              )}
+              <thead>
+                <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600">
+                  {visibleColumns.map((c) => (
+                    <th
+                      key={c.id}
+                      className={`${cell} font-medium ${c.align === 'right' ? 'text-right' : ''}`}
+                    >
+                      {c.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {section.rows.map((row, rowIdx) => (
+                  <tr key={rowIdx} className="print:break-inside-avoid">
+                    {row.map((cellContent, cellIdx) => {
+                      const col = visibleColumns[cellIdx]
+                      return (
+                        <td
+                          key={cellIdx}
+                          className={`${cell} ${col?.align === 'right' ? 'text-right tabular-nums' : ''}`}
+                        >
+                          {cellContent}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+              {section.subtotal && (
+                <tfoot>
+                  <tr className="border-t border-zinc-300 font-semibold text-zinc-900">
+                    {visibleColumns.map((c, idx) => (
+                      <td
+                        key={c.id}
+                        className={`${cell} ${c.align === 'right' ? 'text-right tabular-nums' : ''} ${idx === 0 ? 'text-left' : ''}`}
+                      >
+                        {idx === 0 ? 'Subtotal' : section.subtotal?.[c.id] ?? ''}
+                      </td>
+                    ))}
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          ))}
+          <table className="w-full table-fixed print:break-inside-avoid">
+            <tbody>
+              <tr className="border-t-2 border-zinc-900 font-semibold text-zinc-900">
+                {visibleColumns.map((c, idx) => (
+                  <td
+                    key={c.id}
+                    className={`${cell} ${c.align === 'right' ? 'text-right tabular-nums' : ''} ${idx === 0 ? 'text-left' : ''}`}
+                  >
+                    {idx === 0 ? 'Total' : soa.total[c.id] ?? ''}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <table className="w-full table-fixed">
+          <colgroup>
+            {visibleColumns.map((c) => (
+              <col key={c.id} style={{ width: c.flex ? undefined : '150px' }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600">
+              {visibleColumns.map((c) => (
+                <th
+                  key={c.id}
+                  className={`${cell} font-medium ${c.align === 'right' ? 'text-right' : ''}`}
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {soa.sections[0]?.rows.map((row, rowIdx) => (
+              <tr key={rowIdx} className="print:break-inside-avoid">
+                {row.map((cellContent, cellIdx) => {
+                  const col = visibleColumns[cellIdx]
+                  return (
+                    <td
+                      key={cellIdx}
+                      className={`${cell} ${col?.align === 'right' ? 'text-right tabular-nums' : ''}`}
+                    >
+                      {cellContent}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-zinc-900 font-semibold text-zinc-900">
+              {visibleColumns.map((c, idx) => (
+                <td
+                  key={c.id}
+                  className={`${cell} ${c.align === 'right' ? 'text-right tabular-nums' : ''} ${idx === 0 ? 'text-left' : ''}`}
+                >
+                  {idx === 0 ? 'Total' : soa.total[c.id] ?? ''}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      )}
+      <DocFooter>
+        <p>This statement lists the client-account entries shown on screen when it was prepared.</p>
+      </DocFooter>
+    </>
   )
 }
