@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
-import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm } from './signup.ts'
+import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm, earlyAccessMessage } from './signup.ts'
 
 test('pendingFirmFromMetadata: returns null when meta is null', () => {
   const result = pendingFirmFromMetadata(null)
@@ -153,4 +153,16 @@ test('shouldCreateFirm: returns false when profile exists without firm_id but me
   const metadata = { firm_name: 'Test Co', name: 'Jane Smith' }
   const result = shouldCreateFirm(profile, metadata)
   assert.equal(result, false)
+})
+
+test('earlyAccessMessage: returns waitlist joined message when joined=true', () => {
+  const result = earlyAccessMessage(true)
+  assert.equal(result, "Early access is full right now. We've added you to the waitlist and will email you when a place opens.")
+  assert(!result.includes('EARLY_ACCESS'))
+})
+
+test('earlyAccessMessage: returns homepage waitlist message when joined=false', () => {
+  const result = earlyAccessMessage(false)
+  assert.equal(result, 'Early access is full right now. Join the waitlist from our homepage and we\'ll email you when a place opens.')
+  assert(!result.includes('EARLY_ACCESS'))
 })

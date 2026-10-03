@@ -9,7 +9,7 @@ import { btn } from '../ui'
 import { AuthPages } from '../auth/AuthPages'
 import { rememberReturnTo } from '../auth/route'
 import { AdminConsole } from '../admin/AdminConsole'
-import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm } from './signup.ts'
+import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm, earlyAccessMessage } from './signup.ts'
 
 export type Session = {
   userId: string; profile: Member; firm: Firm
@@ -66,13 +66,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (createError) {
             if (isEarlyAccessFull(createError)) {
               const email = auth?.user.email
+              let joinedWaitlist = false
               if (email) {
                 const { error: joinError } = await supabase.rpc('join_waitlist', {
                   p_email: email,
                   p_firm_name: pendingFirm.firmName,
                 })
-                if (joinError) console.error('join_waitlist failed', joinError)
+                if (joinError) {
+                  console.error('join_waitlist failed', joinError)
+                } else {
+                  joinedWaitlist = true
+                }
               }
+              throw Object.assign(new Error(createError instanceof Error ? createError.message : String(createError)), createError, { joinedWaitlist })
             }
             throw createError
           }
@@ -102,11 +108,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   if (!auth) return <AuthPages />
   if (context.isError) {
     const err = context.error
-    const msg = toUserMessage(err)
     const isFullError = isEarlyAccessFull(err)
     if (isFullError) {
+      const joined = typeof err === 'object' && err !== null && 'joinedWaitlist' in err ? (err as { joinedWaitlist?: boolean }).joinedWaitlist === true : false
+      const msg = earlyAccessMessage(joined)
       return <FullPageMessage title="Early access is full" text={msg} action={() => supabase.auth.signOut()} />
     }
+    const msg = toUserMessage(err)
     return <FullPageMessage title="We could not load your account" text={msg} action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
   }
   const result = context.data!
