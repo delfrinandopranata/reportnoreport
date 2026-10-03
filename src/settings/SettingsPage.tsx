@@ -18,8 +18,8 @@ const Err = ({ text }: { text: string }) =>
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="grid gap-0.5 sm:grid-cols-[11rem_1fr] sm:gap-4">
-      <dt className="text-zinc-500">{label}</dt>
-      <dd className="break-words">{value || <span className="text-zinc-400">Not set</span>}</dd>
+      <dt className="text-zinc-500 dark:text-zinc-400">{label}</dt>
+      <dd className="min-w-0 break-words">{value || <span className="text-zinc-500 dark:text-zinc-400">Not set</span>}</dd>
     </div>
   )
 }
@@ -47,38 +47,44 @@ function EditableCard<T>({
   const [draft, setDraft] = useState<T | null>(null)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const id = title.toLowerCase().replace(/\W+/g, '-')
 
   const save = async () => {
-    if (!draft) return
+    if (!draft || saving) return
+    setSaving(true)
     const message = await onSave(draft).catch((e: Error) => e.message)
+    setSaving(false)
     if (message) return setError(message)
     setDraft(null)
     setError('')
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setSaved(false), 4000)
   }
 
   return (
     <section className={card} aria-labelledby={id}>
       <header className="flex flex-wrap items-start gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <div className="mr-auto">
+        <div className="min-w-0 flex-1 basis-64">
           <h2 id={id} className="font-semibold">
             {title}
           </h2>
-          <p className="text-sm text-zinc-500">{blurb}</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{blurb}</p>
         </div>
-        {saved && (
-          <span className="self-center text-sm text-emerald-700 dark:text-emerald-400" role="status">
-            Saved
-          </span>
-        )}
+        <span className="self-center text-sm text-emerald-700 dark:text-emerald-400" role="status">
+          {saved ? `${title} saved` : ''}
+        </span>
         {!draft && (
-          <button type="button" disabled={!!disabledReason} title={disabledReason ?? undefined} className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => (setDraft(value), setError(''))}>
-            Edit
+          <button type="button" disabled={!!disabledReason} aria-describedby={disabledReason ? `${id}-why` : undefined} aria-label={`Edit ${title.toLowerCase()}`} className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => (setDraft(value), setError(''))}>
+            <Icon name="pencil" /> Edit
           </button>
         )}
       </header>
+      {disabledReason && !draft && (
+        <p id={`${id}-why`} className="border-b border-zinc-100 bg-zinc-50 px-5 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400">
+          Read-only. {disabledReason}
+        </p>
+      )}
       <div className="p-5">
         {draft ? (
           <form
@@ -92,14 +98,16 @@ function EditableCard<T>({
             {form(draft, (patch) => setDraft({ ...draft, ...patch }))}
             <Err text={error} />
             <div className="flex justify-end gap-2">
-              <button type="button" className={btn.ghost} onClick={() => setDraft(null)}>
+              <button type="button" className={btn.ghost} disabled={saving} onClick={() => setDraft(null)}>
                 Cancel
               </button>
-              <button className={btn.primary}>Save</button>
+              <button className={btn.primary} disabled={saving}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
             </div>
           </form>
         ) : (
-          <dl className="grid gap-2.5 text-sm">{view(value)}</dl>
+          <dl className="grid gap-3 text-sm">{view(value)}</dl>
         )}
       </div>
     </section>
@@ -140,11 +148,11 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
           <input type="file" accept="image/*" onChange={onFile} disabled={upload.isPending} className="sr-only" />
         </label>
         {logoPath && (
-          <button type="button" className={btn.danger} onClick={() => update.mutate({ logoPath: null }, { onError: (e) => setError(e.message) })}>
-            Remove
+          <button type="button" className={btn.danger} disabled={update.isPending} onClick={() => update.mutate({ logoPath: null }, { onError: (e) => setError(e.message) })}>
+            {update.isPending ? 'Removing…' : 'Remove logo'}
           </button>
         )}
-        <span className="text-zinc-500">Up to {LOGO_MAX_BYTES / 1024} KB.</span>
+        <span className="text-zinc-500 dark:text-zinc-400">PNG, JPG, SVG or WebP, up to {LOGO_MAX_BYTES / 1024} KB. Saved as soon as you choose it.</span>
       </div>
       <Err text={error} />
     </div>
@@ -273,7 +281,7 @@ function StatementsCard({ disabledReason }: { disabledReason: string | null }) {
         <>
           <Field label="Footer note">
             <textarea value={d.statementNote} rows={3} onChange={(e) => set({ statementNote: e.target.value })} className={input} />
-            <span className="text-zinc-500">
+            <span className="text-zinc-500 dark:text-zinc-400">
               Use <code>{'{days}'}</code> where the discrepancy period should appear.{' '}
               <button type="button" className="underline" onClick={() => set({ statementNote: DEFAULT_NOTE })}>
                 Use the default
@@ -325,7 +333,7 @@ function RegionalCard({ disabledReason }: { disabledReason: string | null }) {
         <>
           <Field label="Currency">
             <input value={firm.currency} readOnly aria-readonly className={`${input} bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50`} />
-            <span className="text-zinc-500">Set when your firm was created. It can't change once transactions exist.</span>
+            <span className="text-zinc-500 dark:text-zinc-400">Set when your firm was created. It can't change once transactions exist.</span>
           </Field>
           <Grid>
             <Field label="Date format">
@@ -361,7 +369,7 @@ function DataCard() {
         <h2 id="data-heading" className="font-semibold">
           Data
         </h2>
-        <p className="text-sm text-zinc-500">Your data is stored securely on our servers and backed up daily.</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">Your data is stored securely on our servers and backed up daily. Nothing to set up here.</p>
       </header>
     </section>
   )
