@@ -19,7 +19,15 @@ test('parseCents avoids float rounding and rejects bad input', () => {
   assert.equal(parseCents('1,234.5'), 123450)
   assert.equal(parseCents('0.29'), 29)
   assert.equal(parseCents('100'), 10000)
-  for (const bad of ['', '0', '0.00', '-5', '1.234', 'abc', '1e3']) assert.equal(parseCents(bad), null, bad)
+  for (const bad of ['', '1.234', 'abc', '1e3']) assert.equal(parseCents(bad), null, bad)
+})
+
+test('parseCents allows negative and zero — a firm may record an under/overpayment freely', () => {
+  assert.equal(parseCents('0'), 0)
+  assert.equal(parseCents('0.00'), 0)
+  assert.equal(parseCents('-5'), -500)
+  assert.equal(parseCents('-12.34'), -1234)
+  assert.equal(parseCents('-1,234.5'), -123450)
 })
 
 test('totals and per-client balances', () => {
