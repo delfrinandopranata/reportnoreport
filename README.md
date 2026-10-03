@@ -2,17 +2,27 @@
 
 Client accounts MVP: record receipts and payments per client, track client funds held, and review each client ledger — on a drag-and-drop dashboard.
 
-**Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · dnd-kit · zustand · zundo (undo/redo)
+**Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · dnd-kit · TanStack Query · Supabase (Postgres, Auth, Storage, Edge Functions)
 
-## Run
+## Run locally
 
 ```bash
+brew install supabase/tap/supabase deno
 pnpm install
+supabase start            # local Postgres, Auth, Storage, Inbucket (emails) at http://127.0.0.1:54324
+supabase db reset         # migrations + seed
+cp .env.example .env.local  # then paste ANON_KEY from `supabase status`
 pnpm dev
 ```
 
-- `pnpm build` — typecheck + production build (`dist/`)
-- `pnpm test` — ledger maths (`node --test`, no extra deps)
+Seed users (password `password123`): `owner@alpha.test`, `admin@alpha.test`, `accountant@alpha.test`, `viewer@alpha.test` (Alpha Advisory, MYR), `owner@beta.test` (Beta Partners, SGD).
+
+## Tests
+
+- `pnpm test` — unit tests
+- `supabase test db` — database tests (RLS, roles, invariants, ledger, import, team)
+- `pnpm test:db` — browser maths vs SQL equivalence (needs `supabase start`)
+- `deno test supabase/functions` — Edge Function rules
 
 ## What's in it
 
@@ -24,8 +34,7 @@ pnpm dev
   - **Customisable table** — show/hide and reorder columns, drag column edges to resize, compact or comfortable rows (remembered per browser).
   - **Import** transactions from CSV (new clients created by name, duplicates skipped, row-level errors), **Export** the current table to CSV, **Print** the current table (A4 landscape).
 - **Client profile** — KPIs, cash flow, client ledger with running balance, record transaction, printable **statement of account** (A4 / PDF).
-- **Undo / redo** — every data and layout change (⌘Z / ⇧⌘Z).
-- Data lives in the browser (`localStorage`); first load seeds demo data. Amounts are stored as integer sen, currency MYR (RM).
+- Data lives in Supabase, separated per firm by row-level security. Amounts are stored as integer minor units in the firm's currency.
 
 ## Deploy
 
@@ -33,10 +42,8 @@ Vercel auto-detects Vite: build `pnpm build`, output `dist`.
 
 ## Users and Settings
 
-- **Users** (`#users`): team list, invite, change role, suspend/reactivate, remove, transfer ownership, plus a roles and permissions table. Roles are `owner`, `admin`, `accountant`, `viewer`. Rules (permission matrix, one owner, unique emails) live in `src/users/rules.ts` and are tested in `src/users.test.ts`; other modules gate actions with `can(role, action)` from `src/users/store.ts`.
-- **There is no sign-in yet.** "Viewing as" previews a role on this device. Real authentication and per-business data separation arrive with the backend; the `User` shape (ids, ISO timestamps, no derived data) maps 1:1 to it.
-- **Settings** (`#settings`, `src/settings/`): organisation, statement footer and bank details, regional options and JSON backup/restore of all app data. Only `settings.manage` roles can edit. The statement reads these values.
-- Persisted under `platform-internal-users` and `platform-internal-settings` (the main data stays under `platform-internal`).
+- **Users** (`#users`): team list, invite, change role, suspend/reactivate, remove, transfer ownership, plus a roles and permissions table. Roles are `owner`, `admin`, `accountant`, `viewer`. The rules are enforced in the database; the UI gates actions with `can(role, action)` from `src/users/rules.ts`.
+- **Settings** (`#settings`, `src/settings/`): organisation, bank accounts, statement footer and regional options. Only `settings.manage` roles can edit. The statement reads these values.
 
 ## Email (Resend)
 
@@ -61,3 +68,11 @@ Warning: do NOT run `supabase config push` for auth while `[auth.email.smtp] ena
 `supabase secrets set RESEND_API_KEY=...` is only needed once Edge Functions send email through the Resend API directly. It is not needed yet.
 
 Never commit the API key. `supabase/.env.example` lists the variable names; real `.env` files are git-ignored.
+
+## Edge Function secrets
+
+The `team` function builds invite links from the `APP_URL` secret. Locally it is set in `supabase/functions/.env.local`. For the hosted project set it to the production app URL:
+
+```bash
+supabase secrets set APP_URL=https://<your-app-url>
+```

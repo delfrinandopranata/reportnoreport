@@ -5,12 +5,14 @@ import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClient, useLedger, useLogoUrl } from './data/queries'
 import { useSession } from './data/session'
 import { accountNo, periodPresets, today, type Client, type Period, type Statement } from './ledger'
-import { formatDate } from './settings/store'
+import { formatDate } from './settings/constants'
 import { LoadError, Skeleton } from './clients/shared'
 import { btn, Icon, PeriodPicker } from './ui'
 
-const longDate = (date: string) => formatDate(date, true)
-const shortDate = (date: string) => formatDate(date)
+function useDates() {
+  const { dateFormat } = useSession().firm
+  return { longDate: (date: string) => formatDate(date, dateFormat, true), shortDate: (date: string) => formatDate(date, dateFormat) }
+}
 
 const cell = 'px-3 py-2'
 const num = `${cell} text-right whitespace-nowrap tabular-nums`
@@ -83,13 +85,14 @@ function StatementLayout({
 
 function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string; meta: [string, string][] }) {
   const { firm: o } = useSession()
+  const { longDate } = useDates()
   const logo = useLogoUrl(o.logoPath)
   const address = [o.address1, o.address2, [o.postcode, o.city].filter(Boolean).join(' '), o.state !== o.city ? o.state : '', o.country !== 'Malaysia' ? o.country : ''].filter(Boolean)
   const reg = o.showRegistrationOnStatement ? [o.registrationNo && `Reg. no. ${o.registrationNo}`, o.sstNo && `SST no. ${o.sstNo}`].filter(Boolean) : []
   return (
     <header className="flex items-start justify-between gap-6 border-b-2 border-zinc-900 pb-5">
       <div className="flex gap-3">
-        {logo && <img src={logo} alt="" className="max-h-14 max-w-32 shrink-0 object-contain" />}
+        {logo && <img src={logo} alt="" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-32 shrink-0 object-contain" />}
         <div className="text-zinc-600">
           <p className="text-lg font-semibold text-zinc-900">{o.name || 'Your business name'}</p>
           {o.tradingName && <p>Trading as {o.tradingName}</p>}
@@ -156,6 +159,7 @@ function DocFooter({ children }: { children: ReactNode }) {
 
 function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
   const { format: fmt } = useMoney()
+  const { shortDate } = useDates()
   // Fixed widths keep columns aligned when several ledgers stack on one statement.
   return (
     <table className="w-full table-fixed">
@@ -259,6 +263,7 @@ type LinesQ = ReturnType<typeof useLedger>
 
 function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: Client; period: Period; balancesQ: BalancesQ; linesQ: LinesQ; ready: boolean }) {
   const { format: fmt } = useMoney()
+  const { longDate } = useDates()
   const { data: balances } = balancesQ
   const { data: lines } = linesQ
   const error = balancesQ.error ?? linesQ.error

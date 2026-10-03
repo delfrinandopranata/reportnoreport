@@ -142,7 +142,7 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
     <div className="grid gap-2 text-sm">
       <span className="font-medium text-zinc-700 dark:text-zinc-300">Logo (optional)</span>
       <div className="flex flex-wrap items-center gap-3">
-        {url && <img src={url} alt="Logo preview" className="max-h-14 max-w-40 rounded border border-zinc-200 bg-white object-contain p-1 dark:border-zinc-700" />}
+        {url && <img src={url} alt="Logo preview" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-40 rounded border border-zinc-200 bg-white object-contain p-1 dark:border-zinc-700" />}
         <label className={`${btn.ghost} cursor-pointer border border-zinc-200 dark:border-zinc-800`}>
           <Icon name="upload" /> {upload.isPending ? 'Uploading…' : logoPath ? 'Replace' : 'Upload image'}
           <input type="file" accept="image/*" onChange={onFile} disabled={upload.isPending} className="sr-only" />
@@ -183,7 +183,7 @@ function OrganisationCard({ disabledReason }: { disabledReason: string | null })
       disabledReason={disabledReason}
       view={(v) => (
         <>
-          <Row label="Logo" value={logoUrl && <img src={logoUrl} alt="Logo" className="max-h-14 max-w-40 object-contain" />} />
+          <Row label="Logo" value={logoUrl && <img src={logoUrl} alt="Logo" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-40 object-contain" />} />
           <Row label="Legal name" value={v.name} />
           <Row label="Trading name" value={v.tradingName} />
           <Row label="SSM registration no." value={v.registrationNo} />

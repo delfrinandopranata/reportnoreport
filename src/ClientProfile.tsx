@@ -28,7 +28,7 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab; actions: ReactNode }) {
+export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const { data: client, isPending, error: loadError } = useClient(id)
   const { firm } = useSession()
   const money = useMoney()
@@ -52,7 +52,6 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
       <div className="grid place-items-center gap-3 py-24 text-center">
         <p className="font-medium">This client doesn’t exist any more.</p>
         <div className="flex items-center gap-2">
-          {actions}
           <a href="#clients" className={btn.primary}>Back to clients</a>
         </div>
       </div>
@@ -98,7 +97,6 @@ export function ClientProfile({ id, tab, actions }: { id: string; tab: ClientTab
           <Icon name="right" className="size-3.5 shrink-0" />
           <span className="truncate text-zinc-900 dark:text-white" aria-current="page">{client.name}</span>
         </nav>
-        {actions}
       </div>
 
       {!onTxns && (
