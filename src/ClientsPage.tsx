@@ -449,7 +449,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         {filterNote.length > 0 && <p className="mt-1 text-sm text-zinc-600">Filtered: {filterNote.join(' · ')}</p>}
       </header>
 
-      <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4 print:grid-cols-4">
+      {!fixedClientId && <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4 print:grid-cols-4">
         {(
           [
             ['Opening balance', summary.opening, `as at ${shortDate(period.from)}`],
@@ -470,7 +470,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             )}
           </div>
         ))}
-      </dl>
+      </dl>}
 
       <div className={`${card} grid gap-4 p-4 print:hidden`}>
         {/* View + actions: Add client is the one primary action, kept visually dominant; Import/Export/Print/SOA are a demoted, equally-weighted secondary cluster (Fitts's Law) */}
