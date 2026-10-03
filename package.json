@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && bash scripts/build-demo.sh",
+    "build:app": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node --test $(ls src/*.test.ts src/*/*.test.ts | grep -v \"\\.db\\.test\\.ts$\")",

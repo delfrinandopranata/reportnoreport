@@ -258,6 +258,9 @@ isOneToOne: false
               "client_id": string,"closing": number,"last_txn_date": string,"opening": number,"payments": number,"receipts": number,"txn_count": number
             }[]
                            },
+"create_firm_for_current_user":
+{ Args: { "p_currency": string,"p_firm_name": string,"p_person_name": string }; Returns: string
+                           },
 "firm_can_write":
 { Args: { "firm": string }; Returns: boolean
                            },
@@ -267,13 +270,24 @@ isOneToOne: false
 "import_transactions":
 { Args: { "p_dry_run"?: boolean,"p_rows": Json }; Returns: Json
                            },
+"join_waitlist":
+{ Args: { "p_email": string,"p_firm_name": string }; Returns: undefined
+                           },
 "ledger_lines":
 { Args: { "p_bank_account"?: string,"p_client"?: string,"p_from": string,"p_per_client"?: boolean,"p_to": string }; Returns: {
               "amount_minor": number,"balance": number,"bank_account_id": string,"client_id": string,"created_at": string,"date": string,"description": string,"id": string,"kind": Database["public"]['Enums']["txn_kind"],"updated_at": string
             }[]
                            },
+"platform_status":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "reactivate_member":
 { Args: { "p_profile": string }; Returns: undefined
+                           },
+"support_client_balances":
+{ Args: { "p_firm": string,"p_from": string,"p_to": string }; Returns: {
+              "client_id": string,"closing": number,"last_txn_date": string,"opening": number,"payments": number,"receipts": number,"txn_count": number
+            }[]
                            },
 "suspend_member":
 { Args: { "p_profile": string }; Returns: undefined

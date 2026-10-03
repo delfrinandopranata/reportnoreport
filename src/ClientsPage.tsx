@@ -21,9 +21,11 @@ import { StatusBadge, TagList } from './clients/fields'
 import { card, LoadError, monthLabel, neg, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
-import { useBalances, useBankAccounts, useClients, useDeleteTxn, useLedger } from './data/queries'
+import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger } from './data/queries'
 import { useSession } from './data/session'
 import { ColumnHeader, ColumnsDialog, useTableLayout, type Column } from './table'
+import { ConsolidatedStatement, StatementLayout } from './Statement'
+import { buildSections, countClients, preparedFrom } from './clients/consolidatedStatement'
 import { downloadCsv, ImportDialog } from './transfer'
 import { Avatar, btn, Icon, input, KindBadge, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
 import { Empty } from './widgets'
@@ -54,7 +56,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const assigneeName = useUserNames()
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
   const nameOf = (id: string) => names.get(id) ?? 'Unknown client'
-  const firstDate = clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), today())
+  const firstTxn = useFirstTxnDate(fixedClientId).data
+  const firstDate = clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), firstTxn && firstTxn < today() ? firstTxn : today())
 
   const [view, setView] = useLocalState<View>('clients.view', 'balances')
   const [period, setPeriod] = useState<Period>(() => periodPresets(firstDate, fyStartMonth)[3].period)
@@ -72,6 +75,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const [limit, setLimit] = useState(PAGE)
   const [printing, setPrinting] = useState(false)
   const [dialog, setDialog] = useState<'add' | 'import' | 'columns' | null>(null)
+  const [soaOpen, setSoaOpen] = useState(false)
 
   // Print every matching row, not just the first page.
   useEffect(() => {
@@ -281,7 +285,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     isTxns && type !== 'all' && (type === 'in' ? 'receipts only' : 'payments only'),
     q && `search “${query.trim()}”`,
     isTxns && mode !== 'none' && `grouped by ${mode}`,
-  ].filter(Boolean)
+  ].filter(Boolean) as string[]
 
   /* ---------- Render helpers ---------- */
 
@@ -367,6 +371,44 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   if (clientsPending) return <LedgerSkeleton />
   if (loadError) return <LoadError error={loadError} what={fixedClientId ? 'this ledger' : 'your clients'} />
 
+  if (soaOpen && !fixedClientId) {
+    return (
+      <StatementLayout
+        back={{ href: '#clients', label: 'Back to clients', onClick: () => setSoaOpen(false) }}
+        title="Statement of account"
+        firstDate={firstDate}
+        fileName={(p) => `Statement of account – ${session.firm.tradingName || session.firm.name} – ${p.from} to ${p.to}`}
+        period={period}
+        setPeriod={setPeriod}
+        ready={true}
+      >
+        {isTxns ? (
+          <ConsolidatedStatement
+            period={period}
+            summary={summary}
+            columns={txnVisible}
+            sections={buildSections(groups, mode, fmt)}
+            total={txnFooter}
+            preparedFrom={preparedFrom(filterNote, mode)}
+            clientCount={countClients(txnRows.map((r) => r.clientId))}
+            rowKey={(r) => r.id}
+          />
+        ) : (
+          <ConsolidatedStatement
+            period={period}
+            summary={summary}
+            columns={balanceVisible}
+            sections={[{ key: 'all', rows: balanceRows }]}
+            total={balanceFooter}
+            preparedFrom={preparedFrom(filterNote, 'none')}
+            clientCount={balanceRows.length}
+            rowKey={(r) => r.client.id}
+          />
+        )}
+      </StatementLayout>
+    )
+  }
+
   return (
     <div className="print-landscape grid grid-cols-1 gap-4">
       {/* Print-only heading: what this sheet is, for whom, and which filters produced it. */}
@@ -433,6 +475,11 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
               <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
             </button>
+            {!fixedClientId && (
+              <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} aria-label="Statement of account" title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
+                <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
+              </button>
+            )}
             {!fixedClientId && (
               <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
                 <Icon name="plus" /> Add client

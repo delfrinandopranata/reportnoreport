@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (body.role === 'owner') return json(400, { error: 'Use Transfer ownership to make someone the owner.' })
     const { data: existing } = await admin.from('profiles').select('id').eq('email', email).maybeSingle()
     if (existing) return json(409, { error: 'Someone with that email already has access.' })
-    const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${appUrl}/app?flow=set-password`, data: { name } })
+    const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${appUrl}/app/?flow=set-password`, data: { name } })
     if (error || !invited.user) return json(502, { error: 'The invitation email could not be sent. Try again.' })
     const { data: profile, error: insertError } = await admin.from('profiles')
       .insert({ user_id: invited.user.id, firm_id: actorRow.firm_id, name, email, role: body.role, status: 'invited' })
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
   if (body.action === 'resend') {
     if (targetRow!.status !== 'invited') return json(400, { error: 'Only pending invitations can be resent.' })
-    const { error } = await admin.auth.admin.inviteUserByEmail(targetRow!.email, { redirectTo: `${appUrl}/app?flow=set-password` })
+    const { error } = await admin.auth.admin.inviteUserByEmail(targetRow!.email, { redirectTo: `${appUrl}/app/?flow=set-password` })
     return error ? json(502, { error: 'The invitation email could not be sent. Try again.' }) : json(200, {})
   }
 

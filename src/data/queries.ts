@@ -51,6 +51,7 @@ function useKeys() {
     recent: (n: number) => ['firm', firm.id, 'recent', n] as const,
     banks: ['firm', firm.id, 'banks'] as const,
     members: ['firm', firm.id, 'members'] as const,
+    firstTxn: (clientId?: string) => ['firm', firm.id, 'firstTxn', clientId ?? 'all'] as const,
   }
 }
 
@@ -97,6 +98,17 @@ export function useRecentTxns(limit: number) {
   return useQuery({ queryKey: keys.recent(limit), queryFn: async () => {
     const { data, error } = await supabase.from('transactions').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }).limit(limit)
     return error ? fail(error) : data.map((r): Txn => ({ id: r.id, clientId: r.client_id, bankAccountId: r.bank_account_id, kind: r.kind === 'receipt' ? 'in' : 'out', amount: r.amount_minor, date: r.date, note: r.description, createdAt: r.created_at, updatedAt: r.updated_at }))
+  } })
+}
+
+/** Earliest transaction date (YYYY-MM-DD), or null with no transactions. Imported history can predate the client record. */
+export function useFirstTxnDate(clientId?: string) {
+  const keys = useKeys(); const fail = useFail()
+  return useQuery({ queryKey: keys.firstTxn(clientId), queryFn: async () => {
+    let q = supabase.from('transactions').select('date').order('date').limit(1)
+    if (clientId) q = q.eq('client_id', clientId)
+    const { data, error } = await q
+    return error ? fail(error) : (data[0]?.date ?? null)
   } })
 }
 

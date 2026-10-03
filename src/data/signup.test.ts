@@ -1,0 +1,168 @@
+import { test } from 'node:test'
+import { strict as assert } from 'node:assert'
+import { pendingFirmFromMetadata, isEarlyAccessFull, shouldCreateFirm, earlyAccessMessage } from './signup.ts'
+
+test('pendingFirmFromMetadata: returns null when meta is null', () => {
+  const result = pendingFirmFromMetadata(null)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when meta is undefined', () => {
+  const result = pendingFirmFromMetadata(undefined)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when meta is not an object', () => {
+  const result = pendingFirmFromMetadata('not an object')
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when firm_name is missing', () => {
+  const meta = { currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when currency is missing', () => {
+  const meta = { firm_name: 'Test Co', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when name is missing', () => {
+  const meta = { firm_name: 'Test Co', currency: 'MYR' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when currency is not MYR/SGD/USD', () => {
+  const meta = { firm_name: 'Test Co', currency: 'GBP', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when firm_name is empty string', () => {
+  const meta = { firm_name: '', currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when name is empty string', () => {
+  const meta = { firm_name: 'Test Co', currency: 'MYR', name: '' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when firm_name is only whitespace', () => {
+  const meta = { firm_name: '   ', currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: extracts valid MYR metadata', () => {
+  const meta = { firm_name: 'Test Co Sdn Bhd', currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.deepEqual(result, { firmName: 'Test Co Sdn Bhd', currency: 'MYR', personName: 'John Doe' })
+})
+
+test('pendingFirmFromMetadata: extracts valid SGD metadata', () => {
+  const meta = { firm_name: 'Test Pte Ltd', currency: 'SGD', name: 'Jane Smith' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.deepEqual(result, { firmName: 'Test Pte Ltd', currency: 'SGD', personName: 'Jane Smith' })
+})
+
+test('pendingFirmFromMetadata: extracts valid USD metadata', () => {
+  const meta = { firm_name: 'Test Inc', currency: 'USD', name: 'Bob Jones' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.deepEqual(result, { firmName: 'Test Inc', currency: 'USD', personName: 'Bob Jones' })
+})
+
+test('pendingFirmFromMetadata: ignores extra properties', () => {
+  const meta = { firm_name: 'Test Co', currency: 'MYR', name: 'John Doe', extra: 'ignored', another: 123 }
+  const result = pendingFirmFromMetadata(meta)
+  assert.deepEqual(result, { firmName: 'Test Co', currency: 'MYR', personName: 'John Doe' })
+})
+
+test('isEarlyAccessFull: returns false when error is null', () => {
+  const result = isEarlyAccessFull(null)
+  assert.equal(result, false)
+})
+
+test('isEarlyAccessFull: returns false when error is not an object', () => {
+  const result = isEarlyAccessFull('not an object')
+  assert.equal(result, false)
+})
+
+test('isEarlyAccessFull: returns false when message is missing', () => {
+  const error = { code: 'P0001' }
+  const result = isEarlyAccessFull(error)
+  assert.equal(result, false)
+})
+
+test('isEarlyAccessFull: returns false when message does not contain EARLY_ACCESS_FULL', () => {
+  const error = { message: 'Enter your firm name.' }
+  const result = isEarlyAccessFull(error)
+  assert.equal(result, false)
+})
+
+test('isEarlyAccessFull: returns true when message contains EARLY_ACCESS_FULL', () => {
+  const error = { message: 'EARLY_ACCESS_FULL' }
+  const result = isEarlyAccessFull(error)
+  assert.equal(result, true)
+})
+
+test('isEarlyAccessFull: returns true when EARLY_ACCESS_FULL is in message text', () => {
+  const error = { code: 'P0001', message: 'Something happened: EARLY_ACCESS_FULL' }
+  const result = isEarlyAccessFull(error)
+  assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns false when profile exists and has firm_id', () => {
+  const profile = { firm_id: '123' }
+  const metadata = { firm_name: 'Test Co', currency: 'MYR', name: 'John Doe' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns false when profile is null and no metadata', () => {
+  const result = shouldCreateFirm(null, null)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns false when profile is null and metadata is incomplete', () => {
+  const metadata = { firm_name: 'Test Co' }
+  const result = shouldCreateFirm(null, metadata)
+  assert.equal(result, false)
+})
+
+test('shouldCreateFirm: returns true when profile is null and metadata is complete', () => {
+  const metadata = { firm_name: 'Test Co', currency: 'MYR', name: 'John Doe' }
+  const result = shouldCreateFirm(null, metadata)
+  assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns true when profile exists without firm_id and metadata is complete', () => {
+  const profile = { firm_id: null }
+  const metadata = { firm_name: 'Test Co', currency: 'SGD', name: 'Jane Smith' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, true)
+})
+
+test('shouldCreateFirm: returns false when profile exists without firm_id but metadata is incomplete', () => {
+  const profile = { firm_id: null }
+  const metadata = { firm_name: 'Test Co', name: 'Jane Smith' }
+  const result = shouldCreateFirm(profile, metadata)
+  assert.equal(result, false)
+})
+
+test('earlyAccessMessage: returns waitlist joined message when joined=true', () => {
+  const result = earlyAccessMessage(true)
+  assert.equal(result, "Early access is full right now. We've added you to the waitlist and will email you when a place opens.")
+  assert(!result.includes('EARLY_ACCESS'))
+})
+
+test('earlyAccessMessage: returns homepage waitlist message when joined=false', () => {
+  const result = earlyAccessMessage(false)
+  assert.equal(result, 'Early access is full right now. Join the waitlist from our homepage and we\'ll email you when a place opens.')
+  assert(!result.includes('EARLY_ACCESS'))
+})

@@ -1,5 +1,5 @@
 const KEY = 'returnTo'
-const AUTH_ROUTES = ['#signin', '#forgot', '#set-password']
+const AUTH_ROUTES = ['#signin', '#signup', '#forgot', '#set-password']
 
 export function rememberReturnTo(hash: string, storage: Pick<Storage, 'setItem'> = sessionStorage) {
   try { storage.setItem(KEY, hash) } catch { /* storage blocked: we just land on the dashboard */ }

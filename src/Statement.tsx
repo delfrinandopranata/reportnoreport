@@ -2,12 +2,14 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { toStatement } from './data/mappers'
 import { useMoney } from './data/money'
-import { useBalances, useBankAccounts, useClient, useLedger, useLogoUrl } from './data/queries'
+import { useBalances, useBankAccounts, useClient, useFirstTxnDate, useLedger, useLogoUrl } from './data/queries'
 import { useSession } from './data/session'
 import { accountNo, periodPresets, today, type Client, type Period, type Statement } from './ledger'
 import { formatDate } from './settings/constants'
 import { LoadError, Skeleton } from './clients/shared'
+import type { StatementSection } from './clients/consolidatedStatement'
 import { btn, Icon, PeriodPicker } from './ui'
+import type { Column } from './table'
 
 function useDates() {
   const { dateFormat } = useSession().firm
@@ -19,7 +21,7 @@ const num = `${cell} text-right whitespace-nowrap tabular-nums`
 const neg = (value: number) => (value < 0 ? 'text-red-700' : '')
 
 /** Period controls, issuer, print button and the A4 paper wrapper shared by every statement. */
-function StatementLayout({
+export function StatementLayout({
   back,
   title,
   firstDate,
@@ -29,7 +31,7 @@ function StatementLayout({
   ready,
   children,
 }: {
-  back: { href: string; label: string }
+  back: { href: string; label: string; onClick?: () => void }
   title: string
   firstDate: string
   fileName: (period: Period) => string
@@ -53,7 +55,7 @@ function StatementLayout({
   return (
     <div className="grid grid-cols-1 gap-6">
       <div className="grid gap-4 print:hidden">
-        <a href={back.href} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+        <a href={back.href} onClick={back.onClick ? (e) => { e.preventDefault(); back.onClick?.() } : undefined} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
           <Icon name="back" /> {back.label}
         </a>
         <header className="flex flex-wrap items-end gap-3">
@@ -238,6 +240,8 @@ export function StatementPage({ id }: { id: string }) {
 }
 
 function StatementLoaded({ client }: { client: Client }) {
+  const firstTxn = useFirstTxnDate(client.id).data
+  const firstDate = firstTxn && firstTxn < client.createdAt ? firstTxn : client.createdAt
   const [period, setPeriod] = useState<Period>(() => periodPresets(client.createdAt)[1].period)
   const balancesQ = useBalances({ from: period.from, to: period.to, clientId: client.id })
   const linesQ = useLedger({ from: period.from, to: period.to, clientId: client.id })
@@ -247,7 +251,7 @@ function StatementLoaded({ client }: { client: Client }) {
     <StatementLayout
       back={{ href: `#clients/${client.id}`, label: client.name }}
       title="Statement of account"
-      firstDate={client.createdAt}
+      firstDate={firstDate}
       fileName={(p) => `Statement of Account - ${client.name} - ${p.from} to ${p.to}`}
       period={period}
       setPeriod={setPeriod}
@@ -311,5 +315,76 @@ function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: C
               </p>
             </DocFooter>
           </>
+  )
+}
+
+type ConsolidatedStatementProps<R> = {
+  period: Period
+  summary: Statement
+  columns: Column<R>[]
+  sections: StatementSection<R>[]
+  total: Record<string, ReactNode>
+  preparedFrom: string
+  clientCount: number
+  rowKey: (row: R) => string
+}
+
+/** The Clients table as shown — same columns, groups and filters — laid out as a printable statement. */
+export function ConsolidatedStatement<R>({ period, summary, columns, sections, total, preparedFrom, clientCount, rowKey }: ConsolidatedStatementProps<R>) {
+  const { longDate } = useDates()
+  const align = (c: Column<R>) => (c.align === 'right' ? num : cell)
+  const totalRow = (label: string, values: Record<string, ReactNode>, className: string) => (
+    <tr className={className}>
+      {columns.map((c, i) => (
+        <td key={c.id} className={align(c)}>{i === 0 ? label : values[c.id] ?? ''}</td>
+      ))}
+    </tr>
+  )
+  return (
+    <>
+      <DocHeader title="Statement of Account" subtitle="Consolidated client account statement" meta={[['Clients', String(clientCount)]]} />
+      <section className="grid grid-cols-2 gap-6 py-6">
+        <div>
+          <Label>Statement period</Label>
+          <p className="font-semibold">{longDate(period.from)} – {longDate(period.to)}</p>
+        </div>
+        <div>
+          <Label>Prepared from</Label>
+          <p className="font-semibold">{preparedFrom}</p>
+        </div>
+      </section>
+      <Summary {...summary} />
+      {/* Cells use the table's own renderers so the statement matches the screen; nothing in it is clickable. */}
+      <table className="pointer-events-none w-full">
+        <thead>
+          <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600">
+            {columns.map((c) => (
+              <th key={c.id} className={`${align(c)} font-medium`}>{c.label}</th>
+            ))}
+          </tr>
+        </thead>
+        {sections.map((s) => (
+          <tbody key={s.key} className="divide-y divide-zinc-100">
+            {s.heading && (
+              <tr className="print:break-after-avoid">
+                <th colSpan={columns.length} className={`${cell} pt-5 text-left font-semibold`}>{s.heading}</th>
+              </tr>
+            )}
+            {s.rows.map((r) => (
+              <tr key={rowKey(r)} className="print:break-inside-avoid">
+                {columns.map((c) => (
+                  <td key={c.id} className={align(c)}>{c.cell(r)}</td>
+                ))}
+              </tr>
+            ))}
+            {s.subtotal && totalRow(`Subtotal – ${s.heading}`, s.subtotal, 'border-t border-zinc-300 font-medium')}
+          </tbody>
+        ))}
+        <tfoot>{totalRow('Total', total, 'border-t-2 border-zinc-900 font-semibold')}</tfoot>
+      </table>
+      <DocFooter>
+        <p>This statement lists the client-account entries shown on screen when it was prepared.</p>
+      </DocFooter>
+    </>
   )
 }
