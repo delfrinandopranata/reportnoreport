@@ -75,8 +75,11 @@ begin
 
 end $$;
 
+-- SECURITY DEFINER: bank_accounts has no delete policy (real accounts are deactivated, never deleted),
+-- so an invoker delete of the sample account silently matched nothing. Role, write and firm checks below
+-- keep this scoped to the caller's own firm.
 create or replace function remove_sample_data() returns void
-language plpgsql security invoker as $$
+language plpgsql security definer set search_path = public as $$
 declare
   v_firm_id uuid;
 begin

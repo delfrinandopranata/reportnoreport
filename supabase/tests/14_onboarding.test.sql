@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(25);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -141,6 +141,12 @@ select is(
   (select count(*) from transactions where firm_id = '0000000a-0000-0000-0000-000000000001' and is_sample),
   0::bigint,
   'remove_sample_data deleted all sample transactions'
+);
+
+select is(
+  (select count(*)::int from bank_accounts where firm_id = '0000000a-0000-0000-0000-000000000001' and is_sample),
+  0,
+  'remove_sample_data deletes the sample bank account'
 );
 
 -- Verify real rows remain
