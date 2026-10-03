@@ -38,7 +38,6 @@ const setRoute = (route: Route) => {
 export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () => void }) {
   const [route, setRouteState] = useState(readRoute)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [firmForSupport, setFirmForSupport] = useState<{ id: string; name: string; currency: string } | null>(null)
 
   const firms = useQuery({
     queryKey: ['admin', 'firms'],
@@ -47,31 +46,22 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
 
   useEffect(() => {
     const onHash = () => {
-      const newRoute = readRoute()
-      setRouteState(newRoute)
-      // If navigating to support view, find the firm from the list
-      if (newRoute.view === 'support' && newRoute.firmId && !firmForSupport) {
-        const firm = (firms.data?.firms ?? []).find((f) => f.id === newRoute.firmId)
-        if (firm) {
-          setFirmForSupport({ id: firm.id, name: firm.name, currency: firm.currency })
-        }
-      }
-      // If navigating away from support, reset the state
-      if (newRoute.view !== 'support') {
-        setFirmForSupport(null)
-      }
+      setRouteState(readRoute())
     }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
-  }, [firms.data?.firms, firmForSupport])
+  }, [])
 
-  const navigate = (view: View, firmId: string | null = null, firmName?: string, currency?: string) => {
-    setRoute({ view, firmId, firmName, currency })
+  const supportFirm = route.view === 'support' && route.firmId
+    ? (firms.data?.firms ?? []).find((f) => f.id === route.firmId) ?? null
+    : null
+
+  const navigate = (view: View, firmId: string | null = null) => {
+    setRoute({ view, firmId })
   }
 
-  const showSupport = (firmId: string, firmName: string, currency: string) => {
-    setFirmForSupport({ id: firmId, name: firmName, currency })
-    navigate('support', firmId, firmName, currency)
+  const showSupport = (firmId: string) => {
+    navigate('support', firmId)
   }
 
   return (
@@ -154,22 +144,39 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
           </div>
         )}
 
-        {route.view === 'support' && firmForSupport && (
-          <div className="space-y-4">
-            <button
-              onClick={() => navigate('firms')}
-              className={`${btn.ghost} gap-1 mb-2`}
-            >
-              <Icon name="back" className="size-4" />
-              Back to firms
-            </button>
-            <h2 className="text-2xl font-bold">{firmForSupport.name}</h2>
-            <SupportView
-              firmId={firmForSupport.id}
-              firmName={firmForSupport.name}
-              currency={firmForSupport.currency}
-            />
-          </div>
+        {route.view === 'support' && (
+          <>
+            {firms.isPending && <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</div>}
+            {!firms.isPending && !supportFirm && (
+              <div className="space-y-4">
+                <button
+                  onClick={() => navigate('firms')}
+                  className={`${btn.ghost} gap-1 mb-2`}
+                >
+                  <Icon name="back" className="size-4" />
+                  Back to firms
+                </button>
+                <div className="text-sm text-red-600 dark:text-red-400">Firm not found</div>
+              </div>
+            )}
+            {supportFirm && (
+              <div className="space-y-4">
+                <button
+                  onClick={() => navigate('firms')}
+                  className={`${btn.ghost} gap-1 mb-2`}
+                >
+                  <Icon name="back" className="size-4" />
+                  Back to firms
+                </button>
+                <h2 className="text-2xl font-bold">{supportFirm.name}</h2>
+                <SupportView
+                  firmId={supportFirm.id}
+                  firmName={supportFirm.name}
+                  currency={supportFirm.currency}
+                />
+              </div>
+            )}
+          </>
         )}
       </main>
 
