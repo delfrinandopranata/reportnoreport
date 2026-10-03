@@ -278,11 +278,17 @@ isOneToOne: false
               "amount_minor": number,"balance": number,"bank_account_id": string,"client_id": string,"created_at": string,"date": string,"description": string,"id": string,"kind": Database["public"]['Enums']["txn_kind"],"updated_at": string
             }[]
                            },
+"load_sample_data":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "platform_status":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
 "reactivate_member":
 { Args: { "p_profile": string }; Returns: undefined
+                           },
+"remove_sample_data":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "support_client_balances":
 { Args: { "p_firm": string,"p_from": string,"p_to": string }; Returns: {
