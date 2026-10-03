@@ -246,22 +246,22 @@ port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
 admin_email = "env(RESEND_FROM_EMAIL)"
-sender_name = "Platform"
+sender_name = "ReportNoReport"
 
 [auth.email.template.invite]
-subject = "You've been invited to Platform"
+subject = "You've been invited to ReportNoReport"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.recovery]
-subject = "Reset your Platform password"
+subject = "Reset your ReportNoReport password"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.confirmation]
-subject = "Confirm your Platform email address"
+subject = "Confirm your ReportNoReport email address"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
-subject = "Confirm your new Platform email address"
+subject = "Confirm your new ReportNoReport email address"
 content_path = "./supabase/templates/email_change.html"
 
 [auth.sms]

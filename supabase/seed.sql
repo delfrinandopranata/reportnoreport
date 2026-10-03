@@ -29,7 +29,7 @@ insert into profiles (user_id, firm_id, name, email, role, status, is_super_admi
   ('00000000-0000-0000-0000-0000000000a3', '0000000a-0000-0000-0000-000000000001', 'Chong Mei Ling', 'viewer@alpha.test', 'viewer', 'active', false),
   ('00000000-0000-0000-0000-0000000000a4', '0000000a-0000-0000-0000-000000000001', 'Nur Aisyah', 'admin@alpha.test', 'admin', 'active', false),
   ('00000000-0000-0000-0000-0000000000b1', '0000000b-0000-0000-0000-000000000001', 'Tan Wei Ming', 'owner@beta.test', 'owner', 'active', false),
-  ('00000000-0000-0000-0000-0000000000f1', null, 'Platform Admin', 'admin@platform.test', 'viewer', 'active', true);
+  ('00000000-0000-0000-0000-0000000000f1', null, 'ReportNoReport Admin', 'admin@platform.test', 'viewer', 'active', true);
 
 insert into bank_accounts (id, firm_id, name, bank_name, account_name, account_no, is_default) values
   ('0000000a-0000-0000-0000-0000000000ba', '0000000a-0000-0000-0000-000000000001', 'Client account', 'Maybank', 'Alpha Advisory Sdn Bhd – Client Account', '5140 1234 5678', true),

@@ -101,7 +101,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-2.5">
           <span className="grid size-9 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"><Icon name="wallet" className="size-5" /></span>
-          <span className="text-sm leading-tight font-semibold">Platform<span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">Client accounts</span></span>
+          <span className="text-sm leading-tight font-semibold">ReportNoReport<span className="block text-xs font-normal text-zinc-500 dark:text-zinc-400">Client accounts</span></span>
         </div>
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
           <h1 className="mb-2 text-xl font-semibold leading-snug">{copy.title}</h1>

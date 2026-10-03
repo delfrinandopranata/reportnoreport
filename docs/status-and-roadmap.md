@@ -39,7 +39,7 @@
 ## Plan B status (complete, merged to main)
 
 **Plan B — Homepage, Self-Serve Trial and Super-Admin Console** is complete. Merged to `main` in
-del-skillsunion/platform-internal#2 (merge commit `95e9678`).
+PR #2 in the former del-skillsunion/platform-internal repo (merge commit `95e9678`).
 
 ### What shipped
 

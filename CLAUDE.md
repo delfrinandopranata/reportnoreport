@@ -1,10 +1,10 @@
-# CLAUDE.md — Platform development conventions
+# CLAUDE.md — ReportNoReport development conventions
 
 This file states conventions for any Claude session in this repo. **Read [docs/README.md](docs/README.md) first** for orientation.
 
 ## Product and architecture
 
-**Platform** is a multi-tenant client-money SaaS (Supabase + Vercel). Read the docs:
+**ReportNoReport** (report without complicated reporting) is a multi-tenant client-money SaaS (Supabase + Vercel). Read the docs:
 - [docs/README.md](docs/README.md) — orientation and quick reference
 - [docs/architecture.md](docs/architecture.md) — entry points, data flow, backend structure
 - [docs/data-model-and-security.md](docs/data-model-and-security.md) — tables, RLS, permissions
