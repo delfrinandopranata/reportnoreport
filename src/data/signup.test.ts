@@ -41,6 +41,24 @@ test('pendingFirmFromMetadata: returns null when currency is not MYR/SGD/USD', (
   assert.equal(result, null)
 })
 
+test('pendingFirmFromMetadata: returns null when firm_name is empty string', () => {
+  const meta = { firm_name: '', currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when name is empty string', () => {
+  const meta = { firm_name: 'Test Co', currency: 'MYR', name: '' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
+test('pendingFirmFromMetadata: returns null when firm_name is only whitespace', () => {
+  const meta = { firm_name: '   ', currency: 'MYR', name: 'John Doe' }
+  const result = pendingFirmFromMetadata(meta)
+  assert.equal(result, null)
+})
+
 test('pendingFirmFromMetadata: extracts valid MYR metadata', () => {
   const meta = { firm_name: 'Test Co Sdn Bhd', currency: 'MYR', name: 'John Doe' }
   const result = pendingFirmFromMetadata(meta)

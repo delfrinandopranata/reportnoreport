@@ -46,14 +46,14 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
       password,
       options: {
         emailRedirectTo: `${location.origin}/app/`,
-        data: { name: data.get('name'), firm_name: data.get('firm_name'), currency: data.get('currency') },
+        data: { name: String(data.get('name')), firm_name: String(data.get('firm_name')), currency: String(data.get('currency')) },
       },
     })
     if (error) {
       if (error.message === 'User already registered') throw new Error('An account with that email already exists. Sign in instead.')
       throw error
     }
-    setNotice(`Check your email -- we sent a link to ${data.get('email')} to verify your address.`)
+    setNotice(`Check your email -- we sent a link to ${String(data.get('email'))} to verify your address.`)
   }
   const joinWaitlist = async (data: FormData) => {
     const { error } = await supabase.rpc('join_waitlist', { p_email: String(data.get('email')), p_firm_name: String(data.get('firm_name')) })

@@ -71,9 +71,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           setCreatingFirm(false)
           if (createError) {
             const isFullError = isEarlyAccessFull(createError)
+            const serverMsg = (createError as { message?: string })?.message || ''
             setFirmCreationError({
               isEarlyAccessFull: isFullError,
-              message: isFullError ? 'Early access is full. You are on the waitlist -- we will email you when a place opens.' : (createError as any).message || 'Something went wrong. Try again.',
+              message: isFullError ? 'Early access is full. You are on the waitlist -- we will email you when a place opens.' : `Could not create firm. ${serverMsg}`.trim(),
             })
             throw createError
           }
