@@ -37,3 +37,19 @@ Vercel auto-detects Vite: build `pnpm build`, output `dist`.
 - **There is no sign-in yet.** "Viewing as" previews a role on this device. Real authentication and per-business data separation arrive with the backend; the `User` shape (ids, ISO timestamps, no derived data) maps 1:1 to it.
 - **Settings** (`#settings`, `src/settings/`): organisation, statement footer and bank details, regional options and JSON backup/restore of all app data. Only `settings.manage` roles can edit. The statement reads these values.
 - Persisted under `platform-internal-users` and `platform-internal-settings` (the main data stays under `platform-internal`).
+
+## Email (Resend)
+
+Hosted Supabase Auth emails (invite, confirmation, password reset, email change) go out through Resend SMTP using the branded templates in `supabase/templates/`. Local development uses Mailpit (http://127.0.0.1:54324); nothing is really sent. The `[auth.email.smtp]` block in `supabase/config.toml` is written but `enabled = false`.
+
+Go-live checklist:
+
+1. Create a Resend account.
+2. Add your sending domain in Resend and verify it (add the SPF and DKIM DNS records Resend shows).
+3. Create an API key with sending access.
+4. In the Supabase dashboard, Authentication > SMTP Settings, enable custom SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = the API key. For Edge Functions, run `supabase secrets set RESEND_API_KEY=...` instead.
+5. Set the sender, e.g. `no-reply@mail.<your-domain>`, with sender name `Platform`.
+6. Raise the Auth email rate limit (Authentication > Rate Limits) from the default.
+7. Send a test invite and check it arrives and the link works.
+
+Never commit the API key. `supabase/.env.example` lists the variable names; real `.env` files are git-ignored.

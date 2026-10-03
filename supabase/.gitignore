@@ -6,3 +6,8 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Real env files (keys never enter the repo)
+.env
+.env.*
+!.env.example
