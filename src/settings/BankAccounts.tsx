@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { BankAccount } from '../data/mappers'
 import { useBankAccounts, useSaveBank } from '../data/queries'
 import { useSession } from '../data/session'
+import { bankPayload } from './bankForm'
 import { btn, Dialog, Field, Icon, input } from '../ui'
 
 export function BankAccountsCard() {
@@ -18,7 +19,7 @@ export function BankAccountsCard() {
     const name = String(d.get('name')).trim()
     if (!name) return setFormError('Enter a name, e.g. "Maybank client account".')
     try {
-      await save.mutateAsync({ id: editing?.id, name, bankName: String(d.get('bankName')).trim(), accountName: String(d.get('accountName')).trim(), accountNo: String(d.get('accountNo')).trim(), isDefault: d.get('isDefault') === 'on' || banks.length === 0, isActive: true })
+      await save.mutateAsync(bankPayload(editing, { name, bankName: String(d.get('bankName')).trim(), accountName: String(d.get('accountName')).trim(), accountNo: String(d.get('accountNo')).trim(), isDefaultChecked: d.get('isDefault') === 'on' }, banks.length))
       setEditing(null); setFormError('')
     } catch (err) { setFormError((err as Error).message) }
   }
