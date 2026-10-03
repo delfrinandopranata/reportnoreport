@@ -1,13 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { LedgerView } from './ClientsPage'
 import { AssigneeSelect, StatusSelect, TagList } from './clients/fields'
-import { ClientForm, ClientView } from './clients/ClientInfo'
+import { ClientAttachments, ClientDetails, ClientForm } from './clients/ClientInfo'
 import { card, LoadError, MutationError, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
-import { useBalances, useClient, useDeleteClient, useLedger, useUpdateClient } from './data/queries'
+import { useBalances, useClient, useDeleteClient, useUpdateClient } from './data/queries'
 import { useSession } from './data/session'
 import { today, type Client } from './ledger'
 import { Avatar, btn, Dialog, Icon, TxnForm } from './ui'
-import { CashflowChart } from './widgets'
 
 export type ClientTab = 'client' | 'transactions'
 
@@ -40,8 +39,8 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState<string | null>(null)
-  const d = new Date()
-  const { data: own = [] } = useLedger({ from: new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA'), to: today(), clientId: id })
+  const [recording, setRecording] = useState(false)
+  const post = useGate('transactions.post', 'record transactions')
   const { data: balances } = useBalances({ from: '1900-01-01', to: today(), clientId: id })
 
   if (isPending) return <ProfileSkeleton />
@@ -81,7 +80,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
     { key: 'client', label: 'Client', href: `#clients/${client.id}` },
     { key: 'transactions', label: 'Transactions', href: `#clients/${client.id}/transactions` },
   ] as const
-  const meta = [client.industry, client.registrationNo, `Client since ${shortDate(client.createdAt)}`].filter(Boolean).join(' · ')
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -124,7 +122,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
                 </a>
               )}
             </div>
-            <p className="mt-1 text-sm text-zinc-500">{meta}</p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto print:hidden">
             <button type="button" className={btn.ghost} onClick={startEdit} disabled={!edit.ok || editing} title={edit.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
@@ -160,6 +157,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             )}
           </Labelled>
         </div>
+        <ClientDetails client={client} />
         <MutationError error={update.error ?? remove.error} />
         <p className="text-xs text-zinc-500">Last updated on {stamp(client.updatedAt)}</p>
       </header>
@@ -181,23 +179,22 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
 
       {onTxns ? (
         <div className="grid gap-6">
-          <div className="grid items-start gap-6 lg:grid-cols-3 print:hidden">
-            <section className={`${card} min-w-0 p-5 lg:col-span-2`}>
-              <h2 className="mb-4 text-sm font-medium text-zinc-500">Cash flow</h2>
-              <CashflowChart txns={own} />
-            </section>
-            <section className={`${card} p-5`} data-tour="record-transaction">
-              <h2 className="mb-4 text-sm font-medium text-zinc-500">Record transaction</h2>
-              <PostTxn clientId={client.id} />
-            </section>
+          <div className="flex justify-end print:hidden">
+            <button type="button" className={btn.primary} data-tour="record-transaction" onClick={() => setRecording(true)} disabled={!post.ok} title={post.title}>
+              <Icon name="plus" /> Record transaction
+            </button>
           </div>
           <LedgerView key={client.id} fixedClientId={client.id} />
         </div>
       ) : editing ? (
         <ClientForm client={client} onDone={() => setEditing(false)} />
       ) : (
-        <ClientView client={client} />
+        <ClientAttachments client={client} />
       )}
+
+      <Dialog open={recording} onClose={() => setRecording(false)} title="Record transaction">
+        <TxnForm clientId={client.id} autoFocus onDone={() => setRecording(false)} />
+      </Dialog>
 
       <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete client">
         <div className="grid gap-4 text-sm">
@@ -258,9 +255,4 @@ function ProfileSkeleton() {
       <span className="sr-only">Loading…</span>
     </div>
   )
-}
-
-function PostTxn({ clientId }: { clientId: string }) {
-  const gate = useGate('transactions.post', 'record transactions')
-  return gate.ok ? <TxnForm clientId={clientId} autoFocus /> : <p className="text-sm text-zinc-500">{gate.title}</p>
 }

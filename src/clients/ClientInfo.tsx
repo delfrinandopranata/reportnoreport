@@ -2,22 +2,15 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
 import { Attachments } from '../attachments/Attachments'
 import { useUpdateClient } from '../data/queries'
-import { Avatar, btn, Field, input } from '../ui'
-import { AssigneeSelect, PhoneField, StatusBadge, StatusSelect, TagList } from './fields'
-import { card, MutationError, shortDate, useUserNames } from './shared'
-
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className={`${card} min-w-0 p-5 print:break-inside-avoid`}>
-    <h2 className="mb-4 text-sm font-medium text-zinc-500">{title}</h2>
-    <div className="grid items-start gap-x-6 gap-y-4 sm:grid-cols-2">{children}</div>
-  </section>
-)
+import { btn, Field, input } from '../ui'
+import { AssigneeSelect, PhoneField, StatusSelect, TagList } from './fields'
+import { card, MutationError, shortDate } from './shared'
 
 function Row({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
-    <div className={`min-w-0 ${wide ? 'sm:col-span-2' : ''}`}>
+    <div className={`min-w-0 ${wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
       <dt className="text-xs text-zinc-500">{label}</dt>
-      <dd className="mt-0.5 text-sm break-words">{children || <span className="text-zinc-400">—</span>}</dd>
+      <dd className="mt-0.5 text-sm break-words">{children}</dd>
     </div>
   )
 }
@@ -25,49 +18,37 @@ function Row({ label, children, wide }: { label: string; children: ReactNode; wi
 const link = 'text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white dark:decoration-zinc-600'
 const idLabel = (c: Pick<Client, 'type'>) => (c.type === 'company' ? 'SSM registration no.' : 'NRIC / passport no.')
 
-export function ClientView({ client: c }: { client: Client }) {
-  const nameOf = useUserNames()
+/** Read-only details for the header card; empty fields are omitted. */
+export function ClientDetails({ client: c }: { client: Client }) {
   const website = c.website && (/^https?:\/\//.test(c.website) ? c.website : `https://${c.website}`)
+  const address = [c.address1, c.address2, [c.postcode, c.city].filter(Boolean).join(' '), c.state, c.country].filter(Boolean)
+  const rows: { label: string; value: ReactNode; wide?: boolean }[] = [
+    { label: 'Type', value: c.type === 'company' ? 'Company' : 'Individual' },
+    { label: idLabel(c), value: c.registrationNo },
+    { label: 'Client ID', value: c.clientCode },
+    { label: 'Industry', value: c.industry },
+    { label: 'Website', value: website && <a href={website} target="_blank" rel="noreferrer" className={link}>{c.website}</a> },
+    { label: 'Account no.', value: <span className="tabular-nums">{accountNo(c.id)}</span> },
+    { label: 'Client since', value: shortDate(c.createdAt) },
+    { label: 'Contact name', value: c.contact },
+    { label: 'Phone', value: c.phone && <a href={`tel:${c.phone}`} className={`${link} tabular-nums`}>{formatPhone(c.phone)}</a> },
+    { label: 'Email', value: c.email && <a href={`mailto:${c.email}`} className={link}>{c.email}</a> },
+    { label: 'Address', value: address.length > 0 && address.map((line) => <span key={line} className="block">{line}</span>), wide: true },
+    { label: 'Notes', value: c.notes && <span className="whitespace-pre-wrap">{c.notes}</span>, wide: true },
+  ]
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-2 print:grid-cols-2">
-      <Section title={c.type === 'company' ? 'Company details' : 'Individual details'}>
-        <Row label="Type">{c.type === 'company' ? 'Company' : 'Individual'}</Row>
-        <Row label={c.type === 'company' ? 'Company name' : 'Full name'}>{c.name}</Row>
-        <Row label={idLabel(c)}>{c.registrationNo}</Row>
-        <Row label="Client ID">{c.clientCode}</Row>
-        <Row label="Industry">{c.industry}</Row>
-        <Row label="Website">{website && <a href={website} target="_blank" rel="noreferrer" className={link}>{c.website}</a>}</Row>
-        <Row label="Account no.">{<span className="tabular-nums">{accountNo(c.id)}</span>}</Row>
-        <Row label="Client since">{shortDate(c.createdAt)}</Row>
-      </Section>
-      <Section title="Primary contact">
-        <Row label="Contact name" wide>{c.contact}</Row>
-        <Row label="Phone">{c.phone && <a href={`tel:${c.phone}`} className={`${link} tabular-nums`}>{formatPhone(c.phone)}</a>}</Row>
-        <Row label="Email">{c.email && <a href={`mailto:${c.email}`} className={link}>{c.email}</a>}</Row>
-      </Section>
-      <Section title="Address">
-        <Row label="Address line 1" wide>{c.address1}</Row>
-        <Row label="Address line 2" wide>{c.address2}</Row>
-        <Row label="City">{c.city}</Row>
-        <Row label="State">{c.state}</Row>
-        <Row label="Postcode">{c.postcode}</Row>
-        <Row label="Country">{c.country}</Row>
-      </Section>
-      <Section title="Account">
-        <Row label="Status"><StatusBadge status={c.status} /></Row>
-        <Row label="Assigned member">
-          {c.assignedUserId && (
-            <span className="flex items-center gap-2"><Avatar name={nameOf(c.assignedUserId)} size="size-6 text-[10px]" />{nameOf(c.assignedUserId)}</span>
-          )}
-        </Row>
-        <Row label="Tags" wide>{c.tags.length > 0 && <TagList tags={c.tags} />}</Row>
-        <Row label="Notes" wide>{c.notes && <span className="whitespace-pre-wrap">{c.notes}</span>}</Row>
-      </Section>
-      <section className={`${card} min-w-0 p-5 print:hidden lg:col-span-2`}>
-        <h2 className="mb-4 text-sm font-medium text-zinc-500">Attachments</h2>
-        <Attachments clientId={c.id} />
-      </section>
-    </div>
+    <dl className="grid gap-x-6 gap-y-4 border-t border-zinc-100 pt-4 sm:grid-cols-2 lg:grid-cols-3 dark:border-zinc-800">
+      {rows.filter((r) => r.value).map((r) => <Row key={r.label} label={r.label} wide={r.wide}>{r.value}</Row>)}
+    </dl>
+  )
+}
+
+export function ClientAttachments({ client: c }: { client: Client }) {
+  return (
+    <section className={`${card} min-w-0 p-5 print:hidden`}>
+      <h2 className="mb-4 text-sm font-medium text-zinc-500">Attachments</h2>
+      <Attachments clientId={c.id} />
+    </section>
   )
 }
 
