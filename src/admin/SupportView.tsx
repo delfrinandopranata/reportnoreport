@@ -4,6 +4,7 @@ import { Avatar, Icon, field } from '../ui'
 import { callAdmin } from './api'
 import { makeMoney } from '../ledger'
 import { today, type Period } from '../ledger'
+import { formatDate } from '../settings/constants'
 
 type SupportClient = { client_id: string; name: string }
 type SupportBalance = {
@@ -230,7 +231,7 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
                   <tbody>
                     {ledger.data.ledger.map((line) => (
                       <tr key={line.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
-                        <td className="px-4 py-2 text-xs text-zinc-600 dark:text-zinc-400">{new Date(line.date).toLocaleDateString()}</td>
+                        <td className="px-4 py-2 text-xs text-zinc-600 dark:text-zinc-400">{formatDate(line.date, 'text')}</td>
                         <td className="px-4 py-2 text-sm font-medium">{line.client_name}</td>
                         <td className="px-4 py-2">
                           <span

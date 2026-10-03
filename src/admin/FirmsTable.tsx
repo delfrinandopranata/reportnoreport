@@ -108,7 +108,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
       return 'Trial ended'
     }
     if (f.billing_status === 'paid' && f.paid_at) {
-      return `Paid: ${formatDate(f.paid_at, 'text')}`
+      return `Paid: ${formatDate(f.paid_at.slice(0, 10), 'text')}`
     }
     if (f.billing_status === 'complimentary') {
       return 'Complimentary'
@@ -190,7 +190,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                   <td className="px-4 py-3 text-xs">{getBillingLabel(firm)}</td>
                   <td className="px-4 py-3">{firm.members}</td>
                   <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                    {formatDate(firm.created_at, 'text')}
+                    {formatDate(firm.created_at.slice(0, 10), 'text')}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">

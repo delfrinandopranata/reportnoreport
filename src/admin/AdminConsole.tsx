@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { btn, Icon } from '../ui'
 import { FirmsTable } from './FirmsTable'
 import { CreateFirmDialog } from './CreateFirmDialog'
 import { SupportView } from './SupportView'
 import { PlatformSettings } from './PlatformSettings'
 import { Waitlist } from './Waitlist'
+import { callAdmin, type AdminListFirmsResponse } from './api'
 
 type View = 'firms' | 'settings' | 'waitlist' | 'support'
 type Route = { view: View; firmId: string | null; firmName?: string; currency?: string }
@@ -38,14 +40,30 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [firmForSupport, setFirmForSupport] = useState<{ id: string; name: string; currency: string } | null>(null)
 
+  const firms = useQuery({
+    queryKey: ['admin', 'firms'],
+    queryFn: async () => (await callAdmin('list_firms', {})) as AdminListFirmsResponse,
+  })
+
   useEffect(() => {
     const onHash = () => {
       const newRoute = readRoute()
       setRouteState(newRoute)
+      // If navigating to support view, find the firm from the list
+      if (newRoute.view === 'support' && newRoute.firmId && !firmForSupport) {
+        const firm = (firms.data?.firms ?? []).find((f) => f.id === newRoute.firmId)
+        if (firm) {
+          setFirmForSupport({ id: firm.id, name: firm.name, currency: firm.currency })
+        }
+      }
+      // If navigating away from support, reset the state
+      if (newRoute.view !== 'support') {
+        setFirmForSupport(null)
+      }
     }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
-  }, [])
+  }, [firms.data?.firms, firmForSupport])
 
   const navigate = (view: View, firmId: string | null = null, firmName?: string, currency?: string) => {
     setRoute({ view, firmId, firmName, currency })
