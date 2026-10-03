@@ -1,28 +1,27 @@
 import { useMemo, useState, type ComponentType } from 'react'
-import { byDateDesc, formatCompact, formatMoney, monthlyFlow, today, totals, totalsByClient, type Txn } from './ledger'
-import { useStore, type Span, type WidgetType } from './store'
+import { monthlyFlow, today, type Txn } from './ledger'
+import { sumBalances } from './data/mappers'
+import { useMoney } from './data/money'
+import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
+import type { Span, WidgetType } from './Dashboard'
 import { Avatar, Icon, KindBadge, TxnForm } from './ui'
 
-const thisMonth = () => today().slice(0, 7)
-
-function useMonthSplit(txns: Txn[]) {
-  return useMemo(() => {
-    const month = thisMonth()
-    return { all: totals(txns), month: totals(txns.filter((t) => t.date.startsWith(month))) }
-  }, [txns])
-}
+const ALL_TIME = '1900-01-01'
 
 function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
-  const txns = useStore((s) => s.txns)
-  const { all, month } = useMonthSplit(txns)
-  const value = all[metric]
+  const money = useMoney()
+  const monthStart = `${today().slice(0, 7)}-01`
+  const all = sumBalances(useBalances({ from: ALL_TIME, to: today() }).data ?? [])
+  const m = sumBalances(useBalances({ from: monthStart, to: today() }).data ?? [])
+  const value = { net: all.closing, in: all.receipts, out: all.payments }[metric]
+  const month = { net: m.receipts - m.payments, in: m.receipts, out: m.payments }[metric]
   const tone = metric === 'in' ? 'bg-in/10 text-in' : metric === 'out' ? 'bg-out/10 text-out' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
   return (
     <div className="flex items-end justify-between gap-3">
       <div className="min-w-0">
-        <p className={`truncate text-2xl font-semibold tracking-tight tabular-nums ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{formatMoney(value)}</p>
+        <p className={`truncate text-2xl font-semibold tracking-tight tabular-nums ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(value)}</p>
         <p className="mt-1 text-sm text-zinc-500 tabular-nums">
-          {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {formatMoney(month[metric])}
+          {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {money.format(month)}
         </p>
       </div>
       <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}>
@@ -33,9 +32,8 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
 }
 
 function ClientsKpi() {
-  const clients = useStore((s) => s.clients)
-  const txns = useStore((s) => s.txns)
-  const overdrawn = useMemo(() => [...totalsByClient(txns).values()].filter((t) => t.net < 0).length, [txns])
+  const { data: clients = [] } = useClients()
+  const overdrawn = (useBalances({ from: ALL_TIME, to: today() }).data ?? []).filter((r) => r.closing < 0).length
   return (
     <div className="flex items-end justify-between gap-3">
       <div>
@@ -57,10 +55,14 @@ const barPath = (x: number, y: number, w: number, h: number) => {
 }
 
 function Cashflow() {
-  return <CashflowChart txns={useStore((s) => s.txns)} />
+  const d = new Date()
+  const sixMonthsAgo = new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA')
+  const { data: lines = [] } = useLedger({ from: sixMonthsAgo, to: today() })
+  return <CashflowChart txns={lines} />
 }
 
 export function CashflowChart({ txns }: { txns: Txn[] }) {
+  const money = useMoney()
   const flow = useMemo(() => monthlyFlow(txns, 6, today()), [txns])
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(1, ...flow.flatMap((f) => [f.in, f.out]))
@@ -84,7 +86,7 @@ export function CashflowChart({ txns }: { txns: Txn[] }) {
             <g key={t}>
               <line x1={CHART.left} x2={CHART.w} y1={y(t)} y2={y(t)} className="stroke-zinc-200 dark:stroke-zinc-800" strokeDasharray={t ? '3 4' : undefined} />
               <text x={CHART.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-zinc-400 text-[11px] tabular-nums">
-                {formatCompact(t)}
+                {money.compact(t)}
               </text>
             </g>
           ))}
@@ -108,28 +110,29 @@ export function CashflowChart({ txns }: { txns: Txn[] }) {
             style={{ left: `${((CHART.left + slot * hover + slot / 2) / CHART.w) * 100}%` }}
           >
             <p className="mb-1.5 font-medium">{active.label} {active.key.slice(0, 4)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-in" />Receipts</span>{formatMoney(active.in)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-out" />Payments</span>{formatMoney(active.out)}</p>
-            <p className="mt-1.5 flex justify-between gap-2 border-t border-zinc-100 pt-1.5 font-medium tabular-nums dark:border-zinc-800"><span>Net cash flow</span>{formatMoney(active.in - active.out)}</p>
+            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-in" />Receipts</span>{money.format(active.in)}</p>
+            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-out" />Payments</span>{money.format(active.out)}</p>
+            <p className="mt-1.5 flex justify-between gap-2 border-t border-zinc-100 pt-1.5 font-medium tabular-nums dark:border-zinc-800"><span>Net cash flow</span>{money.format(active.in - active.out)}</p>
           </div>
         )}
       </div>
       <table className="sr-only">
         <caption>Receipts and payments by month</caption>
         <thead><tr><th>Month</th><th>Receipts</th><th>Payments</th></tr></thead>
-        <tbody>{flow.map((f) => <tr key={f.key}><td>{f.label}</td><td>{formatMoney(f.in)}</td><td>{formatMoney(f.out)}</td></tr>)}</tbody>
+        <tbody>{flow.map((f) => <tr key={f.key}><td>{f.label}</td><td>{money.format(f.in)}</td><td>{money.format(f.out)}</td></tr>)}</tbody>
       </table>
     </div>
   )
 }
 
 function Balances() {
-  const clients = useStore((s) => s.clients)
-  const txns = useStore((s) => s.txns)
+  const money = useMoney()
+  const { data: clients = [] } = useClients()
+  const { data: balances = [] } = useBalances({ from: ALL_TIME, to: today() })
   const rows = useMemo(() => {
-    const byClient = totalsByClient(txns)
-    return clients.map((c) => ({ ...c, net: byClient.get(c.id)?.net ?? 0 })).sort((a, b) => b.net - a.net)
-  }, [clients, txns])
+    const byClient = new Map(balances.map((r) => [r.client_id, r.closing]))
+    return clients.map((c) => ({ ...c, net: byClient.get(c.id) ?? 0 })).sort((a, b) => b.net - a.net)
+  }, [clients, balances])
   const max = Math.max(1, ...rows.map((r) => Math.abs(r.net)))
   if (!rows.length) return <Empty text="No clients yet." />
   return (
@@ -140,7 +143,7 @@ function Balances() {
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <a href={`#clients/${r.id}`} className="truncate text-sm font-medium hover:underline">{r.name}</a>
-              <span className={`text-sm font-medium tabular-nums ${r.net < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{formatMoney(r.net)}</span>
+              <span className={`text-sm font-medium tabular-nums ${r.net < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(r.net)}</span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
               <div className={`h-full rounded-full ${r.net < 0 ? 'bg-red-500' : 'bg-zinc-800 dark:bg-zinc-300'}`} style={{ width: `${(Math.abs(r.net) / max) * 100}%` }} />
@@ -153,15 +156,15 @@ function Balances() {
 }
 
 function Recent() {
-  const clients = useStore((s) => s.clients)
-  const txns = useStore((s) => s.txns)
-  const recent = useMemo(() => [...txns].sort(byDateDesc).slice(0, 6), [txns])
+  const { data: clients = [] } = useClients()
+  const { data: recent = [] } = useRecentTxns(6)
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
   if (!recent.length) return <Empty text="No transactions posted yet." />
   return <TxnList txns={recent} names={names} />
 }
 
 function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) {
+  const money = useMoney()
   return (
     <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
       {txns.map((t) => (
@@ -176,7 +179,7 @@ function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) 
           </div>
           <span className={`text-sm font-medium tabular-nums ${t.kind === 'in' ? 'text-in' : ''}`}>
             {t.kind === 'in' ? '+' : '−'}
-            {formatMoney(t.amount)}
+            {money.format(t.amount)}
           </span>
         </li>
       ))}

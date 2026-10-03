@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { parseCents, periodPresets, today, type Kind, type Period } from './ledger'
-import { useSettings } from './settings/store'
-import { useStore } from './store'
+import { periodPresets, today, type Kind, type Period } from './ledger'
+import { parseAmount } from './data/mappers'
+import { useMoney } from './data/money'
+import { useBankAccounts, useClients, usePostTxn } from './data/queries'
+import { useSession } from './data/session'
 
 const PATHS = {
   grip: 'M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01',
@@ -133,8 +135,11 @@ export function KindBadge({ kind }: { kind: Kind }) {
 }
 
 export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () => void }) {
-  const clients = useStore((s) => s.clients)
-  const addTxn = useStore((s) => s.addTxn)
+  const { data: clients = [] } = useClients()
+  const { data: banks = [] } = useBankAccounts()
+  const post = usePostTxn()
+  const { currency } = useMoney()
+  const active = banks.filter((b) => b.isActive)
   const [kind, setKind] = useState<Kind>('in')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -142,21 +147,26 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
   if (!clientId && clients.length === 0) {
     return <p className="text-sm text-zinc-500">Add a client before recording a transaction.</p>
   }
+  if (active.length === 0) return <p className="text-sm text-zinc-500">Add a bank account in Settings before recording a transaction.</p>
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const data = new FormData(form)
-    const amount = parseCents(String(data.get('amount')))
+    const amount = parseAmount(String(data.get('amount')))
     const target = clientId ?? String(data.get('clientId'))
-    if (amount === null) return setError('Enter an amount greater than 0, up to 2 decimal places.')
+    if (!amount.ok) return setError(amount.error)
     if (!target) return setError('Select a client.')
-    addTxn({ clientId: target, kind, amount, date: String(data.get('date')) || today(), note: String(data.get('note')).trim() })
-    form.reset()
-    setError('')
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1600)
-    onDone?.()
+    try {
+      await post.mutateAsync({ clientId: target, bankAccountId: String(data.get('bankAccountId')), kind, amount: amount.cents, date: String(data.get('date')) || today(), note: String(data.get('note')).trim() })
+      form.reset()
+      setError('')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1600)
+      onDone?.()
+    } catch (err) {
+      setError((err as Error).message)
+    }
   }
 
   return (
@@ -188,8 +198,13 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
           </select>
         </Field>
       )}
+      <Field label="Bank account">
+        <select name="bankAccountId" className={input} defaultValue={active.find((b) => b.isDefault)?.id ?? active[0].id}>
+          {active.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (RM)">
+        <Field label={`Amount (${currency})`}>
           <input name="amount" inputMode="decimal" placeholder="0.00" className={`${input} tabular-nums`} aria-invalid={!!error} />
         </Field>
         <Field label="Transaction date">
@@ -204,7 +219,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
           {error}
         </p>
       )}
-      <button className={btn.primary}>
+      <button className={btn.primary} disabled={post.isPending}>
         <Icon name={saved ? 'check' : 'plus'} /> {saved ? 'Posted' : kind === 'in' ? 'Post receipt' : 'Post payment'}
       </button>
     </form>
@@ -238,7 +253,7 @@ export const nextSort = <K extends string>(sort: Sort<K>, key: K, firstDir: 'asc
   sort.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: firstDir }
 
 export function PeriodPicker({ period, onChange, firstDate }: { period: Period; onChange: (period: Period) => void; firstDate: string }) {
-  const fyStartMonth = useSettings((s) => s.fyStartMonth)
+  const { fyStartMonth } = useSession().firm
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Period">

@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
-import { fillClient, formatMoney, planImport, readImport, toCsv, today, type Client, type Txn } from './ledger'
-import { useStore } from './store'
+import { readImport, toCsv, today, type ImportRow } from './ledger'
+import { useMoney } from './data/money'
+import { useImport, type ImportPayloadRow } from './data/queries'
 import { btn, Dialog, Icon } from './ui'
 
 /** BOM so Excel opens UTF-8 (e.g. client names with accents) correctly. */
@@ -16,12 +17,15 @@ const TEMPLATE = [
   [today(), 'Example Client Sdn Bhd', 'Filing fees', '', '120.00'],
 ]
 
-type Plan = ReturnType<typeof planImport> & { errors: string[]; fileName: string }
+type Preview = { transactions: number; clients: number; duplicates: number }
+type Plan = { rows: ImportRow[]; errors: string[]; fileName: string; preview: Preview | null; serverError: string }
+
+const toPayload = (rows: ImportRow[]): ImportPayloadRow[] =>
+  rows.map((r) => ({ line: r.line, client_name: r.clientName, bank_account: r.bankAccount || null, kind: r.kind === 'in' ? 'receipt' : 'payment', amount_minor: r.amount, date: r.date, description: r.note }))
 
 export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const clients = useStore((s) => s.clients)
-  const txns = useStore((s) => s.txns)
-  const importLedger = useStore((s) => s.importLedger)
+  const money = useMoney()
+  const importRows = useImport()
   const [plan, setPlan] = useState<Plan | null>(null)
   const [done, setDone] = useState('')
 
@@ -37,28 +41,25 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     if (!file) return
     setDone('')
     const { rows, errors } = readImport(await file.text())
-    setPlan({ ...planImport(rows, clients, txns), errors, fileName: file.name })
+    const base = { rows, errors, fileName: file.name }
+    if (!rows.length) return setPlan({ ...base, preview: null, serverError: '' })
+    try {
+      setPlan({ ...base, preview: await importRows.mutateAsync({ rows: toPayload(rows), dryRun: true }), serverError: '' })
+    } catch (err) {
+      setPlan({ ...base, preview: null, serverError: (err as Error).message })
+    }
   }
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!plan) return
-    const created: Client[] = plan.newClients.map((name) => fillClient({ id: crypto.randomUUID(), name }))
-    const ids = new Map([...clients, ...created].map((c) => [c.name.trim().toLowerCase(), c.id]))
-    const added: Txn[] = plan.rows.map((r) => ({
-      id: crypto.randomUUID(),
-      clientId: ids.get(r.clientName.trim().toLowerCase())!,
-      bankAccountId: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      kind: r.kind,
-      amount: r.amount,
-      date: r.date,
-      note: r.note,
-    }))
-    importLedger(created, added)
-    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
-    setDone(`Imported ${plural(added.length, 'transaction')}${created.length ? ` and added ${plural(created.length, 'new client')}` : ''}. You can undo this.`)
-    setPlan(null)
+    try {
+      const r = await importRows.mutateAsync({ rows: toPayload(plan.rows), dryRun: false })
+      const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+      setDone(`Imported ${plural(r.transactions, 'transaction')}${r.clients ? ` and added ${plural(r.clients, 'new client')}` : ''}.`)
+      setPlan(null)
+    } catch (err) {
+      setPlan({ ...plan, serverError: (err as Error).message })
+    }
   }
 
   const receipts = plan?.rows.filter((r) => r.kind === 'in').reduce((sum, r) => sum + r.amount, 0) ?? 0
@@ -68,7 +69,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     <Dialog open={open} onClose={close} title="Import transactions">
       <div className="grid gap-4 text-sm">
         <p className="text-zinc-600 dark:text-zinc-400">
-          Upload a CSV with columns <b>Date</b>, <b>Client</b>, <b>Description</b> and <b>Receipts</b> / <b>Payments</b> (or <b>Type</b> + <b>Amount</b>). Dates as YYYY-MM-DD or DD/MM/YYYY. A file exported from this page imports as-is.
+          Upload a CSV with columns <b>Date</b>, <b>Client</b>, <b>Description</b>, optional <b>Bank account</b> and <b>Receipts</b> / <b>Payments</b> (or <b>Type</b> + <b>Amount</b>). Dates as YYYY-MM-DD or DD/MM/YYYY. A file exported from this page imports as-is.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <label className={`${btn.primary} cursor-pointer`}>
@@ -87,24 +88,22 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
             <p className="font-medium">{plan.fileName}</p>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1 tabular-nums">
               <dt className="text-zinc-500">Transactions to import</dt>
-              <dd className="text-right font-medium">{plan.rows.length}</dd>
+              <dd className="text-right font-medium">{plan.preview?.transactions ?? 0}</dd>
               <dt className="text-zinc-500">Total receipts</dt>
-              <dd className="text-right">{formatMoney(receipts)}</dd>
+              <dd className="text-right">{money.format(receipts)}</dd>
               <dt className="text-zinc-500">Total payments</dt>
-              <dd className="text-right">{formatMoney(payments)}</dd>
-              {plan.duplicates > 0 && (
+              <dd className="text-right">{money.format(payments)}</dd>
+              {(plan.preview?.duplicates ?? 0) > 0 && (
                 <>
                   <dt className="text-zinc-500">Already on the ledger (skipped)</dt>
-                  <dd className="text-right">{plan.duplicates}</dd>
+                  <dd className="text-right">{plan.preview?.duplicates}</dd>
                 </>
               )}
             </dl>
-            {plan.newClients.length > 0 && (
-              <p>
-                <span className="font-medium">{plan.newClients.length} new client{plan.newClients.length > 1 ? 's' : ''} will be added:</span>{' '}
-                <span className="text-zinc-600 dark:text-zinc-400">{plan.newClients.join(', ')}</span>
-              </p>
+            {(plan.preview?.clients ?? 0) > 0 && (
+              <p className="font-medium">{plan.preview?.clients} new client{plan.preview?.clients === 1 ? '' : 's'} will be added.</p>
             )}
+            {plan.serverError && <p className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">{plan.serverError}</p>}
             {plan.errors.length > 0 && (
               <div className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
                 <p className="font-medium">{plan.errors.length} row{plan.errors.length > 1 ? 's' : ''} can’t be imported and will be skipped:</p>
@@ -116,8 +115,8 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
             )}
             <div className="flex justify-end gap-2">
               <button type="button" className={btn.ghost} onClick={() => setPlan(null)}>Cancel</button>
-              <button type="button" className={btn.primary} onClick={confirm} disabled={!plan.rows.length}>
-                Import {plan.rows.length} transaction{plan.rows.length === 1 ? '' : 's'}
+              <button type="button" className={btn.primary} onClick={confirm} disabled={!plan.preview?.transactions || importRows.isPending}>
+                Import {plan.preview?.transactions ?? 0} transaction{plan.preview?.transactions === 1 ? '' : 's'}
               </button>
             </div>
           </div>

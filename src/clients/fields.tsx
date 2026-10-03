@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { addTag, CLIENT_STATUSES, DIAL_CODES, joinPhone, splitPhone, STATUS_LABEL, type ClientStatus } from '../ledger'
 import { field, Icon, input } from '../ui'
-import { useUsers } from '../users/store'
+import { useMembers } from '../data/queries'
 
 const TONE: Record<ClientStatus, string> = {
   active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-400/20',
@@ -120,7 +120,7 @@ export function PhoneField({ value, onChange, invalid }: { value: string; onChan
 
 /** Active members only; a member who has since left stays selectable so the record isn't silently changed. */
 export function AssigneeSelect({ value, onChange, className = input }: { value?: string; onChange: (id: string | undefined) => void; className?: string }) {
-  const users = useUsers((s) => s.users)
+  const { data: users = [] } = useMembers()
   const options = users.filter((u) => u.status === 'active' || u.id === value)
   return (
     <select value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} aria-label="Assigned member" className={className}>

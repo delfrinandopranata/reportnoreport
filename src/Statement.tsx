@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { accountNo, earliestDate, formatMoney, periodPresets, statement, today, type Period, type Statement } from './ledger'
-import { formatDate, useSettings } from './settings/store'
-import { useStore } from './store'
+import { useEffect, useState, type ReactNode } from 'react'
+import { toStatement } from './data/mappers'
+import { useMoney } from './data/money'
+import { useBalances, useBankAccounts, useClient, useLedger, useLogoUrl } from './data/queries'
+import { useSession } from './data/session'
+import { accountNo, periodPresets, today, type Client, type Period, type Statement } from './ledger'
+import { formatDate } from './settings/store'
 import { btn, Icon, PeriodPicker } from './ui'
 
 const longDate = (date: string) => formatDate(date, true)
@@ -72,16 +75,16 @@ function StatementLayout({
 }
 
 function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string; meta: [string, string][] }) {
-  const businessName = useStore((s) => s.businessName)
-  const o = useSettings()
+  const { firm: o } = useSession()
+  const logo = useLogoUrl(o.logoPath)
   const address = [o.address1, o.address2, [o.postcode, o.city].filter(Boolean).join(' '), o.state !== o.city ? o.state : '', o.country !== 'Malaysia' ? o.country : ''].filter(Boolean)
-  const reg = o.showRegNo ? [o.ssmNo && `Reg. no. ${o.ssmNo}`, o.sstNo && `SST no. ${o.sstNo}`].filter(Boolean) : []
+  const reg = o.showRegistrationOnStatement ? [o.registrationNo && `Reg. no. ${o.registrationNo}`, o.sstNo && `SST no. ${o.sstNo}`].filter(Boolean) : []
   return (
     <header className="flex items-start justify-between gap-6 border-b-2 border-zinc-900 pb-5">
       <div className="flex gap-3">
-        {o.logo && <img src={o.logo} alt="" className="max-h-14 max-w-32 shrink-0 object-contain" />}
+        {logo && <img src={logo} alt="" className="max-h-14 max-w-32 shrink-0 object-contain" />}
         <div className="text-zinc-600">
-          <p className="text-lg font-semibold text-zinc-900">{businessName || 'Your business name'}</p>
+          <p className="text-lg font-semibold text-zinc-900">{o.name || 'Your business name'}</p>
           {o.tradingName && <p>Trading as {o.tradingName}</p>}
           {reg.length > 0 && <p>{reg.join(' · ')}</p>}
           {address.length > 0 && <p>{address.join(', ')}</p>}
@@ -92,7 +95,7 @@ function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string;
       <div className="shrink-0 text-right">
         <h2 className="text-xl font-semibold tracking-wide uppercase">{title}</h2>
         <dl className="mt-2 grid grid-cols-[auto_auto] justify-end gap-x-4 gap-y-0.5 text-zinc-600">
-          {[['Statement date', longDate(today())], ...meta, ['Currency', 'MYR (RM)']].map(([k, v]) => (
+          {[['Statement date', longDate(today())], ...meta, ['Currency', o.currency]].map(([k, v]) => (
             <div key={k} className="contents">
               <dt>{k}</dt>
               <dd className="text-zinc-900 tabular-nums">{v}</dd>
@@ -105,6 +108,7 @@ function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string;
 }
 
 function Summary({ opening, receipts, payments, closing }: Statement) {
+  const { format: fmt } = useMoney()
   const items = [
     ['Opening balance', opening],
     ['Total receipts', receipts],
@@ -116,7 +120,7 @@ function Summary({ opening, receipts, payments, closing }: Statement) {
       {items.map(([label, value], i) => (
         <div key={label} className={`p-3 ${i ? 'border-l border-zinc-200' : ''} ${i === 3 ? 'bg-zinc-50' : ''}`}>
           <p className="text-xs text-zinc-500">{label}</p>
-          <p className={`mt-0.5 font-semibold tabular-nums ${i === 3 ? 'text-base' : ''} ${neg(value)}`}>{formatMoney(value)}</p>
+          <p className={`mt-0.5 font-semibold tabular-nums ${i === 3 ? 'text-base' : ''} ${neg(value)}`}>{fmt(value)}</p>
         </div>
       ))}
     </section>
@@ -126,14 +130,16 @@ function Summary({ opening, receipts, payments, closing }: Statement) {
 const Label = ({ children }: { children: ReactNode }) => <p className="mb-1 text-xs font-medium tracking-wide text-zinc-500 uppercase">{children}</p>
 
 function DocFooter({ children }: { children: ReactNode }) {
-  const o = useSettings()
+  const { firm: o } = useSession()
+  const { data: banks = [] } = useBankAccounts()
+  const bank = banks.find((b) => b.isDefault)
   return (
     <footer className="mt-10 border-t border-zinc-200 pt-4 text-xs leading-relaxed text-zinc-500 print:break-inside-avoid">
       {children}
       <p className="mt-1">{o.statementNote.replace('{days}', String(o.discrepancyDays))}</p>
-      {o.bankAccountNo && (
+      {bank?.accountNo && (
         <p className="mt-3">
-          <span className="font-medium text-zinc-700">Settlement details:</span> {[o.bankName, o.bankAccountName, o.bankAccountNo].filter(Boolean).join(' · ')}
+          <span className="font-medium text-zinc-700">Settlement details:</span> {[bank.bankName, bank.accountName, bank.accountNo].filter(Boolean).join(' · ')}
         </p>
       )}
       <p className="mt-4">This is a computer-generated statement. No signature is required.</p>
@@ -142,6 +148,7 @@ function DocFooter({ children }: { children: ReactNode }) {
 }
 
 function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
+  const { format: fmt } = useMoney()
   // Fixed widths keep columns aligned when several ledgers stack on one statement.
   return (
     <table className="w-full table-fixed">
@@ -165,15 +172,15 @@ function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
         <tr className="text-zinc-600">
           <td className={`${cell} whitespace-nowrap tabular-nums`}>{shortDate(period.from)}</td>
           <td className={`${cell} italic`} colSpan={3}>Balance brought forward</td>
-          <td className={`${num} font-medium text-zinc-900`}>{formatMoney(soa.opening)}</td>
+          <td className={`${num} font-medium text-zinc-900`}>{fmt(soa.opening)}</td>
         </tr>
         {soa.lines.map((l) => (
           <tr key={l.id} className="print:break-inside-avoid">
             <td className={`${cell} whitespace-nowrap tabular-nums`}>{shortDate(l.date)}</td>
             <td className={cell}>{l.note || (l.kind === 'in' ? 'Receipt' : 'Payment')}</td>
-            <td className={num}>{l.kind === 'in' ? formatMoney(l.amount) : ''}</td>
-            <td className={num}>{l.kind === 'out' ? formatMoney(l.amount) : ''}</td>
-            <td className={`${num} ${neg(l.balance)}`}>{formatMoney(l.balance)}</td>
+            <td className={num}>{l.kind === 'in' ? fmt(l.amount) : ''}</td>
+            <td className={num}>{l.kind === 'out' ? fmt(l.amount) : ''}</td>
+            <td className={`${num} ${neg(l.balance)}`}>{fmt(l.balance)}</td>
           </tr>
         ))}
         {!soa.lines.length && (
@@ -185,9 +192,9 @@ function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
       <tfoot>
         <tr className="border-t-2 border-zinc-900 font-semibold">
           <td className={cell} colSpan={2}>Closing balance as at {shortDate(period.to)}</td>
-          <td className={num}>{formatMoney(soa.receipts)}</td>
-          <td className={num}>{formatMoney(soa.payments)}</td>
-          <td className={`${num} ${neg(soa.closing)}`}>{formatMoney(soa.closing)}</td>
+          <td className={num}>{fmt(soa.receipts)}</td>
+          <td className={num}>{fmt(soa.payments)}</td>
+          <td className={`${num} ${neg(soa.closing)}`}>{fmt(soa.closing)}</td>
         </tr>
       </tfoot>
     </table>
@@ -202,21 +209,34 @@ const Missing = () => (
 )
 
 export function StatementPage({ id }: { id: string }) {
-  const client = useStore((s) => s.clients.find((c) => c.id === id))
-  const txns = useStore((s) => s.txns)
-  const own = useMemo(() => txns.filter((t) => t.clientId === id), [txns, id])
+  const { data: client, isPending, error } = useClient(id)
+  if (isPending) return <p className="py-24 text-center text-sm text-zinc-500">Loading…</p>
+  if (error) return <p role="alert">{error.message}</p>
   if (!client) return <Missing />
 
   return (
     <StatementLayout
       back={{ href: `#clients/${client.id}`, label: client.name }}
       title="Statement of account"
-      firstDate={earliestDate(own, client.createdAt)}
+      firstDate={client.createdAt}
       fileName={(p) => `Statement of Account - ${client.name} - ${p.from} to ${p.to}`}
     >
-      {(period) => {
-        const soa = statement(own, period.from, period.to)
-        return (
+      {(period) => (
+        <StatementBody client={client} period={period} />
+      )}
+    </StatementLayout>
+  )
+}
+
+function StatementBody({ client, period }: { client: Client; period: Period }) {
+  const { format: fmt } = useMoney()
+  const { data: balances, error: balancesError } = useBalances({ from: period.from, to: period.to, clientId: client.id })
+  const { data: lines, error: linesError } = useLedger({ from: period.from, to: period.to, clientId: client.id })
+  const error = balancesError ?? linesError
+  if (error) return <p role="alert">{error.message}</p>
+  if (!balances || !lines) return <p className="text-zinc-500">Loading…</p>
+  const soa = toStatement(balances[0], lines)
+  return (
           <>
             <DocHeader title="Statement of Account" subtitle="Client account statement" meta={[['Account no.', accountNo(client.id)]]} />
             <section className="grid grid-cols-2 gap-6 py-6">
@@ -236,13 +256,10 @@ export function StatementPage({ id }: { id: string }) {
             <DocFooter>
               <p>
                 {soa.closing < 0
-                  ? `This account is in a debit balance of ${formatMoney(-soa.closing)}. Please arrange settlement at your earliest convenience.`
-                  : `We hold ${formatMoney(soa.closing)} in client funds on your behalf as at ${longDate(period.to)}.`}
+                  ? `This account is in a debit balance of ${fmt(-soa.closing)}. Please arrange settlement at your earliest convenience.`
+                  : `We hold ${fmt(soa.closing)} in client funds on your behalf as at ${longDate(period.to)}.`}
               </p>
             </DocFooter>
           </>
-        )
-      }}
-    </StatementLayout>
   )
 }

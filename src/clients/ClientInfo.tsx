@@ -1,9 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
-import { useStore } from '../store'
+import { useUpdateClient } from '../data/queries'
 import { Avatar, btn, Field, input } from '../ui'
 import { AssigneeSelect, PhoneField, StatusBadge, StatusSelect, TagList } from './fields'
-import { card, shortDate, useUserNames } from './shared'
+import { card, MutationError, shortDate, useUserNames } from './shared'
 
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className={`${card} min-w-0 p-5 print:break-inside-avoid`}>
@@ -68,7 +68,7 @@ export function ClientView({ client: c }: { client: Client }) {
 type Draft = Omit<Client, 'id' | 'createdAt' | 'updatedAt'>
 
 export function ClientForm({ client, onDone }: { client: Client; onDone: () => void }) {
-  const updateClient = useStore((s) => s.updateClient)
+  const update = useUpdateClient()
   const { id: _id, createdAt: _created, updatedAt: _updated, ...initial } = client
   const [draft, setDraft] = useState<Draft>(initial)
   const [errors, setErrors] = useState<ClientErrors>({})
@@ -76,15 +76,19 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
   const malaysia = draft.country === 'Malaysia'
   const countries = COUNTRIES.includes(draft.country) ? COUNTRIES : [draft.country, ...COUNTRIES]
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const found = validateClient(draft)
     setErrors(found)
     if (Object.keys(found).length) return
     const clean = { ...draft, name: draft.name.trim(), email: draft.email.trim(), postcode: draft.postcode.trim() }
-    // One save = one undo step; an untouched form isn't a change.
-    if (JSON.stringify(clean) !== JSON.stringify(initial)) updateClient(client.id, clean)
-    onDone()
+    // An untouched form isn't a change. On conflict the form stays open with the message.
+    try {
+      if (JSON.stringify(clean) !== JSON.stringify(initial)) await update.mutateAsync({ id: client.id, patch: clean, loadedUpdatedAt: client.updatedAt })
+      onDone()
+    } catch {
+      // shown below via update.error
+    }
   }
   const error = (key: keyof ClientErrors) => errors[key] && <span className="text-sm text-red-600 dark:text-red-400" role="alert">{errors[key]}</span>
   const text = (key: 'registrationNo' | 'industry' | 'website' | 'contact' | 'address1' | 'address2' | 'city', placeholder = '') => (
@@ -185,9 +189,10 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
           </div>
         </section>
       </div>
+      <MutationError error={update.error} />
       <div className="flex justify-end gap-2">
         <button type="button" className={btn.ghost} onClick={onDone}>Cancel</button>
-        <button className={btn.primary}>Save changes</button>
+        <button className={btn.primary} disabled={update.isPending}>Save changes</button>
       </div>
     </form>
   )

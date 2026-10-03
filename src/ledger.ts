@@ -298,7 +298,7 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim()))
 }
 
-export type ImportRow = { line: number; clientName: string; kind: Kind; amount: number; date: string; note: string }
+export type ImportRow = { line: number; clientName: string; bankAccount: string; kind: Kind; amount: number; date: string; note: string }
 
 /** YYYY-MM-DD or DD/MM/YYYY (Malaysian convention) → YYYY-MM-DD, or null if it isn't a real date. */
 function readDate(value: string): string | null {
@@ -316,7 +316,7 @@ const amountOf = (value = '') => parseCents(text(value).replace(/^RM\s*/i, ''))
 
 /**
  * Reads a transactions CSV. Columns are matched by header name (any order, extra columns ignored):
- * Date, Client, Description, and either Receipts / Payments, or Type (Receipt|Payment) + Amount.
+ * Date, Client, Description, optional Bank account, and either Receipts / Payments, or Type (Receipt|Payment) + Amount.
  */
 export function readImport(csv: string): { rows: ImportRow[]; errors: string[] } {
   const [header = [], ...body] = parseCsv(csv)
@@ -347,23 +347,7 @@ export function readImport(csv: string): { rows: ImportRow[]; errors: string[] }
     if (receipt !== undefined && payment !== undefined) return void errors.push(`Row ${line}: has both a receipt and a payment — split it into two rows.`)
     if (!kind) return void errors.push(`Row ${line}: needs a receipt or payment amount.`)
     if (!amount) return void errors.push(`Row ${line}: amount must be greater than 0 with up to 2 decimals.`)
-    rows.push({ line, clientName, kind, amount, date, note: text(at(cells, 'description')) })
+    rows.push({ line, clientName, bankAccount: text(at(cells, 'bank account')), kind, amount, date, note: text(at(cells, 'description')) })
   })
   return { rows, errors }
-}
-
-const nameKey = (name: string) => name.trim().toLowerCase()
-const txnKey = (clientId: string, t: Pick<Txn, 'date' | 'kind' | 'amount' | 'note'>) => `${clientId}|${t.date}|${t.kind}|${t.amount}|${t.note}`
-
-/** Matches clients by name (case-insensitive) and skips rows identical to a transaction already on the ledger. */
-export function planImport(rows: ImportRow[], clients: Client[], txns: Txn[]) {
-  const known = new Map(clients.map((c) => [nameKey(c.name), c.id]))
-  const existing = new Set(txns.map((t) => txnKey(t.clientId, t)))
-  // First spelling seen wins when the same new client appears with different casing.
-  const newClients = [...groupBy(rows.filter((r) => !known.has(nameKey(r.clientName))), (r) => nameKey(r.clientName)).values()].map((g) => g[0].clientName.trim())
-  const fresh = rows.filter((r) => {
-    const id = known.get(nameKey(r.clientName))
-    return !id || !existing.has(txnKey(id, r))
-  })
-  return { newClients, rows: fresh, duplicates: rows.length - fresh.length }
 }

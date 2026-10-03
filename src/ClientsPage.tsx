@@ -2,12 +2,9 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import {
   accountNo,
-  earliestDate,
-  formatMoney,
   groupBy,
   periodPresets,
   plainAmount,
-  statement,
   today,
   totals,
   CLIENT_STATUSES,
@@ -17,14 +14,15 @@ import {
   type ClientStatus,
   type Kind,
   type Period,
-  type Statement,
   type StatementLine,
 } from './ledger'
 import { AddClient } from './clients/AddClient'
 import { StatusBadge, TagList } from './clients/fields'
-import { card, money, monthLabel, neg, Segmented, select, shortDate, useCan, useUserNames } from './clients/shared'
-import { useSettings } from './settings/store'
-import { useStore } from './store'
+import { card, monthLabel, neg, Segmented, select, shortDate, useGate, useMoneyCell, useUserNames } from './clients/shared'
+import { sumBalances, toStatement } from './data/mappers'
+import { useMoney } from './data/money'
+import { useBalances, useBankAccounts, useClients, useDeleteTxn, useLedger } from './data/queries'
+import { useSession } from './data/session'
 import { ColumnHeader, ColumnsDialog, useTableLayout, type Column } from './table'
 import { downloadCsv, ImportDialog } from './transfer'
 import { Avatar, btn, Icon, input, KindBadge, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
@@ -35,30 +33,34 @@ type GroupMode = 'none' | 'client' | 'month'
 type TxnSort = 'date' | 'client' | 'amount'
 type BalanceSort = 'name' | 'opening' | 'in' | 'out' | 'closing' | 'count' | 'last'
 type TypeFilter = 'all' | Kind
-type BalanceRow = { client: Client; soa: Statement; last: string }
+type ClientBalance = { client: Client; soa: ReturnType<typeof toStatement>; count: number; last: string }
 
 const PAGE = 200
 export const ClientsPage = () => <LedgerView />
 
 /** Clients list (balances + transactions) or, with `fixedClientId`, one client's transactions. */
 export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
-  const clients = useStore((s) => s.clients)
-  const txns = useStore((s) => s.txns)
-  const businessName = useStore((s) => s.businessName)
-  const removeTxn = useStore((s) => s.removeTxn)
-  const canEditClients = useCan('clients.edit')
-  const canPost = useCan('transactions.post')
-  const canDeleteTxn = useCan('transactions.delete')
+  const session = useSession()
+  const { fyStartMonth } = session.firm
+  const { data: clients = [], isPending: clientsPending, error: clientsError } = useClients()
+  const { data: banks = [] } = useBankAccounts()
+  const removeTxn = useDeleteTxn()
+  const fmt = useMoney().format
+  const { currency } = useMoney()
+  const money = useMoneyCell()
+  const editClients = useGate('clients.edit', 'edit clients')
+  const post = useGate('transactions.post', 'record transactions')
+  const deleteTxn = useGate('transactions.delete', 'delete transactions')
   const assigneeName = useUserNames()
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
   const nameOf = (id: string) => names.get(id) ?? 'Unknown client'
-  const firstDate = earliestDate(txns, clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), today()))
+  const firstDate = clients.reduce((min, c) => (c.createdAt < min ? c.createdAt : min), today())
 
   const [view, setView] = useLocalState<View>('clients.view', 'balances')
-  const fyStartMonth = useSettings((s) => s.fyStartMonth)
   const [period, setPeriod] = useState<Period>(() => periodPresets(firstDate, fyStartMonth)[3].period)
   const [query, setQuery] = useState('')
   const [clientFilter, setClientId] = useState('all')
+  const [bankAccountId, setBankAccountId] = useState<string>()
   // Default to every client: inactive and archived clients can still hold client money.
   const [status, setStatus] = useState<ClientStatus | 'all'>('all')
   const [debitOnly, setDebitOnly] = useState(false)
@@ -91,26 +93,25 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const isTxns = !!fixedClientId || view === 'transactions'
   const statuses = useMemo(() => new Map(clients.map((c) => [c.id, c.status])), [clients])
 
-  // Per-client statements drive balances, the debit filter and client-group closings.
-  const perClient = useMemo(() => {
-    const byClient = groupBy(txns, (t) => t.clientId)
-    return new Map(clients.map((c) => [c.id, statement(byClient.get(c.id) ?? [], period.from, period.to)]))
-  }, [clients, txns, period])
+  const { data: balanceData, error: balancesError } = useBalances({ from: period.from, to: period.to, bankAccountId })
+  const { data: lines = [], error: ledgerError } = useLedger({
+    from: period.from, to: period.to, clientId: fixedClientId ?? (clientFilter === 'all' ? undefined : clientFilter), bankAccountId, perClient: mode === 'client',
+  })
+  const balanceRows_ = balanceData ?? []
+  const perClient = useMemo(() => new Map(balanceRows_.map((r) => [r.client_id, r])), [balanceData]) // eslint-disable-line react-hooks/exhaustive-deps
+  const closingOf = (id: string) => perClient.get(id)?.closing ?? 0
   const inScope = (id: string) =>
-    (clientId === 'all' || id === clientId) && (!!fixedClientId || status === 'all' || statuses.get(id) === status) && (!debitOnly || (perClient.get(id)?.closing ?? 0) < 0)
+    (clientId === 'all' || id === clientId) && (!!fixedClientId || status === 'all' || statuses.get(id) === status) && (!debitOnly || closingOf(id) < 0)
 
   // Accounting scope = client filters + period. Search and type only narrow what's listed.
-  const scoped = useMemo(() => txns.filter((t) => inScope(t.clientId)), [txns, clientId, debitOnly, perClient, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
-  const summary = useMemo(() => statement(scoped, period.from, period.to), [scoped, period])
+  const scoped = useMemo(() => lines.filter((t) => inScope(t.clientId)), [lines, clientId, debitOnly, perClient, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
+  const summary = useMemo(() => ({ ...sumBalances(balanceRows_.filter((r) => inScope(r.client_id))), lines: scoped }), [balanceData, scoped, clientId, debitOnly, status, statuses]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------- Transactions view ---------- */
 
   // A running balance only means something over the full, chronological ledger.
   const showBalance = txnSort.key === 'date' && type === 'all' && !q
-  const balances = useMemo(() => {
-    const scopes = mode === 'client' ? [...groupBy(scoped, (t) => t.clientId).values()] : [scoped]
-    return new Map(scopes.flatMap((list) => statement(list, period.from, period.to).lines.map((l) => [l.id, l.balance] as const)))
-  }, [scoped, period, mode])
+  const balances = useMemo(() => new Map(lines.map((l) => [l.id, l.balance])), [lines])
 
   const txnRows = useMemo(() => {
     const listed = summary.lines.filter((t) => (type === 'all' || t.kind === type) && (!q || `${t.note} ${names.get(t.clientId) ?? ''}`.toLowerCase().includes(q)))
@@ -157,11 +158,13 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         <span className="flex items-center gap-2.5">
           <KindBadge kind={t.kind} />
           <span className="truncate">{t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}</span>
-          {fixedClientId && canDeleteTxn && (
+          {fixedClientId && (
             <button
               type="button"
-              onClick={() => removeTxn(t.id)}
-              className="ml-auto shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
+              disabled={!deleteTxn.ok || removeTxn.isPending}
+              title={deleteTxn.title}
+              onClick={() => removeTxn.mutate(t.id)}
+              className="ml-auto shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 disabled:opacity-40 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
               aria-label={`Delete ledger entry ${t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}, ${shortDate(t.date)}`}
             >
               <Icon name="trash" className="size-3.5" />
@@ -172,20 +175,18 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       text: (t) => t.note,
     },
     { id: 'type', label: 'Type', width: 100, hidden: true, cell: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment'), text: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment') },
-    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{formatMoney(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
-    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? formatMoney(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
+    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
+    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
     { id: 'balance', label: 'Balance', width: 150, align: 'right', cell: (t) => <span className="font-medium">{money(balances.get(t.id) ?? 0)}</span>, text: (t) => plainAmount(balances.get(t.id) ?? 0) },
   ]
 
   /* ---------- Balances view ---------- */
 
-  const balanceRows = useMemo((): BalanceRow[] => {
-    const last = new Map<string, string>()
-    for (const t of txns) if (t.date <= period.to && (last.get(t.clientId) ?? '') < t.date) last.set(t.clientId, t.date)
+  const balanceRows = useMemo((): ClientBalance[] => {
     const dir = balanceSort.dir === 'asc' ? 1 : -1
     return clients
       .filter((c) => inScope(c.id) && (!q || `${c.name} ${c.contact} ${c.email} ${c.registrationNo}`.toLowerCase().includes(q)))
-      .map((c) => ({ client: c, soa: perClient.get(c.id)!, last: last.get(c.id) ?? '' }))
+      .map((c) => ({ client: c, soa: toStatement(perClient.get(c.id), []), count: perClient.get(c.id)?.txn_count ?? 0, last: perClient.get(c.id)?.last_txn_date ?? '' }))
       .sort((a, b) => {
         const by = {
           name: a.client.name.localeCompare(b.client.name),
@@ -193,14 +194,14 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           in: a.soa.receipts - b.soa.receipts,
           out: a.soa.payments - b.soa.payments,
           closing: a.soa.closing - b.soa.closing,
-          count: a.soa.lines.length - b.soa.lines.length,
+          count: a.count - b.count,
           last: a.last.localeCompare(b.last),
         }[balanceSort.key]
         return by * dir || a.client.name.localeCompare(b.client.name)
       })
-  }, [clients, txns, perClient, q, balanceSort, period, clientId, debitOnly, status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [clients, perClient, q, balanceSort, period, clientId, debitOnly, status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const balanceColumns: Column<BalanceRow, BalanceSort>[] = [
+  const balanceColumns: Column<ClientBalance, BalanceSort>[] = [
     {
       id: 'client',
       label: 'Client',
@@ -228,10 +229,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     { id: 'registration', label: 'Registration no.', width: 190, hidden: true, cell: (r) => r.client.registrationNo || '—', text: (r) => r.client.registrationNo },
     { id: 'industry', label: 'Industry', width: 170, hidden: true, cell: (r) => r.client.industry || '—', text: (r) => r.client.industry },
     { id: 'opening', label: 'Opening balance', width: 150, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
-    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{formatMoney(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
-    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'out', cell: (r) => formatMoney(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
+    { id: 'receipts', label: 'Receipts', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{fmt(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
+    { id: 'payments', label: 'Payments', width: 140, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
     { id: 'closing', label: 'Closing balance', width: 150, align: 'right', sortKey: 'closing', cell: (r) => <span className="font-semibold">{money(r.soa.closing)}</span>, text: (r) => plainAmount(r.soa.closing) },
-    { id: 'count', label: 'Transactions', width: 120, align: 'right', sortKey: 'count', hidden: true, cell: (r) => r.soa.lines.length, text: (r) => String(r.soa.lines.length) },
+    { id: 'count', label: 'Transactions', width: 120, align: 'right', sortKey: 'count', hidden: true, cell: (r) => r.count, text: (r) => String(r.count) },
     { id: 'last', label: 'Last transaction', width: 140, align: 'right', sortKey: 'last', cell: (r) => <span className="text-zinc-500">{r.last ? shortDate(r.last) : '—'}</span>, text: (r) => r.last },
   ]
 
@@ -305,8 +306,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const txnBody = paged.map((g) => {
     const { open, shown: visible } = g
     const subtotal: Record<string, ReactNode> = {
-      receipts: <span className="text-in">{formatMoney(g.receipts)}</span>,
-      payments: formatMoney(g.payments),
+      receipts: <span className="text-in">{fmt(g.receipts)}</span>,
+      payments: fmt(g.payments),
       balance: g.closing === undefined ? '' : money(g.closing),
     }
     return (
@@ -339,23 +340,27 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   })
 
   const txnFooter: Record<string, ReactNode> = {
-    receipts: <span className="text-in">{formatMoney(totals(txnRows).in)}</span>,
-    payments: formatMoney(totals(txnRows).out),
+    receipts: <span className="text-in">{fmt(totals(txnRows).in)}</span>,
+    payments: fmt(totals(txnRows).out),
     balance: money(summary.closing),
   }
   const balanceTotals = balanceRows.reduce(
-    (acc, r) => ({ opening: acc.opening + r.soa.opening, receipts: acc.receipts + r.soa.receipts, payments: acc.payments + r.soa.payments, closing: acc.closing + r.soa.closing, count: acc.count + r.soa.lines.length }),
+    (acc, r) => ({ opening: acc.opening + r.soa.opening, receipts: acc.receipts + r.soa.receipts, payments: acc.payments + r.soa.payments, closing: acc.closing + r.soa.closing, count: acc.count + r.count }),
     { opening: 0, receipts: 0, payments: 0, closing: 0, count: 0 },
   )
   const balanceFooter: Record<string, ReactNode> = {
     opening: money(balanceTotals.opening),
-    receipts: <span className="text-in">{formatMoney(balanceTotals.receipts)}</span>,
-    payments: formatMoney(balanceTotals.payments),
+    receipts: <span className="text-in">{fmt(balanceTotals.receipts)}</span>,
+    payments: fmt(balanceTotals.payments),
     closing: money(balanceTotals.closing),
     count: balanceTotals.count,
   }
 
+  const loadError = clientsError ?? balancesError ?? ledgerError
   const rowsCount = isTxns ? txnRows.length : balanceRows.length
+
+  if (clientsPending) return <Empty text="Loading…" />
+  if (loadError) return <p role="alert">{loadError.message}</p>
 
   return (
     <div className="print-landscape grid grid-cols-1 gap-4">
@@ -363,12 +368,12 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       <header className="hidden border-b-2 border-zinc-900 pb-3 print:block">
         <div className="flex items-end justify-between gap-6">
           <div>
-            <p className="text-lg font-semibold">{businessName}</p>
+            <p className="text-lg font-semibold">{session.firm.tradingName || session.firm.name}</p>
             <h1 className="text-xl font-semibold">{isTxns ? 'Client ledger' : 'Client balances'}{fixedClientId && ` — ${nameOf(fixedClientId)}`}</h1>
           </div>
           <div className="text-right text-sm text-zinc-600">
             <p>Period {shortDate(period.from)} – {shortDate(period.to)}</p>
-            <p>Printed {shortDate(today())} · Currency MYR (RM)</p>
+            <p>Printed {shortDate(today())} · Currency {currency}</p>
           </div>
         </div>
         {filterNote.length > 0 && <p className="mt-1 text-sm text-zinc-600">Filtered: {filterNote.join(' · ')}</p>}
@@ -385,7 +390,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         ).map(([label, value, sub]) => (
           <div key={label} className={`${card} p-5 print:p-3`}>
             <dt className="text-sm text-zinc-500">{label}</dt>
-            <dd className={`mt-2 text-lg font-semibold tracking-tight tabular-nums sm:text-2xl print:mt-1 print:text-base ${neg(value)}`}>{formatMoney(value)}</dd>
+            <dd className={`mt-2 text-lg font-semibold tracking-tight tabular-nums sm:text-2xl print:mt-1 print:text-base ${neg(value)}`}>{fmt(value)}</dd>
             <dd className="mt-1 text-sm text-zinc-500">{sub}</dd>
           </div>
         ))}
@@ -406,8 +411,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             ]}
           />}
           <div className="ml-auto flex flex-wrap items-center gap-1">
-            {!fixedClientId && canPost && (
-              <button type="button" className={btn.ghost} onClick={() => setDialog('import')}>
+            {!fixedClientId && (
+              <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} onClick={() => setDialog('import')}>
                 <Icon name="upload" /> Import
               </button>
             )}
@@ -417,8 +422,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount}>
               <Icon name="printer" /> Print
             </button>
-            {!fixedClientId && canEditClients && (
-              <button type="button" className={btn.primary} onClick={() => setDialog('add')}>
+            {!fixedClientId && (
+              <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} onClick={() => setDialog('add')}>
                 <Icon name="plus" /> Add client
               </button>
             )}
@@ -453,6 +458,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                 {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
+              </select>
+              <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={select}>
+                <option value="all">All bank accounts</option>
+                {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
               <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={select}>
                 {CLIENT_STATUSES.map((st) => (
@@ -502,6 +511,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-zinc-100 px-5 py-3 text-sm dark:border-zinc-800 print:hidden">
           <span className="font-medium">{isTxns ? `${txnRows.length} transactions` : `${balanceRows.length} clients`}</span>
           <span className="text-zinc-500">{shortDate(period.from)} – {shortDate(period.to)}</span>
+          {removeTxn.error && <span className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</span>}
           {isTxns && !showBalance && <span className="text-xs text-zinc-400">Running balance shows when sorted by date with no search or type filter.</span>}
           <div className="ml-auto flex items-center gap-1">
             {isTxns && mode !== 'none' && groups.length > 0 && (

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { addTag, fillClient, formatPhone, joinPhone, splitPhone, validateClient, groupBy, periodPresets, parseCsv, planImport, readImport, monthlyFlow, parseCents, plainAmount, statement, toCsv, totals, totalsByClient, type Txn } from './ledger.ts'
+import { addTag, fillClient, formatPhone, joinPhone, splitPhone, validateClient, groupBy, periodPresets, parseCsv, readImport, monthlyFlow, parseCents, plainAmount, statement, toCsv, totals, totalsByClient, type Txn } from './ledger.ts'
 
 const txn = (clientId: string, kind: Txn['kind'], amount: number, date: string): Txn => ({
   id: `${clientId}-${date}-${amount}`,
@@ -88,22 +88,9 @@ test('readImport round-trips an export and reports bad rows', () => {
   assert.match(readImport('Date,Description\n2026-01-01,x').errors[0], /Missing columns: client, receipts/)
 })
 
-test('planImport matches clients by name and skips existing duplicates', () => {
-  const clients = [{ id: 'k', name: 'Kopi Corner', contact: '', email: '', createdAt: '2026-01-01' }]
-  const existing = [{ ...txn('k', 'in', 500, '2026-09-01'), note: 'Fee' }]
-  const plan = planImport(
-    [
-      { line: 2, clientName: 'kopi corner ', kind: 'in', amount: 500, date: '2026-09-01', note: 'Fee' },
-      { line: 3, clientName: 'Kopi Corner', kind: 'in', amount: 600, date: '2026-09-01', note: 'Fee' },
-      { line: 4, clientName: 'New Co', kind: 'out', amount: 1, date: '2026-09-02', note: '' },
-      { line: 5, clientName: 'new co', kind: 'out', amount: 2, date: '2026-09-02', note: '' },
-    ],
-    clients,
-    existing,
-  )
-  assert.deepEqual(plan.newClients, ['New Co'])
-  assert.equal(plan.duplicates, 1)
-  assert.deepEqual(plan.rows.map((r) => r.line), [3, 4, 5])
+test('readImport reads an optional bank account column', () => {
+  const { rows } = readImport('Date,Client,Bank account,Receipts\n2026-09-01,Kopi,CIMB escrow,10')
+  assert.equal(rows[0].bankAccount, 'CIMB escrow')
 })
 
 test('fillClient defaults an old record and keeps what it has', () => {
