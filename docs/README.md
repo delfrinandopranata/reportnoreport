@@ -24,7 +24,7 @@
 
 **Plan A** (backend tenancy, complete): Supabase migrations, Auth integration, RLS per firm, server-computed balances, real team invites via Edge Functions.
 
-**Plan B** (self-serve console, in progress): homepage (`/`), sign-up with email verification, early-access cap + waitlist, super-admin console, trial banner, demo at `/demo/`.
+**Plan B** (self-serve console, complete): homepage (`/`), sign-up with email verification, early-access cap + waitlist, super-admin console, trial banner, demo at `/demo/`.
 
 **Plan C** (Stripe billing): RM 10 one-time payment via Stripe Checkout; 14-day trial expires → write-only read-only status.
 
@@ -60,4 +60,4 @@ When decisions were made during implementation (constraints, trade-offs, ruled q
 
 ---
 
-**Status:** Plan A complete on main, Plan B in progress on `feat/self-serve-console`. See [status-and-roadmap.md](./status-and-roadmap.md) for details.
+**Status:** Plans A and B complete on main; Plan C (Stripe) is next. See [status-and-roadmap.md](./status-and-roadmap.md) for details.
