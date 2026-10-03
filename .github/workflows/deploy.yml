@@ -33,7 +33,11 @@ jobs:
         with:
           version: latest
       - run: supabase link --project-ref "$PROJECT_REF"
-      - run: supabase db push
+      # --include-all: several agents numbered migrations by calendar date rather than by
+      # true apply order, so a later-dated migration can land in main (and get recorded as
+      # applied) before an earlier-dated one merges. Without this flag, `db push` refuses
+      # to insert that earlier file at all, silently blocking every migration after it.
+      - run: supabase db push --include-all
       - run: supabase secrets set --project-ref "$PROJECT_REF" APP_URL=https://reportnoreport.com/app/
       - run: supabase functions deploy --project-ref "$PROJECT_REF"
 
