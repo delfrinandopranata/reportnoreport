@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(17);
 
 -- helpers
 create or replace function pg_temp.new_user(p_email text, p_confirmed boolean) returns uuid language plpgsql security definer as $$
@@ -48,6 +48,13 @@ select join_waitlist('WaitList@Test.Test', 'Test Firm');
 select join_waitlist('waitlist@test.test', 'Another Firm');
 reset role;
 select is((select count(*)::int from waitlist where lower(email) = 'waitlist@test.test'), 1, 'calling twice with same email leaves one row');
+
+-- create_firm_for_current_user validation tests
+select pg_temp.act_as(pg_temp.new_user('validate@new.test', true));
+select throws_ok($$ select create_firm_for_current_user('Firm', 'EUR', 'Name') $$, 'P0001', 'Choose MYR, SGD or USD.', 'invalid currency rejected');
+select throws_ok($$ select create_firm_for_current_user('', 'MYR', 'Name') $$, 'P0001', 'Enter your firm name.', 'blank firm name rejected');
+select throws_ok($$ select create_firm_for_current_user('Firm', 'MYR', '') $$, 'P0001', 'Enter your name.', 'blank person name rejected');
+reset role;
 
 select * from finish();
 rollback;
