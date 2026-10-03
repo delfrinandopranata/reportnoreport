@@ -6,6 +6,7 @@ declare v_before billing_status;
 begin
   select billing_status into v_before from firms where id = p_firm_id for update;
   if not found then raise exception 'Firm not found.'; end if;
+  if v_before = 'paid' then raise exception 'stripe.already_paid'; end if;
   update firms
   set billing_status = 'paid', paid_at = now(), stripe_payment_intent_id = p_payment_intent_id
   where id = p_firm_id;
