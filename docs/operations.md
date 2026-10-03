@@ -208,6 +208,91 @@ The public waitlist endpoint (`/api/waitlist`) is rate-limited by Supabase/Verce
 
 ---
 
+## Stripe Setup and Operations
+
+### Test Mode (Local Development)
+
+1. **Create a Stripe test account** at stripe.com if you haven't already.
+
+2. **Get your test API keys:**
+   - Go to Stripe Dashboard › Developers › API keys
+   - Copy the **Secret key** (starts with `sk_test_…`)
+   - Copy the **Webhook signing secret** (starts with `whsec_…`) from Webhooks
+
+3. **Set environment variables** in `supabase/functions/.env.local` (git-ignored):
+   ```
+   STRIPE_SECRET_KEY=sk_test_…
+   STRIPE_WEBHOOK_SECRET=whsec_…
+   ```
+
+4. **Webhook configuration (local testing):**
+   - Use `stripe listen` (CLI) to forward webhook events to your local functions:
+     ```bash
+     stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
+     ```
+   - The output will show a `whsec_test_…` secret — copy this to `STRIPE_WEBHOOK_SECRET` in `supabase/functions/.env.local`
+
+5. **Local testing flow:**
+   ```bash
+   supabase start                  # local database and services
+   supabase functions serve --env-file supabase/functions/.env.local
+   pnpm dev                        # app on http://localhost:5201/app/
+   stripe listen --forward-to ...  # in another terminal
+   ```
+   - Navigate to `#settings/billing` (sign in as owner)
+   - Click "Pay MYR 10.00"
+   - Use test card: `4242 4242 4242 4242`, any future date, any CVC
+   - Verify the payment succeeds and firm status updates to `paid`
+
+### Live Mode (Production)
+
+1. **Create a live Stripe account** (or use an existing one for production).
+
+2. **Repeat the test setup with live API keys** (start with `sk_live_…`, `whsec_…`).
+
+3. **Update Supabase Edge Function secrets** (hosted project):
+   ```bash
+   supabase secrets set STRIPE_SECRET_KEY=sk_live_…
+   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_live_…
+   ```
+   Secrets are read at request time; no redeploy is needed after updating them.
+
+4. **Create webhook endpoint in Stripe Dashboard:**
+   - Developers › Webhooks › Add endpoint
+   - URL: `https://<your-project-ref>.supabase.co/functions/v1/stripe-webhook`
+   - Events: `checkout.session.completed`, `charge.refunded`
+   - Copy the signing secret to the Supabase secrets above
+
+### Webhook Deployment
+
+The webhook function must be deployed with `--no-verify-jwt` because Stripe provides its own signature verification (HMAC-SHA256):
+
+```bash
+supabase functions deploy stripe-webhook --no-verify-jwt
+supabase functions deploy billing-checkout
+```
+
+Run these after schema changes or Edge Function code updates. Webhook events are processed asynchronously; failures are logged in the Supabase Edge Functions dashboard.
+
+### Events Processed
+
+The webhook handler (`supabase/functions/stripe-webhook/`) subscribes to two Stripe event types:
+
+- **`checkout.session.completed`** (when `payment_status` is `paid`): Calls the `record_payment(firm_id, payment_intent_id)` RPC function. Sets the firm's `billing_status` to `paid`, records `paid_at`, and stores the Stripe `payment_intent_id` for refund lookups. Logged in `change_log` for audit.
+
+- **`charge.refunded`**: Calls the `record_refund(firm_id)` RPC function. Sets the firm's `billing_status` to `read_only`, preventing further writes. Logged in `change_log`.
+
+Both RPCs are idempotent (use row-level locking) and guarded by unique constraints on `stripe_events.event_id` to prevent duplicate processing if Stripe retries a webhook delivery.
+
+### Refunds and Reactivation
+
+When a charge is refunded:
+- The firm becomes `read_only` and cannot record new transactions
+- The super-admin console can mark the firm `complimentary` to unblock writes without another payment
+- Alternatively, the firm can pay again (MYR 10.00) to restore `paid` status
+
+---
+
 ## Production logs and observability
 
 **Not yet set up:** alerting, uptime checks, error tracking, automatic metrics collection.
@@ -301,11 +386,10 @@ Services communicate via HTTPS. No server-to-server auth required; the frontend 
 | Edge Function timeout | Function is too slow or Supabase is down | Check function logs (Supabase › Edge Functions › Logs) and see the Supabase dashboard for timeout settings |
 | Database locked / can't run migrations | Stale connection or migration in progress | Restart Supabase: `supabase stop && supabase start` |
 
-## Future: Plan C and beyond
+## Future: Plan D and beyond
 
-The deployment checklist above covers Plans A and B. Future plans will add:
+The deployment checklist above covers Plans A, B, and C. Future plans will add:
 
-- **Plan C:** RM 10 one-time payment via Stripe (requires Stripe account, API keys, webhook secret)
 - **Plan D:** Product tour, Get started checklist, sample data UX
 - **Later sub-projects:** Trust and compliance (audit views, locked periods, bank reconciliation); Client communication (emailed statements, reminders, client portal)
 

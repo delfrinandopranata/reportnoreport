@@ -50,6 +50,7 @@ Vercel auto-detects Vite: build `pnpm build`, output `dist`. Environment variabl
 
 - **Users** (`#users`): team list, invite, change role, suspend/reactivate, remove, transfer ownership, plus a roles and permissions table. Roles are `owner`, `admin`, `accountant`, `viewer`. The rules are enforced in the database; the UI gates actions with `can(role, action)` from `src/users/rules.ts`.
 - **Settings** (`#settings`, `src/settings/`): organisation, bank accounts, statement footer and regional options. Only `settings.manage` roles can edit. The statement reads these values.
+- **Billing** (`#settings/billing`): pay MYR 10.00 one-time via Stripe (owners only). After payment, the firm is marked `paid` and can record transactions. Refunds set the firm to `read_only`. See [docs/operations.md](docs/operations.md) § Stripe Setup and Operations for local testing and deployment.
 
 ## Email (Resend)
 
