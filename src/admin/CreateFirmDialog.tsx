@@ -118,11 +118,11 @@ export function CreateFirmDialog({
           </select>
         </Field>
 
-        <div className="rounded-lg bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
           The owner gets an email to set their password. The link is valid for 24 hours.
         </div>
 
-        {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-200">{error}</div>}
+        {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{error}</div>}
 
         <div className="flex gap-3 pt-4">
           <button type="button" onClick={onClose} className={btn.ghost}>

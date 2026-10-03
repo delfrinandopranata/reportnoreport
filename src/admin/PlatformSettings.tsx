@@ -53,44 +53,72 @@ export function PlatformSettings() {
   }
 
   return (
-    <div className="max-w-md space-y-4">
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Maximum self-serve firms">
-            <input
-              type="number"
-              min="0"
-              max="1000"
-              value={formData.firm_cap ?? ''}
-              onChange={(e) => setFormData({ ...formData, firm_cap: e.target.value ? parseInt(e.target.value) : undefined })}
-              className={input}
-            />
-          </Field>
+    <div className="max-w-2xl space-y-6">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Field label="Maximum self-serve firms">
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                value={formData.firm_cap ?? ''}
+                onChange={(e) => setFormData({ ...formData, firm_cap: e.target.value ? parseInt(e.target.value) : undefined })}
+                className={input}
+                aria-describedby="firm-cap-help"
+              />
+              <p id="firm-cap-help" className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                Maximum number of firms allowed to self-serve sign up
+              </p>
+            </Field>
+          </div>
 
-          <Field label="Default trial days">
-            <input
-              type="number"
-              min="1"
-              max="365"
-              value={formData.trial_days ?? ''}
-              onChange={(e) => setFormData({ ...formData, trial_days: e.target.value ? parseInt(e.target.value) : undefined })}
-              className={input}
-            />
-          </Field>
+          <div>
+            <Field label="Default trial days">
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={formData.trial_days ?? ''}
+                onChange={(e) => setFormData({ ...formData, trial_days: e.target.value ? parseInt(e.target.value) : undefined })}
+                className={input}
+                aria-describedby="trial-days-help"
+              />
+              <p id="trial-days-help" className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                Number of days each new trial firm gets
+              </p>
+            </Field>
+          </div>
 
           {settings.data && (
-            <div className="rounded-lg bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-              <strong>{settings.data.self_serve_firms}</strong> of <strong>{settings.data.firm_cap}</strong> self-serve places used.
+            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+              <div className="font-medium">Self-serve usage</div>
+              <div className="mt-1">
+                <strong>{settings.data.self_serve_firms}</strong> of <strong>{settings.data.firm_cap}</strong> places used
+              </div>
             </div>
           )}
 
-          {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-200">{error}</div>}
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-200" role="alert">
+              {error}
+            </div>
+          )}
 
-          {success && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-950 dark:text-green-200">Settings saved.</div>}
+          {success && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-600 dark:border-green-900 dark:bg-green-950 dark:text-green-200" role="status">
+              Settings saved.
+            </div>
+          )}
 
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className={btn.primary} disabled={update.isPending}>
-              {update.isPending ? 'Saving...' : 'Save'}
+          <div className="flex gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <button
+              type="submit"
+              className={btn.primary}
+              disabled={update.isPending}
+              aria-busy={update.isPending}
+            >
+              {update.isPending ? 'Saving…' : success ? 'Saved' : 'Save'}
             </button>
           </div>
         </form>

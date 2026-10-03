@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { btn } from '../ui'
+import { btn, Icon } from '../ui'
 import { callAdmin, type AdminListWaitlistResponse } from './api'
+import { formatDate } from '../settings/constants'
 
 export function Waitlist() {
   const [copyConfirm, setCopyConfirm] = useState(false)
@@ -26,31 +27,44 @@ export function Waitlist() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
           <h2 className="font-semibold">Waitlist ({entries.length})</h2>
           {entries.length > 0 && (
             <button
               onClick={() => setCopyConfirm(true)}
-              className={btn.ghost}
+              className={`${btn.primary} gap-2`}
               disabled={copy.isPending}
+              aria-busy={copy.isPending}
             >
+              <Icon name="mail" className="size-4" />
               Copy emails
             </button>
           )}
         </div>
 
         {copySuccess && (
-          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-950 dark:text-green-200">
-            Copied {entries.length} email{entries.length !== 1 ? 's' : ''} to clipboard.
+          <div className="border-b border-green-200 bg-green-50 px-6 py-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-200">
+            <div className="flex items-center gap-2">
+              <Icon name="check" className="size-4" />
+              Copied {entries.length} email{entries.length !== 1 ? 's' : ''} to clipboard
+            </div>
           </div>
         )}
 
-        {waitlist.isPending && <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading waitlist...</div>}
-        {waitlist.isError && <div className="text-sm text-red-600 dark:text-red-400">Failed to load waitlist</div>}
+        {waitlist.isPending && (
+          <div className="p-8 text-center text-sm text-zinc-600 dark:text-zinc-400">Loading waitlist…</div>
+        )}
+
+        {waitlist.isError && (
+          <div className="p-8 text-center text-sm text-red-600 dark:text-red-400">Failed to load waitlist</div>
+        )}
 
         {!waitlist.isPending && !waitlist.isError && entries.length === 0 && (
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">No one on the waitlist</div>
+          <div className="p-8 text-center">
+            <p className="font-medium text-zinc-900 dark:text-zinc-100">No waitlist entries</p>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">No one has joined the waitlist yet</p>
+          </div>
         )}
 
         {entries.length > 0 && (
@@ -58,9 +72,9 @@ export function Waitlist() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
-                  <th className="px-4 py-3 text-left font-medium">Email</th>
-                  <th className="px-4 py-3 text-left font-medium">Firm name</th>
-                  <th className="px-4 py-3 text-left font-medium">Date</th>
+                  <th className="px-6 py-3 text-left font-medium">Email</th>
+                  <th className="px-6 py-3 text-left font-medium">Firm name</th>
+                  <th className="px-6 py-3 text-left font-medium">Date joined</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,10 +83,10 @@ export function Waitlist() {
                     key={i}
                     className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
                   >
-                    <td className="px-4 py-3 font-mono text-xs">{entry.email}</td>
-                    <td className="px-4 py-3">{entry.firm_name}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                      {new Date(entry.created_at).toLocaleDateString()}
+                    <td className="px-6 py-3 font-mono text-xs">{entry.email}</td>
+                    <td className="px-6 py-3 text-sm">{entry.firm_name}</td>
+                    <td className="px-6 py-3 text-xs text-zinc-600 dark:text-zinc-400">
+                      {formatDate(entry.created_at.slice(0, 10), 'text')}
                     </td>
                   </tr>
                 ))}
@@ -85,7 +99,7 @@ export function Waitlist() {
       {copyConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm dark:bg-zinc-950/50">
           <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <h3 className="mb-2 text-base font-semibold">Copy waitlist emails?</h3>
+            <h3 className="mb-1 text-base font-semibold">Copy waitlist emails?</h3>
             <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">
               {entries.length} email{entries.length !== 1 ? 's' : ''} will be copied to your clipboard, separated by commas.
             </p>
@@ -101,8 +115,9 @@ export function Waitlist() {
                 }}
                 className={btn.primary}
                 disabled={copy.isPending}
+                aria-busy={copy.isPending}
               >
-                {copy.isPending ? 'Copying...' : 'Copy'}
+                {copy.isPending ? 'Copying…' : 'Copy'}
               </button>
             </div>
           </div>
