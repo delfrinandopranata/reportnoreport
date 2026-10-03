@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 import { isSetPasswordFlow } from '../auth/route.ts'
 
-type Env = Partial<Record<'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY', string>>
+type Env = Partial<Record<'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY' | 'VITE_DEMO', string>>
 
 const REFUSAL = 'Refusing to start: a service-role/secret key was put in VITE_SUPABASE_ANON_KEY'
 
@@ -29,7 +29,11 @@ export function readEnv(env: Env): { url: string; anonKey: string } {
 export const openedFromSetPasswordLink = typeof location !== 'undefined' && isSetPasswordFlow(location.search, location.hash)
 
 const viteEnv = (import.meta as { env?: Env }).env
-export const supabase = viteEnv ? (() => {
+
+/** The demo build never talks to a backend — never construct a real client, so a demo visitor's actions can't reach production data. */
+const isDemoBuild = viteEnv?.VITE_DEMO === 'true'
+
+export const supabase = (viteEnv && !isDemoBuild) ? (() => {
   const { url, anonKey } = readEnv(viteEnv)
   return createClient<Database>(url, anonKey)
 })() : (null as unknown as ReturnType<typeof createClient<Database>>)
