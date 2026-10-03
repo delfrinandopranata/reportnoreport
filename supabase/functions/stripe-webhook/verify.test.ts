@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert'
-import { verify } from './verify.ts'
+import { verify, SIGNATURE_HEADER } from './verify.ts'
 
 async function generateSignature(secret: string, timestamp: number, body: string): Promise<string> {
   const signedContent = `${timestamp}.${body}`
@@ -111,4 +111,10 @@ Deno.test('verify: timestamp within 300s passes', async () => {
 
   const result = await verify(headerValue, body, secret)
   assertEquals(result, true)
+})
+
+Deno.test('reads the header Stripe actually sends', () => {
+  // Stripe sends `Stripe-Signature`; an `x-stripe-signature` lookup rejected every real event.
+  assertEquals(SIGNATURE_HEADER, 'stripe-signature')
+  assertEquals(new Headers({ 'Stripe-Signature': 't=1,v1=a' }).get(SIGNATURE_HEADER), 't=1,v1=a')
 })

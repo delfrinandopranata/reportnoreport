@@ -1,3 +1,6 @@
+/** The header Stripe signs webhooks with (case-insensitive in HTTP). */
+export const SIGNATURE_HEADER = 'stripe-signature'
+
 export async function verify(signatureHeader: string, body: string, secret: string): Promise<boolean> {
   if (!signatureHeader) return false
 

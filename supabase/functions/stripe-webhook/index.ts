@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
-import { verify } from './verify.ts'
+import { verify, SIGNATURE_HEADER } from './verify.ts'
 import { getEventAction, type EventAction } from './rules.ts'
 
 const url = Deno.env.get('SUPABASE_URL')
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  const signatureHeader = req.headers.get('x-stripe-signature') ?? ''
+  const signatureHeader = req.headers.get(SIGNATURE_HEADER) ?? ''
   const bodyText = await req.text()
 
   // Verify Stripe signature FIRST
