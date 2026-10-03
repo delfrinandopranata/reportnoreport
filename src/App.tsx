@@ -10,6 +10,8 @@ import { ROLE_LABEL } from './users/rules'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
+import { Tour } from './tour'
+import { useTour } from './tour/useTour'
 
 type View = 'dashboard' | 'clients' | 'users' | 'settings' | 'billing'
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
@@ -50,6 +52,7 @@ export default function App() {
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
+  const tour = useTour()
 
   useEffect(() => {
     const onHash = () => setRoute(readRoute())
@@ -117,6 +120,7 @@ export default function App() {
               )}
             <a
               href={`#${n.view}`}
+              data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : n.view === 'users' ? 'users-and-invites' : n.view === 'settings' ? 'settings-and-billing' : undefined}
               aria-current={route.view === n.view ? 'page' : undefined}
               className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-white aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
             >
@@ -200,6 +204,9 @@ export default function App() {
             <h1 className="text-2xl font-semibold tracking-tight">{HEADINGS[route.view].title}</h1>
             <p className="text-sm text-zinc-500">{HEADINGS[route.view].subtitle}</p>
           </div>
+          <button type="button" className={`${btn.ghost}`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
+            <Icon name="search" />
+          </button>
           {isDashboard && (
             <button type="button" className={editing ? btn.primary : `${btn.ghost} border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900`} onClick={() => setEditing(!editing)}>
               <Icon name={editing ? 'check' : 'layout'} />
@@ -211,6 +218,18 @@ export default function App() {
           </>
         )}
       </main>
+
+      {tour.open && tour.currentStep && (
+        <Tour
+          open={tour.open}
+          step={tour.currentStep}
+          currentIndex={tour.currentIndex}
+          totalSteps={tour.steps.length}
+          onNext={tour.onNext}
+          onPrev={tour.onPrev}
+          onSkip={tour.onSkip}
+        />
+      )}
     </div>
   )
 }
