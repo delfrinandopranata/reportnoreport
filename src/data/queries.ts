@@ -542,9 +542,8 @@ export function useLoadSampleData() {
       if (error) throw error
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+      // Sample data touches clients, ledgers, balances, contracts and dashboard widgets alike.
+      qc.invalidateQueries({ queryKey: ['firm', firm.id] })
     },
     onError: fail,
   })
@@ -562,9 +561,8 @@ export function useRemoveSampleData() {
       if (error) throw error
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'clients'] })
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'balances'] })
-      qc.invalidateQueries({ queryKey: ['firm', firm.id, 'sample-data-exists'] })
+      // Sample data touches clients, ledgers, balances, contracts and dashboard widgets alike.
+      qc.invalidateQueries({ queryKey: ['firm', firm.id] })
     },
     onError: fail,
   })

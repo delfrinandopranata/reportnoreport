@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(26);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -164,7 +164,7 @@ select is(
   'Firm Beta sample clients untouched after Firm Alpha removed'
 );
 
--- Test 6: Non-sample transaction referencing sample client blocks removal
+-- Test 6: an own transaction posted to a sample client no longer blocks removal
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1');
 
 -- First delete the real client we added, then reload sample data
@@ -177,11 +177,10 @@ select '0000000a-0000-0000-0000-000000000001', id, (select id from bank_accounts
        'receipt'::txn_kind, 100000, '2026-10-04', 'Non-sample txn with sample client', false
 from clients where firm_id = '0000000a-0000-0000-0000-000000000001' and is_sample limit 1;
 
--- Now try to remove; should fail
-select throws_ok(
-  $$select remove_sample_data()$$,
-  'P0001'
-);
+select lives_ok($$select remove_sample_data()$$, 'removal succeeds even with an own transaction on a sample client');
+select is(
+  (select count(*) from clients where firm_id = '0000000a-0000-0000-0000-000000000001' and is_sample),
+  0::bigint, 'all sample clients removed, along with everything recorded against them');
 
 -- Test 7: a read-only firm can neither load nor remove sample data
 reset role;
@@ -189,7 +188,7 @@ update firms set billing_status = 'read_only' where id = '0000000b-0000-0000-000
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
 select throws_ok($$select load_sample_data()$$, 'P0001', 'permission denied: firm cannot write',
   'Read-only firm cannot load sample data');
-select throws_ok($$select remove_sample_data()$$, 'P0001', 'permission denied: firm cannot write',
+select throws_like($$select remove_sample_data()$$, 'Your firm can''t make changes right now:%',
   'Read-only firm cannot remove sample data');
 
 select * from finish();

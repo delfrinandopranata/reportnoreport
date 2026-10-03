@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { LedgerView } from './ClientsPage'
-import { AssigneeSelect, StatusBadge, StatusSelect, TagList } from './clients/fields'
+import { AssigneeSelect, StatusSelect, TagList } from './clients/fields'
 import { ClientForm, ClientView } from './clients/ClientInfo'
-import { card, LoadError, MutationError, neg, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
-import { useMoney } from './data/money'
+import { card, LoadError, MutationError, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
 import { useBalances, useClient, useDeleteClient, useLedger, useUpdateClient } from './data/queries'
 import { useSession } from './data/session'
 import { today, type Client } from './ledger'
@@ -31,7 +30,6 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
 export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const { data: client, isPending, error: loadError } = useClient(id)
   const { firm } = useSession()
-  const money = useMoney()
   const update = useUpdateClient()
   const remove = useDeleteClient()
   const edit = useGate('clients.edit', 'edit clients')
@@ -45,7 +43,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const d = new Date()
   const { data: own = [] } = useLedger({ from: new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA'), to: today(), clientId: id })
   const { data: balances } = useBalances({ from: '1900-01-01', to: today(), clientId: id })
-  const net = balances?.[0]?.closing ?? 0
 
   if (isPending) return <ProfileSkeleton />
   if (loadError) return <LoadError error={loadError} what="this client" />
@@ -81,13 +78,8 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   }
   const onTxns = tab === 'transactions'
   const tabs = [
-    { key: 'client', label: 'Client', href: `#clients/${client.id}`, headline: <StatusBadge status={client.status} /> },
-    {
-      key: 'transactions',
-      label: 'Transactions',
-      href: `#clients/${client.id}/transactions`,
-      headline: <span className={`text-base font-semibold tabular-nums ${neg(net)}`}>{money.format(net)}</span>,
-    },
+    { key: 'client', label: 'Client', href: `#clients/${client.id}` },
+    { key: 'transactions', label: 'Transactions', href: `#clients/${client.id}/transactions` },
   ] as const
   const meta = [client.industry, client.registrationNo, `Client since ${shortDate(client.createdAt)}`].filter(Boolean).join(' · ')
 
@@ -183,7 +175,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             className="-mb-px grid shrink-0 gap-1 border-b-2 border-transparent px-4 py-2.5 text-sm text-zinc-500 transition hover:text-zinc-900 aria-selected:border-zinc-900 aria-selected:text-zinc-900 dark:hover:text-white dark:aria-selected:border-white dark:aria-selected:text-white"
           >
             <span className="font-medium">{t.label}</span>
-            {t.headline}
           </a>
         ))}
       </div>
