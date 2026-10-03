@@ -8,6 +8,7 @@ export type FirmRow = Tables['firms']['Row']
 export type BankRow = Tables['bank_accounts']['Row']
 export type ProfileRow = Tables['profiles']['Row']
 export type ContractRow = Tables['contracts']['Row']
+export type AttachmentRow = Tables['attachments']['Row']
 
 export const AMOUNT_CAP = 10_000_000_000_000 // matches transactions.amount_minor check
 
@@ -108,6 +109,15 @@ export type Contract = {
 export const rowToContract = (r: ContractRow): Contract => ({
   id: r.id, clientId: r.client_id, title: r.title, startDate: r.start_date, endDate: r.end_date,
   status: r.status as Contract['status'], reviewedBy: r.reviewed_by, createdAt: r.created_at,
+})
+
+export type Attachment = {
+  id: string; transactionId: string | null; clientId: string | null
+  storagePath: string; originalName: string; mimeType: string; sizeBytes: number; createdAt: string
+}
+export const rowToAttachment = (r: AttachmentRow): Attachment => ({
+  id: r.id, transactionId: r.transaction_id, clientId: r.client_id,
+  storagePath: r.storage_path, originalName: r.original_name, mimeType: r.mime_type, sizeBytes: r.size_bytes, createdAt: r.created_at,
 })
 
 export function parseAmount(input: string): { ok: true; cents: number } | { ok: false; error: string } {

@@ -21,12 +21,13 @@ import { StatusBadge, TagList } from './clients/fields'
 import { card, LoadError, monthLabel, neg, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
-import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger } from './data/queries'
+import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger, fetchAttachmentsForExport } from './data/queries'
 import { useSession } from './data/session'
 import { ColumnHeader, ColumnsDialog, useTableLayout, type Column } from './table'
 import { ConsolidatedStatement, StatementLayout } from './Statement'
 import { buildSections, countClients, preparedFrom } from './clients/consolidatedStatement'
-import { downloadCsv, ImportDialog } from './transfer'
+import { AttachmentsButton } from './attachments/Attachments'
+import { downloadCsv, downloadZip, ImportDialog } from './transfer'
 import { Avatar, btn, Icon, input, KindBadge, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
 import { Empty } from './widgets'
 
@@ -76,6 +77,9 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const [printing, setPrinting] = useState(false)
   const [dialog, setDialog] = useState<'add' | 'import' | 'columns' | null>(null)
   const [soaOpen, setSoaOpen] = useState(false)
+  const [includeAttachments, setIncludeAttachments] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   // Print every matching row, not just the first page.
   useEffect(() => {
@@ -165,16 +169,19 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           <KindBadge kind={t.kind} />
           <span className="truncate">{t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}</span>
           {fixedClientId && (
-            <button
-              type="button"
-              disabled={!deleteTxn.ok || removeTxn.isPending}
-              title={deleteTxn.title}
-              onClick={() => removeTxn.mutate(t.id)}
-              className="ml-auto shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 disabled:opacity-40 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
-              aria-label={`Delete ledger entry ${t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}, ${shortDate(t.date)}`}
-            >
-              <Icon name="trash" className="size-3.5" />
-            </button>
+            <span className="ml-auto flex shrink-0 items-center">
+              <AttachmentsButton transactionId={t.id} />
+              <button
+                type="button"
+                disabled={!deleteTxn.ok || removeTxn.isPending}
+                title={deleteTxn.title}
+                onClick={() => removeTxn.mutate(t.id)}
+                className="shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 disabled:opacity-40 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
+                aria-label={`Delete ledger entry ${t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}, ${shortDate(t.date)}`}
+              >
+                <Icon name="trash" className="size-3.5" />
+              </button>
+            </span>
           )}
         </span>
       ),
@@ -272,11 +279,26 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     })
   const allCollapsed = mode !== 'none' && groups.every((g) => collapsed.has(g.key))
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
     const stamp = `${period.from}_${period.to}`
     const who = fixedClientId ? `_${nameOf(fixedClientId).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}` : ''
-    if (isTxns) downloadCsv(`client-ledger${who}_${stamp}.csv`, [txnVisible.map((c) => c.label), ...txnRows.map((r) => txnVisible.map((c) => c.text(r)))])
-    else downloadCsv(`client-balances_${stamp}.csv`, [balanceVisible.map((c) => c.label), ...balanceRows.map((r) => balanceVisible.map((c) => c.text(r)))])
+    const baseName = isTxns ? `client-ledger${who}_${stamp}` : `client-balances_${stamp}`
+    const rows = isTxns
+      ? [txnVisible.map((c) => c.label), ...txnRows.map((r) => txnVisible.map((c) => c.text(r)))]
+      : [balanceVisible.map((c) => c.label), ...balanceRows.map((r) => balanceVisible.map((c) => c.text(r)))]
+    if (!includeAttachments) return downloadCsv(`${baseName}.csv`, rows)
+    setExporting(true)
+    setExportError('')
+    try {
+      const attachments = isTxns
+        ? await fetchAttachmentsForExport('transaction_id', txnRows.map((r) => r.id))
+        : await fetchAttachmentsForExport('client_id', balanceRows.map((r) => r.client.id))
+      await downloadZip(`${baseName}.zip`, `${baseName}.csv`, rows, attachments)
+    } catch (err) {
+      setExportError((err as Error).message)
+    } finally {
+      setExporting(false)
+    }
   }
 
   const filterNote = [
@@ -472,8 +494,12 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                   <Icon name="upload" /> <span className="max-sm:sr-only">Import</span>
                 </button>
               )}
-              <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount} aria-label="Export CSV" title={rowsCount ? 'Export CSV' : 'Nothing to export'}>
-                <Icon name="download" /> <span className="max-sm:sr-only">Export</span>
+              <label className="flex items-center gap-1.5 px-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <input type="checkbox" checked={includeAttachments} onChange={(e) => setIncludeAttachments(e.target.checked)} className="accent-zinc-900" />
+                Include attachments
+              </label>
+              <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount || exporting} aria-label="Export" title={rowsCount ? 'Export' : 'Nothing to export'}>
+                <Icon name="download" /> <span className="max-sm:sr-only">{exporting ? 'Exporting…' : 'Export'}</span>
               </button>
               <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
                 <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
@@ -492,6 +518,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </div>
         </div>
         {gateHint && <p id="ledger-gate" className="text-xs text-zinc-500">{gateHint}</p>}
+        {exportError && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{exportError}</p>}
 
         {/* Period: quick presets + custom range, kept as one cluster (Miller's Law) */}
         <div className="grid gap-1.5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
