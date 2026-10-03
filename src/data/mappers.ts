@@ -12,7 +12,7 @@ export const AMOUNT_CAP = 10_000_000_000_000 // matches transactions.amount_mino
 
 export function rowToClient(r: ClientRow): Client {
   return {
-    id: r.id, name: r.name, contact: r.contact, email: r.email, createdAt: r.created_at.slice(0, 10), updatedAt: r.updated_at,
+    id: r.id, name: r.name, contact: r.contact, email: r.email, createdAt: new Date(r.created_at).toLocaleDateString('en-CA'), updatedAt: r.updated_at,
     type: r.type, registrationNo: r.registration_no, industry: r.industry, phone: r.phone, website: r.website,
     address1: r.address1, address2: r.address2, city: r.city, state: r.state, postcode: r.postcode, country: r.country,
     status: r.status, tags: r.tags, assignedUserId: r.assigned_to ?? undefined, notes: r.notes,

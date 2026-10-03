@@ -14,7 +14,8 @@ test('rowToClient maps snake_case to the app Client', () => {
   assert.equal(c.registrationNo, '')
   assert.equal(c.assignedUserId, undefined)
   assert.deepEqual(c.tags, ['VIP'])
-  assert.equal(c.createdAt, '2026-01-01')
+  // client-since is the viewer's local calendar date, so compute the expectation the same way (timezone-independent)
+  assert.equal(c.createdAt, new Date('2026-01-01T00:00:00Z').toLocaleDateString('en-CA'))
   assert.equal(c.updatedAt, '2026-02-01T00:00:00Z')
 })
 

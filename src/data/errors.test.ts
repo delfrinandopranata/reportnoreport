@@ -19,3 +19,22 @@ test('network failures and unknown errors are plain', () => {
   assert.equal(toUserMessage({ code: '23505', message: 'duplicate key' }), 'That already exists.')
   assert.equal(toUserMessage('weird'), 'Something went wrong. Try again.')
 })
+
+const NET = "Couldn't save. Check your connection and try again."
+test('supabase-js network failures arrive as plain objects or named errors', () => {
+  assert.equal(toUserMessage({ message: 'TypeError: Failed to fetch' }), NET)
+  assert.equal(toUserMessage({ name: 'FunctionsFetchError', message: 'x' }), NET)
+  assert.equal(toUserMessage({ name: 'AuthRetryableFetchError', message: 'x' }), NET)
+})
+
+test('expired JWT asks to sign in again, not a permission message', () => {
+  assert.equal(toUserMessage({ code: 'PGRST301', message: 'JWT expired' }, { writeBlockReason: 'Trial ended.' }), 'Your session has expired. Sign in again.')
+})
+
+test('check violations are specific', () => {
+  assert.equal(
+    toUserMessage({ code: '23514', message: 'violates check constraint "ledger_amount_minor_check"' }),
+    'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.',
+  )
+  assert.equal(toUserMessage({ code: '23514', message: 'violates check constraint "x"' }), "One of the values isn't allowed. Check the form and try again.")
+})
