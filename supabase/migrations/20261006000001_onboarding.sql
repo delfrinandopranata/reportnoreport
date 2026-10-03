@@ -52,7 +52,7 @@ begin
 
   select array_agg(id) into v_client_ids from clients where firm_id = v_firm_id and is_sample;
 
-  -- Create ~150 sample transactions across 6 months (Apr-Sep 2026)
+  -- ~150 sample transactions spread over the last six months, so charts and periods show them
   insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date, description, is_sample)
   with client_txns as (
     select unnest(v_client_ids) as client_id, generate_subscripts(v_client_ids, 1) as client_num
@@ -63,7 +63,7 @@ begin
     v_bank_id,
     case when (seq % 3 = 0) then 'payment'::txn_kind else 'receipt'::txn_kind end,
     case when (seq % 3 = 0) then (25000 + (client_num::int * 3000)) else (100000 + (client_num::int * 5000)) end,
-    '2026-04-01'::date + (seq || ' days')::interval,
+    current_date - ((18 - seq) * 9 + client_num::int),
     case when (seq % 3 = 0) then
       case client_num when 1 then 'Filing fees' when 2 then 'Court fees' when 3 then 'Stamp duty' when 4 then 'Corporate fees paid' when 5 then 'Supplier payment' when 6 then 'Expense reimbursement' when 7 then 'Property costs' when 8 then 'Project expense' else 'Payment' end
     else
