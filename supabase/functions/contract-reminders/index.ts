@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ from: fromEmail, to: emails, subject: 'Contracts approaching their end date', text: reminderEmailBody(contracts) }),
     })
     if (!res.ok) {
-      console.error('Resend send failed for firm', firmId, await res.text())
+      // Don't log the response body: Resend echoes the recipient list back on validation errors.
+      console.error('Resend send failed for firm', firmId, res.status)
       continue
     }
     // Marked only after a successful send, so a failed send is retried on the next run instead of silently skipped.
