@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "git": { "deploymentEnabled": false },
   "redirects": [
     { "source": "/app", "destination": "/app/", "permanent": true },
