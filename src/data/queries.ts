@@ -174,30 +174,48 @@ export function useContracts() {
   } })
 }
 
+export type ContractInput = { clientId: string; counterparty: string; title: string; startDate: string; endDate: string }
+
 export function useCreateContract() {
   const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
-  return useMutation({ mutationFn: async (input: { clientId: string; title: string; startDate: string; endDate: string }) => {
+  return useMutation({ mutationFn: async (input: ContractInput) => {
     if (DEMO) {
       const store = getStore()
-      const now = new Date().toISOString()
-      saveStore({ ...store, contracts: [...store.contracts, { id: uid(), clientId: input.clientId, title: input.title, startDate: input.startDate, endDate: input.endDate, status: 'pending_review', reviewedBy: null, createdAt: now }] })
+      saveStore({ ...store, contracts: [...store.contracts, { id: uid(), ...input, notes: '', createdAt: new Date().toISOString() }] })
       return
     }
-    const { error } = await supabase.from('contracts').insert({ client_id: input.clientId, title: input.title, start_date: input.startDate, end_date: input.endDate })
+    const { error } = await supabase.from('contracts').insert({ client_id: input.clientId, counterparty: input.counterparty, title: input.title, start_date: input.startDate, end_date: input.endDate })
     if (error) await fail(error)
   }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.contracts }) })
 }
 
-export function useApproveContract() {
-  const qc = useQueryClient(); const keys = useKeys(); const fail = useFail(); const { profile } = useSession()
-  return useMutation({ mutationFn: async ({ id, approve }: { id: string; approve: boolean }) => {
+export function useUpdateContract() {
+  const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
+  return useMutation({ mutationFn: async ({ id, ...input }: ContractInput & { id: string }) => {
     if (DEMO) {
       const store = getStore()
-      saveStore({ ...store, contracts: store.contracts.map((c) => c.id === id ? { ...c, status: approve ? 'approved' : 'rejected', reviewedBy: profile.id } : c) })
+      saveStore({ ...store, contracts: store.contracts.map((c) => c.id === id ? { ...c, ...input } : c) })
       return
     }
-    const { error } = await supabase.rpc('approve_contract', { p_contract: id, p_approve: approve })
-    if (error) await fail(error)
+    const { data, error } = await supabase.from('contracts')
+      .update({ client_id: input.clientId, counterparty: input.counterparty, title: input.title, start_date: input.startDate, end_date: input.endDate })
+      .eq('id', id).select('id')
+    if (error) return fail(error)
+    if (!data.length) throw new Error("You don't have permission to do that.")
+  }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.contracts }) })
+}
+
+export function useDeleteContract() {
+  const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
+  return useMutation({ mutationFn: async (id: string) => {
+    if (DEMO) {
+      const store = getStore()
+      saveStore({ ...store, contracts: store.contracts.filter((c) => c.id !== id) })
+      return
+    }
+    const { data, error } = await supabase.from('contracts').delete().eq('id', id).select('id')
+    if (error) return fail(error)
+    if (!data.length) throw new Error("You don't have permission to do that.")
   }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.contracts }) })
 }
 
