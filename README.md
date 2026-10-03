@@ -1,4 +1,8 @@
-# Platform Internal
+# ReportNoReport
+
+Report without complicated reporting — client-money ledgers and statements for professional firms.
+
+Repository: https://github.com/delfrinandopranata/reportnoreport
 
 Client accounts MVP: record receipts and payments per client, track client funds held, and review each client ledger — on a drag-and-drop dashboard.
 
@@ -54,12 +58,12 @@ Hosted Supabase Auth emails (invite, confirmation, password reset, email change)
 Go-live checklist (hosted project; the local `config.toml` does not reach it automatically):
 
 1. Resend: add your sending domain and verify it (SPF and DKIM DNS records), then create an API key with sending access.
-2. Supabase dashboard > Authentication > SMTP Settings: enable custom SMTP with host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `no-reply@mail.<your-domain>`, sender name `Platform`.
+2. Supabase dashboard > Authentication > SMTP Settings: enable custom SMTP with host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `no-reply@mail.<your-domain>`, sender name `ReportNoReport`.
 3. Authentication > Email Templates: paste each file from `supabase/templates/` with its subject (same as `config.toml`):
-   - Invite user (`invite.html`): `You've been invited to Platform`
-   - Reset password (`recovery.html`): `Reset your Platform password`
-   - Confirm sign up (`confirmation.html`): `Confirm your Platform email address`
-   - Change email address (`email_change.html`): `Confirm your new Platform email address`
+   - Invite user (`invite.html`): `You've been invited to ReportNoReport`
+   - Reset password (`recovery.html`): `Reset your ReportNoReport password`
+   - Confirm sign up (`confirmation.html`): `Confirm your ReportNoReport email address`
+   - Change email address (`email_change.html`): `Confirm your new ReportNoReport email address`
 4. Authentication > Providers > Email: set OTP expiry to `86400` (24 hours, the hosted maximum).
 5. Authentication > URL Configuration: Site URL = the production app URL; Redirect URLs include `<app-url>/app/?flow=set-password` and `<app-url>/**`.
 6. Authentication > Rate Limits: raise the email rate limit from the default.

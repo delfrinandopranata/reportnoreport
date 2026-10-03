@@ -1,6 +1,6 @@
-# Platform — Documentation Index
+# ReportNoReport — Documentation Index
 
-**Platform** is a multi-tenant SaaS for client-money management built on Supabase and deployed on Vercel. Firms sign up (free 14-day trial, then RM 10 one-time), invite their team, post receipts and payments per client, view balances and statements, and export ledgers.
+**ReportNoReport** (report without complicated reporting) is a multi-tenant SaaS for client-money management built on Supabase and deployed on Vercel. Firms sign up (free 14-day trial, then RM 10 one-time), invite their team, post receipts and payments per client, view balances and statements, and export ledgers.
 
 ## For new developers
 

@@ -75,7 +75,7 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
                 <Icon name="wallet" className="size-6" />
               </span>
               <div>
-                <h1 className="text-lg font-semibold">Platform admin</h1>
+                <h1 className="text-lg font-semibold">ReportNoReport admin</h1>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">Signed in as {name}</p>
               </div>
             </div>

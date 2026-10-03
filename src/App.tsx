@@ -99,7 +99,7 @@ export default function App() {
             <Icon name="wallet" />
           </span>
           <span className="hidden text-sm leading-tight font-semibold sm:block">
-            Platform
+            ReportNoReport
             <span className="block text-xs font-normal text-zinc-500">Client accounts</span>
           </span>
         </div>
@@ -165,7 +165,7 @@ export default function App() {
                     <span className="block text-xs opacity-90">(ends {trial.endsOn})</span>
                   </p>
                   {profile.role === 'owner' && (
-                    <p className="mt-2 text-xs opacity-90">You'll be able to pay RM 10 to keep using Platform.</p>
+                    <p className="mt-2 text-xs opacity-90">You'll be able to pay RM 10 to keep using ReportNoReport.</p>
                   )}
                 </div>
               </>

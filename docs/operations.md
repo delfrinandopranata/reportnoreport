@@ -2,7 +2,7 @@
 
 ## Hosted deployment checklist
 
-This checklist describes every step to deploy the Platform to production. The app will be available at `https://<your-domain>/app/`, with the homepage at `https://<your-domain>/`.
+This checklist describes every step to deploy ReportNoReport to production. The app will be available at `https://<your-domain>/app/`, with the homepage at `https://<your-domain>/`.
 
 ### Step 1: Create a Supabase project
 
@@ -82,16 +82,16 @@ Resend sends emails on behalf of your domain. (Local development uses Mailpit an
    - Port: `465`
    - Username: `resend`
    - Password: (paste your Resend API key)
-   - Sender name: `Platform`
+   - Sender name: `ReportNoReport`
    - From email: `no-reply@mail.<your-domain>` (must match a verified domain at Resend)
 
 ### Step 8: Upload email templates to Supabase
 
 Supabase dashboard › Authentication › Email Templates. For each of these templates:
-- **Invite user:** Copy HTML from `supabase/templates/invite.html`, paste into the template editor, set subject to `You've been invited to Platform`
-- **Reset password:** Copy HTML from `supabase/templates/recovery.html`, set subject to `Reset your Platform password`
-- **Confirm sign up:** Copy HTML from `supabase/templates/confirmation.html`, set subject to `Confirm your Platform email address`
-- **Change email:** Copy HTML from `supabase/templates/email_change.html`, set subject to `Confirm your new Platform email address`
+- **Invite user:** Copy HTML from `supabase/templates/invite.html`, paste into the template editor, set subject to `You've been invited to ReportNoReport`
+- **Reset password:** Copy HTML from `supabase/templates/recovery.html`, set subject to `Reset your ReportNoReport password`
+- **Confirm sign up:** Copy HTML from `supabase/templates/confirmation.html`, set subject to `Confirm your ReportNoReport email address`
+- **Change email:** Copy HTML from `supabase/templates/email_change.html`, set subject to `Confirm your new ReportNoReport email address`
 
 Send a test invite to verify emails arrive with correct branding and clickable links.
 
@@ -99,7 +99,7 @@ Send a test invite to verify emails arrive with correct branding and clickable l
 
 1. Create a Vercel account and link your GitHub repo
 2. Create a new Vercel project:
-   - Select the `platform-internal` repo
+   - Select the `delfrinandopranata/reportnoreport` repo
    - Framework: Vite
    - Build command: `pnpm build`
    - Output directory: `dist`
@@ -189,7 +189,7 @@ Set it to your support or contact email address. Commit and redeploy to producti
 1. Sign in as the super-admin
 2. Navigate to `https://<your-domain>/app/#admin`
 3. Verify the "Firms" list appears (may be empty if no sign-ups yet)
-4. Verify "Platform Settings" shows (firm cap, trial days)
+4. Verify "Platform settings" shows (firm cap, trial days)
 
 **Smoke tests:**
 - Waitlist sign-up at homepage (rate limited to one entry per email)
