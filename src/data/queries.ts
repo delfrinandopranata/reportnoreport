@@ -206,6 +206,7 @@ export type { Contract }
 export function useAttachments(p: { transactionId?: string; clientId?: string }) {
   const keys = useKeys(); const fail = useFail()
   return useQuery({ queryKey: keys.attachments(p), queryFn: async () => {
+    if (DEMO) return [] as Attachment[]
     let q = supabase.from('attachments').select('*').order('created_at')
     q = p.transactionId ? q.eq('transaction_id', p.transactionId) : q.eq('client_id', p.clientId!)
     const { data, error } = await q
@@ -216,6 +217,7 @@ export function useAttachments(p: { transactionId?: string; clientId?: string })
 export function useUploadAttachment() {
   const { firm } = useSession(); const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
   return useMutation({ mutationFn: async ({ file, transactionId, clientId }: { file: File; transactionId?: string; clientId?: string }) => {
+    if (DEMO) throw new Error('Attachments are disabled in this demo.')
     const ext = file.name.includes('.') ? file.name.split('.').pop() : 'bin'
     const path = `${firm.id}/${crypto.randomUUID()}.${ext}`
     const { error: uploadError } = await supabase.storage.from('attachments').upload(path, file, { contentType: file.type })
@@ -231,6 +233,7 @@ export function useUploadAttachment() {
 export function useDeleteAttachment() {
   const qc = useQueryClient(); const keys = useKeys(); const fail = useFail()
   return useMutation({ mutationFn: async (a: Attachment) => {
+    if (DEMO) throw new Error('Attachments are disabled in this demo.')
     const { data, error } = await supabase.from('attachments').delete().eq('id', a.id).select('id')
     if (error) return fail(error)
     if (!data.length) throw new Error("You don't have permission to do that.")
@@ -239,7 +242,7 @@ export function useDeleteAttachment() {
 }
 
 export function useAttachmentUrl(path: string | null): string | null {
-  const { data } = useQuery({ queryKey: ['attachment-url', path], enabled: !!path, staleTime: 50 * 60 * 1000, queryFn: async () => {
+  const { data } = useQuery({ queryKey: ['attachment-url', path], enabled: !!path && !DEMO, staleTime: 50 * 60 * 1000, queryFn: async () => {
     const { data } = await supabase.storage.from('attachments').createSignedUrl(path!, 3600)
     return data?.signedUrl ?? null
   } })
@@ -248,7 +251,7 @@ export function useAttachmentUrl(path: string | null): string | null {
 
 /** For bundled exports: every attachment on the given transactions/clients, with its file bytes. Not a hook — called from an export click handler. */
 export async function fetchAttachmentsForExport(column: 'transaction_id' | 'client_id', ids: string[]): Promise<{ attachment: Attachment; data: Blob }[]> {
-  if (!ids.length) return []
+  if (!ids.length || DEMO) return []
   const rows = await fetchAll((from, to) => supabase.from('attachments').select('*').in(column, ids).range(from, to))
   return Promise.all(rows.map(rowToAttachment).map(async (attachment) => {
     const { data, error } = await supabase.storage.from('attachments').download(attachment.storagePath)
