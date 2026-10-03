@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Platform handles client money with clear ledgers, statements, and controls. Free for 14 days, then RM 10 once." />
+    <meta property="og:title" content="Platform — Client money, handled." />
+    <meta property="og:description" content="Platform handles client money with clear ledgers, statements, and controls. Free for 14 days, then RM 10 once." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://platform.example.com/" />
+    <!-- canonical: https://platform.example.com/ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -239,13 +245,17 @@
       <h2 class="text-2xl font-bold">Join the waitlist</h2>
       <p class="mt-2 text-zinc-600 dark:text-zinc-400">We're at capacity right now, but we'd love to have you when space opens up.</p>
       <form id="waitlist-form" class="mt-6 space-y-4">
+        <label for="waitlist-email" class="block text-sm font-medium">Email address</label>
         <input
+          id="waitlist-email"
           type="email"
           placeholder="your@firm.com"
           required
           class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 dark:border-zinc-700 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-400"
         />
+        <label for="waitlist-firm-name" class="block text-sm font-medium">Firm name</label>
         <input
+          id="waitlist-firm-name"
           type="text"
           placeholder="Your firm name"
           required

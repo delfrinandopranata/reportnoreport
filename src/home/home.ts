@@ -1,5 +1,6 @@
 import '../index.css'
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '../data/database.types'
 
 const CONTACT_EMAIL = 'hello@example.com'
 
@@ -28,7 +29,7 @@ async function initializeSignupFlow() {
   }
 
   try {
-    const client = createClient(env.url, env.anonKey)
+    const client = createClient<Database>(env.url, env.anonKey)
     const { data, error } = await client.rpc('platform_status')
     if (error) throw error
 
@@ -37,7 +38,7 @@ async function initializeSignupFlow() {
       setupSignupCtas()
     } else {
       setupWaitlistCtas()
-      setupWaitlistForm(client as unknown as ReturnType<typeof createClient>)
+      setupWaitlistForm(client)
     }
   } catch (err) {
     // Fail open: keep CTAs as sign-up if RPC fails
@@ -72,7 +73,7 @@ function setupWaitlistCtas() {
 }
 
 /** Set up waitlist form submission. */
-function setupWaitlistForm(client: ReturnType<typeof createClient>) {
+function setupWaitlistForm(client: ReturnType<typeof createClient<Database>>) {
   const form = document.getElementById('waitlist-form') as HTMLFormElement
   const dialog = document.getElementById('waitlist-dialog') as HTMLDialogElement
   const messageDiv = document.getElementById('waitlist-message')!
@@ -83,10 +84,11 @@ function setupWaitlistForm(client: ReturnType<typeof createClient>) {
     messageDiv.classList.add('hidden')
     errorDiv.classList.add('hidden')
 
-    // Get email and firm name from inputs
-    const inputs = form.querySelectorAll('input')
-    const finalEmail = (inputs[0] as HTMLInputElement).value.trim()
-    const finalFirmName = (inputs[1] as HTMLInputElement).value.trim()
+    // Get email and firm name from inputs by ID
+    const emailInput = document.getElementById('waitlist-email') as HTMLInputElement
+    const firmNameInput = document.getElementById('waitlist-firm-name') as HTMLInputElement
+    const finalEmail = emailInput.value.trim()
+    const finalFirmName = firmNameInput.value.trim()
 
     if (!finalEmail || !finalFirmName) {
       errorDiv.textContent = 'Please fill in all fields.'
@@ -95,13 +97,10 @@ function setupWaitlistForm(client: ReturnType<typeof createClient>) {
     }
 
     try {
-      const { error } = await (client.rpc as any)(
-        'join_waitlist',
-        {
-          p_email: finalEmail,
-          p_firm_name: finalFirmName,
-        }
-      )
+      const { error } = await client.rpc('join_waitlist', {
+        p_email: finalEmail,
+        p_firm_name: finalFirmName,
+      })
       if (error) throw error
 
       messageDiv.textContent = "Thanks! We'll be in touch when space opens up."
