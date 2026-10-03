@@ -93,6 +93,12 @@ test('readImport reads an optional bank account column', () => {
   assert.equal(rows[0].bankAccount, 'CIMB escrow')
 })
 
+test('readImport accepts a leading ISO currency code on amounts', () => {
+  const { rows, errors } = readImport('Date,Client,Receipts,Payments\n2026-09-01,Kopi,"MYR 1,250.00",\n2026-09-02,Kopi,,sgd10\n2026-09-03,Kopi,RM 5,')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(rows.map((r) => r.amount), [125000, 1000, 500])
+})
+
 test('fillClient defaults an old record and keeps what it has', () => {
   const c = fillClient({ id: '1', name: 'Old Co', contact: 'A', email: 'a@x.my', createdAt: '2026-01-02' }, '2026-10-03T08:00:00.000Z')
   assert.equal(c.status, 'active')

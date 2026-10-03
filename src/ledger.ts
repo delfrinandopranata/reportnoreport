@@ -126,22 +126,18 @@ export type Totals = { in: number; out: number; net: number; count: number }
 
 const moneyCache = new Map<string, { format(cents: number): string; compact(cents: number): string }>()
 
-/** Locale that renders each currency with its own local symbol. */
-const MONEY_LOCALE: Record<string, string> = { MYR: 'en-MY', SGD: 'en-SG', USD: 'en-US' }
-
-/** Unambiguous symbols; any other currency shows its ISO code. */
-const MONEY_SYMBOL: Record<string, string> = { MYR: 'RM', SGD: 'S$', USD: 'US$' }
-
-/** Formatter for one currency; cached because Intl.NumberFormat is expensive to build. */
+/** Formatter for one currency, always `<CODE> <number>` (minus first); cached because Intl.NumberFormat is expensive to build. */
 export function makeMoney(currency: string) {
   const cached = moneyCache.get(currency)
   if (cached) return cached
-  const locale = MONEY_LOCALE[currency] ?? 'en-MY'
-  const symbol = MONEY_SYMBOL[currency] ?? currency
   const make = (opts: Intl.NumberFormatOptions) => {
-    const nf = new Intl.NumberFormat(locale, { style: 'currency', currency, ...opts })
-    return (cents: number) =>
-      nf.formatToParts(cents / 100).map((p) => (p.type === 'currency' ? symbol : p.value)).join('')
+    const nf = new Intl.NumberFormat('en-MY', { style: 'currency', currency, currencyDisplay: 'code', ...opts })
+    return (cents: number) => {
+      const parts = nf.formatToParts(cents / 100)
+      const minus = parts.some((p) => p.type === 'minusSign') ? '-' : ''
+      const number = parts.filter((p) => p.type !== 'currency' && p.type !== 'minusSign' && p.type !== 'literal').map((p) => p.value).join('')
+      return `${minus}${currency} ${number}`
+    }
   }
   const m = { format: make({}), compact: make({ notation: 'compact', maximumFractionDigits: 1 }) }
   moneyCache.set(currency, m)
@@ -323,7 +319,7 @@ function readDate(value: string): string | null {
 
 /** Undo the export's formula guard and currency decoration. */
 const text = (value = '') => value.trim().replace(/^'(?=[=+\-@])/, '')
-const amountOf = (value = '') => parseCents(text(value).replace(/^RM\s*/i, ''))
+const amountOf = (value = '') => parseCents(text(value).replace(/^(?:RM|[A-Za-z]{3})\s*/, ''))
 
 /**
  * Reads a transactions CSV. Columns are matched by header name (any order, extra columns ignored):
