@@ -125,13 +125,13 @@ isOneToOne: false
                   ]
                 },"contracts": {
                   Row: {
-                    "client_id": string,"created_at": string,"created_by": string,"end_date": string,"firm_id": string,"id": string,"notes": string,"reminder_sent_at": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"start_date": string,"status": string,"title": string,"updated_at": string
+                    "client_id": string,"counterparty": string,"created_at": string,"created_by": string,"end_date": string,"firm_id": string,"id": string,"notes": string,"reminder_sent_at": string | null,"start_date": string,"title": string,"updated_at": string
                   }
                   Insert: {
-                    "client_id": string,"created_at"?: string,"created_by"?: string,"end_date": string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"start_date": string,"status"?: string,"title": string,"updated_at"?: string
+                    "client_id": string,"counterparty"?: string,"created_at"?: string,"created_by"?: string,"end_date": string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"start_date": string,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "client_id"?: string,"created_at"?: string,"created_by"?: string,"end_date"?: string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"start_date"?: string,"status"?: string,"title"?: string,"updated_at"?: string
+                    "client_id"?: string,"counterparty"?: string,"created_at"?: string,"created_by"?: string,"end_date"?: string,"firm_id"?: string,"id"?: string,"notes"?: string,"reminder_sent_at"?: string | null,"start_date"?: string,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -151,12 +151,6 @@ isOneToOne: false
       columns: ["firm_id"]
 isOneToOne: false
       referencedRelation: "firms"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "contracts_reviewed_by_fkey"
-      columns: ["reviewed_by"]
-isOneToOne: false
-      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -289,9 +283,6 @@ isOneToOne: false
           Functions: {
             "accept_invite":
 { Args: Record<PropertyKey, never>; Returns: undefined
-                           },
-"approve_contract":
-{ Args: { "p_approve": boolean,"p_contract": string }; Returns: undefined
                            },
 "assert_manager":
 { Args: { "p_target": string }; Returns: {

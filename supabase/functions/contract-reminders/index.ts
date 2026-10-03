@@ -7,7 +7,7 @@ const resendKey = Deno.env.get('RESEND_API_KEY')
 const fromEmail = Deno.env.get('RESEND_FROM_EMAIL')
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
-type ContractRow = { id: string; firm_id: string; title: string; end_date: string; clients: { name: string } | null }
+type ContractRow = { id: string; firm_id: string; title: string; counterparty: string; end_date: string; clients: { name: string } | null }
 
 // Called by the daily GitHub Actions cron, never a signed-in person: no user JWT, just the service role key (verify_jwt = false, like stripe-webhook).
 Deno.serve(async (req) => {
@@ -20,8 +20,7 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = await admin
     .from('contracts')
-    .select('id, firm_id, title, end_date, clients(name)')
-    .eq('status', 'approved')
+    .select('id, firm_id, title, counterparty, end_date, clients(name)')
     .is('reminder_sent_at', null)
     .returns<ContractRow[]>()
   if (error) {
@@ -31,7 +30,7 @@ Deno.serve(async (req) => {
 
   const expiring: ExpiringContract[] = (rows ?? [])
     .filter((r) => inReminderWindow(r.end_date, today))
-    .map((r) => ({ id: r.id, firm_id: r.firm_id, title: r.title, end_date: r.end_date, client_name: r.clients?.name ?? 'Unknown client' }))
+    .map((r) => ({ id: r.id, firm_id: r.firm_id, title: r.title, counterparty: r.counterparty, end_date: r.end_date, client_name: r.clients?.name ?? 'Unknown client' }))
 
   let firmsEmailed = 0
   let contractsReminded = 0

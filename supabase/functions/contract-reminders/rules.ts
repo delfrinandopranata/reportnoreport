@@ -1,4 +1,4 @@
-export type ExpiringContract = { id: string; firm_id: string; title: string; end_date: string; client_name: string }
+export type ExpiringContract = { id: string; firm_id: string; title: string; end_date: string; client_name: string; counterparty: string }
 
 /** True when end_date falls within [today, today + 7 days] inclusive. */
 export function inReminderWindow(endDate: string, today: string): boolean {
@@ -15,7 +15,7 @@ export function groupByFirm(contracts: ExpiringContract[]): Map<string, Expiring
 
 /** Plain-text body listing every expiring contract for one firm. */
 export function reminderEmailBody(contracts: ExpiringContract[]): string {
-  const lines = contracts.map((c) => `- ${c.title} (${c.client_name}) — ends ${c.end_date}`)
+  const lines = contracts.map((c) => `- ${c.title} (${c.client_name}${c.counterparty ? ` with ${c.counterparty}` : ''}) — ends ${c.end_date}`)
   const subject = contracts.length === 1 ? 'A contract is' : 'Contracts are'
   return `${subject} approaching its end date:\n\n${lines.join('\n')}\n\nRenew in time to avoid a lapse in cover.`
 }

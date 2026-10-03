@@ -73,8 +73,9 @@ function seed(): DemoStore {
   ]
 
   const contracts: Contract[] = [
-    { id: 'demo-ct1', clientId: 'demo-c1', title: 'Retainer agreement 2026', startDate: daysAgo(170), endDate: daysFromNow(18), status: 'approved', reviewedBy: ownerId, createdAt: daysAgo(170) },
-    { id: 'demo-ct2', clientId: 'demo-c2', title: 'Logistics services contract', startDate: daysAgo(5), endDate: daysFromNow(360), status: 'pending_review', reviewedBy: null, createdAt: daysAgo(5) },
+    { id: 'demo-ct0', clientId: 'demo-c1', counterparty: 'Old Mill Traders', title: 'Distribution agreement', startDate: daysAgo(400), endDate: daysAgo(10), notes: '', createdAt: daysAgo(400) },
+    { id: 'demo-ct1', clientId: 'demo-c1', counterparty: 'Harbour Foods Sdn Bhd', title: 'Supply agreement 2026', startDate: daysAgo(170), endDate: daysFromNow(18), notes: '', createdAt: daysAgo(170) },
+    { id: 'demo-ct2', clientId: 'demo-c2', counterparty: 'Northgate Logistics', title: 'Logistics services contract', startDate: daysAgo(5), endDate: daysFromNow(360), notes: '', createdAt: daysAgo(5) },
   ]
 
   const firm: Firm = {

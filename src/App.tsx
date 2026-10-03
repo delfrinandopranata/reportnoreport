@@ -40,7 +40,7 @@ const NAV = [
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all clients.' },
   clients: { title: 'Clients', subtitle: 'Client balances and every receipt and payment, in one ledger.' },
-  contracts: { title: 'Contract Manager', subtitle: 'Contracts with your clients, their review status and renewal dates.' },
+  contracts: { title: 'Contract Manager', subtitle: "Your clients' contracts with their own clients, and when each one ends." },
   users: { title: 'Users', subtitle: 'Who has access to your business\'s accounts, and what each role can do.' },
   settings: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
   billing: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
