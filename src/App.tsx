@@ -40,8 +40,8 @@ const NAV_OTHERS = [
 ] as const
 
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all client accounts.' },
-  clients: { title: 'Clients', subtitle: 'Client accounts, balances and every receipt and payment, in one ledger.' },
+  dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all clients.' },
+  clients: { title: 'Clients', subtitle: 'Client balances and every receipt and payment, in one ledger.' },
   users: { title: 'Users', subtitle: 'Who has access to your business\'s accounts, and what each role can do.' },
   settings: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
   billing: { title: 'Settings', subtitle: 'Your organisation\'s details, bank accounts and statement options.' },
@@ -115,7 +115,6 @@ export default function App() {
           </span>
           <span className="hidden text-sm leading-tight font-semibold sm:block">
             ReportNoReport
-            <span className="block text-xs font-normal text-zinc-500">Client accounts</span>
           </span>
         </div>
         <nav aria-label="Main" className="flex gap-1 lg:flex-col">

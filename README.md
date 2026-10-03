@@ -4,7 +4,7 @@ Report without complicated reporting — client-money ledgers and statements for
 
 Repository: https://github.com/delfrinandopranata/reportnoreport
 
-Client accounts MVP: record receipts and payments per client, track client funds held, and review each client ledger — on a drag-and-drop dashboard.
+Record receipts and payments per client, track client funds held, and review each client ledger — on a drag-and-drop dashboard.
 
 **Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · dnd-kit · TanStack Query · Supabase (Postgres, Auth, Storage, Edge Functions)
 
