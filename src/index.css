@@ -2,7 +2,7 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Chart/series identity: money in = blue, money out = orange (validated categorical slots 1–2). */
+  /* Chart/series identity: receipts = blue, payments = orange (validated categorical slots 1–2). */
   --color-in: #2a78d6;
   --color-out: #eb6834;
 }

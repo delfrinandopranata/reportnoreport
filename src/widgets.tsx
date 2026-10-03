@@ -22,7 +22,7 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
       <div className="min-w-0">
         <p className={`truncate text-2xl font-semibold tracking-tight tabular-nums ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{formatMoney(value)}</p>
         <p className="mt-1 text-sm text-zinc-500 tabular-nums">
-          {metric === 'net' ? 'Net' : metric === 'in' ? 'Received' : 'Paid out'} {formatMoney(month[metric])} this month
+          {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {formatMoney(month[metric])}
         </p>
       </div>
       <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}>
@@ -40,7 +40,7 @@ function ClientsKpi() {
     <div className="flex items-end justify-between gap-3">
       <div>
         <p className="text-2xl font-semibold tracking-tight tabular-nums">{clients.length}</p>
-        <p className="mt-1 text-sm text-zinc-500">{overdrawn ? `${overdrawn} overdrawn` : 'All balances healthy'}</p>
+        <p className="mt-1 text-sm text-zinc-500">{overdrawn ? `${overdrawn} in debit balance` : 'No debit balances'}</p>
       </div>
       <span className="grid size-10 place-items-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
         <Icon name="users" className="size-5" />
@@ -57,7 +57,10 @@ const barPath = (x: number, y: number, w: number, h: number) => {
 }
 
 function Cashflow() {
-  const txns = useStore((s) => s.txns)
+  return <CashflowChart txns={useStore((s) => s.txns)} />
+}
+
+export function CashflowChart({ txns }: { txns: Txn[] }) {
   const flow = useMemo(() => monthlyFlow(txns, 6, today()), [txns])
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(1, ...flow.flatMap((f) => [f.in, f.out]))
@@ -71,12 +74,12 @@ function Cashflow() {
   return (
     <div>
       <div className="mb-2 flex items-center gap-4 text-xs text-zinc-500" aria-hidden>
-        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-in" /> Money in</span>
-        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-out" /> Money out</span>
+        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-in" /> Receipts</span>
+        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-out" /> Payments</span>
         <span className="ml-auto">Last 6 months</span>
       </div>
       <div className="relative">
-        <svg viewBox={`0 0 ${CHART.w} ${CHART.h}`} className="w-full" role="img" aria-label="Money in and out by month" onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${CHART.w} ${CHART.h}`} className="w-full" role="img" aria-label="Receipts and payments by month" onMouseLeave={() => setHover(null)}>
           {ticks.map((t) => (
             <g key={t}>
               <line x1={CHART.left} x2={CHART.w} y1={y(t)} y2={y(t)} className="stroke-zinc-200 dark:stroke-zinc-800" strokeDasharray={t ? '3 4' : undefined} />
@@ -105,15 +108,15 @@ function Cashflow() {
             style={{ left: `${((CHART.left + slot * hover + slot / 2) / CHART.w) * 100}%` }}
           >
             <p className="mb-1.5 font-medium">{active.label} {active.key.slice(0, 4)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-in" />In</span>{formatMoney(active.in)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-out" />Out</span>{formatMoney(active.out)}</p>
-            <p className="mt-1.5 flex justify-between gap-2 border-t border-zinc-100 pt-1.5 font-medium tabular-nums dark:border-zinc-800"><span>Net</span>{formatMoney(active.in - active.out)}</p>
+            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-in" />Receipts</span>{formatMoney(active.in)}</p>
+            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-out" />Payments</span>{formatMoney(active.out)}</p>
+            <p className="mt-1.5 flex justify-between gap-2 border-t border-zinc-100 pt-1.5 font-medium tabular-nums dark:border-zinc-800"><span>Net cash flow</span>{formatMoney(active.in - active.out)}</p>
           </div>
         )}
       </div>
       <table className="sr-only">
-        <caption>Money in and out by month</caption>
-        <thead><tr><th>Month</th><th>In</th><th>Out</th></tr></thead>
+        <caption>Receipts and payments by month</caption>
+        <thead><tr><th>Month</th><th>Receipts</th><th>Payments</th></tr></thead>
         <tbody>{flow.map((f) => <tr key={f.key}><td>{f.label}</td><td>{formatMoney(f.in)}</td><td>{formatMoney(f.out)}</td></tr>)}</tbody>
       </table>
     </div>
@@ -154,18 +157,18 @@ function Recent() {
   const txns = useStore((s) => s.txns)
   const recent = useMemo(() => [...txns].sort(byDateDesc).slice(0, 6), [txns])
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
-  if (!recent.length) return <Empty text="No money movements yet." />
+  if (!recent.length) return <Empty text="No transactions posted yet." />
   return <TxnList txns={recent} names={names} />
 }
 
-export function TxnList({ txns, names, onRemove }: { txns: Txn[]; names?: Map<string, string>; onRemove?: (id: string) => void }) {
+function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) {
   return (
     <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
       {txns.map((t) => (
         <li key={t.id} className="group flex items-center gap-3 py-2.5">
           <KindBadge kind={t.kind} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{names?.get(t.clientId) ?? (t.note || (t.kind === 'in' ? 'Money in' : 'Money out'))}</p>
+            <p className="truncate text-sm font-medium">{names?.get(t.clientId) ?? (t.note || (t.kind === 'in' ? 'Receipt' : 'Payment'))}</p>
             <p className="truncate text-xs text-zinc-500">
               {names && t.note ? `${t.note} · ` : ''}
               {new Date(`${t.date}T00:00`).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -175,11 +178,6 @@ export function TxnList({ txns, names, onRemove }: { txns: Txn[]; names?: Map<st
             {t.kind === 'in' ? '+' : '−'}
             {formatMoney(t.amount)}
           </span>
-          {onRemove && (
-            <button type="button" onClick={() => onRemove(t.id)} className="rounded p-1 text-zinc-400 opacity-0 transition group-hover:opacity-100 hover:text-red-600 focus:opacity-100" aria-label="Delete transaction">
-              <Icon name="trash" className="size-3.5" />
-            </button>
-          )}
         </li>
       ))}
     </ul>
@@ -191,12 +189,12 @@ export function Empty({ text }: { text: string }) {
 }
 
 export const WIDGETS: Record<WidgetType, { title: string; blurb: string; span: Span; Component: ComponentType }> = {
-  net: { title: 'Client money held', blurb: 'Total in minus total out', span: 1, Component: () => <MoneyKpi metric="net" /> },
-  in: { title: 'Money in', blurb: 'Everything received', span: 1, Component: () => <MoneyKpi metric="in" /> },
-  out: { title: 'Money out', blurb: 'Everything paid out', span: 1, Component: () => <MoneyKpi metric="out" /> },
-  clients: { title: 'Clients', blurb: 'Count and overdrawn', span: 1, Component: ClientsKpi },
-  cashflow: { title: 'Cash flow', blurb: 'In vs out, last 6 months', span: 2, Component: Cashflow },
-  balances: { title: 'Balance by client', blurb: 'Who holds the most', span: 2, Component: Balances },
-  recent: { title: 'Recent activity', blurb: 'Latest movements', span: 2, Component: Recent },
-  'quick-add': { title: 'Record money', blurb: 'Log money in or out', span: 2, Component: () => <TxnForm /> },
+  net: { title: 'Client funds held', blurb: 'Receipts less payments', span: 1, Component: () => <MoneyKpi metric="net" /> },
+  in: { title: 'Total receipts', blurb: 'All funds received', span: 1, Component: () => <MoneyKpi metric="in" /> },
+  out: { title: 'Total payments', blurb: 'All funds disbursed', span: 1, Component: () => <MoneyKpi metric="out" /> },
+  clients: { title: 'Active clients', blurb: 'Count and debit balances', span: 1, Component: ClientsKpi },
+  cashflow: { title: 'Cash flow', blurb: 'Receipts vs payments, 6 months', span: 2, Component: Cashflow },
+  balances: { title: 'Client balances', blurb: 'Funds held per client', span: 2, Component: Balances },
+  recent: { title: 'Recent transactions', blurb: 'Latest ledger entries', span: 2, Component: Recent },
+  'quick-add': { title: 'Record transaction', blurb: 'Post a receipt or payment', span: 2, Component: () => <TxnForm /> },
 }

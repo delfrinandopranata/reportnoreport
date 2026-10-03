@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore as useZustand } from 'zustand'
-import { Clients } from './Clients'
+import { ClientProfile, Clients } from './Clients'
 import { Dashboard } from './Dashboard'
 import { useStore } from './store'
 import { btn, Icon } from './ui'
@@ -68,7 +68,7 @@ export default function App() {
           </span>
           <span className="hidden text-sm leading-tight font-semibold sm:block">
             Platform
-            <span className="block text-xs font-normal text-zinc-500">Client money</span>
+            <span className="block text-xs font-normal text-zinc-500">Client accounts</span>
           </span>
         </div>
         <nav className="flex gap-1 lg:flex-col">
@@ -86,19 +86,23 @@ export default function App() {
         </nav>
         <button
           type="button"
-          onClick={() => confirm('Replace everything with fresh demo data? You can undo this.') && resetDemo()}
+          onClick={() => confirm('Replace all clients and transactions with sample data? You can undo this.') && resetDemo()}
           className="ml-auto hidden text-xs text-zinc-400 hover:text-zinc-600 lg:mt-auto lg:ml-0 lg:block lg:px-3 lg:text-left dark:hover:text-zinc-300"
         >
-          Reset demo data
+          Load sample data
         </button>
       </aside>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8">
+        {route.clientId ? (
+          <ClientProfile id={route.clientId} actions={<History />} />
+        ) : (
+          <>
         <header className="mb-6 flex flex-wrap items-center gap-3">
           <div className="mr-auto">
             <h1 className="text-2xl font-semibold tracking-tight">{isDashboard ? 'Dashboard' : 'Clients'}</h1>
             <p className="text-sm text-zinc-500">
-              {isDashboard ? 'Money in and out across every client.' : 'Every client and the money you hold for them.'}
+              {isDashboard ? 'Receipts, payments and funds held across all client accounts.' : 'Client accounts and the funds held on their behalf.'}
             </p>
           </div>
           <History />
@@ -109,7 +113,9 @@ export default function App() {
             </button>
           )}
         </header>
-        {isDashboard ? <Dashboard editing={editing} /> : <Clients selectedId={route.clientId} />}
+        {isDashboard ? <Dashboard editing={editing} /> : <Clients />}
+          </>
+        )}
       </main>
     </div>
   )

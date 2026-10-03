@@ -54,8 +54,8 @@ function demoData(): Data {
     ['Kopi Corner', 'Wei Jie Ong', 'weijie@kopicorner.example'],
   ]
   const clients = people.map(([name, contact, email]) => ({ id: uid(), name, contact, email, createdAt: dayOf(6) }))
-  const ins = ['Retainer deposit', 'Invoice payment', 'Top-up', 'Escrow deposit']
-  const outs = ['Supplier payment', 'Disbursement', 'Filing fees', 'Refund to client', 'Payroll on behalf']
+  const ins = ['Retainer received', 'Invoice settlement', 'Funds received', 'Escrow deposit']
+  const outs = ['Supplier payment', 'Disbursement', 'Filing fees', 'Refund to client', 'Payroll disbursement']
   const txns: Txn[] = clients.flatMap((c, ci) =>
     Array.from({ length: 6 }, (_, monthsAgo) => {
       const scale = 1 + ci * 0.6
@@ -78,9 +78,10 @@ function demoData(): Data {
   return { clients, txns, widgets: DEFAULT_WIDGETS }
 }
 
+// persist wraps temporal so undo/redo go through persist's setter and get saved too.
 export const useStore = create<Data & Actions>()(
-  temporal(
-    persist(
+  persist(
+    temporal(
       (set) => ({
         ...demoData(),
         addClient: (client) =>
@@ -101,12 +102,12 @@ export const useStore = create<Data & Actions>()(
           set((s) => ({ widgets: s.widgets.map((w) => (w.id === id ? { ...w, span: NEXT_SPAN[w.span] } : w)) })),
         resetDemo: () => set(demoData()),
       }),
-      { name: 'platform-internal', version: 1 },
+      {
+        limit: 100,
+        partialize: ({ clients, txns, widgets }): Data => ({ clients, txns, widgets }),
+      },
     ),
-    {
-      limit: 100,
-      partialize: ({ clients, txns, widgets }): Data => ({ clients, txns, widgets }),
-    },
+    { name: 'platform-internal', version: 1 },
   ),
 )
 

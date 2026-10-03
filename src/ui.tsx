@@ -5,6 +5,7 @@ import { useStore } from './store'
 const PATHS = {
   grip: 'M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01',
   x: 'M18 6 6 18M6 6l12 12',
+  back: 'm15 18-6-6 6-6',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
   redo: 'm15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13',
   plus: 'M5 12h14M12 5v14',
@@ -69,8 +70,8 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   )
 }
 
-/** Native <dialog>: focus trap, Esc and backdrop for free. `side` renders it as a right-hand drawer. */
-export function Dialog({ open, onClose, title, side, children }: { open: boolean; onClose: () => void; title: string; side?: boolean; children: ReactNode }) {
+/** Native <dialog>: focus trap, Esc and backdrop for free. */
+export function Dialog({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const dialog = ref.current
@@ -78,15 +79,12 @@ export function Dialog({ open, onClose, title, side, children }: { open: boolean
     if (open && !dialog.open) dialog.showModal()
     if (!open && dialog.open) dialog.close()
   }, [open])
-  const shape = side
-    ? 'ml-auto mr-0 h-dvh max-h-dvh w-full max-w-xl'
-    : 'm-auto w-[calc(100%-2rem)] max-w-md rounded-2xl'
   return (
     <dialog
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
-      className={`${shape} bg-white text-zinc-900 shadow-2xl backdrop:bg-zinc-950/40 backdrop:backdrop-blur-sm dark:bg-zinc-900 dark:text-zinc-100`}
+      className={`m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl bg-white text-zinc-900 shadow-2xl backdrop:bg-zinc-950/40 backdrop:backdrop-blur-sm dark:bg-zinc-900 dark:text-zinc-100`}
     >
       {open && (
         <div className="flex h-full flex-col">
@@ -107,7 +105,7 @@ export function KindBadge({ kind }: { kind: Kind }) {
   return (
     <span
       className={`grid size-8 shrink-0 place-items-center rounded-full ${kind === 'in' ? 'bg-in/10 text-in' : 'bg-out/10 text-out'}`}
-      aria-label={kind === 'in' ? 'Money in' : 'Money out'}
+      aria-label={kind === 'in' ? 'Receipt' : 'Payment'}
     >
       <Icon name={kind} />
     </span>
@@ -122,7 +120,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
   const [saved, setSaved] = useState(false)
 
   if (!clientId && clients.length === 0) {
-    return <p className="text-sm text-zinc-500">Add a client first, then record money against them here.</p>
+    return <p className="text-sm text-zinc-500">Add a client before recording a transaction.</p>
   }
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -131,8 +129,8 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
     const data = new FormData(form)
     const amount = parseCents(String(data.get('amount')))
     const target = clientId ?? String(data.get('clientId'))
-    if (amount === null) return setError('Enter an amount above 0, with up to 2 decimals.')
-    if (!target) return setError('Choose a client.')
+    if (amount === null) return setError('Enter an amount greater than 0, up to 2 decimal places.')
+    if (!target) return setError('Select a client.')
     addTxn({ clientId: target, kind, amount, date: String(data.get('date')) || today(), note: String(data.get('note')).trim() })
     form.reset()
     setError('')
@@ -143,7 +141,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
 
   return (
     <form onSubmit={onSubmit} className="grid gap-3" noValidate>
-      <div className="grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="radiogroup" aria-label="Direction">
+      <div className="grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="radiogroup" aria-label="Transaction type">
         {(['in', 'out'] as const).map((k) => (
           <button
             key={k}
@@ -155,7 +153,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
               kind === k ? `bg-white shadow-sm dark:bg-zinc-950 ${k === 'in' ? 'text-in' : 'text-out'}` : 'text-zinc-500'
             }`}
           >
-            <Icon name={k} className="size-3.5" /> Money {k}
+            <Icon name={k} className="size-3.5" /> {k === 'in' ? 'Receipt' : 'Payment'}
           </button>
         ))}
       </div>
@@ -171,15 +169,15 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
         </Field>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (S$)">
+        <Field label="Amount (SGD)">
           <input name="amount" inputMode="decimal" placeholder="0.00" className={`${input} tabular-nums`} aria-invalid={!!error} />
         </Field>
-        <Field label="Date">
+        <Field label="Transaction date">
           <input name="date" type="date" defaultValue={today()} max={today()} className={input} />
         </Field>
       </div>
-      <Field label="Note">
-        <input name="note" placeholder={kind === 'in' ? 'e.g. Retainer deposit' : 'e.g. Supplier payment'} className={input} />
+      <Field label="Description">
+        <input name="note" placeholder={kind === 'in' ? 'e.g. Retainer received' : 'e.g. Supplier invoice INV-1042'} className={input} />
       </Field>
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -187,7 +185,7 @@ export function TxnForm({ clientId, onDone }: { clientId?: string; onDone?: () =
         </p>
       )}
       <button className={btn.primary}>
-        <Icon name={saved ? 'check' : 'plus'} /> {saved ? 'Recorded' : `Record money ${kind}`}
+        <Icon name={saved ? 'check' : 'plus'} /> {saved ? 'Posted' : kind === 'in' ? 'Post receipt' : 'Post payment'}
       </button>
     </form>
   )
