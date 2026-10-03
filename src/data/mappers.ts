@@ -103,12 +103,10 @@ export const rowToMember = (r: ProfileRow): Member => ({
 })
 
 export type Contract = {
-  id: string; clientId: string; title: string; startDate: string; endDate: string
-  status: 'pending_review' | 'approved' | 'rejected'; reviewedBy: string | null; createdAt: string
+  id: string; clientId: string; counterparty: string; title: string; startDate: string; endDate: string; notes: string; createdAt: string
 }
 export const rowToContract = (r: ContractRow): Contract => ({
-  id: r.id, clientId: r.client_id, title: r.title, startDate: r.start_date, endDate: r.end_date,
-  status: r.status as Contract['status'], reviewedBy: r.reviewed_by, createdAt: r.created_at,
+  id: r.id, clientId: r.client_id, counterparty: r.counterparty, title: r.title, startDate: r.start_date, endDate: r.end_date, notes: r.notes, createdAt: r.created_at,
 })
 
 export type Attachment = {

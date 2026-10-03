@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(16);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -32,15 +32,21 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1'); -- owner@beta
 select is((select count(*)::int from contracts), 0, 'beta sees no alpha contracts');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2'); -- accountant@alpha
-select throws_ok($$ select approve_contract((select id from contracts where title = 'Retainer agreement'), true) $$,
-  'P0001', 'Only an owner or admin can review contracts.', 'accountant cannot approve');
+select lives_ok($$ update contracts set counterparty = 'Harbour Foods', end_date = '2027-01-31' where title = 'Retainer agreement' $$,
+  'accountant can edit a contract');
+select is((select counterparty from contracts where title = 'Retainer agreement'), 'Harbour Foods', 'edit persisted');
 
-select pg_temp.act_as('00000000-0000-0000-0000-0000000000a4'); -- admin@alpha
-select lives_ok($$ select approve_contract((select id from contracts where title = 'Retainer agreement'), true) $$,
-  'admin can approve a contract');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a3'); -- viewer@alpha
+select is_empty($$ update contracts set title = 'Hacked' where title = 'Retainer agreement' returning 1 $$, 'viewer cannot edit a contract');
+select is_empty($$ delete from contracts where title = 'Retainer agreement' returning 1 $$, 'viewer cannot delete a contract');
 
-reset role;
-select is((select status from contracts where title = 'Retainer agreement'), 'approved', 'contract status updated to approved');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1'); -- owner@beta
+select is_empty($$ update contracts set title = 'Hacked' returning 1 $$, 'beta cannot edit alpha contracts');
+select is_empty($$ delete from contracts returning 1 $$, 'beta cannot delete alpha contracts');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a2'); -- accountant@alpha
+select lives_ok($$ delete from contracts where title = 'Service agreement' $$, 'accountant can delete a contract');
+select is((select count(*)::int from contracts where title = 'Service agreement'), 0, 'delete persisted');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1'); -- owner@beta, trial still active
 select lives_ok($$ insert into contracts (client_id, title, start_date, end_date)
@@ -49,8 +55,7 @@ select lives_ok($$ insert into contracts (client_id, title, start_date, end_date
 reset role;
 update firms set trial_ends_at = now() - interval '1 day' where id = '0000000b-0000-0000-0000-000000000001';
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
-select throws_like($$ select approve_contract((select id from contracts where title = 'Beta retainer'), true) $$,
-  'Your firm can''t make changes right now: %', 'approve is blocked when the firm cannot write');
+select is_empty($$ delete from contracts where title = 'Beta retainer' returning 1 $$, 'delete is blocked when the firm cannot write');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a1'); -- owner@alpha
 select throws_ok($$ insert into contracts (client_id, title, start_date, end_date)

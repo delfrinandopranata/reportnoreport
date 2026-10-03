@@ -106,10 +106,11 @@ export function Avatar({ name, size = 'size-8' }: { name: string; size?: string 
   )
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="grid gap-1.5 text-sm">
       <span className="font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
+      {hint && <span className="-mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</span>}
       {children}
     </label>
   )
