@@ -12,6 +12,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
   const [search, setSearch] = useState('')
   const [confirmAction, setConfirmAction] = useState<Action | null>(null)
   const [actionError, setActionError] = useState<{ firmId: string; message: string } | null>(null)
+  const [now] = useState(() => new Date())
 
   const list = useQuery({
     queryKey: ['admin', 'firms'],
@@ -93,9 +94,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
       f.currency.toLowerCase().includes(search.toLowerCase()),
   )
 
-  const now = useMemo(() => new Date(), [])
-
-  const getBillingLabel = (f: Firm) => {
+  const getBillingLabel = useMemo(() => (f: Firm) => {
     if (f.billing_status === 'trial' && f.trial_ends_at) {
       const ends = new Date(f.trial_ends_at)
       const daysLeft = Math.ceil((ends.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
@@ -105,7 +104,7 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
       return `Paid: ${new Date(f.paid_at).toLocaleDateString()}`
     }
     return f.billing_status === 'complimentary' ? 'Complimentary' : 'Read-only'
-  }
+  }, [now])
 
   return (
     <div className="space-y-4">
