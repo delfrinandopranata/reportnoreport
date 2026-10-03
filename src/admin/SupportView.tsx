@@ -6,7 +6,7 @@ import { makeMoney } from '../ledger'
 import { today, type Period } from '../ledger'
 import { formatDate } from '../settings/constants'
 
-type SupportClient = { client_id: string; name: string }
+type SupportClient = { id: string; name: string }
 type SupportBalance = {
   client_id: string
   client_name: string
@@ -115,7 +115,7 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
           {clients.data?.clients && clients.data.clients.length > 0 && (
             <div className="space-y-2">
               {clients.data.clients.map((c) => (
-                <div key={c.client_id} className="flex items-center gap-2 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                <div key={c.id} className="flex items-center gap-2 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
                   <Avatar name={c.name} size="size-6" />
                   <span className="text-sm font-medium">{c.name}</span>
                 </div>
