@@ -129,14 +129,21 @@ const moneyCache = new Map<string, { format(cents: number): string; compact(cent
 /** Locale that renders each currency with its own local symbol. */
 const MONEY_LOCALE: Record<string, string> = { MYR: 'en-MY', SGD: 'en-SG', USD: 'en-US' }
 
+/** Unambiguous symbols; any other currency shows its ISO code. */
+const MONEY_SYMBOL: Record<string, string> = { MYR: 'RM', SGD: 'S$', USD: 'US$' }
+
 /** Formatter for one currency; cached because Intl.NumberFormat is expensive to build. */
 export function makeMoney(currency: string) {
   const cached = moneyCache.get(currency)
   if (cached) return cached
   const locale = MONEY_LOCALE[currency] ?? 'en-MY'
-  const full = new Intl.NumberFormat(locale, { style: 'currency', currency })
-  const short = new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 })
-  const m = { format: (cents: number) => full.format(cents / 100), compact: (cents: number) => short.format(cents / 100) }
+  const symbol = MONEY_SYMBOL[currency] ?? currency
+  const make = (opts: Intl.NumberFormatOptions) => {
+    const nf = new Intl.NumberFormat(locale, { style: 'currency', currency, ...opts })
+    return (cents: number) =>
+      nf.formatToParts(cents / 100).map((p) => (p.type === 'currency' ? symbol : p.value)).join('')
+  }
+  const m = { format: make({}), compact: make({ notation: 'compact', maximumFractionDigits: 1 }) }
   moneyCache.set(currency, m)
   return m
 }
