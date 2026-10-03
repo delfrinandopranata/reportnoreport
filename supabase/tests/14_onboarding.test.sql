@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(24);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -176,6 +176,15 @@ select throws_ok(
   $$select remove_sample_data()$$,
   'P0001'
 );
+
+-- Test 7: a read-only firm can neither load nor remove sample data
+reset role;
+update firms set billing_status = 'read_only' where id = '0000000b-0000-0000-0000-000000000001';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+select throws_ok($$select load_sample_data()$$, 'P0001', 'permission denied: firm cannot write',
+  'Read-only firm cannot load sample data');
+select throws_ok($$select remove_sample_data()$$, 'P0001', 'permission denied: firm cannot write',
+  'Read-only firm cannot remove sample data');
 
 select * from finish();
 rollback;
