@@ -42,14 +42,22 @@ Vercel auto-detects Vite: build `pnpm build`, output `dist`.
 
 Hosted Supabase Auth emails (invite, confirmation, password reset, email change) go out through Resend SMTP using the branded templates in `supabase/templates/`. Local development uses Mailpit (http://127.0.0.1:54324); nothing is really sent. The `[auth.email.smtp]` block in `supabase/config.toml` is written but `enabled = false`.
 
-Go-live checklist:
+Go-live checklist (hosted project; the local `config.toml` does not reach it automatically):
 
-1. Create a Resend account.
-2. Add your sending domain in Resend and verify it (add the SPF and DKIM DNS records Resend shows).
-3. Create an API key with sending access.
-4. In the Supabase dashboard, Authentication > SMTP Settings, enable custom SMTP: host `smtp.resend.com`, port `465`, user `resend`, password = the API key. For Edge Functions, run `supabase secrets set RESEND_API_KEY=...` instead.
-5. Set the sender, e.g. `no-reply@mail.<your-domain>`, with sender name `Platform`.
-6. Raise the Auth email rate limit (Authentication > Rate Limits) from the default.
-7. Send a test invite and check it arrives and the link works.
+1. Resend: add your sending domain and verify it (SPF and DKIM DNS records), then create an API key with sending access.
+2. Supabase dashboard > Authentication > SMTP Settings: enable custom SMTP with host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `no-reply@mail.<your-domain>`, sender name `Platform`.
+3. Authentication > Email Templates: paste each file from `supabase/templates/` with its subject (same as `config.toml`):
+   - Invite user (`invite.html`): `You've been invited to Platform`
+   - Reset password (`recovery.html`): `Reset your Platform password`
+   - Confirm sign up (`confirmation.html`): `Confirm your Platform email address`
+   - Change email address (`email_change.html`): `Confirm your new Platform email address`
+4. Authentication > Providers > Email: set OTP expiry to `86400` (24 hours, the hosted maximum).
+5. Authentication > URL Configuration: Site URL = the production app URL; Redirect URLs include `<app-url>/app?flow=set-password` and `<app-url>/**`.
+6. Authentication > Rate Limits: raise the email rate limit from the default.
+7. Send a test invite and check it arrives, the branding renders and the link works.
+
+Warning: do NOT run `supabase config push` for auth while `[auth.email.smtp] enabled = false` locally. It would push that setting and turn Resend off in production.
+
+`supabase secrets set RESEND_API_KEY=...` is only needed once Edge Functions send email through the Resend API directly. It is not needed yet.
 
 Never commit the API key. `supabase/.env.example` lists the variable names; real `.env` files are git-ignored.

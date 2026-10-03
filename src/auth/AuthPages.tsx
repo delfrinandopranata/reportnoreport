@@ -63,7 +63,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
           <p className="mb-5 text-sm text-zinc-600 dark:text-zinc-400">{copy.help}</p>
           <form key={mode} className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'forgot' ? forgot : setPassword)}>
             {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete="email" inputMode="email" autoFocus required className={input} {...(mode === 'forgot' ? fieldError : {})} /></Field>}
-            {mode !== 'forgot' && <PasswordField label="Password" name="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} autoFocus={mode === 'set-password'} describedBy={mode === 'set-password' ? 'pw-rules' : errorId} invalid={!!error} />}
+            {mode !== 'forgot' && <PasswordField label="Password" name="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} autoFocus={mode === 'set-password'} describedBy={mode === 'set-password' ? ['pw-rules', errorId].filter(Boolean).join(' ') : errorId} invalid={!!error} />}
             {mode === 'set-password' && <>
               <p id="pw-rules" className="-mt-2 text-xs text-zinc-600 dark:text-zinc-400">At least 8 characters. Use a password you don’t use anywhere else.</p>
               <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" describedBy={errorId} invalid={!!error} />
@@ -94,7 +94,7 @@ function PasswordField({ label, name, autoComplete, autoFocus, describedBy, inva
       <label htmlFor={name} className="font-medium text-zinc-700 dark:text-zinc-300">{label}</label>
       <div className="relative">
         <input id={name} name={name} type={shown ? 'text' : 'password'} autoComplete={autoComplete} autoFocus={autoFocus} required aria-invalid={invalid || undefined} aria-describedby={describedBy} className={`${input} pr-16`} />
-        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`Show ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 rounded-md px-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
+        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 rounded-md px-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
       </div>
     </div>
   )
