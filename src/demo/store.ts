@@ -82,7 +82,7 @@ function seed(): DemoStore {
     phone: '+60312345678', email: 'hello@demoaccounting.example', website: 'https://demoaccounting.example',
     address1: 'Level 10, Menara Demo', address2: 'Jalan Contoh', postcode: '50450', city: 'Kuala Lumpur', state: 'Kuala Lumpur', country: 'Malaysia',
     logoPath: null, currency: 'MYR', statementNote: 'Thank you for your business.', discrepancyDays: 7, showRegistrationOnStatement: true,
-    fyStartMonth: 1, dateFormat: 'text', billingStatus: 'paid', trialEndsAt: null, paidAt: daysAgo(170), designSystem: 'ocean',
+    fyStartMonth: 1, dateFormat: 'text', billingStatus: 'complimentary', trialEndsAt: null, paidAt: null, designSystem: 'ocean',
   }
 
   return { firm, profile: members[0], members, clients, transactions, bankAccounts, contracts, preferences: {} }
