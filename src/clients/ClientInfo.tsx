@@ -113,7 +113,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
           </fieldset>
           <div className="sm:col-span-2">
             <Field label={draft.type === 'company' ? 'Company name' : 'Full name'}>
-              <input value={draft.name} onChange={(e) => set('name', e.target.value)} aria-invalid={!!errors.name} className={input} />
+              <input value={draft.name} onChange={(e) => set('name', e.target.value)} autoFocus aria-invalid={!!errors.name} className={input} />
               {error('name')}
             </Field>
           </div>
@@ -192,7 +192,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
       <MutationError error={update.error} />
       <div className="flex justify-end gap-2">
         <button type="button" className={btn.ghost} onClick={onDone}>Cancel</button>
-        <button className={btn.primary} disabled={update.isPending}>Save changes</button>
+        <button className={btn.primary} disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save changes'}</button>
       </div>
     </form>
   )

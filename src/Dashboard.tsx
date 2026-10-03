@@ -88,12 +88,13 @@ function Card({ widget, editing, state = 'idle', drag, layout }: { widget: Widge
           <div className="ml-auto flex items-center">
             <button
               type="button"
-              className={`${btn.ghost} p-1.5`}
+              className={`${btn.ghost} gap-1.5 p-1.5 text-xs`}
               onClick={() => resizeWidget(widget.id)}
-              title={`Width: ${SPAN_LABEL[widget.span]} — click to change`}
+              title={`Width: ${SPAN_LABEL[widget.span]} — select to change`}
               aria-label={`Change width of ${title}, currently ${SPAN_LABEL[widget.span]}`}
             >
               <Icon name="resize" className="size-3.5" />
+              <span className={widget.span === 1 ? 'hidden' : 'hidden sm:inline'} aria-hidden>{SPAN_LABEL[widget.span]}</span>
             </button>
             <button type="button" className={`${btn.ghost} p-1.5 hover:text-red-600`} onClick={() => removeWidget(widget.id)} aria-label={`Remove ${title}`}>
               <Icon name="x" className="size-3.5" />
@@ -123,8 +124,9 @@ function SortableCard({ widget, editing, layout }: { widget: Widget; editing: bo
 function Library({ addWidget }: { addWidget: Layout['addWidget'] }) {
   return (
     <div className="mb-6 rounded-2xl border border-dashed border-zinc-300 bg-white/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
-      <p className="mb-3 text-sm text-zinc-500">
-        Drag a widget by its handle to reorder it. Select a widget below to add it to the dashboard.
+      <h2 className="text-sm font-medium">Add widgets</h2>
+      <p className="mt-0.5 mb-3 text-sm text-zinc-500">
+        Select a widget to add it. Drag the handle on a card to reorder it, or focus the handle and use Space and the arrow keys. Changes save automatically; select Done when finished.
       </p>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {(Object.keys(WIDGETS) as WidgetType[]).map((type) => (
@@ -176,9 +178,9 @@ export function Dashboard({ editing }: { editing: boolean }) {
     <>
       {editing && <Library addWidget={layout.addWidget} />}
       {widgets.length === 0 && (
-        <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-20 text-center dark:border-zinc-700">
+        <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-16 text-center dark:border-zinc-700">
           <p className="font-medium">No widgets on this dashboard</p>
-          <p className="mt-1 text-sm text-zinc-500">{editing ? 'Add a widget above.' : 'Select “Edit layout” to add widgets.'}</p>
+          <p className="mt-1 max-w-sm px-4 text-sm text-zinc-500">{editing ? 'Select a widget above to add it.' : 'Select “Edit layout” at the top of the page to add widgets.'}</p>
         </div>
       )}
       <DndContext

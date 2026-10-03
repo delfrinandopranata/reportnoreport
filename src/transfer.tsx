@@ -81,6 +81,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
           </button>
         </div>
 
+        {importRows.isPending && !plan && <p className="text-zinc-500" role="status">Checking file…</p>}
         {done && <p className="rounded-lg bg-emerald-50 p-3 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" role="status">{done}</p>}
 
         {plan && (
@@ -114,9 +115,9 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button type="button" className={btn.ghost} onClick={() => setPlan(null)}>Cancel</button>
+              <button type="button" className={btn.ghost} onClick={() => setPlan(null)} disabled={importRows.isPending}>Cancel</button>
               <button type="button" className={btn.primary} onClick={confirm} disabled={!plan.preview?.transactions || importRows.isPending}>
-                Import {plan.preview?.transactions ?? 0} transaction{plan.preview?.transactions === 1 ? '' : 's'}
+                {importRows.isPending ? 'Importing…' : `Import ${plan.preview?.transactions ?? 0} transaction${plan.preview?.transactions === 1 ? '' : 's'}`}
               </button>
             </div>
           </div>

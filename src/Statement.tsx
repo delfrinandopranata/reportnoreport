@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { toStatement } from './data/mappers'
 import { useMoney } from './data/money'
@@ -5,6 +6,7 @@ import { useBalances, useBankAccounts, useClient, useLedger, useLogoUrl } from '
 import { useSession } from './data/session'
 import { accountNo, periodPresets, today, type Client, type Period, type Statement } from './ledger'
 import { formatDate } from './settings/store'
+import { LoadError, Skeleton } from './clients/shared'
 import { btn, Icon, PeriodPicker } from './ui'
 
 const longDate = (date: string) => formatDate(date, true)
@@ -20,15 +22,20 @@ function StatementLayout({
   title,
   firstDate,
   fileName,
+  period,
+  setPeriod,
+  ready,
   children,
 }: {
   back: { href: string; label: string }
   title: string
   firstDate: string
   fileName: (period: Period) => string
-  children: (period: Period) => ReactNode
+  period: Period
+  setPeriod: (period: Period) => void
+  ready: boolean
+  children: ReactNode
 }) {
-  const [period, setPeriod] = useState<Period>(() => periodPresets(firstDate)[1].period)
   const invalid = period.from > period.to
   const docTitle = fileName(period)
 
@@ -52,7 +59,7 @@ function StatementLayout({
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
             <p className="text-sm text-zinc-500">Choose the statement period, then print or save as PDF.</p>
           </div>
-          <button type="button" className={btn.primary} onClick={() => print()} disabled={invalid}>
+          <button type="button" className={`${btn.primary} max-sm:w-full`} onClick={() => print()} disabled={invalid || !ready} aria-describedby={invalid ? 'period-error' : undefined}>
             <Icon name="printer" /> Print / Save PDF
           </button>
         </header>
@@ -62,13 +69,13 @@ function StatementLayout({
           <p className="text-sm text-zinc-500">
             Issuer, registration, bank and footer details come from <a href="#settings" className="font-medium underline">Settings</a>.
           </p>
-          {invalid && <p className="text-sm text-red-600 dark:text-red-400" role="alert">The start date must be on or before the end date.</p>}
+          {invalid && <p id="period-error" className="text-sm text-red-600 dark:text-red-400" role="alert">The start date must be on or before the end date.</p>}
         </div>
       </div>
 
       {/* The document itself: fixed light palette so print and screen match regardless of theme. */}
       <article className="mx-auto w-full max-w-[210mm] overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-900 shadow-sm sm:p-10 print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:p-0 print:shadow-none">
-        <div className="min-w-[560px] print:min-w-0">{children(period)}</div>
+        <div className="min-w-[560px] print:min-w-0">{children}</div>
       </article>
     </div>
   )
@@ -95,7 +102,7 @@ function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string;
       <div className="shrink-0 text-right">
         <h2 className="text-xl font-semibold tracking-wide uppercase">{title}</h2>
         <dl className="mt-2 grid grid-cols-[auto_auto] justify-end gap-x-4 gap-y-0.5 text-zinc-600">
-          {[['Statement date', longDate(today())], ...meta, ['Currency', o.currency]].map(([k, v]) => (
+          {[['Statement date', longDate(today())], ...meta, ['Currency', o.currency.split(' ')[0]]].map(([k, v]) => (
             <div key={k} className="contents">
               <dt>{k}</dt>
               <dd className="text-zinc-900 tabular-nums">{v}</dd>
@@ -210,31 +217,69 @@ const Missing = () => (
 
 export function StatementPage({ id }: { id: string }) {
   const { data: client, isPending, error } = useClient(id)
-  if (isPending) return <p className="py-24 text-center text-sm text-zinc-500">Loading…</p>
-  if (error) return <p role="alert">{error.message}</p>
+  if (isPending) {
+    return (
+      <div role="status" aria-label="Loading statement" className="grid gap-4">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-16 w-full max-w-md" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <span className="sr-only">Loading…</span>
+      </div>
+    )
+  }
+  if (error) return <LoadError error={error} what="this client" />
   if (!client) return <Missing />
 
+  return <StatementLoaded client={client} />
+}
+
+function StatementLoaded({ client }: { client: Client }) {
+  const [period, setPeriod] = useState<Period>(() => periodPresets(client.createdAt)[1].period)
+  const balancesQ = useBalances({ from: period.from, to: period.to, clientId: client.id })
+  const linesQ = useLedger({ from: period.from, to: period.to, clientId: client.id })
+  // Previous data is kept while refetching; never present it as the new period's or client's figures.
+  const ready = !!balancesQ.data && !!linesQ.data && !balancesQ.isPlaceholderData && !linesQ.isPlaceholderData && !balancesQ.error && !linesQ.error
   return (
     <StatementLayout
       back={{ href: `#clients/${client.id}`, label: client.name }}
       title="Statement of account"
       firstDate={client.createdAt}
       fileName={(p) => `Statement of Account - ${client.name} - ${p.from} to ${p.to}`}
+      period={period}
+      setPeriod={setPeriod}
+      ready={ready}
     >
-      {(period) => (
-        <StatementBody client={client} period={period} />
-      )}
+      <StatementBody client={client} period={period} balancesQ={balancesQ} linesQ={linesQ} ready={ready} />
     </StatementLayout>
   )
 }
 
-function StatementBody({ client, period }: { client: Client; period: Period }) {
+type BalancesQ = ReturnType<typeof useBalances>
+type LinesQ = ReturnType<typeof useLedger>
+
+function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: Client; period: Period; balancesQ: BalancesQ; linesQ: LinesQ; ready: boolean }) {
   const { format: fmt } = useMoney()
-  const { data: balances, error: balancesError } = useBalances({ from: period.from, to: period.to, clientId: client.id })
-  const { data: lines, error: linesError } = useLedger({ from: period.from, to: period.to, clientId: client.id })
-  const error = balancesError ?? linesError
-  if (error) return <p role="alert">{error.message}</p>
-  if (!balances || !lines) return <p className="text-zinc-500">Loading…</p>
+  const { data: balances } = balancesQ
+  const { data: lines } = linesQ
+  const error = balancesQ.error ?? linesQ.error
+  const qc = useQueryClient()
+  if (error) {
+    return (
+      <div role="alert" className="grid justify-items-start gap-2 py-6">
+        <p className="font-medium text-red-700">We couldn’t load this statement.</p>
+        <p className="text-zinc-600">{error.message}</p>
+        <button type="button" className="rounded-lg border border-zinc-300 px-3 py-1.5 font-medium hover:bg-zinc-50" onClick={() => qc.invalidateQueries()}>Try again</button>
+      </div>
+    )
+  }
+  if (!ready || !balances || !lines) {
+    return (
+      <div role="status" aria-label="Preparing statement" className="grid animate-pulse gap-4 py-2">
+        <div className="h-24 rounded-md bg-zinc-100" /><div className="h-16 rounded-md bg-zinc-100" /><div className="h-40 rounded-md bg-zinc-100" />
+        <span className="text-sm text-zinc-500">Preparing statement…</span>
+      </div>
+    )
+  }
   const soa = toStatement(balances[0], lines)
   return (
           <>

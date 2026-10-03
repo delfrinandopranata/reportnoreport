@@ -18,7 +18,7 @@ import {
 } from './ledger'
 import { AddClient } from './clients/AddClient'
 import { StatusBadge, TagList } from './clients/fields'
-import { card, monthLabel, neg, Segmented, select, shortDate, useGate, useMoneyCell, useUserNames } from './clients/shared'
+import { card, LoadError, monthLabel, neg, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClients, useDeleteTxn, useLedger } from './data/queries'
@@ -93,8 +93,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const isTxns = !!fixedClientId || view === 'transactions'
   const statuses = useMemo(() => new Map(clients.map((c) => [c.id, c.status])), [clients])
 
-  const { data: balanceData, error: balancesError } = useBalances({ from: period.from, to: period.to, bankAccountId })
-  const { data: lines = [], error: ledgerError } = useLedger({
+  const { data: balanceData, error: balancesError, isPending: balancesPending } = useBalances({ from: period.from, to: period.to, bankAccountId })
+  const { data: lines = [], error: ledgerError, isLoading: ledgerLoading } = useLedger({
     from: period.from, to: period.to, clientId: fixedClientId ?? (clientFilter === 'all' ? undefined : clientFilter), bankAccountId, perClient: mode === 'client',
   }, isTxns)
   const balanceRows_ = balanceData ?? []
@@ -360,9 +360,12 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
   const loadError = clientsError ?? balancesError ?? ledgerError
   const rowsCount = isTxns ? txnRows.length : balanceRows.length
+  const loading = balancesPending || (isTxns && ledgerLoading)
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+  const gateHint = fixedClientId ? undefined : (!editClients.ok ? editClients.title : undefined) ?? (!post.ok ? post.title : undefined)
 
-  if (clientsPending) return <Empty text="Loading…" />
-  if (loadError) return <p role="alert">{loadError.message}</p>
+  if (clientsPending) return <LedgerSkeleton />
+  if (loadError) return <LoadError error={loadError} what={fixedClientId ? 'this ledger' : 'your clients'} />
 
   return (
     <div className="print-landscape grid grid-cols-1 gap-4">
@@ -385,15 +388,21 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         {(
           [
             ['Opening balance', summary.opening, `as at ${shortDate(period.from)}`],
-            ['Total receipts', summary.receipts, `${summary.lines.filter((l) => l.kind === 'in').length} receipts`],
-            ['Total payments', summary.payments, `${summary.lines.filter((l) => l.kind === 'out').length} payments`],
+            ['Total receipts', summary.receipts, isTxns ? plural(summary.lines.filter((l) => l.kind === 'in').length, 'receipt') : 'in this period'],
+            ['Total payments', summary.payments, isTxns ? plural(summary.lines.filter((l) => l.kind === 'out').length, 'payment') : 'in this period'],
             ['Closing balance', summary.closing, `as at ${shortDate(period.to)}`],
           ] as const
         ).map(([label, value, sub]) => (
-          <div key={label} className={`${card} p-5 print:p-3`}>
+          <div key={label} className={`${card} p-4 sm:p-5 print:p-3`}>
             <dt className="text-sm text-zinc-500">{label}</dt>
-            <dd className={`mt-2 text-lg font-semibold tracking-tight tabular-nums sm:text-2xl print:mt-1 print:text-base ${neg(value)}`}>{fmt(value)}</dd>
-            <dd className="mt-1 text-sm text-zinc-500">{sub}</dd>
+            {loading ? (
+              <dd className="mt-2 grid gap-2" role="status" aria-label="Loading"><Skeleton className="h-7 w-28 sm:h-8" /><Skeleton className="h-4 w-20" /></dd>
+            ) : (
+              <>
+                <dd className={`mt-2 text-base font-semibold tracking-tight tabular-nums sm:text-2xl print:mt-1 print:text-base ${neg(value)}`}>{fmt(value)}</dd>
+                <dd className="mt-1 text-sm text-zinc-500">{sub}</dd>
+              </>
+            )}
           </div>
         ))}
       </dl>
@@ -414,23 +423,24 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           />}
           <div className="ml-auto flex flex-wrap items-center gap-1">
             {!fixedClientId && (
-              <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} onClick={() => setDialog('import')}>
-                <Icon name="upload" /> Import
+              <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} aria-label="Import" aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('import')}>
+                <Icon name="upload" /> <span className="max-sm:sr-only">Import</span>
               </button>
             )}
-            <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount}>
-              <Icon name="download" /> Export
+            <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount} aria-label="Export CSV" title={rowsCount ? 'Export CSV' : 'Nothing to export'}>
+              <Icon name="download" /> <span className="max-sm:sr-only">Export</span>
             </button>
-            <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount}>
-              <Icon name="printer" /> Print
+            <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
+              <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
             </button>
             {!fixedClientId && (
-              <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} onClick={() => setDialog('add')}>
+              <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
                 <Icon name="plus" /> Add client
               </button>
             )}
           </div>
         </div>
+        {gateHint && <p id="ledger-gate" className="text-xs text-zinc-500">{gateHint}</p>}
         <PeriodPicker
           period={period}
           onChange={(p) => {
@@ -511,10 +521,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
       <div className={`${card} overflow-hidden print:overflow-visible print:rounded-none print:border-0`}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-zinc-100 px-5 py-3 text-sm dark:border-zinc-800 print:hidden">
-          <span className="font-medium">{isTxns ? `${txnRows.length} transactions` : `${balanceRows.length} clients`}</span>
+          <span className="font-medium">{isTxns ? plural(txnRows.length, 'transaction') : plural(balanceRows.length, 'client')}</span>
           <span className="text-zinc-500">{shortDate(period.from)} – {shortDate(period.to)}</span>
           {removeTxn.error && <span className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</span>}
-          {isTxns && !showBalance && <span className="text-xs text-zinc-400">Running balance shows when sorted by date with no search, type, status or debit filter, unless one client is selected.</span>}
+          {isTxns && !showBalance && <span className="basis-full text-xs text-zinc-500">Running balance shows when sorted by date with no search, type, status or debit filter, unless one client is selected.</span>}
           <div className="ml-auto flex items-center gap-1">
             {isTxns && mode !== 'none' && groups.length > 0 && (
               <button type="button" className={`${btn.ghost} py-1`} onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)))}>
@@ -527,7 +537,12 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </div>
         </div>
 
-        {rowsCount ? (
+        {loading ? (
+          <div role="status" aria-label="Loading ledger" className="grid gap-3 p-5">
+            {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
+            <span className="sr-only">Loading…</span>
+          </div>
+        ) : rowsCount ? (
           <div className="overflow-x-auto print:overflow-visible">
             <table className="w-full table-fixed text-sm print:text-xs" style={{ minWidth: printing ? undefined : minWidth }}>
               {isTxns ? colgroup(txnVisible, txnTable.widthOf) : colgroup(balanceVisible, balanceTable.widthOf)}
@@ -579,7 +594,27 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </div>
         ) : (
           <div className="p-6">
-            <Empty text={filtersActive ? 'Nothing matches these filters.' : isTxns ? 'No transactions in this period.' : 'No clients yet. Add a client or import transactions.'} />
+            <Empty
+              text={
+                filtersActive
+                  ? 'Nothing matches these filters. Widen the search or clear the filters to see more.'
+                  : !fixedClientId && clients.length === 0
+                    ? 'No clients yet. Add your first client, or import a CSV of existing transactions.'
+                    : isTxns
+                      ? 'No transactions in this period. Choose a different period above, or record one.'
+                      : 'No client balances to show for this period.'
+              }
+              action={
+                filtersActive ? (
+                  <button type="button" className={btn.primary} onClick={clearFilters}><Icon name="x" /> Clear filters</button>
+                ) : !fixedClientId && clients.length === 0 ? (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button type="button" className={btn.primary} disabled={!editClients.ok} onClick={() => setDialog('add')}><Icon name="plus" /> Add client</button>
+                    <button type="button" className={btn.ghost} disabled={!post.ok} onClick={() => setDialog('import')}><Icon name="upload" /> Import CSV</button>
+                  </div>
+                ) : undefined
+              }
+            />
           </div>
         )}
       </div>
@@ -591,6 +626,22 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       ) : (
         <ColumnsDialog open={dialog === 'columns'} onClose={() => setDialog(null)} table={balanceTable} />
       )}
+    </div>
+  )
+}
+
+/** Same shape as the loaded page (KPI row, toolbar, table) so nothing jumps when data lands. */
+function LedgerSkeleton() {
+  return (
+    <div role="status" aria-label="Loading clients" className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`${card} grid gap-2 p-5`}><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-20" /></div>
+        ))}
+      </div>
+      <div className={`${card} grid gap-3 p-4`}><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /></div>
+      <div className={`${card} grid gap-3 p-5`}>{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
+      <span className="sr-only">Loading…</span>
     </div>
   )
 }

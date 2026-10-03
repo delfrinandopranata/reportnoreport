@@ -1,21 +1,46 @@
-import { useMemo, useState, type ComponentType } from 'react'
+import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { monthlyFlow, today, type Txn } from './ledger'
 import { sumBalances } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
 import type { Span, WidgetType } from './Dashboard'
-import { useGate } from './clients/shared'
-import { Avatar, Icon, KindBadge, TxnForm } from './ui'
+import { LoadError, Skeleton, useGate } from './clients/shared'
+import { Avatar, btn, Icon, KindBadge, TxnForm } from './ui'
 
 const ALL_TIME = '1900-01-01'
 
 type QueryState = { isPending: boolean; error: Error | null }
 
+/** Loading placeholders sized like each widget's real content, so the grid doesn't jump when data lands. */
+const LOADING = {
+  kpi: (
+    <div className="flex items-end justify-between gap-3">
+      <div className="grid gap-2"><Skeleton className="h-8 w-36" /><Skeleton className="h-4 w-44" /></div>
+      <Skeleton className="size-10 rounded-xl" />
+    </div>
+  ),
+  chart: <Skeleton className="h-[248px] w-full rounded-xl" />,
+  list: (
+    <div className="grid gap-3.5">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-3"><Skeleton className="size-8 rounded-full" /><Skeleton className="h-4 flex-1" /><Skeleton className="h-4 w-20" /></div>
+      ))}
+    </div>
+  ),
+}
+
 /** Loading / error stand-in for a widget; null once every query has data. */
-function queryStatus(...qs: QueryState[]) {
+function queryStatus(shape: keyof typeof LOADING, ...qs: QueryState[]) {
   const error = qs.find((q) => q.error)?.error
-  if (error) return <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
-  if (qs.some((q) => q.isPending)) return <p role="status" className="text-sm text-zinc-500">Loading…</p>
+  if (error) return <LoadError error={error} what="this widget" compact />
+  if (qs.some((q) => q.isPending)) {
+    return (
+      <div role="status" aria-label="Loading">
+        {LOADING[shape]}
+        <span className="sr-only">Loading…</span>
+      </div>
+    )
+  }
   return null
 }
 
@@ -24,7 +49,7 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
   const monthStart = `${today().slice(0, 7)}-01`
   const allQ = useBalances({ from: ALL_TIME, to: today() })
   const monthQ = useBalances({ from: monthStart, to: today() })
-  const status = queryStatus(allQ, monthQ)
+  const status = queryStatus('kpi', allQ, monthQ)
   if (status) return status
   const all = sumBalances(allQ.data ?? [])
   const m = sumBalances(monthQ.data ?? [])
@@ -34,12 +59,12 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
   return (
     <div className="flex items-end justify-between gap-3">
       <div className="min-w-0">
-        <p className={`truncate text-2xl font-semibold tracking-tight tabular-nums ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(value)}</p>
+        <p className={`truncate text-xl font-semibold tracking-tight tabular-nums 2xl:text-2xl ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(value)}</p>
         <p className="mt-1 text-sm text-zinc-500 tabular-nums">
           {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {money.format(month)}
         </p>
       </div>
-      <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}>
+      <span aria-hidden className={`hidden size-10 shrink-0 place-items-center rounded-xl 2xl:grid ${tone}`}>
         <Icon name={metric === 'net' ? 'wallet' : metric} className="size-5" />
       </span>
     </div>
@@ -49,7 +74,7 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
 function ClientsKpi() {
   const clientsQ = useClients()
   const balancesQ = useBalances({ from: ALL_TIME, to: today() })
-  const status = queryStatus(clientsQ, balancesQ)
+  const status = queryStatus('kpi', clientsQ, balancesQ)
   if (status) return status
   const clients = clientsQ.data ?? []
   const overdrawn = (balancesQ.data ?? []).filter((r) => r.closing < 0).length
@@ -59,7 +84,7 @@ function ClientsKpi() {
         <p className="text-2xl font-semibold tracking-tight tabular-nums">{clients.filter((c) => c.status === 'active').length}</p>
         <p className="mt-1 text-sm text-zinc-500">{overdrawn ? `${overdrawn} in debit balance` : 'No debit balances'}</p>
       </div>
-      <span className="grid size-10 place-items-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+      <span aria-hidden className="hidden size-10 place-items-center rounded-xl bg-zinc-100 2xl:grid text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
         <Icon name="users" className="size-5" />
       </span>
     </div>
@@ -77,7 +102,7 @@ function Cashflow() {
   const d = new Date()
   const sixMonthsAgo = new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA')
   const ledger = useLedger({ from: sixMonthsAgo, to: today() })
-  return queryStatus(ledger) ?? <CashflowChart txns={ledger.data ?? []} />
+  return queryStatus('chart', ledger) ?? <CashflowChart txns={ledger.data ?? []} />
 }
 
 export function CashflowChart({ txns }: { txns: Txn[] }) {
@@ -155,9 +180,9 @@ function Balances() {
     return clients.map((c) => ({ ...c, net: byClient.get(c.id) ?? 0 })).sort((a, b) => b.net - a.net)
   }, [clients, balances])
   const max = Math.max(1, ...rows.map((r) => Math.abs(r.net)))
-  const status = queryStatus(clientsQ, balancesQ)
+  const status = queryStatus('list', clientsQ, balancesQ)
   if (status) return status
-  if (!rows.length) return <Empty text="No clients yet." />
+  if (!rows.length) return <Empty text="No clients yet." action={<a href="#clients" className={btn.ghost}>Go to clients</a>} />
   return (
     <ul className="grid gap-3">
       {rows.slice(0, 6).map((r) => (
@@ -184,9 +209,9 @@ function Recent() {
   const clients = clientsQ.data ?? []
   const recent = recentQ.data ?? []
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
-  const status = queryStatus(clientsQ, recentQ)
+  const status = queryStatus('list', clientsQ, recentQ)
   if (status) return status
-  if (!recent.length) return <Empty text="No transactions posted yet." />
+  if (!recent.length) return <Empty text="No transactions posted yet." action={<a href="#clients" className={btn.ghost}>Open a client to record one</a>} />
   return <TxnList txns={recent} names={names} />
 }
 
@@ -214,8 +239,14 @@ function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) 
   )
 }
 
-export function Empty({ text }: { text: string }) {
-  return <p className="grid h-24 place-items-center rounded-xl border border-dashed border-zinc-200 text-sm text-zinc-500 dark:border-zinc-800">{text}</p>
+/** Empty state: says what happened and, via `action`, what to do next. */
+export function Empty({ text, action }: { text: string; action?: ReactNode }) {
+  return (
+    <div className="grid min-h-24 content-center justify-items-center gap-3 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
+      <p>{text}</p>
+      {action}
+    </div>
+  )
 }
 
 function QuickAdd() {

@@ -69,7 +69,7 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
         <MutationError error={create.error} />
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" className={btn.ghost} onClick={close}>Cancel</button>
-          <button className={btn.primary} disabled={create.isPending}>Add client</button>
+          <button className={btn.primary} disabled={create.isPending}>{create.isPending ? 'Adding…' : 'Add client'}</button>
         </div>
       </form>
     </Dialog>
