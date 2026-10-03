@@ -450,7 +450,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         ))}
       </dl>
 
-      <div className={`${card} grid gap-3 p-4 print:hidden`}>
+      <div className={`${card} grid gap-4 p-4 print:hidden`}>
+        {/* View + actions: Add client is the one primary action, kept visually dominant; Import/Export/Print/SOA are a demoted, equally-weighted secondary cluster (Fitts's Law) */}
         <div className="flex flex-wrap items-center gap-2">
           {!fixedClientId && <Segmented<View>
             label="View"
@@ -464,23 +465,25 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               ['transactions', 'Transactions'],
             ]}
           />}
-          <div className="ml-auto flex flex-wrap items-center gap-1">
-            {!fixedClientId && (
-              <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} aria-label="Import" aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('import')}>
-                <Icon name="upload" /> <span className="max-sm:sr-only">Import</span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-0.5 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-800">
+              {!fixedClientId && (
+                <button type="button" className={btn.ghost} disabled={!post.ok} title={post.title} aria-label="Import" aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('import')}>
+                  <Icon name="upload" /> <span className="max-sm:sr-only">Import</span>
+                </button>
+              )}
+              <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount} aria-label="Export CSV" title={rowsCount ? 'Export CSV' : 'Nothing to export'}>
+                <Icon name="download" /> <span className="max-sm:sr-only">Export</span>
               </button>
-            )}
-            <button type="button" className={btn.ghost} onClick={exportCsv} disabled={!rowsCount} aria-label="Export CSV" title={rowsCount ? 'Export CSV' : 'Nothing to export'}>
-              <Icon name="download" /> <span className="max-sm:sr-only">Export</span>
-            </button>
-            <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
-              <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
-            </button>
-            {!fixedClientId && (
-              <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} aria-label="Statement of account" title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
-                <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
+              <button type="button" className={btn.ghost} onClick={() => print()} disabled={!rowsCount} aria-label="Print" title={rowsCount ? 'Print' : 'Nothing to print'}>
+                <Icon name="printer" /> <span className="max-sm:sr-only">Print</span>
               </button>
-            )}
+              {!fixedClientId && (
+                <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} aria-label="Statement of account" title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
+                  <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
+                </button>
+              )}
+            </div>
             {!fixedClientId && (
               <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
                 <Icon name="plus" /> Add client
@@ -489,15 +492,22 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </div>
         </div>
         {gateHint && <p id="ledger-gate" className="text-xs text-zinc-500">{gateHint}</p>}
-        <PeriodPicker
-          period={period}
-          onChange={(p) => {
-            setPeriod(p)
-            resetPaging()
-          }}
-          firstDate={firstDate}
-        />
-        <div className="flex flex-wrap items-center gap-2">
+
+        {/* Period: quick presets + custom range, kept as one cluster (Miller's Law) */}
+        <div className="grid gap-1.5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <span className="text-xs font-medium text-zinc-500">Period</span>
+          <PeriodPicker
+            period={period}
+            onChange={(p) => {
+              setPeriod(p)
+              resetPaging()
+            }}
+            firstDate={firstDate}
+          />
+        </div>
+
+        {/* Search + filters: search leads, as is conventional (Jakob's Law) */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
           <div className="relative w-full sm:w-64">
             <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
             <input
@@ -531,40 +541,60 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               </select>
             </>
           )}
-          {!fixedClientId && <button
-            type="button"
-            aria-pressed={debitOnly}
-            onClick={() => setDebitOnly(!debitOnly)}
-            className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${debitOnly ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}
-          >
-            Debit balances only
-          </button>}
-          {isTxns && (
-            <>
-              <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'Receipts'], ['out', 'Payments']]} />
-              <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
-                Group by
-                <select
-                  value={mode}
-                  onChange={(e) => {
-                    setMode(e.target.value as GroupMode)
-                    setCollapsed(new Set())
-                  }}
-                  className={select}
-                >
-                  <option value="none">None</option>
-                  {!fixedClientId && <option value="client">Client</option>}
-                  <option value="month">Month</option>
-                </select>
-              </label>
-            </>
-          )}
-          {filtersActive && (
-            <button type="button" className={btn.ghost} onClick={clearFilters}>
+        </div>
+
+        {/* Debit toggle / type filter / group-by: three distinct kinds of decision, visually separated (Hick's Law) */}
+        {(!fixedClientId || isTxns) && (
+          <div className="flex flex-wrap items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+            {!fixedClientId && (
+              <button
+                type="button"
+                aria-pressed={debitOnly}
+                onClick={() => setDebitOnly(!debitOnly)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${debitOnly ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-300'}`}
+              >
+                Debit balances only
+              </button>
+            )}
+            {isTxns && (
+              <>
+                {!fixedClientId && <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm whitespace-nowrap text-zinc-500">Type</span>
+                  <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'Receipts'], ['out', 'Payments']]} />
+                </div>
+                <span className="hidden h-6 w-px bg-zinc-200 sm:block dark:bg-zinc-800" aria-hidden />
+                <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
+                  Group by
+                  <select
+                    value={mode}
+                    onChange={(e) => {
+                      setMode(e.target.value as GroupMode)
+                      setCollapsed(new Set())
+                    }}
+                    className={select}
+                  >
+                    <option value="none">None</option>
+                    {!fixedClientId && <option value="client">Client</option>}
+                    <option value="month">Month</option>
+                  </select>
+                </label>
+              </>
+            )}
+            {filtersActive && (
+              <button type="button" className={`${btn.ghost} ml-auto`} onClick={clearFilters}>
+                <Icon name="x" /> Clear filters
+              </button>
+            )}
+          </div>
+        )}
+        {!(!fixedClientId || isTxns) && filtersActive && (
+          <div className="flex border-t border-zinc-100 pt-4 dark:border-zinc-800">
+            <button type="button" className={`${btn.ghost} ml-auto`} onClick={clearFilters}>
               <Icon name="x" /> Clear filters
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className={`${card} overflow-hidden print:overflow-visible print:rounded-none print:border-0`}>
