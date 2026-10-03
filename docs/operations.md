@@ -2,7 +2,7 @@
 
 ## Hosted deployment checklist
 
-This checklist describes every step to deploy ReportNoReport to production. The app will be available at `https://<your-domain>/app/`, with the homepage at `https://<your-domain>/`.
+This checklist describes every step to deploy ReportNoReport to production. The app will be available at `https://reportnoreport.com/app/`, with the homepage at `https://reportnoreport.com/`.
 
 ### Step 1: Create a Supabase project
 
@@ -45,7 +45,7 @@ Verify the functions are listed at: Supabase dashboard › Edge Functions.
 Set the APP_URL secret from the CLI:
 
 ```bash
-supabase secrets set APP_URL=https://<your-domain>/app/
+supabase secrets set APP_URL=https://reportnoreport.com/app/
 ```
 
 Supabase automatically injects `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` into Edge Functions; these do not need to be set manually.
@@ -62,12 +62,12 @@ Supabase automatically injects `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABAS
 
 **Auth redirect URLs:**
 - Supabase dashboard › Authentication › URL Configuration
-  - Site URL: `https://<your-domain>/app/` (must end with `/`)
+  - Site URL: `https://reportnoreport.com/app/` (must end with `/`)
   - Redirect URLs (add all of these):
     ```
-    https://<your-domain>/app/?flow=set-password
-    https://<your-domain>/app/**
-    https://<your-domain>/**
+    https://reportnoreport.com/app/?flow=set-password
+    https://reportnoreport.com/app/**
+    https://reportnoreport.com/**
     ```
 
 ### Step 7: Set up Resend SMTP for email delivery
@@ -75,7 +75,7 @@ Supabase automatically injects `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABAS
 Resend sends emails on behalf of your domain. (Local development uses Mailpit and sends no real emails.)
 
 1. Create a Resend account at https://resend.com
-2. Add your sending domain and verify DNS records (SPF and DKIM)
+2. Add `reportnoreport.com` and add its DNS records in Cloudflare (SPF, DKIM, DMARC)
 3. Create an API key with "Sending" permission
 4. In Supabase dashboard › Authentication › SMTP Settings, enable custom SMTP:
    - Host: `smtp.resend.com`
@@ -83,7 +83,7 @@ Resend sends emails on behalf of your domain. (Local development uses Mailpit an
    - Username: `resend`
    - Password: (paste your Resend API key)
    - Sender name: `ReportNoReport`
-   - From email: `no-reply@mail.<your-domain>` (must match a verified domain at Resend)
+   - From email: `noreply@reportnoreport.com` (must match a verified domain at Resend)
 
 ### Step 8: Upload email templates to Supabase
 
@@ -134,7 +134,7 @@ The first sign-in must be a super-admin (no firm, `is_super_admin = true`). You 
 **Option A: Via Supabase dashboard (recommended)**
 1. Go to Supabase dashboard › Authentication › Users
 2. Click "Invite" and send an invite to your super-admin email
-3. Accept the invite (you'll be redirected to `https://<your-domain>/app/?flow=set-password`)
+3. Accept the invite (you'll be redirected to `https://reportnoreport.com/app/?flow=set-password`)
 4. Set your password and return to the app
 5. Run this SQL in Supabase › SQL Editor to mark yourself as super-admin:
    ```sql
@@ -168,7 +168,7 @@ The first sign-in must be a super-admin (no firm, `is_super_admin = true`). You 
 
 The homepage has a contact link. In `src/home/home.ts`, line 5, replace the default:
 ```typescript
-const CONTACT_EMAIL = 'hello@example.com'
+const CONTACT_EMAIL = 'hello@reportnoreport.com'
 ```
 
 Set it to your support or contact email address. Commit and redeploy to production.
@@ -176,8 +176,8 @@ Set it to your support or contact email address. Commit and redeploy to producti
 ### Step 12: Verify the deployment
 
 **Homepage and public pages:**
-1. Open `https://<your-domain>/` → should see the marketing homepage, no sign-in required
-2. Click "Sign up" → should redirect to `https://<your-domain>/app/#signup`
+1. Open `https://reportnoreport.com/` → should see the marketing homepage, no sign-in required
+2. Click "Sign up" → should redirect to `https://reportnoreport.com/app/#signup`
 
 **Sign-up flow:**
 1. Fill in firm name, currency, email, password
@@ -187,7 +187,7 @@ Set it to your support or contact email address. Commit and redeploy to producti
 
 **Admin console:**
 1. Sign in as the super-admin
-2. Navigate to `https://<your-domain>/app/#admin`
+2. Navigate to `https://reportnoreport.com/app/#admin`
 3. Verify the "Firms" list appears (may be empty if no sign-ups yet)
 4. Verify "Platform settings" shows (firm cap, trial days)
 
