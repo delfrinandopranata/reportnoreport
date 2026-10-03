@@ -82,3 +82,27 @@ export function monthlyFlow(txns: Txn[], months: number, asOf: string): MonthFlo
 }
 
 export const byDateDesc = (a: Txn, b: Txn) => b.date.localeCompare(a.date)
+
+export type StatementLine = Txn & { balance: number }
+
+export type Statement = {
+  opening: number
+  receipts: number
+  payments: number
+  closing: number
+  lines: StatementLine[]
+}
+
+/** Oldest first; same-day entries keep the order they were posted in. */
+export const chronological = (txns: Txn[]) => [...txns].sort((a, b) => a.date.localeCompare(b.date))
+
+/** Statement for [from, to] inclusive (YYYY-MM-DD). Everything before `from` rolls into the opening balance. */
+export function statement(txns: Txn[], from: string, to: string): Statement {
+  const signed = (t: Txn) => (t.kind === 'in' ? t.amount : -t.amount)
+  const opening = txns.filter((t) => t.date < from).reduce((sum, t) => sum + signed(t), 0)
+  const inPeriod = chronological(txns.filter((t) => t.date >= from && t.date <= to))
+  let balance = opening
+  const lines = inPeriod.map((t) => ({ ...t, balance: (balance += signed(t)) }))
+  const { in: receipts, out: payments } = totals(inPeriod)
+  return { opening, receipts, payments, closing: opening + receipts - payments, lines }
+}

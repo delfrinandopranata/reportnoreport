@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useStore as useZustand } from 'zustand'
 import { ClientProfile, Clients } from './Clients'
+import { ConsolidatedStatementPage, StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
 import { useStore } from './store'
 import { btn, Icon } from './ui'
 
-type Route = { view: 'dashboard' | 'clients'; clientId: string | null }
+type Route = { view: 'dashboard' | 'clients'; clientId: string | null; statement: boolean }
 
 const readRoute = (): Route => {
-  const [view, clientId] = location.hash.slice(1).split('/')
-  return view === 'clients' ? { view, clientId: clientId ?? null } : { view: 'dashboard', clientId: null }
+  const [view, clientId, sub] = location.hash.slice(1).split('/')
+  if (view === 'clients' && clientId === 'statement') return { view, clientId: null, statement: true }
+  return view === 'clients'
+    ? { view, clientId: clientId ?? null, statement: sub === 'statement' }
+    : { view: 'dashboard', clientId: null, statement: false }
 }
 
 function History() {
@@ -61,7 +65,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      <aside className="flex items-center gap-1 border-b border-zinc-200 bg-white px-4 py-3 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:border-r lg:border-b-0 lg:px-3 lg:py-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <aside className="flex items-center print:hidden gap-1 border-b border-zinc-200 bg-white px-4 py-3 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:border-r lg:border-b-0 lg:px-3 lg:py-5 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mr-3 flex items-center gap-2.5 lg:mr-0 lg:mb-6 lg:px-2">
           <span className="grid size-8 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
             <Icon name="wallet" />
@@ -93,8 +97,12 @@ export default function App() {
         </button>
       </aside>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8">
-        {route.clientId ? (
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8 print:max-w-none print:p-0">
+        {route.statement && !route.clientId ? (
+          <ConsolidatedStatementPage />
+        ) : route.clientId && route.statement ? (
+          <StatementPage id={route.clientId} />
+        ) : route.clientId ? (
           <ClientProfile id={route.clientId} actions={<History />} />
         ) : (
           <>

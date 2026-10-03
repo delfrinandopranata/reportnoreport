@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { formatMoney, totals, totalsByClient } from './ledger'
+import { formatMoney, statement, totals, totalsByClient } from './ledger'
 import { useStore } from './store'
 import { Avatar, btn, Dialog, Field, Icon, input, KindBadge, TxnForm } from './ui'
 import { CashflowChart, Empty } from './widgets'
@@ -48,14 +48,8 @@ export function ClientProfile({ id, actions }: { id: string; actions: ReactNode 
   const removeTxn = useStore((s) => s.removeTxn)
   const removeClient = useStore((s) => s.removeClient)
   const own = useMemo(() => txns.filter((t) => t.clientId === id), [txns, id])
-  // Running balance is computed oldest-first, then shown newest-first.
-  const ledger = useMemo(() => {
-    let balance = 0
-    return [...own]
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((t) => ({ ...t, balance: (balance += t.kind === 'in' ? t.amount : -t.amount) }))
-      .reverse()
-  }, [own])
+  // Whole-history statement gives the running balance; shown newest-first.
+  const ledger = useMemo(() => statement(own, '0000-01-01', '9999-12-31').lines.reverse(), [own])
   const sum = totals(own)
 
   if (!client) {
@@ -102,6 +96,9 @@ export function ClientProfile({ id, actions }: { id: string; actions: ReactNode 
         <button type="button" className={btn.danger} onClick={onDelete}>
           <Icon name="trash" /> Delete
         </button>
+        <a href={`#clients/${client.id}/statement`} className={btn.primary}>
+          <Icon name="file" /> Statement of account
+        </a>
       </header>
 
       <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -205,7 +202,10 @@ export function Clients() {
           <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search clients" className={`${input} pl-9`} aria-label="Search clients" />
         </div>
-        <button type="button" className={`${btn.primary} sm:ml-auto`} onClick={() => setAdding(true)}>
+        <a href="#clients/statement" className={`${btn.ghost} border border-zinc-200 bg-white sm:ml-auto dark:border-zinc-800 dark:bg-zinc-900`}>
+          <Icon name="file" /> Consolidated statement
+        </a>
+        <button type="button" className={btn.primary} onClick={() => setAdding(true)}>
           <Icon name="plus" /> Add client
         </button>
       </div>

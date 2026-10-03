@@ -8,9 +8,10 @@ export type WidgetType = 'net' | 'in' | 'out' | 'clients' | 'cashflow' | 'balanc
 export type Span = 1 | 2 | 4
 export type Widget = { id: string; type: WidgetType; span: Span }
 
-type Data = { clients: Client[]; txns: Txn[]; widgets: Widget[] }
+type Data = { businessName: string; clients: Client[]; txns: Txn[]; widgets: Widget[] }
 
 type Actions = {
+  setBusinessName: (name: string) => void
   addClient: (client: Omit<Client, 'id' | 'createdAt'>) => void
   removeClient: (id: string) => void
   addTxn: (txn: Omit<Txn, 'id'>) => void
@@ -75,7 +76,7 @@ function demoData(): Data {
       ]
     }).flat(),
   )
-  return { clients, txns, widgets: DEFAULT_WIDGETS }
+  return { businessName: 'Your Business Pte Ltd', clients, txns, widgets: DEFAULT_WIDGETS }
 }
 
 // persist wraps temporal so undo/redo go through persist's setter and get saved too.
@@ -84,6 +85,7 @@ export const useStore = create<Data & Actions>()(
     temporal(
       (set) => ({
         ...demoData(),
+        setBusinessName: (businessName) => set({ businessName }),
         addClient: (client) =>
           set((s) => ({ clients: [...s.clients, { ...client, id: uid(), createdAt: today() }] })),
         removeClient: (id) =>
@@ -100,11 +102,11 @@ export const useStore = create<Data & Actions>()(
           }),
         resizeWidget: (id) =>
           set((s) => ({ widgets: s.widgets.map((w) => (w.id === id ? { ...w, span: NEXT_SPAN[w.span] } : w)) })),
-        resetDemo: () => set(demoData()),
+        resetDemo: () => set(({ businessName }) => ({ ...demoData(), businessName })),
       }),
       {
         limit: 100,
-        partialize: ({ clients, txns, widgets }): Data => ({ clients, txns, widgets }),
+        partialize: ({ businessName, clients, txns, widgets }): Data => ({ businessName, clients, txns, widgets }),
       },
     ),
     { name: 'platform-internal', version: 1 },
