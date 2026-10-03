@@ -193,7 +193,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
         role="dialog"
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`fixed z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl outline-none dark:border-zinc-800 dark:bg-zinc-900 ${
+        className={`fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl outline-none dark:border-zinc-800 dark:bg-zinc-900 ${
           prefersReducedMotion ? '' : 'animate-in fade-in zoom-in-95'
         }`}
         style={{

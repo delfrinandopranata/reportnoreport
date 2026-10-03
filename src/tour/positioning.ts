@@ -19,7 +19,7 @@ export interface PopoverPosition {
   arrowSide: Position
 }
 
-const POPOVER_WIDTH = 320 // max-w-sm ~= 320px
+const POPOVER_WIDTH = 320 // must match the popover's w-80 in Tour.tsx
 const POPOVER_HEIGHT = 200 // approximate, varies by content
 const OFFSET = 16 // gap between target and popover
 const VIEWPORT_MARGIN = 8 // minimum margin from viewport edge
