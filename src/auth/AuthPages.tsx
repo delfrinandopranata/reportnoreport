@@ -6,17 +6,18 @@ import { takeReturnTo } from './route'
 type Mode = 'signin' | 'forgot' | 'set-password'
 const modeFromHash = (): Mode => (location.hash.startsWith('#forgot') ? 'forgot' : location.hash.startsWith('#set-password') || location.hash.includes('type=invite') || location.hash.includes('type=recovery') ? 'set-password' : 'signin')
 
-export function AuthPages() {
-  const [mode, setMode] = useState<Mode>(modeFromHash)
+export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSetPassword?: boolean; onPasswordSet?: () => void } = {}) {
+  const [mode, setMode] = useState<Mode>(forceSetPassword ? 'set-password' : modeFromHash)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
+    if (forceSetPassword) return
     const onHash = () => setMode(modeFromHash())
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
-  }, [])
+  }, [forceSetPassword])
 
   const run = async (e: FormEvent<HTMLFormElement>, fn: (data: FormData) => Promise<void>) => {
     e.preventDefault()
@@ -27,7 +28,7 @@ export function AuthPages() {
 
   const signIn = (data: FormData) => supabase.auth.signInWithPassword({ email: String(data.get('email')), password: String(data.get('password')) })
     .then(({ error }) => { if (error) throw new Error(error.message === 'Invalid login credentials' ? 'Email or password is incorrect.' : error.message); location.hash = takeReturnTo() })
-  const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}${location.pathname}#set-password` })
+  const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}/app?flow=set-password` })
     .then(({ error }) => { if (error) throw error; setNotice('If that email has an account, a reset link is on its way.') })
   const setPassword = async (data: FormData) => {
     const password = String(data.get('password'))
@@ -35,6 +36,10 @@ export function AuthPages() {
     if (password !== String(data.get('confirm'))) throw new Error('The passwords don’t match.')
     const { error } = await supabase.auth.updateUser({ password })
     if (error) throw error
+    const url = new URL(location.href)
+    url.searchParams.delete('flow')
+    history.replaceState(null, '', url)
+    onPasswordSet?.()
     location.hash = takeReturnTo()
   }
 
@@ -51,9 +56,9 @@ export function AuthPages() {
           {notice && <p className="text-sm text-emerald-700 dark:text-emerald-300" role="status">{notice}</p>}
           <button className={btn.primary} disabled={busy}>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'forgot' ? 'Send reset link' : 'Save password'}</button>
         </form>
-        <p className="mt-4 text-sm">
+        {!forceSetPassword && <p className="mt-4 text-sm">
           {mode === 'signin' ? <a href="#forgot" className="text-zinc-500 underline">Forgot password?</a> : <a href="#signin" className="text-zinc-500 underline">Back to sign in</a>}
-        </p>
+        </p>}
       </div>
     </div>
   )

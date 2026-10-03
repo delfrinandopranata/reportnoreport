@@ -14,3 +14,8 @@ export function takeReturnTo(storage: Pick<Storage, 'getItem' | 'removeItem'> = 
     return '#dashboard'
   }
 }
+
+/** True when the page was opened from an invite/reset email and must ask for a new password even though a session exists. */
+export function isSetPasswordFlow(search: string, hash: string): boolean {
+  return new URLSearchParams(search).get('flow') === 'set-password' || /[#&]type=(invite|recovery)\b/.test(hash)
+}

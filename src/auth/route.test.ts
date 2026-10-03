@@ -19,3 +19,13 @@ test('never returns to auth pages', () => {
   rememberReturnTo('#signin', s)
   assert.equal(takeReturnTo(s), '#dashboard')
 })
+
+import { isSetPasswordFlow } from './route.ts'
+
+test('isSetPasswordFlow detects flow query, invite and recovery hashes', () => {
+  assert.equal(isSetPasswordFlow('?flow=set-password', ''), true)
+  assert.equal(isSetPasswordFlow('', '#access_token=x&type=invite'), true)
+  assert.equal(isSetPasswordFlow('', '#access_token=x&type=recovery'), true)
+  assert.equal(isSetPasswordFlow('?flow=other', '#dashboard'), false)
+  assert.equal(isSetPasswordFlow('', '#signin'), false)
+})

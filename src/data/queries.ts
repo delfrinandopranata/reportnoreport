@@ -8,7 +8,7 @@ import {
   clientToRow, firmToRow, rowToBank, rowToClient, rowToLine, rowToMember,
   type BalanceRow, type BankAccount, type Firm, type LedgerRow, type Member,
 } from './mappers'
-import { ConflictError } from './conflict.ts'
+import { classifyEmptyUpdate, ConflictError } from './conflict.ts'
 import { useSession } from './session'
 import { supabase } from './supabase'
 
@@ -137,7 +137,9 @@ export function useUpdateClient() {
     if (error) return fail(error)
     if (data.length === 0) {
       const { data: current } = await supabase.from('clients').select('updated_at, updated_by').eq('id', id).maybeSingle()
-      if (!current) throw new Error('This client no longer exists.')
+      const why = classifyEmptyUpdate(current, loadedUpdatedAt)
+      if (!current || why === 'gone') throw new Error('This client no longer exists.')
+      if (why === 'blocked') return fail({ code: '42501' })
       const { data: who } = current.updated_by
         ? await supabase.from('profiles').select('name').eq('user_id', current.updated_by).maybeSingle()
         : { data: null }
@@ -173,8 +175,9 @@ export function useUpdateTxn() {
     if (patch.date) row.date = patch.date
     if (patch.note !== undefined) row.description = patch.note
     if (patch.bankAccountId) row.bank_account_id = patch.bankAccountId
-    const { error } = await supabase.from('transactions').update(row).eq('id', id)
-    if (error) fail(error)
+    const { data, error } = await supabase.from('transactions').update(row).eq('id', id).select('id')
+    if (error) return fail(error)
+    if (!data.length) fail({ code: '42501' })
   }, onSuccess: invalidate })
 }
 
@@ -198,8 +201,9 @@ export function useImport() {
 export function useUpdateFirm() {
   const qc = useQueryClient(); const { firm } = useSession(); const fail = useFail()
   return useMutation({ mutationFn: async (patch: Partial<Firm>) => {
-    const { error } = await supabase.from('firms').update(firmToRow(patch)).eq('id', firm.id)
-    if (error) fail(error)
+    const { data, error } = await supabase.from('firms').update(firmToRow(patch)).eq('id', firm.id).select('id')
+    if (error) return fail(error)
+    if (!data.length) fail({ code: '42501' })
   }, onSuccess: () => qc.invalidateQueries({ queryKey: ['session'] }) })
 }
 
@@ -233,9 +237,13 @@ export function useSaveBank() {
       const { error } = await (b.id ? clear.neq('id', b.id) : clear)
       if (error) return fail(error)
     }
-    const { error } = b.id
-      ? await supabase.from('bank_accounts').update({ ...row, ...(b.isDefault !== undefined && { is_default: b.isDefault }) }).eq('id', b.id)
-      : await supabase.from('bank_accounts').insert({ ...row, name: b.name!, is_default: !!b.isDefault })
+    if (b.id) {
+      const { data, error } = await supabase.from('bank_accounts').update({ ...row, ...(b.isDefault !== undefined && { is_default: b.isDefault }) }).eq('id', b.id).select('id')
+      if (error) return fail(error)
+      if (!data.length) fail({ code: '42501' })
+      return
+    }
+    const { error } = await supabase.from('bank_accounts').insert({ ...row, name: b.name!, is_default: !!b.isDefault })
     if (error) fail(error)
   }, onSuccess: () => qc.invalidateQueries({ queryKey: keys.banks }) })
 }

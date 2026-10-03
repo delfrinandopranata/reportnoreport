@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
+import { isSetPasswordFlow } from '../auth/route.ts'
 
 type Env = Partial<Record<'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY', string>>
 
@@ -23,6 +24,9 @@ export function readEnv(env: Env): { url: string; anonKey: string } {
   }
   return { url: env.VITE_SUPABASE_URL!, anonKey }
 }
+
+/** Captured before supabase-js strips the invite/recovery tokens from the URL. */
+export const openedFromSetPasswordLink = typeof location !== 'undefined' && isSetPasswordFlow(location.search, location.hash)
 
 const viteEnv = (import.meta as { env?: Env }).env
 export const supabase = viteEnv ? (() => {
