@@ -94,13 +94,6 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
                   </a>
                   <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">Done</p>
                 </div>
-                <button
-                  onClick={() => onRestore(item.id)}
-                  className={`${ring} ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium text-zinc-400 hover:bg-white hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300`}
-                  aria-label={`Restore "${item.title}"`}
-                >
-                  Restore
-                </button>
               </div>
             ))}
           </div>
