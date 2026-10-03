@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { Client, ClientInput, Kind, StatementLine, Txn } from '../ledger'
 import type { Database, Json } from './database.types'
@@ -10,6 +10,7 @@ import {
 } from './mappers'
 import { classifyEmptyUpdate, ConflictError } from './conflict.ts'
 import { useSession } from './session'
+import { fetchAll } from './paging'
 import { supabase } from './supabase'
 
 export { ConflictError, conflictMessage } from './conflict.ts'
@@ -48,8 +49,8 @@ function useInvalidateFirm() {
 export function useClients() {
   const keys = useKeys(); const fail = useFail()
   return useQuery({ queryKey: keys.clients, queryFn: async () => {
-    const { data, error } = await supabase.from('clients').select('*').order('name')
-    return error ? fail(error) : data.map(rowToClient)
+    const rows = await fetchAll((from, to) => supabase.from('clients').select('*').order('name').order('id').range(from, to)).catch(fail)
+    return rows.map(rowToClient)
   } })
 }
 
@@ -63,17 +64,16 @@ export function useClient(id: string) {
 
 export function useBalances(p: { from: string; to: string; bankAccountId?: string; clientId?: string }) {
   const keys = useKeys(); const fail = useFail()
-  return useQuery({ queryKey: keys.balances(p), queryFn: async () => {
-    const { data, error } = await supabase.rpc('client_balances', { p_from: p.from, p_to: p.to, p_bank_account: p.bankAccountId, p_client: p.clientId })
-    return error ? fail(error) : (data as BalanceRow[])
-  } })
+  return useQuery({ queryKey: keys.balances(p), placeholderData: keepPreviousData, queryFn: async () =>
+    (await fetchAll((from, to) => supabase.rpc('client_balances', { p_from: p.from, p_to: p.to, p_bank_account: p.bankAccountId, p_client: p.clientId }).range(from, to)).catch(fail)) as BalanceRow[],
+  })
 }
 
-export function useLedger(p: { from: string; to: string; clientId?: string; bankAccountId?: string; perClient?: boolean }) {
+export function useLedger(p: { from: string; to: string; clientId?: string; bankAccountId?: string; perClient?: boolean }, enabled = true) {
   const keys = useKeys(); const fail = useFail()
-  return useQuery({ queryKey: keys.ledger(p), queryFn: async () => {
-    const { data, error } = await supabase.rpc('ledger_lines', { p_from: p.from, p_to: p.to, p_client: p.clientId, p_bank_account: p.bankAccountId, p_per_client: p.perClient ?? false })
-    return error ? fail(error) : (data as LedgerRow[]).map(rowToLine)
+  return useQuery({ queryKey: keys.ledger(p), enabled, placeholderData: keepPreviousData, queryFn: async () => {
+    const rows = await fetchAll((from, to) => supabase.rpc('ledger_lines', { p_from: p.from, p_to: p.to, p_client: p.clientId, p_bank_account: p.bankAccountId, p_per_client: p.perClient ?? false }).range(from, to)).catch(fail)
+    return (rows as LedgerRow[]).map(rowToLine)
   } })
 }
 
@@ -96,8 +96,8 @@ export function useBankAccounts() {
 export function useMembers() {
   const keys = useKeys(); const fail = useFail()
   return useQuery({ queryKey: keys.members, queryFn: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('name')
-    return error ? fail(error) : data.map(rowToMember)
+    const rows = await fetchAll((from, to) => supabase.from('profiles').select('*').order('name').order('id').range(from, to)).catch(fail)
+    return rows.map(rowToMember)
   } })
 }
 

@@ -126,12 +126,16 @@ export type Totals = { in: number; out: number; net: number; count: number }
 
 const moneyCache = new Map<string, { format(cents: number): string; compact(cents: number): string }>()
 
+/** Locale that renders each currency with its own local symbol. */
+const MONEY_LOCALE: Record<string, string> = { MYR: 'en-MY', SGD: 'en-SG', USD: 'en-US' }
+
 /** Formatter for one currency; cached because Intl.NumberFormat is expensive to build. */
 export function makeMoney(currency: string) {
   const cached = moneyCache.get(currency)
   if (cached) return cached
-  const full = new Intl.NumberFormat('en-MY', { style: 'currency', currency })
-  const short = new Intl.NumberFormat('en-MY', { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 })
+  const locale = MONEY_LOCALE[currency] ?? 'en-MY'
+  const full = new Intl.NumberFormat(locale, { style: 'currency', currency })
+  const short = new Intl.NumberFormat(locale, { style: 'currency', currency, notation: 'compact', maximumFractionDigits: 1 })
   const m = { format: (cents: number) => full.format(cents / 100), compact: (cents: number) => short.format(cents / 100) }
   moneyCache.set(currency, m)
   return m

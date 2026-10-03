@@ -4,15 +4,30 @@ import { sumBalances } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
 import type { Span, WidgetType } from './Dashboard'
+import { useGate } from './clients/shared'
 import { Avatar, Icon, KindBadge, TxnForm } from './ui'
 
 const ALL_TIME = '1900-01-01'
 
+type QueryState = { isPending: boolean; error: Error | null }
+
+/** Loading / error stand-in for a widget; null once every query has data. */
+function queryStatus(...qs: QueryState[]) {
+  const error = qs.find((q) => q.error)?.error
+  if (error) return <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
+  if (qs.some((q) => q.isPending)) return <p role="status" className="text-sm text-zinc-500">Loading…</p>
+  return null
+}
+
 function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
   const money = useMoney()
   const monthStart = `${today().slice(0, 7)}-01`
-  const all = sumBalances(useBalances({ from: ALL_TIME, to: today() }).data ?? [])
-  const m = sumBalances(useBalances({ from: monthStart, to: today() }).data ?? [])
+  const allQ = useBalances({ from: ALL_TIME, to: today() })
+  const monthQ = useBalances({ from: monthStart, to: today() })
+  const status = queryStatus(allQ, monthQ)
+  if (status) return status
+  const all = sumBalances(allQ.data ?? [])
+  const m = sumBalances(monthQ.data ?? [])
   const value = { net: all.closing, in: all.receipts, out: all.payments }[metric]
   const month = { net: m.receipts - m.payments, in: m.receipts, out: m.payments }[metric]
   const tone = metric === 'in' ? 'bg-in/10 text-in' : metric === 'out' ? 'bg-out/10 text-out' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
@@ -32,8 +47,12 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
 }
 
 function ClientsKpi() {
-  const { data: clients = [] } = useClients()
-  const overdrawn = (useBalances({ from: ALL_TIME, to: today() }).data ?? []).filter((r) => r.closing < 0).length
+  const clientsQ = useClients()
+  const balancesQ = useBalances({ from: ALL_TIME, to: today() })
+  const status = queryStatus(clientsQ, balancesQ)
+  if (status) return status
+  const clients = clientsQ.data ?? []
+  const overdrawn = (balancesQ.data ?? []).filter((r) => r.closing < 0).length
   return (
     <div className="flex items-end justify-between gap-3">
       <div>
@@ -57,8 +76,8 @@ const barPath = (x: number, y: number, w: number, h: number) => {
 function Cashflow() {
   const d = new Date()
   const sixMonthsAgo = new Date(d.getFullYear(), d.getMonth() - 5, 1).toLocaleDateString('en-CA')
-  const { data: lines = [] } = useLedger({ from: sixMonthsAgo, to: today() })
-  return <CashflowChart txns={lines} />
+  const ledger = useLedger({ from: sixMonthsAgo, to: today() })
+  return queryStatus(ledger) ?? <CashflowChart txns={ledger.data ?? []} />
 }
 
 export function CashflowChart({ txns }: { txns: Txn[] }) {
@@ -127,13 +146,17 @@ export function CashflowChart({ txns }: { txns: Txn[] }) {
 
 function Balances() {
   const money = useMoney()
-  const { data: clients = [] } = useClients()
-  const { data: balances = [] } = useBalances({ from: ALL_TIME, to: today() })
+  const clientsQ = useClients()
+  const balancesQ = useBalances({ from: ALL_TIME, to: today() })
+  const clients = clientsQ.data ?? []
+  const balances = balancesQ.data ?? []
   const rows = useMemo(() => {
     const byClient = new Map(balances.map((r) => [r.client_id, r.closing]))
     return clients.map((c) => ({ ...c, net: byClient.get(c.id) ?? 0 })).sort((a, b) => b.net - a.net)
   }, [clients, balances])
   const max = Math.max(1, ...rows.map((r) => Math.abs(r.net)))
+  const status = queryStatus(clientsQ, balancesQ)
+  if (status) return status
   if (!rows.length) return <Empty text="No clients yet." />
   return (
     <ul className="grid gap-3">
@@ -156,9 +179,13 @@ function Balances() {
 }
 
 function Recent() {
-  const { data: clients = [] } = useClients()
-  const { data: recent = [] } = useRecentTxns(6)
+  const clientsQ = useClients()
+  const recentQ = useRecentTxns(6)
+  const clients = clientsQ.data ?? []
+  const recent = recentQ.data ?? []
   const names = useMemo(() => new Map(clients.map((c) => [c.id, c.name])), [clients])
+  const status = queryStatus(clientsQ, recentQ)
+  if (status) return status
   if (!recent.length) return <Empty text="No transactions posted yet." />
   return <TxnList txns={recent} names={names} />
 }
@@ -191,6 +218,11 @@ export function Empty({ text }: { text: string }) {
   return <p className="grid h-24 place-items-center rounded-xl border border-dashed border-zinc-200 text-sm text-zinc-500 dark:border-zinc-800">{text}</p>
 }
 
+function QuickAdd() {
+  const gate = useGate('transactions.post', 'record transactions')
+  return gate.ok ? <TxnForm /> : <p className="text-sm text-zinc-500">{gate.title}</p>
+}
+
 export const WIDGETS: Record<WidgetType, { title: string; blurb: string; span: Span; Component: ComponentType }> = {
   net: { title: 'Client funds held', blurb: 'Receipts less payments', span: 1, Component: () => <MoneyKpi metric="net" /> },
   in: { title: 'Total receipts', blurb: 'All funds received', span: 1, Component: () => <MoneyKpi metric="in" /> },
@@ -199,5 +231,5 @@ export const WIDGETS: Record<WidgetType, { title: string; blurb: string; span: S
   cashflow: { title: 'Cash flow', blurb: 'Receipts vs payments, 6 months', span: 2, Component: Cashflow },
   balances: { title: 'Client balances', blurb: 'Funds held per client', span: 2, Component: Balances },
   recent: { title: 'Recent transactions', blurb: 'Latest ledger entries', span: 2, Component: Recent },
-  'quick-add': { title: 'Record transaction', blurb: 'Post a receipt or payment', span: 2, Component: () => <TxnForm /> },
+  'quick-add': { title: 'Record transaction', blurb: 'Post a receipt or payment', span: 2, Component: QuickAdd },
 }

@@ -96,7 +96,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const { data: balanceData, error: balancesError } = useBalances({ from: period.from, to: period.to, bankAccountId })
   const { data: lines = [], error: ledgerError } = useLedger({
     from: period.from, to: period.to, clientId: fixedClientId ?? (clientFilter === 'all' ? undefined : clientFilter), bankAccountId, perClient: mode === 'client',
-  })
+  }, isTxns)
   const balanceRows_ = balanceData ?? []
   const perClient = useMemo(() => new Map(balanceRows_.map((r) => [r.client_id, r])), [balanceData]) // eslint-disable-line react-hooks/exhaustive-deps
   const closingOf = (id: string) => perClient.get(id)?.closing ?? 0
@@ -109,8 +109,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
   /* ---------- Transactions view ---------- */
 
-  // A running balance only means something over the full, chronological ledger.
-  const showBalance = txnSort.key === 'date' && type === 'all' && !q
+  // The server's running balance spans the whole ledger scope, so it only matches the listed rows
+  // when nothing narrows them: no search, type, status or debit filter (unless one client is picked).
+  const wholeScope = clientId !== 'all' || (status === 'all' && !debitOnly)
+  const showBalance = txnSort.key === 'date' && type === 'all' && !q && wholeScope
   const balances = useMemo(() => new Map(lines.map((l) => [l.id, l.balance])), [lines])
 
   const txnRows = useMemo(() => {
@@ -512,7 +514,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           <span className="font-medium">{isTxns ? `${txnRows.length} transactions` : `${balanceRows.length} clients`}</span>
           <span className="text-zinc-500">{shortDate(period.from)} – {shortDate(period.to)}</span>
           {removeTxn.error && <span className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</span>}
-          {isTxns && !showBalance && <span className="text-xs text-zinc-400">Running balance shows when sorted by date with no search or type filter.</span>}
+          {isTxns && !showBalance && <span className="text-xs text-zinc-400">Running balance shows when sorted by date with no search, type, status or debit filter, unless one client is selected.</span>}
           <div className="ml-auto flex items-center gap-1">
             {isTxns && mode !== 'none' && groups.length > 0 && (
               <button type="button" className={`${btn.ghost} py-1`} onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)))}>
