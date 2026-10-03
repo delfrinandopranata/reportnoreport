@@ -1,14 +1,267 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>Platform — Client money, handled.</title>
   </head>
-  <body>
-    <h1>Client money, handled.</h1>
-    <a href="/app/">Sign in</a>
+  <body class="bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <header class="border-b border-zinc-200 dark:border-zinc-800">
+      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-100">
+              <span class="text-sm font-bold text-white dark:text-zinc-900">P</span>
+            </div>
+            <span class="text-lg font-semibold">Platform</span>
+          </div>
+          <nav class="hidden gap-8 md:flex">
+            <a href="#features" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">Features</a>
+            <a href="#pricing" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">Pricing</a>
+            <a href="#faq" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">FAQ</a>
+          </nav>
+          <div class="flex gap-3">
+            <a href="/app/" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">Sign in</a>
+            <button id="cta-primary" class="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">Start free trial</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">Client money, handled.</h1>
+        <p class="mt-6 text-lg text-zinc-600 dark:text-zinc-400">
+          Clear ledgers, statements in your currency, and total control over who sees what. Built for professional firms that hold money on behalf of clients.
+        </p>
+        <div class="mt-10 flex justify-center gap-4">
+          <button id="cta-primary-hero" class="rounded-lg bg-zinc-900 px-6 py-3 font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
+            Start free trial
+          </button>
+          <a href="/demo/" class="rounded-lg border border-zinc-300 px-6 py-3 font-medium text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-900">
+            See the demo
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+      <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <h2 class="text-center text-3xl font-bold">What it does</h2>
+        <div class="mt-12 grid gap-8 md:grid-cols-3">
+          <div class="rounded-2xl bg-white p-8 dark:bg-zinc-800">
+            <h3 class="text-lg font-semibold">Client ledgers</h3>
+            <p class="mt-2 text-zinc-600 dark:text-zinc-400">Running balances for each client. Know exactly what you're holding, when, and why.</p>
+          </div>
+          <div class="rounded-2xl bg-white p-8 dark:bg-zinc-800">
+            <h3 class="text-lg font-semibold">Statements</h3>
+            <p class="mt-2 text-zinc-600 dark:text-zinc-400">Professional statements in your firm's currency. Print or send them directly.</p>
+          </div>
+          <div class="rounded-2xl bg-white p-8 dark:bg-zinc-800">
+            <h3 class="text-lg font-semibold">Your team</h3>
+            <p class="mt-2 text-zinc-600 dark:text-zinc-400">Assign roles so everyone sees only what they need. You control permissions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <h2 class="text-center text-3xl font-bold">How it works</h2>
+      <div class="mt-12 grid gap-8 md:grid-cols-3">
+        <div class="text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+            <span class="font-semibold">1</span>
+          </div>
+          <h3 class="mt-4 font-semibold">Sign up and verify</h3>
+          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Create an account and confirm your email in seconds.</p>
+        </div>
+        <div class="text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+            <span class="font-semibold">2</span>
+          </div>
+          <h3 class="mt-4 font-semibold">Add clients and accounts</h3>
+          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Add your bank accounts and clients. Or import them from a spreadsheet.</p>
+        </div>
+        <div class="text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+            <span class="font-semibold">3</span>
+          </div>
+          <h3 class="mt-4 font-semibold">Record and send</h3>
+          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Record receipts and payments. Send statements directly to clients.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+      <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <h2 class="text-center text-3xl font-bold">Features</h2>
+        <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">Firm-level isolation</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Your data is completely separate from other firms.</p>
+            </div>
+          </div>
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">Roles and permissions</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Fine-grained control over who sees what.</p>
+            </div>
+          </div>
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">CSV import and export</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Migrate data in and out easily.</p>
+            </div>
+          </div>
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">Printable statements</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Professional PDFs for your records and clients.</p>
+            </div>
+          </div>
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">Multi-currency</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Choose MYR, SGD, or USD per firm.</p>
+            </div>
+          </div>
+          <div class="flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800">
+            <div class="flex-shrink-0">
+              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-semibold">Full change history</h3>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">See who did what and when.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div class="rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-800">
+        <h2 class="text-3xl font-bold">Simple pricing</h2>
+        <p class="mt-4 text-lg font-semibold text-zinc-900 dark:text-white">Free for 14 days. Then RM 10, once.</p>
+        <p class="mt-2 text-zinc-600 dark:text-zinc-400">No card needed to start.</p>
+        <button id="cta-primary-pricing" class="mt-8 rounded-lg bg-zinc-900 px-8 py-3 font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
+          Start free trial
+        </button>
+      </div>
+    </section>
+
+    <section id="faq" class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+      <div class="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
+        <h2 class="text-center text-3xl font-bold">Frequently asked questions</h2>
+        <div class="mt-12 space-y-4">
+          <details class="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <summary class="cursor-pointer font-semibold">Is my data separate from other firms?</summary>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
+              Yes. Each firm's data is completely isolated. You cannot see other firms' data, and they cannot see yours.
+            </p>
+          </details>
+          <details class="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <summary class="cursor-pointer font-semibold">Which currencies do you support?</summary>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
+              Platform supports Malaysian Ringgit (MYR), Singapore Dollar (SGD), and US Dollar (USD). You choose one currency per firm.
+            </p>
+          </details>
+          <details class="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <summary class="cursor-pointer font-semibold">What happens after 14 days?</summary>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
+              Your account becomes read-only until you pay. You can still download and export all your data, so you're never locked in.
+            </p>
+          </details>
+          <details class="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <summary class="cursor-pointer font-semibold">Can I import from a spreadsheet?</summary>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
+              Yes. You can import clients and transactions via CSV during setup and at any time.
+            </p>
+          </details>
+          <details class="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <summary class="cursor-pointer font-semibold">Who can see what?</summary>
+            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
+              You control it. Assign roles to your team: Admin (full access), Manager (all clients), or Client (view own account only).
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-zinc-200 dark:border-zinc-800">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p class="text-sm text-zinc-600 dark:text-zinc-400">
+            © <span id="year"></span> Platform
+          </p>
+          <div class="flex gap-6">
+            <a href="/app/" class="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">Sign in</a>
+            <a id="contact-link" href="mailto:hello@example.com" class="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+              Contact us
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <dialog id="waitlist-dialog" class="rounded-2xl border border-zinc-300 p-6 dark:border-zinc-700 dark:bg-zinc-800">
+      <h2 class="text-2xl font-bold">Join the waitlist</h2>
+      <p class="mt-2 text-zinc-600 dark:text-zinc-400">We're at capacity right now, but we'd love to have you when space opens up.</p>
+      <form id="waitlist-form" class="mt-6 space-y-4">
+        <input
+          type="email"
+          placeholder="your@firm.com"
+          required
+          class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 dark:border-zinc-700 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-400"
+        />
+        <input
+          type="text"
+          placeholder="Your firm name"
+          required
+          class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 dark:border-zinc-700 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-400"
+        />
+        <button type="submit" class="w-full rounded-lg bg-zinc-900 py-2 font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
+          Join the waitlist
+        </button>
+      </form>
+      <div id="waitlist-message" role="status" class="mt-4 hidden rounded-lg bg-green-50 p-3 text-sm text-green-900 dark:bg-green-900/20 dark:text-green-300"></div>
+      <div id="waitlist-error" role="alert" class="mt-4 hidden rounded-lg bg-red-50 p-3 text-sm text-red-900 dark:bg-red-900/20 dark:text-red-300"></div>
+      <button type="button" onclick="document.getElementById('waitlist-dialog').close()" class="mt-6 w-full rounded-lg border border-zinc-300 py-2 font-medium text-zinc-900 dark:border-zinc-700 dark:text-white">
+        Close
+      </button>
+    </dialog>
+
     <script type="module" src="/src/home/home.ts"></script>
   </body>
 </html>
