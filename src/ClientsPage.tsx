@@ -190,7 +190,19 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     { id: 'type', label: 'Type', width: 100, hidden: true, cell: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment'), text: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment') },
     { id: 'receipts', label: 'In', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
     { id: 'payments', label: 'Out', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
-    { id: 'balance', label: 'Balance', width: 150, align: 'right', cell: (t) => <span className="font-medium">{money(balances.get(t.id) ?? 0)}</span>, text: (t) => plainAmount(balances.get(t.id) ?? 0) },
+    {
+      id: 'balance',
+      label: 'Balance',
+      width: 150,
+      align: 'right',
+      cell: (t) =>
+        showBalance ? (
+          <span className="font-medium">{money(balances.get(t.id) ?? 0)}</span>
+        ) : (
+          <span className="text-zinc-400" title="Running balance isn't available with this filter">—</span>
+        ),
+      text: (t) => (showBalance ? plainAmount(balances.get(t.id) ?? 0) : ''),
+    },
   ]
 
   /* ---------- Balances view ---------- */
@@ -252,7 +264,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
   const txnTable = useTableLayout(fixedClientId ? 'client-transactions' : 'transactions', txnColumns)
   const balanceTable = useTableLayout('balances', balanceColumns)
-  const txnVisible = txnTable.visible.filter((c) => (c.id !== 'client' || (mode !== 'client' && !fixedClientId)) && (c.id !== 'balance' || showBalance))
+  const txnVisible = txnTable.visible.filter((c) => c.id !== 'client' || (mode !== 'client' && !fixedClientId))
   const balanceVisible = balanceTable.visible
   const table = isTxns ? txnTable : balanceTable
   const dense = table.layout.dense
@@ -329,13 +341,21 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   ).list
   const shownBalances = balanceRows.slice(0, rowLimit)
   const truncated = isTxns ? paged.some((g) => g.open && g.shown.length < g.rows.length) : shownBalances.length < balanceRows.length
+  // Mobile card list: flat (no group headers), every column's data shown regardless of the desktop hidden-column state.
+  const shownTxns = paged.flatMap((g) => g.shown)
+  const amountCell = (t: StatementLine) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : <span>{fmt(t.amount)}</span>)
+  const txnCardFields = (t: StatementLine) =>
+    txnTable.all
+      .filter((c) => c.id !== 'description' && (c.id !== 'client' || (mode !== 'client' && !fixedClientId)))
+      .map((c) => ({ label: c.label, value: c.cell(t) }))
+  const balanceCardFields = (r: ClientBalance) => balanceTable.all.filter((c) => c.id !== 'client' && c.id !== 'closing').map((c) => ({ label: c.label, value: c.cell(r) }))
 
   const txnBody = paged.map((g) => {
     const { open, shown: visible } = g
     const subtotal: Record<string, ReactNode> = {
       receipts: <span className="text-in">{fmt(g.receipts)}</span>,
       payments: fmt(g.payments),
-      balance: g.closing === undefined ? '' : money(g.closing),
+      balance: g.closing === undefined ? <span className="text-zinc-400" title="Running balance isn't available with this filter">—</span> : money(g.closing),
     }
     return (
       <tbody key={g.key} className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -448,61 +468,61 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       </header>
 
       <div className={`${card} flex flex-wrap items-center gap-2 p-4 print:hidden`}>
-        {!fixedClientId && <Segmented<View>
-          label="View"
-          value={view}
-          onChange={(v) => {
-            setView(v)
-            resetPaging()
-          }}
-          options={[
-            ['balances', 'Balances'],
-            ['transactions', 'Transactions'],
-          ]}
-        />}
-        <div className="relative w-full sm:w-48">
-          <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
+        <div role="group" aria-label="Filters" className="flex flex-1 flex-wrap items-center gap-2 rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40">
+          {!fixedClientId && <Segmented<View>
+            label="View"
+            value={view}
+            onChange={(v) => {
+              setView(v)
               resetPaging()
             }}
-            placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
-            aria-label="Search"
-            className={`${input} py-1.5 pl-9`}
+            options={[
+              ['balances', 'Balances'],
+              ['transactions', 'Transactions'],
+            ]}
+          />}
+          <div className="relative w-full sm:w-48">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                resetPaging()
+              }}
+              placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
+              aria-label="Search"
+              className={`${input} py-1.5 pl-9`}
+            />
+          </div>
+          <PeriodPicker
+            period={period}
+            onChange={(p) => {
+              setPeriod(p)
+              resetPaging()
+            }}
+            firstDate={firstDate}
           />
-        </div>
-        <PeriodPicker
-          period={period}
-          onChange={(p) => {
-            setPeriod(p)
-            resetPaging()
-          }}
-          firstDate={firstDate}
-        />
-        {!fixedClientId && (
-          <>
-            <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={`${select} sm:w-36`}>
-              <option value="all">All clients</option>
-              {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={`${select} sm:w-36`}>
-              <option value="all">All bank accounts</option>
-              {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-            <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={`${select} sm:w-36`}>
-              {CLIENT_STATUSES.map((st) => (
-                <option key={st} value={st}>{STATUS_LABEL[st]}</option>
-              ))}
-              <option value="all">All statuses</option>
-            </select>
-          </>
-        )}
+          {!fixedClientId && (
+            <>
+              <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={`${select} sm:w-36`}>
+                <option value="all">All clients</option>
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={`${select} sm:w-36`}>
+                <option value="all">All bank accounts</option>
+                {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={`${select} sm:w-36`}>
+                {CLIENT_STATUSES.map((st) => (
+                  <option key={st} value={st}>{STATUS_LABEL[st]}</option>
+                ))}
+                <option value="all">All statuses</option>
+              </select>
+            </>
+          )}
 
-        <div className="flex basis-full flex-wrap items-center gap-2">
           {isTxns && (
             <>
               <div className="flex items-center gap-2">
@@ -531,7 +551,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               <Icon name="x" /> Clear filters
             </button>
           )}
-          <div className="ml-auto flex items-center gap-2">
+        </div>
+
+        <div className="flex basis-full justify-end sm:basis-auto">
+          <div role="group" aria-label="Actions" className="flex items-center gap-2 border-l border-zinc-200 pl-3 dark:border-zinc-800">
             <Menu
               trigger={<Icon name="more" />}
               triggerLabel="More actions"
@@ -598,7 +621,38 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             <span className="sr-only">Loading…</span>
           </div>
         ) : rowsCount ? (
-          <div className="overflow-x-auto print:overflow-visible">
+          <>
+          <div className="grid gap-3 p-4 sm:hidden print:hidden">
+            {isTxns
+              ? shownTxns.map((t) => (
+                  <MobileCard
+                    key={t.id}
+                    heading={txnVisible.find((c) => c.id === 'description')!.cell(t)}
+                    figureLabel="Amount"
+                    figure={amountCell(t)}
+                    fields={txnCardFields(t)}
+                  />
+                ))
+              : shownBalances.map((r) => (
+                  <MobileCard
+                    key={r.client.id}
+                    href={`#clients/${r.client.id}`}
+                    heading={
+                      <span className="flex items-center gap-3">
+                        <Avatar name={r.client.name} />
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{r.client.name}</span>
+                          <span className="block truncate text-xs text-zinc-500">{r.client.contact || r.client.email || '—'}</span>
+                        </span>
+                      </span>
+                    }
+                    figureLabel="Closing balance"
+                    figure={money(r.soa.closing)}
+                    fields={balanceCardFields(r)}
+                  />
+                ))}
+          </div>
+          <div className="hidden overflow-x-auto sm:block print:block print:overflow-visible">
             <table className="w-full table-fixed text-sm print:text-xs" style={{ minWidth: printing ? undefined : minWidth }}>
               {isTxns ? colgroup(txnVisible, txnTable.widthOf) : colgroup(balanceVisible, balanceTable.widthOf)}
               <thead>
@@ -639,14 +693,15 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                 </tr>
               </tfoot>
             </table>
-            {truncated && (
-              <div className="border-t border-zinc-100 p-3 text-center dark:border-zinc-800 print:hidden">
-                <button type="button" className={btn.ghost} onClick={() => setLimit(limit + PAGE)}>
-                  Showing first {limit} · Show {PAGE} more
-                </button>
-              </div>
-            )}
           </div>
+          {truncated && (
+            <div className="border-t border-zinc-100 p-3 text-center dark:border-zinc-800 print:hidden">
+              <button type="button" className={btn.ghost} onClick={() => setLimit(limit + PAGE)}>
+                Showing first {limit} · Show {PAGE} more
+              </button>
+            </div>
+          )}
+          </>
         ) : (
           <div className="p-6">
             <Empty
@@ -708,6 +763,31 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 }
 
 /** Same shape as the loaded page (KPI row, toolbar, table) so nothing jumps when data lands. */
+/** Mobile reflow of one table row: heading + prominent figure up top, every other column below as label:value. */
+function MobileCard({ heading, figure, figureLabel, fields, href }: { heading: ReactNode; figure: ReactNode; figureLabel: string; fields: { label: string; value: ReactNode }[]; href?: string }) {
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">{heading}</div>
+        <div className="shrink-0 text-right">
+          <p className="text-xs text-zinc-500">{figureLabel}</p>
+          <p className="font-semibold tabular-nums">{figure}</p>
+        </div>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-zinc-100 pt-2 text-xs dark:border-zinc-800">
+        {fields.map((f, i) => (
+          <div key={i} className="min-w-0">
+            <dt className="text-zinc-500">{f.label}</dt>
+            <dd className="truncate">{f.value || '—'}</dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  )
+  const className = `${card} grid gap-2 p-4`
+  return href ? <a href={href} className={className}>{body}</a> : <div className={className}>{body}</div>
+}
+
 function LedgerSkeleton() {
   return (
     <div role="status" aria-label="Loading clients" className="grid grid-cols-1 gap-4">
