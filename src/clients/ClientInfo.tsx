@@ -1,8 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
 import { Attachments } from '../attachments/Attachments'
-import { useUpdateClient } from '../data/queries'
-import { btn, Field, Icon, input } from '../ui'
+import { useUpdateClient, usePreference } from '../data/queries'
+import { btn, Field, Icon, input, useUnloadGuard } from '../ui'
 import { AssigneeSelect, PhoneField, StatusSelect, TagList } from './fields'
 import { card, MutationError, shortDate } from './shared'
 
@@ -43,10 +43,20 @@ export function ClientDetails({ client: c }: { client: Client }) {
   )
 }
 
-/** A collapsible header section; native <details> keeps keyboard and screen-reader behaviour for free. */
-export function Expandable({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * A collapsible header section; native <details> keeps keyboard and screen-reader behaviour for
+ * free. `prefKey`, when given, remembers open/closed per person across visits (via usePreference) —
+ * omit it for a section that should just start closed every time.
+ */
+export function Expandable({ title, children, prefKey }: { title: string; children: ReactNode; prefKey?: string }) {
+  const [open, setOpen, loaded] = usePreference(prefKey ?? '__unused', false)
+  if (prefKey && !loaded) return null
   return (
-    <details className="group border-t border-zinc-100 pt-4 dark:border-zinc-800">
+    <details
+      className="group border-t border-zinc-100 pt-4 dark:border-zinc-800"
+      open={prefKey ? open : undefined}
+      onToggle={prefKey ? (e) => setOpen(e.currentTarget.open) : undefined}
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md text-sm font-medium text-zinc-700 [&::-webkit-details-marker]:hidden dark:text-zinc-300">
         {title}
         <Icon name="down" className="size-4 text-zinc-400 transition group-open:rotate-180" />
@@ -67,6 +77,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
   const { id: _id, createdAt: _created, updatedAt: _updated, ...initial } = client
   const [draft, setDraft] = useState<Draft>(initial)
   const [errors, setErrors] = useState<ClientErrors>({})
+  useUnloadGuard(JSON.stringify(draft) !== JSON.stringify(initial))
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }))
   const malaysia = draft.country === 'Malaysia'
   const countries = COUNTRIES.includes(draft.country) ? COUNTRIES : [draft.country, ...COUNTRIES]

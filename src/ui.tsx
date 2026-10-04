@@ -279,7 +279,9 @@ export function TxnForm({ clientId, onDone, autoFocus = false }: { clientId?: st
   const [kind, setKind] = useState<Kind>('in')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [dirty, setDirty] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
+  useUnloadGuard(dirty)
   const errorId = useId()
   const hasForm = active.length > 0 && (!!clientId || clients.length > 0)
   // Only when the caller asks (dialog/tab), never on page load.
@@ -304,6 +306,7 @@ export function TxnForm({ clientId, onDone, autoFocus = false }: { clientId?: st
       await post.mutateAsync({ clientId: target, bankAccountId: String(data.get('bankAccountId')), kind, amount: amount.cents, date: String(data.get('date')) || today(), note: String(data.get('note')).trim() })
       form.reset()
       setError('')
+      setDirty(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 1600)
       onDone?.()
@@ -313,7 +316,7 @@ export function TxnForm({ clientId, onDone, autoFocus = false }: { clientId?: st
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-3" noValidate>
+    <form onSubmit={onSubmit} onInput={() => setDirty(true)} className="grid gap-3" noValidate>
       <div className="grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="radiogroup" aria-label="Transaction type">
         {(['in', 'out'] as const).map((k) => (
           <button
@@ -396,6 +399,16 @@ export function useLocalState<T>(key: string, initial: T) {
     }
   }, [key, value])
   return [value, setValue] as const
+}
+
+/** Warns before a browser tab close/refresh/navigate while `dirty` is true, so an in-progress draft isn't silently lost. */
+export function useUnloadGuard(dirty: boolean) {
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
 }
 
 export type Sort<K extends string> = { key: K; dir: 'asc' | 'desc' }
