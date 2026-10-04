@@ -28,8 +28,9 @@ import { ConsolidatedStatement, StatementLayout } from './Statement'
 import { buildSections, countClients, preparedFrom } from './clients/consolidatedStatement'
 import { AttachmentsButton } from './attachments/Attachments'
 import { downloadCsv, downloadZip, ImportDialog } from './transfer'
-import { Avatar, btn, Icon, input, KindBadge, Menu, menuItemClass, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
+import { Avatar, btn, Dialog, Icon, input, KindBadge, Menu, menuItemClass, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
 import { Empty } from './widgets'
+import type { Txn } from './ledger'
 
 type View = 'transactions' | 'balances'
 type GroupMode = 'none' | 'client' | 'month'
@@ -75,6 +76,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const [limit, setLimit] = useState(PAGE)
   const [printing, setPrinting] = useState(false)
   const [dialog, setDialog] = useState<'add' | 'import' | 'columns' | null>(null)
+  const [confirmDeleteTxn, setConfirmDeleteTxn] = useState<Txn | null>(null)
   const [soaOpen, setSoaOpen] = useState(false)
   const [includeAttachments, setIncludeAttachments] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -171,9 +173,9 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               <AttachmentsButton transactionId={t.id} />
               <button
                 type="button"
-                disabled={!deleteTxn.ok || removeTxn.isPending}
+                disabled={!deleteTxn.ok}
                 title={deleteTxn.title}
-                onClick={() => removeTxn.mutate(t.id)}
+                onClick={() => setConfirmDeleteTxn(t)}
                 className="shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 disabled:opacity-40 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
                 aria-label={`Delete ledger entry ${t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}, ${shortDate(t.date)}`}
               >
@@ -679,6 +681,28 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       ) : (
         <ColumnsDialog open={dialog === 'columns'} onClose={() => setDialog(null)} table={balanceTable} />
       )}
+
+      <Dialog open={!!confirmDeleteTxn} onClose={() => setConfirmDeleteTxn(null)} title="Delete ledger entry">
+        {confirmDeleteTxn && (
+          <div className="grid gap-4 text-sm">
+            <p>
+              Delete {confirmDeleteTxn.note || (confirmDeleteTxn.kind === 'in' ? 'Receipt' : 'Payment')} of {money(confirmDeleteTxn.amount)} on {shortDate(confirmDeleteTxn.date)}? This can't be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button type="button" className={btn.ghost} onClick={() => setConfirmDeleteTxn(null)}>Cancel</button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500"
+                disabled={removeTxn.isPending}
+                onClick={() => removeTxn.mutate(confirmDeleteTxn.id, { onSuccess: () => setConfirmDeleteTxn(null) })}
+              >
+                {removeTxn.isPending ? 'Deleting…' : 'Delete entry'}
+              </button>
+            </div>
+            {removeTxn.error && <p className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</p>}
+          </div>
+        )}
+      </Dialog>
     </div>
   )
 }
