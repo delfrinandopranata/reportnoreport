@@ -162,6 +162,7 @@ export default function App() {
             align="up"
             side="left"
             className="min-w-0 flex-1"
+            triggerClassName={`${ring} block w-full min-w-0 rounded-lg`}
           />
           <ThemeToggle theme={theme} setTheme={setTheme} className="shrink-0" />
         </div>

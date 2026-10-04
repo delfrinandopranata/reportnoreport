@@ -221,6 +221,7 @@ export function AccountMenu({
   align = 'down',
   side = 'right',
   className = '',
+  triggerClassName,
 }: {
   trigger: ReactNode
   name: string
@@ -230,10 +231,11 @@ export function AccountMenu({
   align?: 'up' | 'down'
   side?: 'left' | 'right'
   className?: string
+  triggerClassName?: string
 }) {
   const itemClass = menuItemClass
   return (
-    <Menu trigger={trigger} triggerLabel={`Account menu for ${name}`} menuLabel="Account" align={align} side={side} className={className}>
+    <Menu trigger={trigger} triggerLabel={`Account menu for ${name}`} menuLabel="Account" align={align} side={side} className={className} triggerClassName={triggerClassName}>
       {(close) => (
         <>
           <div className="px-3 py-2">

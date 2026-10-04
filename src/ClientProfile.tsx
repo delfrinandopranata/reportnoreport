@@ -20,7 +20,7 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 content-start gap-1.5">
       <span className="text-xs text-zinc-500">{label}</span>
-      <div className="text-sm">{children}</div>
+      <div className="flex min-h-8 items-center text-sm">{children}</div>
     </div>
   )
 }
@@ -104,12 +104,12 @@ export function ClientProfile({ id }: { id: string; tab: ClientTab }) {
             <button type="button" className={btn.ghost} onClick={() => print()}>
               <Icon name="printer" /> Print
             </button>
-            <button type="button" className={btn.danger} onClick={() => setConfirmDelete(true)} disabled={!del.ok || remove.isPending} title={del.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
-              <Icon name="trash" /> Delete
-            </button>
             <a href={`#clients/${client.id}/statement`} className={`${btn.primary} max-sm:w-full`}>
               <Icon name="file" /> Statement of account
             </a>
+            <button type="button" className={`${btn.danger} sm:ml-2 sm:border-l sm:border-zinc-200 sm:rounded-l-none sm:dark:border-zinc-700`} onClick={() => setConfirmDelete(true)} disabled={!del.ok || remove.isPending} title={del.title} aria-describedby={gateHint ? 'client-gate' : undefined}>
+              <Icon name="trash" /> Delete
+            </button>
           </div>
         </div>
 
@@ -144,8 +144,9 @@ export function ClientProfile({ id }: { id: string; tab: ClientTab }) {
       {editing ? (
         <ClientForm client={client} onDone={() => setEditing(false)} />
       ) : (
-        <div className="grid gap-6">
-          <div className="flex justify-end print:hidden">
+        <div className="grid gap-4">
+          <div className="flex items-center justify-between gap-3 print:hidden">
+            <h2 className="text-lg font-semibold tracking-tight">Ledger</h2>
             <button type="button" className={btn.primary} data-tour="record-transaction" onClick={() => setRecording(true)} disabled={!post.ok} title={post.title}>
               <Icon name="plus" /> Record transaction
             </button>
