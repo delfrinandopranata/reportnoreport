@@ -2,9 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { LedgerView } from './ClientsPage'
 import { AssigneeSelect, StatusSelect, TagList } from './clients/fields'
 import { ClientAttachments, ClientDetails, ClientForm, Expandable } from './clients/ClientInfo'
-import { card, LoadError, MutationError, shortDate, Skeleton, useGate, useUserNames } from './clients/shared'
+import { card, LoadError, MutationError, Skeleton, useGate, useUserNames } from './clients/shared'
 import { useBalances, useClient, useDeleteClient, useUpdateClient } from './data/queries'
-import { useSession } from './data/session'
 import { today, type Client } from './ledger'
 import { Avatar, btn, Dialog, Icon, TxnForm } from './ui'
 
@@ -26,9 +25,8 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
+export function ClientProfile({ id }: { id: string; tab: ClientTab }) {
   const { data: client, isPending, error: loadError } = useClient(id)
-  const { firm } = useSession()
   const update = useUpdateClient()
   const remove = useDeleteClient()
   const edit = useGate('clients.edit', 'edit clients')
@@ -38,7 +36,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   const nameOf = useUserNames()
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [confirmLeave, setConfirmLeave] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
   const post = useGate('transactions.post', 'record transactions')
   const { data: balances } = useBalances({ from: '1900-01-01', to: today(), clientId: id })
@@ -57,10 +54,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
   }
 
   const patch = (change: Partial<Client>) => update.mutate({ id: client.id, patch: change, loadedUpdatedAt: client.updatedAt })
-  const startEdit = () => {
-    if (tab !== 'client') location.hash = `clients/${client.id}`
-    setEditing(true)
-  }
+  const startEdit = () => setEditing(true)
   const onDelete = async () => {
     setConfirmDelete(false)
     try {
@@ -70,16 +64,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
       // shown below via remove.error
     }
   }
-  const leaveTab = (e: React.MouseEvent, href: string) => {
-    if (!editing) return
-    e.preventDefault()
-    setConfirmLeave(href)
-  }
-  const onTxns = tab === 'transactions'
-  const tabs = [
-    { key: 'client', label: 'Client', href: `#clients/${client.id}` },
-    { key: 'transactions', label: 'Transactions', href: `#clients/${client.id}/transactions` },
-  ] as const
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -91,17 +75,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
         </nav>
       </div>
 
-      {!onTxns && (
-        <div className="hidden items-end justify-between border-b-2 border-zinc-900 pb-3 print:flex">
-          <div>
-            <p className="text-lg font-semibold">{firm.tradingName || firm.name}</p>
-            <h1 className="text-xl font-semibold">Client information sheet</h1>
-          </div>
-          <p className="text-sm text-zinc-600">Printed {shortDate(today())}</p>
-        </div>
-      )}
-
-      <header className={`${card} grid gap-5 p-5 ${onTxns ? 'print:hidden' : ''}`} data-tour="client-profile">
+      <header className={`${card} grid gap-5 p-5 print:hidden`} data-tour="client-profile">
         <div className="flex flex-wrap items-start gap-4">
           <Avatar name={client.name} size="size-14 text-base" />
           <div className="min-w-0 flex-1 basis-56">
@@ -167,22 +141,9 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
         <MutationError error={update.error ?? remove.error} />
       </header>
 
-      <div role="tablist" aria-label="Client sections" className="-mt-2 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-zinc-200 print:hidden dark:border-zinc-800">
-        {tabs.map((t) => (
-          <a
-            key={t.key}
-            href={t.href}
-            role="tab"
-            aria-selected={tab === t.key}
-            onClick={t.key === tab ? undefined : (e) => leaveTab(e, t.href)}
-            className="-mb-px grid shrink-0 gap-1 border-b-2 border-transparent px-4 py-2.5 text-sm text-zinc-500 transition hover:text-zinc-900 aria-selected:border-zinc-900 aria-selected:text-zinc-900 dark:hover:text-white dark:aria-selected:border-white dark:aria-selected:text-white"
-          >
-            <span className="font-medium">{t.label}</span>
-          </a>
-        ))}
-      </div>
-
-      {onTxns ? (
+      {editing ? (
+        <ClientForm client={client} onDone={() => setEditing(false)} />
+      ) : (
         <div className="grid gap-6">
           <div className="flex justify-end print:hidden">
             <button type="button" className={btn.primary} data-tour="record-transaction" onClick={() => setRecording(true)} disabled={!post.ok} title={post.title}>
@@ -191,9 +152,7 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
           </div>
           <LedgerView key={client.id} fixedClientId={client.id} />
         </div>
-      ) : editing ? (
-        <ClientForm client={client} onDone={() => setEditing(false)} />
-      ) : null}
+      )}
 
       <Dialog open={recording} onClose={() => setRecording(false)} title="Record transaction">
         <TxnForm clientId={client.id} autoFocus onDone={() => setRecording(false)} />
@@ -211,27 +170,6 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
               onClick={onDelete}
             >
               {remove.isPending ? 'Deleting…' : 'Delete client'}
-            </button>
-          </div>
-        </div>
-      </Dialog>
-
-      <Dialog open={!!confirmLeave} onClose={() => setConfirmLeave(null)} title="Discard changes?">
-        <div className="grid gap-4 text-sm">
-          <p>Discard your unsaved changes?</p>
-          <div className="flex justify-end gap-2">
-            <button type="button" className={btn.ghost} onClick={() => setConfirmLeave(null)}>Cancel</button>
-            <button
-              type="button"
-              className={btn.primary}
-              onClick={() => {
-                const href = confirmLeave
-                setConfirmLeave(null)
-                setEditing(false)
-                if (href) location.hash = href
-              }}
-            >
-              Discard
             </button>
           </div>
         </div>
