@@ -157,12 +157,12 @@ export function ClientProfile({ id, tab }: { id: string; tab: ClientTab }) {
             )}
           </Labelled>
         </div>
-        <Expandable title="Details">
+        <Expandable title="Details" prefKey="client-details-open">
           <ClientDetails client={client} />
           <p className="mt-4 text-xs text-zinc-500">Last updated on {stamp(client.updatedAt)}</p>
         </Expandable>
         <div className="print:hidden">
-          <Expandable title="Attachments"><ClientAttachments client={client} /></Expandable>
+          <Expandable title="Attachments" prefKey="client-attachments-open"><ClientAttachments client={client} /></Expandable>
         </div>
         <MutationError error={update.error ?? remove.error} />
       </header>
