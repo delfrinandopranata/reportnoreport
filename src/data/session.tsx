@@ -70,6 +70,8 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
       const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', userId!).maybeSingle()
       if (profileError) throw profileError
 
+      if (profile?.is_super_admin) return { profile, firm: null, reason: null, isSuperAdmin: true }
+
       let currentProfile = profile
       if (shouldCreateFirm(profile, auth?.user.user_metadata)) {
         const pendingFirm = pendingFirmFromMetadata(auth?.user.user_metadata)
@@ -106,9 +108,6 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
       }
 
       if (!currentProfile) return { profile: null, firm: null, reason: null, isSuperAdmin: false }
-      if (currentProfile.is_super_admin) {
-        return { profile: currentProfile, firm: null, reason: null, isSuperAdmin: true }
-      }
 
       if (!currentProfile.firm_id) return { profile: currentProfile, firm: null, reason: null, isSuperAdmin: false }
       const { data: firm, error: firmError } = await supabase.from('firms').select('*').eq('id', currentProfile.firm_id).maybeSingle()
