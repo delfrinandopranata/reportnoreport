@@ -11,7 +11,7 @@ Deno.test('start: stores the record, the start submission and a role task on the
   const res = await start()
   assertEquals(res.status, 200)
   const [rec] = db.records
-  assertEquals(res.body, { recordId: rec.id, status: 'open' })
+  assertEquals(res.body, { recordId: rec.id, status: 'open', error: null })
   assertEquals([rec.title, rec.current_node_id, rec.step, rec.status, rec.data.days], ['Leave approval: Ada', 'approve', 1, 'open', 3])
   assertEquals(db.submissions.map((s) => [s.node_id, s.outcome, s.task_id]), [['start', 'submitted', null]])
   assertEquals(db.tasks.map((t) => [t.node_id, t.assignee_role_id, t.due_at?.toISOString()]), [['approve', ROLE_ADMIN, '2026-10-13T12:00:00.000Z']])
@@ -53,6 +53,7 @@ Deno.test('reject runs the set_status action and closes the record as rejected',
   await start()
   const res = await act(claim(), 'rejected')
   assertEquals(res.body.status, 'rejected')
+  assertEquals(res.body.error, null)
   assertEquals([db.records[0].status, db.records[0].label, db.records[0].current_node_id], ['rejected', 'Rejected by manager', 'rejected'])
   assertEquals(db.events.at(-1)?.kind, 'closed')
 })
@@ -104,6 +105,8 @@ Deno.test('a failing action stops the record with the reason; nothing after it r
   await start()
   const res = await act(claim(), 'approved')
   assertEquals([res.status, res.body.status], [200, 'error'])
+  assertEquals(res.body.error, db.records[0].error)
+  assertEquals(typeof res.body.error, 'string')
   const rec = db.records[0]
   assertEquals([rec.status, rec.current_node_id, db.scheduled.length, db.submissions.length], ['error', 'approve', 0, 2])
   assertMatch(rec.error ?? '', /Set status/)

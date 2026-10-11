@@ -1,5 +1,5 @@
 begin;
-select plan(41);
+select plan(44);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -115,6 +115,18 @@ select throws_ok(format($$ delete from workflows where id = %L $$, :'wf'), '2350
 reset role;
 select isnt_empty(format($$ select 1 from audit_log where action = 'task.claim' and target = %L $$, :'task'), 'task claim audited');
 select isnt_empty($$ select 1 from cron.job where jobname = 'resume-workflows' and schedule = '* * * * *' $$, 'resume job runs every minute');
+
+-- Only open records pin a step: an errored record cannot be cleared in Phase 3, so it must not block deletion.
+insert into records (org_id, workflow_id, title, current_node_id, status, error, started_by)
+  values (:'alpha', :'wf', 'Stopped', 'long', 'error', 'Enter the status text.', :'member');
+select lives_ok(format($$ update workflows set graph = jsonb_set(graph, '{nodes}', (select jsonb_agg(n) from jsonb_array_elements(graph->'nodes') n where n->>'id' <> 'long')) where id = %L $$, :'wf'),
+  'a step with only an error record can be deleted');
+select pg_temp.act_as(:'admin');
+select results_eq(format($$ select node_id, n from open_record_counts(%L) $$, :'wf'), $$ values ('approve'::text, 1) $$, 'error records are not counted as open');
+reset role;
+update records set status = 'open' where title = 'Stopped';
+select throws_ok(format($$ update workflows set graph = jsonb_set(graph, '{nodes}', (select jsonb_agg(n) from jsonb_array_elements(graph->'nodes') n where n->>'id' <> 'long')) where id = %L $$, :'wf'),
+  'P0001', null, 'the same record, once open, blocks deleting its step');
 
 select * from finish();
 rollback;

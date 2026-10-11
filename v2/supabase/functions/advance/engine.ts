@@ -106,7 +106,7 @@ export async function startRecord(tx: Tx, input: { workflowId: string; answers: 
   })
   await tx.event({ org_id: wf.org_id, record_id: rec.id, kind: 'started', node_id: start.id, actor_id: ctx.actor, detail: { submissionId } })
   const after = await walk(tx, rec, graph, start.id, 'submitted', ctx)
-  return { status: 200, body: { recordId: rec.id, status: after.status } }
+  return { status: 200, body: { recordId: rec.id, status: after.status, error: after.status === 'error' ? after.error : null } }
 }
 
 export async function submitTask(tx: Tx, input: { taskId: string; outcome: string; answers: Answers }, ctx: Ctx): Promise<Result> {
@@ -139,7 +139,7 @@ export async function submitTask(tx: Tx, input: { taskId: string; outcome: strin
   rec.data = { ...rec.data, ...checked.answers }
   await tx.event({ org_id: rec.org_id, record_id: rec.id, kind: 'submitted', node_id: node.id, actor_id: ctx.actor, detail: { submissionId, outcome, taskId: task.id } })
   const after = await walk(tx, rec, graph, node.id, outcome, ctx)
-  return { status: 200, body: { recordId: rec.id, status: after.status } }
+  return { status: 200, body: { recordId: rec.id, status: after.status, error: after.status === 'error' ? after.error : null } }
 }
 
 /**
