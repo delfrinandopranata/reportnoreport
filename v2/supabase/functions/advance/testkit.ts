@@ -1,23 +1,31 @@
 import type { NewEvent, NewSubmission, RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
 import { startRecord, submitTask, resumeOne, type Ctx } from './engine.ts'
+import type { MessagePatch, NewMessage, NewNotification, TemplateRow } from './notify.ts'
 import type { Graph } from '../_shared/workflow/graph.ts'
 import { FORM, ORG, VALID } from '../_shared/forms/fixture.ts'
-import { ADMIN, F_APPROVAL, F_LEAVE, LEAVE, MEMBER, ROLE_ADMIN, WF } from '../_shared/workflow/fixture.ts'
+import { ADMIN, F_APPROVAL, F_LEAVE, LEAVE, MEMBER, ROLE_ADMIN, T_APPROVED, WF } from '../_shared/workflow/fixture.ts'
 
 type Sched = ScheduledRow & { run_at: Date; status: 'pending' | 'done' | 'skipped' | 'failed'; error: string | null }
 export type Db = {
   workflows: WorkflowRow[]
   forms: { id: string; org_id: string; schema: unknown }[]
-  members: { user_id: string; org_id: string }[]
-  roles: { id: string; org_id: string }[]
+  members: { user_id: string; org_id: string; email: string; name: string }[]
+  roles: { id: string; org_id: string; name: string }[]
   holders: Set<string> // `${userId}:${roleId}` pairs
   starters: Set<string> // `${userId}:${workflowId}` pairs that pass has_permission(org, 'records.start', workflow)
   records: RecordRow[]
-  tasks: (TaskRow & { due_at: Date | null })[]
+  tasks: (TaskRow & { due_at: Date | null; overdue_notified_at: Date | null })[]
   submissions: (NewSubmission & { id: string })[]
   scheduled: Sched[]
   events: NewEvent[]
+  orgName: string
+  templates: TemplateRow[]
+  muted: Set<string> // `${userId}:${kind}` pairs with email turned off
+  notifications: NewNotification[]
+  messages: (NewMessage & { id: string; status: MessagePatch['status']; attempts: number; error: string | null; next_attempt_at: Date; sent_at: Date | null; provider_id: string | null })[]
 }
+
+const person = (m: Db['members'][number]) => ({ userId: m.user_id, email: m.email, name: m.name })
 
 /** Yields so two transactions interleave the way two connections would. */
 const tick = () => new Promise((r) => setTimeout(r, 0))
@@ -79,7 +87,7 @@ export function fakeStore(db: Db): Store {
         },
         insertTask: async (row) => {
           if (db.tasks.some((t) => t.record_id === row.record_id && t.status === 'open')) throw new Error('duplicate key value violates unique constraint "tasks_one_open_per_record"')
-          const t = { ...row, id: id('task'), claimed_by: null, status: 'open' as const }
+          const t = { ...row, id: id('task'), claimed_by: null, status: 'open' as const, overdue_notified_at: null }
           db.tasks.push(t)
           return t.id
         },
@@ -95,11 +103,64 @@ export function fakeStore(db: Db): Store {
           const s = db.scheduled.find((x) => x.id === sid)
           if (s) { s.status = status; s.error = error }
         },
+        orgName: async () => db.orgName,
+        template: async (org, ref) =>
+          db.templates.find((x) => x.org_id === org && ('id' in ref ? x.id === ref.id : x.kind === ref.kind && x.kind !== 'custom')) ?? null,
+        peopleByIds: async (org, ids) => db.members.filter((m) => m.org_id === org && ids.includes(m.user_id)).map(person),
+        peopleInRole: async (org, role) => db.members.filter((m) => m.org_id === org && db.holders.has(`${m.user_id}:${role}`)).map(person),
+        roleName: async (role, org) => db.roles.find((r) => r.id === role && r.org_id === org)?.name ?? null,
+        emailMuted: async (ids, kind) => new Set(ids.filter((u) => db.muted.has(`${u}:${kind}`))),
+        notify: async (rows) => { db.notifications.push(...rows) },
+        queueMessages: async (rows) => {
+          // next_attempt_at: due at once, like the column default now()
+          for (const r of rows) db.messages.push({ ...r, id: id('msg'), status: 'queued', attempts: 0, error: null, next_attempt_at: new Date(0), sent_at: null, provider_id: null })
+        },
+        overdueTasks: async (now, limit) => db.tasks
+          .filter((t) => t.status === 'open' && !t.overdue_notified_at && t.due_at && t.due_at <= now)
+          .slice(0, limit).map((t) => ({ id: t.id, record_id: t.record_id })),
+        markOverdue: async (tid, now) => {
+          await lock(`t:${tid}`)
+          await tick()
+          const t = db.tasks.find((x) => x.id === tid && x.status === 'open' && !x.overdue_notified_at && x.due_at && x.due_at <= now)
+          if (!t) return null
+          t.overdue_notified_at = now
+          return { ...t }
+        },
+        dueMessages: async (now, limit) => db.messages.filter((m) => m.status === 'queued' && m.next_attempt_at <= now).slice(0, limit).map((m) => m.id),
+        lockMessage: async (mid, now) => {
+          await lock(`m:${mid}`)
+          const m = db.messages.find((x) => x.id === mid && x.status === 'queued' && x.next_attempt_at <= now)
+          return m ? { id: m.id, org_id: m.org_id, recipient_email: m.recipient_email, subject: m.subject, body_html: m.body_html, body_text: m.body_text, attempts: m.attempts } : null
+        },
+        finishMessage: async (mid, p) => {
+          const m = db.messages.find((x) => x.id === mid)
+          if (!m) return
+          m.status = p.status
+          m.attempts = p.attempts
+          m.error = p.error
+          if (p.nextAttemptAt) m.next_attempt_at = p.nextAttemptAt
+          if (p.sentAt) m.sent_at = p.sentAt
+          if (p.providerId !== undefined) m.provider_id = p.providerId
+        },
       }
       try { return await fn(tx) } finally { for (const r of held) r() }
     },
   }
 }
+
+export const APP = 'http://localhost:5173/app/'
+export const GONE = '00000000-0000-0000-0000-0000000000a9' // never a member
+
+const tpl = (id: string, kind: TemplateRow['kind'], name: string, subject: string, body: string): TemplateRow =>
+  ({ id, org_id: ORG, kind, name, channel: 'email', subject, body })
+const TEMPLATES: TemplateRow[] = [
+  tpl('0000000a-0000-0000-0000-00000000a0e0', 'task_assigned', 'Task assigned', 'New task: {{record.title}}',
+    'Hello {{recipient.name}}, "{{record.title}}" needs {{step.assignee.name}}: {{link.task}}'),
+  tpl('0000000a-0000-0000-0000-00000000a0e2', 'task_overdue', 'Task overdue', 'Overdue: {{record.title}}', 'Still waiting on {{step.assignee.name}}: {{link.task}}'),
+  tpl(T_APPROVED, 'record_approved', 'Record approved', 'Approved: {{record.title}}', '{{step.assignee.name}} approved it. {{link.record}}'),
+  tpl('0000000a-0000-0000-0000-00000000a0e3', 'record_rejected', 'Record rejected', 'Rejected: {{record.title}}', 'See {{link.record}}'),
+  tpl('0000000a-0000-0000-0000-00000000a0e4', 'invite', 'Invite to org', 'Join {{org.name}}', '{{link.invite}}'),
+]
 
 export const NOW = new Date('2026-10-11T12:00:00Z')
 export const BETA_USER = '00000000-0000-0000-0000-0000000000b1'
@@ -109,14 +170,21 @@ export function setup(graph: Graph = LEAVE) {
   const db: Db = {
     workflows: [{ id: WF, org_id: ORG, name: 'Leave approval', status: 'published', graph }],
     forms: [{ id: F_LEAVE, org_id: ORG, schema: FORM }, { id: F_APPROVAL, org_id: ORG, schema: [{ key: 'comment', type: 'long_text', label: 'Comment' }] }],
-    members: [{ user_id: MEMBER, org_id: ORG }, { user_id: ADMIN, org_id: ORG }],
-    roles: [{ id: ROLE_ADMIN, org_id: ORG }],
+    members: [
+      { user_id: MEMBER, org_id: ORG, email: 'member@alpha.test', name: 'member@alpha.test' },
+      { user_id: ADMIN, org_id: ORG, email: 'admin@alpha.test', name: 'admin@alpha.test' },
+    ],
+    roles: [{ id: ROLE_ADMIN, org_id: ORG, name: 'Admin' }],
+    orgName: 'Alpha School',
+    templates: structuredClone(TEMPLATES),
+    muted: new Set(),
+    notifications: [], messages: [],
     holders: new Set([`${ADMIN}:${ROLE_ADMIN}`]),
     starters: new Set([`${MEMBER}:${WF}`]),
     records: [], tasks: [], submissions: [], scheduled: [], events: [],
   }
   const store = fakeStore(db)
-  const ctx = (actor: string): Ctx => ({ now: NOW, actor, fileExists: () => Promise.resolve(true) })
+  const ctx = (actor: string): Ctx => ({ now: NOW, actor, appUrl: APP, fileExists: () => Promise.resolve(true) })
   const start = (answers: Record<string, unknown> = VALID, actor = MEMBER) =>
     store.tx((tx) => startRecord(tx, { workflowId: WF, answers }, ctx(actor)))
   const act = (taskId: string, outcome: string, actor = ADMIN, answers: Record<string, unknown> = { comment: 'Fine' }) =>
@@ -125,7 +193,7 @@ export function setup(graph: Graph = LEAVE) {
   const claim = (actor = ADMIN) => { const t = db.tasks.find((x) => x.status === 'open')!; t.claimed_by = actor; return t.id }
   const resume = async (now: Date) => {
     const ids = await store.tx((tx) => tx.dueScheduled(now, 50))
-    return Promise.all(ids.map((sid) => store.tx((tx) => resumeOne(tx, sid, now))))
+    return Promise.all(ids.map((sid) => store.tx((tx) => resumeOne(tx, sid, { now, appUrl: APP }))))
   }
   return { db, store, start, act, claim, resume }
 }

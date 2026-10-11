@@ -3,6 +3,8 @@ import {
   durationMs, nextEdge, nodeById, nodeName, outcomesOf, readGraph, timeRunAt,
   type Edge, type FormNode, type Graph, type Outcome, type StartNode,
 } from '../_shared/workflow/graph.ts'
+import { notifyTask, sendAction, type MessagePatch, type MessageRow, type NewMessage, type NewNotification, type Person, type TemplateRow } from './notify.ts'
+import type { TemplateKind } from '../_shared/comms/recipients.ts'
 
 export type RecordStatus = 'open' | 'done' | 'rejected' | 'error'
 export type RecordRow = {
@@ -50,9 +52,29 @@ export interface Tx {
   /** FOR UPDATE SKIP LOCKED, pending rows only. */
   lockScheduled(id: string): Promise<ScheduledRow | null>
   finishScheduled(id: string, status: 'done' | 'skipped' | 'failed', error: string | null): Promise<void>
+  orgName(orgId: string): Promise<string>
+  template(orgId: string, ref: { id: string } | { kind: TemplateKind }): Promise<TemplateRow | null>
+  /** Active members among these users. */
+  peopleByIds(orgId: string, userIds: string[]): Promise<Person[]>
+  /** Active holders of the role, by email, at most MAX_PEOPLE. */
+  peopleInRole(orgId: string, roleId: string): Promise<Person[]>
+  roleName(roleId: string, orgId: string): Promise<string | null>
+  /** Of these users, the ones who turned email off for this kind. */
+  emailMuted(userIds: string[], kind: TemplateKind): Promise<Set<string>>
+  notify(rows: NewNotification[]): Promise<void>
+  queueMessages(rows: NewMessage[]): Promise<void>
+  /** Open, unreminded tasks past due, oldest first. */
+  overdueTasks(now: Date, limit: number): Promise<{ id: string; record_id: string }[]>
+  /** Sets overdue_notified_at once; null when another run did, or the task is done or not due. */
+  markOverdue(taskId: string, now: Date): Promise<TaskRow | null>
+  dueMessages(now: Date, limit: number): Promise<string[]>
+  /** FOR UPDATE SKIP LOCKED, queued and due rows only. */
+  lockMessage(id: string, now: Date): Promise<MessageRow | null>
+  finishMessage(id: string, patch: MessagePatch): Promise<void>
 }
 export interface Store { tx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> }
-export type Ctx = { now: Date; actor: string; fileExists(path: string): Promise<boolean> }
+export type Ctx = { now: Date; actor: string; appUrl: string; fileExists(path: string): Promise<boolean> }
+export type WalkCtx = { now: Date; actor: string | null; appUrl: string }
 export type Result = { status: number; body: Record<string, unknown> }
 
 /** A step that cannot run: the record stops in `error` with this message, which is shown to people as is. */
@@ -149,7 +171,7 @@ export async function submitTask(tx: Tx, input: { taskId: string; outcome: strin
  * Follows `outcome` out of `from` until the record waits (Form, Time) or closes (End). Saves the record.
  * A StepError stops the walk where it is and puts the record in `error`; it is never skipped (spec §5.4, §10).
  */
-export async function walk(tx: Tx, rec: RecordRow, graph: Graph, from: string, outcome: Outcome, ctx: { now: Date; actor: string | null }): Promise<RecordRow> {
+export async function walk(tx: Tx, rec: RecordRow, graph: Graph, from: string, outcome: Outcome, ctx: WalkCtx): Promise<RecordRow> {
   const ev = (kind: EventKind, nodeId: string | null, detail: Record<string, unknown> = {}) =>
     tx.event({ org_id: rec.org_id, record_id: rec.id, kind, node_id: nodeId, actor_id: ctx.actor, detail })
   let at = from
@@ -159,7 +181,7 @@ export async function walk(tx: Tx, rec: RecordRow, graph: Graph, from: string, o
       if (hop >= MAX_HOPS) throw new StepError('This workflow loops without stopping. Ask a workflow manager to add a Form or Time step to the loop.')
       const edge = nextEdge(graph, at, out)
       if (!edge) throw new StepError(`"${nodeName(nodeById(graph, at))}" has no path for "${out}". Ask a workflow manager to connect it.`)
-      for (const a of edge.actions) await runAction(rec, edge, a, ev)
+      for (const a of edge.actions) await runAction(tx, rec, edge, a, ctx, ev)
       const node = nodeById(graph, edge.to)
       if (!node) throw new StepError('The next step was deleted. Ask a workflow manager to reconnect this path.')
       rec.current_node_id = node.id
@@ -170,7 +192,7 @@ export async function walk(tx: Tx, rec: RecordRow, graph: Graph, from: string, o
         await ev('condition', node.id, { outcome: out })
         continue
       }
-      if (node.type === 'form') { await createTask(tx, rec, node, ctx.now, ev); break }
+      if (node.type === 'form') { await createTask(tx, rec, node, ctx, ev); break }
       if (node.type === 'time') {
         const runAt = timeRunAt(node, rec.data, ctx.now)
         if (!runAt) throw new StepError(`"${nodeName(node)}" needs a valid date in its date field.`)
@@ -191,21 +213,27 @@ export async function walk(tx: Tx, rec: RecordRow, graph: Graph, from: string, o
   return rec
 }
 
-async function runAction(rec: RecordRow, edge: Edge, a: unknown, ev: (k: EventKind, n: string | null, d?: Record<string, unknown>) => Promise<void>) {
+type Ev = (k: EventKind, n: string | null, d?: Record<string, unknown>) => Promise<void>
+
+async function runAction(tx: Tx, rec: RecordRow, edge: Edge, a: unknown, ctx: WalkCtx, ev: Ev) {
   if (isObj(a) && a.type === 'set_status') {
     const label = typeof a.label === 'string' ? a.label.trim() : ''
     if (!label || label.length > 60) throw new StepError('A "Set status" action on this path has no status text. Ask a workflow manager to fix it.')
     rec.label = label
     return ev('action', edge.from, { type: 'set_status', edge: edge.id, label })
   }
-  if (isObj(a) && (a.type === 'send_message' || a.type === 'generate_pdf')) {
-    // shortcut: recorded as pending only; Phase 4 (messages) and Phase 5 (PDF) process pending action events.
+  if (isObj(a) && a.type === 'send_message') {
+    const sent = await sendAction(tx, rec, edge.from, a, ctx)
+    return ev('action', edge.from, { type: 'send_message', edge: edge.id, ...sent })
+  }
+  if (isObj(a) && a.type === 'generate_pdf') {
+    // shortcut: recorded as pending only; Phase 5 (Reports) processes pending generate_pdf events.
     return ev('action', edge.from, { type: a.type, edge: edge.id, status: 'pending', config: a })
   }
   throw new StepError('This path has an action the workflow cannot run. Ask a workflow manager to remove it.')
 }
 
-async function createTask(tx: Tx, rec: RecordRow, node: FormNode, now: Date, ev: (k: EventKind, n: string | null, d?: Record<string, unknown>) => Promise<void>) {
+async function createTask(tx: Tx, rec: RecordRow, node: FormNode, ctx: WalkCtx, ev: Ev) {
   const a: unknown = node.assignee
   const name = nodeName(node)
   let role: string | null = null
@@ -223,13 +251,14 @@ async function createTask(tx: Tx, rec: RecordRow, node: FormNode, now: Date, ev:
     throw new StepError(`"${name}" has nobody assigned. Ask a workflow manager to choose someone.`)
   }
   const due = node.due ? durationMs(node.due) : null
-  const dueAt = due === null ? null : new Date(now.getTime() + due)
+  const dueAt = due === null ? null : new Date(ctx.now.getTime() + due)
   const taskId = await tx.insertTask({ org_id: rec.org_id, record_id: rec.id, node_id: node.id, assignee_role_id: role, assignee_user_id: user, due_at: dueAt })
-  await ev('task', node.id, { taskId, role, user, dueAt: dueAt?.toISOString() ?? null })
+  const sent = await notifyTask(tx, 'task_assigned', rec, { id: taskId, node_id: node.id, assignee_role_id: role, assignee_user_id: user, claimed_by: null }, ctx)
+  await ev('task', node.id, { taskId, role, user, dueAt: dueAt?.toISOString() ?? null, notified: sent.notices, emailed: sent.emails })
 }
 
 /** Continues one due Time step, or skips it when the record left that step (or closed) since it was scheduled. */
-export async function resumeOne(tx: Tx, id: string, now: Date): Promise<'done' | 'skipped' | 'failed' | 'gone'> {
+export async function resumeOne(tx: Tx, id: string, ctx: { now: Date; appUrl: string }): Promise<'done' | 'skipped' | 'failed' | 'gone'> {
   const row = await tx.lockScheduled(id)
   if (!row) return 'gone' // another resume took it, or it is no longer pending
   const rec = await tx.lockRecord(row.record_id)
@@ -240,7 +269,7 @@ export async function resumeOne(tx: Tx, id: string, now: Date): Promise<'done' |
   }
   const graph = readGraph((await tx.workflow(rec.workflow_id))?.graph) ?? { nodes: [], edges: [] }
   await tx.event({ org_id: rec.org_id, record_id: rec.id, kind: 'resumed', node_id: row.resume_node_id, actor_id: null, detail: {} })
-  const after = await walk(tx, rec, graph, row.resume_node_id, 'next', { now, actor: null })
+  const after = await walk(tx, rec, graph, row.resume_node_id, 'next', { now: ctx.now, actor: null, appUrl: ctx.appUrl })
   const failed = after.status === 'error'
   await tx.finishScheduled(id, failed ? 'failed' : 'done', failed ? after.error : null)
   return failed ? 'failed' : 'done'

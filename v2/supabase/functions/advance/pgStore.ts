@@ -1,7 +1,11 @@
 import postgres from 'npm:postgres@3.4.5'
+import { MAX_PEOPLE, type MessageRow, type Person, type TemplateRow } from './notify.ts'
 import type { RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
 
 const RECORD = ['id', 'org_id', 'workflow_id', 'title', 'current_node_id', 'status', 'label', 'error', 'data', 'step', 'started_by']
+const TEMPLATE = ['id', 'org_id', 'kind', 'name', 'channel', 'subject', 'body']
+const MESSAGE = ['org_id', 'template_id', 'record_id', 'recipient_user_id', 'recipient_email', 'subject', 'body_html', 'body_text']
+const NOTICE = ['org_id', 'user_id', 'kind', 'title', 'body', 'link']
 
 /** Connects as `postgres` (RLS bypassed): the engine checks membership, permission and assignment itself. */
 export function pgStore(url: string): Store & { end(): Promise<void> } {
@@ -15,6 +19,8 @@ export function pgStore(url: string): Store & { end(): Promise<void> } {
 function pgTx(t: postgres.TransactionSql): Tx {
   const one = async <R>(q: Promise<readonly unknown[]>) => ((await q)[0] as R | undefined) ?? null
   const json = (v: unknown) => t.json(v as postgres.JSONValue)
+  const person = t`m.user_id as "userId", m.email::text as email, coalesce(nullif(btrim(m.full_name), ''), m.email::text) as name`
+  const rows = (r: unknown) => r as Record<string, postgres.ParameterOrJSON<never>>[]
   return {
     workflow: (id) => one<WorkflowRow>(t`select id, org_id, name, status, graph from workflows where id = ${id} for share`),
     lockRecord: (id) => one<RecordRow>(t`select ${t(RECORD)} from records where id = ${id} for update`),
@@ -62,6 +68,40 @@ function pgTx(t: postgres.TransactionSql): Tx {
       where id = ${id} and status = 'pending' for update skip locked`),
     finishScheduled: async (id, status, error) => {
       await t`update scheduled_actions set status = ${status}, error = ${error}, finished_at = now() where id = ${id}`
+    },
+    orgName: async (org) => (await one<{ name: string }>(t`select name from orgs where id = ${org}`))?.name ?? '',
+    template: (org, ref) => ('id' in ref
+      ? one<TemplateRow>(t`select ${t(TEMPLATE)} from message_templates where id = ${ref.id} and org_id = ${org}`)
+      : one<TemplateRow>(t`select ${t(TEMPLATE)} from message_templates where org_id = ${org} and kind = ${ref.kind} and is_system`)),
+    peopleByIds: async (org, ids) => (ids.length
+      ? [...await t<Person[]>`select ${person} from members m where m.org_id = ${org} and m.status = 'active' and m.user_id in ${t(ids)} order by m.email`]
+      : []),
+    peopleInRole: async (org, role) => [...await t<Person[]>`
+      select ${person} from members m join member_roles mr on mr.member_id = m.id
+      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role} order by m.email limit ${MAX_PEOPLE}`],
+    roleName: async (role, org) => (await one<{ name: string }>(t`select name from roles where id = ${role} and org_id = ${org}`))?.name ?? null,
+    emailMuted: async (ids, kind) => new Set(ids.length
+      ? (await t`select user_id from notification_prefs where type = ${kind} and not email_enabled and user_id in ${t(ids)}`).map((r) => r.user_id as string)
+      : []),
+    notify: async (r) => { await t`insert into notifications ${t(rows(r), NOTICE)}` },
+    queueMessages: async (r) => { await t`insert into messages ${t(rows(r), MESSAGE)}` },
+    overdueTasks: async (now, limit) => [...await t<{ id: string; record_id: string }[]>`
+      select id, record_id from tasks where status = 'open' and overdue_notified_at is null and due_at <= ${now} order by due_at limit ${limit}`],
+    markOverdue: (id, now) => one<TaskRow>(t`
+      update tasks set overdue_notified_at = ${now}
+      where id = ${id} and status = 'open' and overdue_notified_at is null and due_at <= ${now}
+      returning id, org_id, record_id, node_id, assignee_role_id, assignee_user_id, claimed_by, status`),
+    dueMessages: async (now, limit) =>
+      (await t`select id from messages where status = 'queued' and next_attempt_at <= ${now} order by next_attempt_at limit ${limit}`).map((r) => r.id as string),
+    lockMessage: (id, now) => one<MessageRow>(t`
+      select id, org_id, recipient_email::text as recipient_email, subject, body_html, body_text, attempts from messages
+      where id = ${id} and status = 'queued' and next_attempt_at <= ${now} for update skip locked`),
+    finishMessage: async (id, p) => {
+      await t`update messages set status = ${p.status}, attempts = ${p.attempts}, error = ${p.error},
+        next_attempt_at = coalesce(${p.nextAttemptAt ?? null}::timestamptz, next_attempt_at),
+        sent_at = coalesce(${p.sentAt ?? null}::timestamptz, sent_at),
+        provider_id = coalesce(${p.providerId ?? null}::text, provider_id)
+        where id = ${id}`
     },
   }
 }

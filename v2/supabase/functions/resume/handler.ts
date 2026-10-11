@@ -1,6 +1,6 @@
 import { failScheduled, resumeOne, type Result, type Store } from '../advance/engine.ts'
 
-export type Deps = { authorised: boolean; store: Store; now(): Date }
+export type Deps = { authorised: boolean; store: Store; now(): Date; appUrl: string }
 const BATCH = 50 // shortcut: 50 timers a minute; raise or loop when an org schedules more
 
 /** Called by pg_cron every minute. Each timer runs in its own transaction so one failure cannot block the rest. */
@@ -11,7 +11,7 @@ export async function resume(deps: Deps): Promise<Result> {
   const counts = { done: 0, skipped: 0, failed: 0 }
   for (const id of ids) {
     try {
-      const r = await deps.store.tx((tx) => resumeOne(tx, id, now))
+      const r = await deps.store.tx((tx) => resumeOne(tx, id, { now, appUrl: deps.appUrl }))
       if (r !== 'gone') counts[r] += 1
     } catch (e) {
       console.error('resume failed for', id, e)

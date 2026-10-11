@@ -2,7 +2,7 @@ import type { Answers } from '../_shared/forms/index.ts'
 import { OUTCOMES, type Outcome } from '../_shared/workflow/graph.ts'
 import { startRecord, submitTask, type Result, type Store } from './engine.ts'
 
-export type Deps = { userId(): Promise<string | null>; store: Store; fileExists(path: string): Promise<boolean>; now(): Date }
+export type Deps = { userId(): Promise<string | null>; store: Store; fileExists(path: string): Promise<boolean>; now(): Date; appUrl: string }
 type Req = { action: 'start'; workflowId: string; answers: Answers } | { action: 'submit'; taskId: string; outcome: Outcome; answers: Answers }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -24,6 +24,6 @@ export async function advance(body: unknown, deps: Deps): Promise<Result> {
   if (!req) return { status: 400, body: { error: 'Send a start or submit request.' } }
   const actor = await deps.userId()
   if (!actor) return { status: 401, body: { error: 'Sign in again to continue.' } }
-  const ctx = { now: deps.now(), actor, fileExists: deps.fileExists }
+  const ctx = { now: deps.now(), actor, appUrl: deps.appUrl, fileExists: deps.fileExists }
   return deps.store.tx((tx) => (req.action === 'start' ? startRecord(tx, req, ctx) : submitTask(tx, req, ctx)))
 }

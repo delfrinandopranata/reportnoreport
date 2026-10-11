@@ -1,11 +1,11 @@
 import { assertEquals } from 'jsr:@std/assert@1'
 import { advance, type Deps } from './handler.ts'
-import { setup } from './testkit.ts'
+import { APP, setup } from './testkit.ts'
 import { VALID } from '../_shared/forms/fixture.ts'
 import { ADMIN, MEMBER, WF } from '../_shared/workflow/fixture.ts'
 
 const deps = (store: Deps['store'], user: string | null = MEMBER): Deps =>
-  ({ userId: () => Promise.resolve(user), store, fileExists: () => Promise.resolve(true), now: () => new Date('2026-10-11T12:00:00Z') })
+  ({ userId: () => Promise.resolve(user), store, fileExists: () => Promise.resolve(true), now: () => new Date('2026-10-11T12:00:00Z'), appUrl: APP })
 
 Deno.test('rejects a malformed body before touching the database', async () => {
   const { store, db } = setup()

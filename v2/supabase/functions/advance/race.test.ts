@@ -17,7 +17,7 @@ Deno.test({
   async fn() {
     const store = pgStore(url!)
     const sql = postgres(url!, { max: 1 })
-    const ctx = (actor: string) => ({ now: new Date(), actor, fileExists: () => Promise.resolve(true) })
+    const ctx = (actor: string) => ({ now: new Date(), actor, appUrl: 'http://localhost:5173/app/', fileExists: () => Promise.resolve(true) })
     try {
       const started = await store.tx((tx) => startRecord(tx, { workflowId: WF, answers: VALID }, ctx(MEMBER)))
       assertEquals(started.status, 200)

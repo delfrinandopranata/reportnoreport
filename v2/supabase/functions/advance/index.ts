@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { advance } from './handler.ts'
 import { pgStore } from './pgStore.ts'
+import { readAppUrl } from '../_shared/comms/render.ts'
 import { fileExists } from '../_shared/storage.ts'
 
 const CORS = {
@@ -13,6 +14,7 @@ const json = (status: number, body: unknown) =>
 const MAX_BODY = 1_000_000
 const url = Deno.env.get('SUPABASE_URL')!
 const store = pgStore(Deno.env.get('SUPABASE_DB_URL')!) // one small pool per worker
+const appUrl = readAppUrl(Deno.env.get('APP_URL')) // throws at boot: links in messages must be right before anything is queued
 const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
 Deno.serve(async (req) => {
@@ -31,6 +33,7 @@ Deno.serve(async (req) => {
       store,
       fileExists: (path) => fileExists(admin, path),
       now: () => new Date(),
+      appUrl,
     })
     return json(res.status, res.body)
   } catch (e) {
