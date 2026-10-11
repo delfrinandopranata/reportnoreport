@@ -24,10 +24,12 @@ import { StepSheet } from './StepSheet'
 
 const VIEW_KEY = 'rnr.wfView'
 type View = 'map' | 'list'
+const MOVE_HELP = 'Press Enter or Space to select this step. With it selected, press the arrow keys to move it.'
+// xyflow 12.12 reads the `keyboardDisabled` text when keyboard moves are enabled (its keys are swapped), so both carry the help.
 const ARIA = {
   'node.a11yDescription.ariaLiveMessage': ({ direction }: { direction: string }) => `Moved ${direction}.`,
-  'node.a11yDescription.default': 'Press Enter or Space to select this step. With it selected, press the arrow keys to move it.',
-  'node.a11yDescription.keyboardDisabled': '',
+  'node.a11yDescription.default': MOVE_HELP,
+  'node.a11yDescription.keyboardDisabled': MOVE_HELP,
 }
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -267,8 +269,8 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
                 onEdgeClick={onEdgeClick} onPaneClick={() => setSel(null)} snapToGrid snapGrid={[16, 16]} deleteKeyCode={null}
                 selectionKeyCode={null} multiSelectionKeyCode={null} edgesFocusable={false} selectNodesOnDrag={false}
                 nodesDraggable={isMd} nodesConnectable={isMd} proOptions={{ hideAttribution: false }} defaultEdgeOptions={EDGE_DEFAULTS}
-                ariaLabelConfig={ARIA} fitView fitViewOptions={{ duration: 0 }}>
-                <Background gap={16} size={1} />
+                ariaLabelConfig={ARIA} minZoom={0.3} fitView fitViewOptions={{ duration: 0 }}>
+                <Background gap={16} size={1} color="var(--chart-grid)" />
                 <Controls showInteractive={false} />
               </ReactFlow>
             </div>

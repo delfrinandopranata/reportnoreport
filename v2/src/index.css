@@ -38,6 +38,7 @@ a:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible { ou
 @media (pointer: coarse) {
   .rnr-btn, .rnr-input { min-height: var(--touch-min); }
   .rnr-check { min-height: var(--touch-min); }
+  .rnr-seg button { min-height: var(--touch-min); }
   input[type="checkbox"] { width: 20px; height: 20px; }
   .rnr-card summary { padding-block: var(--space-3); }
 }
@@ -118,3 +119,4 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 /* Segmented as a view toggle: the inactive label on the track is 4.4:1 in ink-muted, below AA at 14px. */
 .rnr-seg button[aria-pressed="false"] { color: var(--ink-label); }
 .rnr-pick .rnr-caption svg { margin-top: 0; width: 14px; height: 14px; }
+.wf-outcome { gap: var(--space-3); } /* unlayered .rnr-field gap beats the Tailwind gap utility */

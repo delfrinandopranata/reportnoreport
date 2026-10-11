@@ -197,7 +197,7 @@ export function SidePanel({ graph, node, open, forms, roles, members, onChange, 
       {outcomesOf(node).map((o) => {
         const edge = graph.edges.find((e) => e.from === node.id && e.outcome === o)
         return (
-          <fieldset key={o} id={`out-${o}`} className="rnr-field gap-2">
+          <fieldset key={o} id={`out-${o}`} className="rnr-field wf-outcome">
             <legend className="rnr-label" tabIndex={-1}>{WHEN[o]}</legend>
             {/* The keyboard way to connect: same result as dragging from the card's handle. */}
             <Select label="Goes to" value={edge?.to ?? ''} options={[['', 'Not connected'], ...targets]} onChange={(to) => goTo(o, to)} />

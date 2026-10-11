@@ -19,7 +19,7 @@ function Blocks({ onAdd, className }: { onAdd(t: NodeType): void; className: str
     <ul className={className}>
       {NODE_TYPES.map((t) => (
         <li key={t}>
-          <button type="button" draggable className="rnr-block rnr-focus w-full text-left" aria-label={`Add ${TYPE_LABELS[t]} step`}
+          <button type="button" draggable className="rnr-block rnr-focus h-full w-full text-left" aria-label={`Add ${TYPE_LABELS[t]} step`}
             onDragStart={(e) => dragStep(e, t)} onClick={() => onAdd(t)}>
             <PlusIcon />
             <span><span className="label block">{TYPE_LABELS[t]}</span><span className="rnr-caption block">{HINTS[t]}</span></span>

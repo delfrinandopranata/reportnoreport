@@ -14,8 +14,8 @@ export function MiniCanvas({ graph, current }: { graph: Graph; current: string |
       <ReactFlowProvider>
         <ReactFlow nodes={view.nodes} edges={view.edges} nodeTypes={CARD_TYPES} defaultEdgeOptions={EDGE_DEFAULTS}
           nodesDraggable={false} nodesConnectable={false} nodesFocusable={false} edgesFocusable={false} elementsSelectable={false}
-          zoomOnScroll={false} preventScrolling={false} fitView fitViewOptions={{ duration: 0 }}>
-          <Background gap={16} size={1} />
+          zoomOnScroll={false} preventScrolling={false} minZoom={0.3} fitView fitViewOptions={{ duration: 0 }}>
+          <Background gap={16} size={1} color="var(--chart-grid)" />
         </ReactFlow>
       </ReactFlowProvider>
     </div>
