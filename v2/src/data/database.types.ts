@@ -43,6 +43,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"dashboard_versions": {
+                  Row: {
+                    "org_id": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "org_id": string,"version"?: number
+                  }
+                  Update: {
+                    "org_id"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dashboard_versions_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: true
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"dashboard_widgets": {
                   Row: {
                     "created_at": string,"id": string,"kind": string,"org_id": string,"position": number,"report_id": string,"span": number,"title": string
@@ -525,6 +545,9 @@ isOneToOne: false
 "audit":
 { Args: { "p_action": string,"p_after": Json,"p_before": Json,"p_org": string,"p_target": string }; Returns: undefined
                            },
+"bump_dashboard_version":
+{ Args: { "p_org": string }; Returns: undefined
+                           },
 "can_start":
 { Args: { "w": Omit<Database["public"]['Tables']["workflows"]['Row'], Database["public"]['Tables']["workflows"]['ComputedFields']> }; Returns: boolean
                            },
@@ -578,7 +601,7 @@ isOneToOne: false
 { Args: { "p_message": string }; Returns: undefined
                            },
 "save_dashboard_layout":
-{ Args: { "p_layout": Json,"p_org": string }; Returns: undefined
+{ Args: { "p_layout": Json,"p_org": string,"p_version": number }; Returns: undefined
                            },
 "save_role":
 { Args: { "p_name": string,"p_org": string,"p_permissions": (string)[],"p_role_id": string }; Returns: string

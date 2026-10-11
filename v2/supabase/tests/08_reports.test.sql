@@ -103,16 +103,16 @@ select pg_temp.act_as(:'admin');
 select lives_ok(format($$ insert into dashboard_widgets (id, org_id, report_id, kind, title, span, position) values
   (%L, %L, %L, 'number', 'Leave records', 1, 1), (%L, %L, %L, 'bar', 'By type', 2, 2) $$,
   :'wid', :'alpha', :'rep', :'wid2', :'alpha', :'rep'), 'reports.manage adds widgets');
-select lives_ok(format($$ select save_dashboard_layout(%L, %L::jsonb) $$, :'alpha',
-  json_build_array(json_build_object('id', :'wid2', 'span', 4), json_build_object('id', :'wid', 'span', 1))::text), 'reports.manage saves a layout');
+select lives_ok(format($$ select save_dashboard_layout(%L, %L::jsonb, %s) $$, :'alpha',
+  json_build_array(json_build_object('id', :'wid2', 'span', 4), json_build_object('id', :'wid', 'span', 1))::text, (select version from dashboard_versions where org_id = :'alpha')), 'reports.manage saves a layout');
 select results_eq(format($$ select id::text, span, position from dashboard_widgets where org_id = %L order by position $$, :'alpha'),
   format($$ values (%L::text, 4, 1), (%L::text, 1, 2) $$, :'wid2', :'wid'), 'order and widths applied');
 select isnt_empty(format($$ select 1 from audit_log where action = 'dashboard.layout' and org_id = %L $$, :'alpha'), 'layout audited');
-select throws_ok(format($$ select save_dashboard_layout(%L, %L::jsonb) $$, :'alpha', json_build_array(json_build_object('id', :'wid', 'span', 1))::text),
+select throws_ok(format($$ select save_dashboard_layout(%L, %L::jsonb, %s) $$, :'alpha', json_build_array(json_build_object('id', :'wid', 'span', 1))::text, (select version from dashboard_versions where org_id = :'alpha')),
   'P0001', 'The dashboard changed. Reload to see the latest layout.', 'a stale layout is refused');
 select pg_temp.act_as(:'member');
 select is((select count(*)::int from dashboard_widgets where org_id = :'alpha'), 2, 'reports.view sees the dashboard');
-select throws_ok(format($$ select save_dashboard_layout(%L, '[]'::jsonb) $$, :'alpha'), '42501', null, 'a member cannot change the layout');
+select throws_ok(format($$ select save_dashboard_layout(%L, '[]'::jsonb, 0) $$, :'alpha'), '42501', null, 'a member cannot change the layout');
 select pg_temp.act_as(:'betaowner');
 select is((select count(*)::int from dashboard_widgets where org_id = :'alpha'), 0, 'beta sees no alpha widgets');
 
