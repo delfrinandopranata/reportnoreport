@@ -38,6 +38,6 @@ Deno.serve(async (req) => {
     return json(res.status, res.body)
   } catch (e) {
     console.error('advance failed', e)
-    return json(500, { error: 'We could not save this step. Try again.' })
+    return json(500, { error: 'This step did not save. Try again.' })
   }
 })

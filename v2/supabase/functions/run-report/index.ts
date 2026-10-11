@@ -33,6 +33,6 @@ Deno.serve(async (req) => {
     return json(res.status, res.body)
   } catch (e) {
     console.error('run-report failed', e)
-    return json(500, { error: 'We could not run this report. Try again.' })
+    return json(500, { error: 'This report did not run. Try again.' })
   }
 })

@@ -63,6 +63,6 @@ Deno.serve(async (req) => {
     return json(res.status, res.body)
   } catch (e) {
     console.error('save-workflow failed', e)
-    return json(500, { error: 'We could not save this workflow. Try again.' })
+    return json(500, { error: 'This workflow did not save. Try again.' })
   }
 })

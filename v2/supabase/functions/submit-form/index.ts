@@ -43,6 +43,6 @@ Deno.serve(async (req) => {
     return json(res.status, res.body)
   } catch (e) {
     console.error('submit-form failed', e)
-    return json(500, { error: 'We could not save your answers. Try again.' })
+    return json(500, { error: 'Your answers did not save. Try again.' })
   }
 })
