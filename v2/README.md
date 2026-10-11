@@ -117,21 +117,14 @@ Each test deletes what it creates. CI (`.github/workflows/ci-v2.yml`, in the rep
 
 ## Deploy
 
-**Supabase (hosted project).**
-1. `supabase link --project-ref <ref>` and `supabase db push` (migrations only; never the seed).
-2. Set the function secrets from the table above: `supabase secrets set CRON_SECRET=… APP_URL=… EMAIL_TRANSPORT=resend EMAIL_FROM=… RESEND_API_KEY=… UNSUBSCRIBE_URL=… UNSUBSCRIBE_SECRET=… RESEND_WEBHOOK_SECRET=…`.
-3. Create the five Vault secrets (`cron_secret` equal to `CRON_SECRET`, and the four function URLs).
-4. `supabase functions deploy` (every function; `config.toml` sets `verify_jwt = false` for the cron, webhook and unsubscribe functions, which check their own secret, signature or token).
-5. In Resend: verify the sending domain, then add a webhook to `https://<ref>.supabase.co/functions/v1/resend-webhook` for `email.delivered`, `email.opened`, `email.clicked`, `email.bounced` and `email.complained`, and copy its signing secret into `RESEND_WEBHOOK_SECRET`. Turn on open and click tracking for the domain. Resend's default rate limit paces campaigns at roughly 120 emails a minute; ask Resend for more when campaigns are large.
-6. Add `https://reportnoreport.com/app/` to Supabase Auth redirect URLs.
-
-**Vercel.** Set the project Root Directory to `v2/` and `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Vercel builds with `pnpm build`, which fails if `scripts/check-dist.mjs` finds a leaked secret, a broken internal link, an `<img>` without `alt`, an image over 200 KB or a `[…]` placeholder. Routing, security headers and caching live in `vercel.json`.
+Merging to `main` deploys v2 through `.github/workflows/deploy-v2.yml` (CI v2, then `supabase db push`, the function secrets and functions on the v2 project, then Vercel with Root Directory `v2/`); v1's `deploy.yml` ignores v2 paths. The one-off owner steps (Supabase project, GitHub `production-v2` environment, Auth redirect URLs, Resend, DNS, domain move, rollback) are in [docs/go-live.md](docs/go-live.md). Function secrets, set by the workflow from `V2_*` GitHub secrets: `CRON_SECRET`, `APP_URL`, `EMAIL_TRANSPORT`, `EMAIL_FROM`, `RESEND_API_KEY`, `UNSUBSCRIBE_URL`, `UNSUBSCRIBE_SECRET`, `RESEND_WEBHOOK_SECRET`. Vault secrets (created once, by name): `cron_secret`, `resume_url`, `send_messages_url`, `render_pdfs_url`, `send_campaigns_url`. Vercel builds with `pnpm build`, which fails if `scripts/check-dist.mjs` finds a leaked secret, a broken internal link, an `<img>` without `alt`, an image over 200 KB or a `[...]` placeholder. Routing, security headers and caching live in `vercel.json`.
 
 ## Known limits
 
 Most are a `shortcut:` in the code naming the point at which to change it.
 
 - **Fonts.** Inter covers Latin, Greek and Cyrillic; Tamil, Chinese, Japanese and other scripts print as empty boxes in record PDFs (add a Noto subset per script when an organisation needs it). PDF text is drawn without shaping, and times are in UTC.
+- **PDF fonts.** Record PDFs stay in Inter, ink on white, after the Phase 7 identity change.
 - **Report size.** A saved report reads at most 10,000 visible records; more is refused (413), never cut.
 - **Campaign size.** At most 10,000 people per campaign after opt-outs and de-duplication; more fails the campaign with a sentence. Everyone left out is counted on the report.
 - **Workflow messages.** A workflow "Send message" step reaches at most 500 people; larger audiences are campaigns.

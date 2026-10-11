@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths-ignore: ['v2/**', '.github/workflows/deploy-v2.yml', '.github/workflows/ci-v2.yml']
   workflow_dispatch:
 
 permissions:
@@ -38,7 +39,7 @@ jobs:
       # applied) before an earlier-dated one merges. Without this flag, `db push` refuses
       # to insert that earlier file at all, silently blocking every migration after it.
       - run: supabase db push --include-all
-      - run: supabase secrets set --project-ref "$PROJECT_REF" APP_URL=https://reportnoreport.com/app/
+      - run: supabase secrets set --project-ref "$PROJECT_REF" APP_URL=https://ledger.reportnoreport.com/app/
       - run: supabase functions deploy --project-ref "$PROJECT_REF"
 
   vercel:
@@ -48,7 +49,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: production
-      url: https://reportnoreport.com
+      url: https://ledger.reportnoreport.com
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}

@@ -1,0 +1,91 @@
+name: Deploy v2
+
+on:
+  push:
+    branches: [main]
+    paths: ['v2/**', '.github/workflows/deploy-v2.yml', '.github/workflows/ci-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One v2 production deploy at a time, independent of v1's "production" group.
+concurrency:
+  group: production-v2
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci-v2.yml
+
+  supabase:
+    name: Migrate the v2 database and deploy its Edge Functions
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production-v2
+    defaults:
+      run:
+        working-directory: v2
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_V2_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_V2_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_V2_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - run: supabase link --project-ref "$PROJECT_REF"
+      # v2 migrations are numbered in apply order, so a plain push (no --include-all) refuses an out-of-order file loudly.
+      - run: supabase db push
+      - name: Set function secrets
+        env:
+          CRON_SECRET: ${{ secrets.V2_CRON_SECRET }}
+          RESEND_API_KEY: ${{ secrets.V2_RESEND_API_KEY }}
+          UNSUBSCRIBE_SECRET: ${{ secrets.V2_UNSUBSCRIBE_SECRET }}
+          RESEND_WEBHOOK_SECRET: ${{ secrets.V2_RESEND_WEBHOOK_SECRET }}
+          EMAIL_FROM: ${{ vars.V2_EMAIL_FROM }}
+        # Written to a private temp file so no value is on a command line; GitHub masks them in the log either way.
+        run: |
+          umask 077
+          f="$(mktemp)"
+          trap 'rm -f "$f"' EXIT
+          {
+            echo "APP_URL=https://reportnoreport.com/app/"
+            echo "EMAIL_TRANSPORT=resend"
+            echo "EMAIL_FROM=$EMAIL_FROM"
+            echo "CRON_SECRET=$CRON_SECRET"
+            echo "RESEND_API_KEY=$RESEND_API_KEY"
+            echo "UNSUBSCRIBE_URL=https://$PROJECT_REF.supabase.co/functions/v1/unsubscribe"
+            echo "UNSUBSCRIBE_SECRET=$UNSUBSCRIBE_SECRET"
+            echo "RESEND_WEBHOOK_SECRET=$RESEND_WEBHOOK_SECRET"
+          } > "$f"
+          supabase secrets set --project-ref "$PROJECT_REF" --env-file "$f"
+      - run: supabase functions deploy --project-ref "$PROJECT_REF"
+
+  vercel:
+    name: Deploy v2 web to Vercel
+    needs: supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production-v2
+      url: https://reportnoreport.com
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_V2_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: v2/pnpm-lock.yaml
+      - run: npm install --global vercel@latest
+      # Run from the repository root: the v2 Vercel project's Root Directory setting (v2) selects the app.
+      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: vercel build --prod --token="$VERCEL_TOKEN"
+      - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
