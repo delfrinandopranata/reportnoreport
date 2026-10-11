@@ -15,7 +15,8 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 | 3 | Analytics: **Vercel Web Analytics**, loaded only after consent |
 | 4 | Approach: **Vite multi-page build** — public pages are static HTML, no React/Supabase |
 | 5 | Domain: `https://reportnoreport.com` |
-| 6 | Legal entity: **ReportNoReport**; governing law still to confirm (Terms keeps a `[Governing law]` placeholder) |
+| 6 | Legal entity: **ReportNoReport**; governing law **Malaysia** |
+| 7 | Markets: Malaysia, Singapore, Indonesia, worldwide — privacy covers MY PDPA 2010, SG PDPA 2012, ID UU PDP 27/2022, GDPR |
 
 ## 1. Pages and routing
 
@@ -52,8 +53,8 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 
 ## 4. Content, images, speed, analytics
 
-- **Privacy:** data collected (account email, organisation data, anonymous page views), Supabase as processor, storage location, retention, deletion, contact, local storage used (auth session, appearance, consent). "Last updated" date.
-- **Terms:** acceptable use, accounts and organisations, trial and payment, liability, termination, governing law. Draft only — legal review before launch.
+- **Privacy:** per-region rights (MY PDPA, SG PDPA, ID UU PDP, GDPR), cross-border transfer clause, data-request contact; data collected (account email, organisation data, anonymous page views), Supabase as processor, storage location, retention, deletion, contact, local storage used (auth session, appearance, consent). "Last updated" date.
+- **Terms:** acceptable use, accounts and organisations, trial and payment, liability, termination, governing law (Malaysia, courts of Malaysia). Draft only — legal review before launch.
 - **Alt text:** every `<img>` has `alt` (decorative = `alt=""`); icons in `src/ui/icons.tsx` get `aria-hidden="true"`.
 - **Images:** compressed once; build fails on any image in `dist/` over 200 KB.
 - **Speed:** public pages ship only `consent.js`; preload Inter; `Cache-Control: public, max-age=31536000, immutable` on `/assets/*`. Lighthouse run once against `vercel dev`, scores recorded in the PR; target ≥95 in all four categories on public pages.
@@ -66,7 +67,7 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 2. an internal `href`/`src` in `dist/**/*.html` that does not resolve to a file
 3. `<img>` without `alt`
 4. image file > 200 KB
-5. `[Governing law]` still present
+5. a `[` placeholder token (`[Company name]`, `[Governing law]`, `[TBD]`) still present
 
 One script, no new dependency. Unit test: `scripts/check-dist.test.mjs` with fixture HTML for each rule.
 
@@ -80,5 +81,5 @@ Content-Security-Policy · a CMS for legal text · i18n · server-side rendering
 - Unknown path returns HTTP 404 with the custom page.
 - Sharing `https://reportnoreport.com` shows title, description and `og.png`.
 - No analytics request before Accept; one after.
-- `pnpm build` fails on each of the five check rules (rule 5 until governing law is filled in).
+- `pnpm build` fails on each of the five check rules.
 - Lighthouse ≥95 ×4 on public pages.
