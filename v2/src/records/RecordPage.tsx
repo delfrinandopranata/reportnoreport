@@ -9,7 +9,7 @@ import { nodeById, nodeName } from '../workflows/logic'
 import { useRecord, useRecordEvents, useRecordSubmissions, type RecordRow, type RecordSubmission } from '../workflows/api'
 import { MiniCanvas } from '../workflows/canvas/MiniCanvas'
 import { RecordStatusMark } from './StatusMark'
-import { eventIcon, eventText } from './timeline'
+import { eventIcon, eventNote, eventText } from './timeline'
 
 const ICONS = { clock: ClockIcon, stop: StopIcon, check: CheckIcon, x: XIcon }
 
@@ -68,6 +68,7 @@ function RecordView({ rec }: { rec: RecordRow }) {
                   <span className="flex-none pt-0.5" style={{ width: 14, color: 'var(--ink-muted)' }} aria-hidden="true">{Icon && <Icon size={14} />}</span>
                   <div className="min-w-0">
                     <p className="label">{eventText(e, graph, who(e.actor_id))}</p>
+                    {eventNote(e) && <p className="rnr-caption">{eventNote(e)}</p>}
                     <p className="rnr-caption"><When iso={e.created_at} /></p>
                     {sub && <Answers sub={sub} by={who(sub.submitted_by) ?? 'Someone'} />}
                   </div>

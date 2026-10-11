@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { eventText, eventIcon } from './timeline.ts'
+import { eventText, eventIcon, eventNote } from './timeline.ts'
 import { LEAVE } from '../../supabase/functions/_shared/workflow/fixture.ts'
 
 const ev = (kind: string, node_id: string | null, detail: Record<string, unknown> = {}) => ({ kind, node_id, detail })
@@ -25,8 +25,24 @@ test('runtime events say what the workflow did', () => {
 })
 test('actions that are not carried out yet say so', () => {
   assert.equal(eventText(ev('action', 'approve', { type: 'set_status', label: 'Rejected by manager' }), LEAVE, null), 'Status set to “Rejected by manager”')
-  assert.equal(eventText(ev('action', 'approve', { type: 'send_message', status: 'pending' }), LEAVE, null), 'Message not sent yet. Available when Communication ships.')
+  assert.equal(eventText(ev('action', 'approve', { type: 'send_message', status: 'pending' }), LEAVE, null), 'Message not sent: recorded before messages were available.')
   assert.equal(eventText(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' }), LEAVE, null), 'PDF not made yet. Available when Reports ship.')
+})
+test('sent messages say what was sent, to how many people, and what was skipped', () => {
+  const sent = (d: Record<string, unknown>) => ev('action', 'approve', { type: 'send_message', template: 'Record approved', ...d })
+  assert.equal(eventText(sent({ people: 1, emails: 1, skipped: 0 }), LEAVE, null), 'Sent “Record approved” to 1 person')
+  assert.equal(eventText(sent({ people: 3, emails: 2, skipped: 2 }), LEAVE, null),
+    'Sent “Record approved” to 3 people. 2 recipients were skipped: no longer a member, or no valid email.')
+  assert.equal(eventText(sent({ people: 2, skipped: 1 }), LEAVE, null),
+    'Sent “Record approved” to 2 people. 1 recipient was skipped: no longer a member, or no valid email.')
+})
+test('the second timeline line counts emails queued, and only when there are some', () => {
+  const sent = (d: Record<string, unknown>) => ev('action', 'approve', { type: 'send_message', template: 'T', ...d })
+  assert.equal(eventNote(sent({ people: 1, emails: 1 })), '1 email queued for delivery.')
+  assert.equal(eventNote(sent({ people: 3, emails: 2 })), '2 emails queued for delivery.')
+  assert.equal(eventNote(sent({ people: 3, emails: 0 })), null)
+  assert.equal(eventNote(ev('action', 'approve', { type: 'send_message', status: 'pending' })), null)
+  assert.equal(eventNote(ev('started', 'start')), null)
 })
 test('a deleted step and an unknown event still read', () => {
   assert.equal(eventText(ev('task', 'gone'), LEAVE, null), 'Waiting for A deleted step')
@@ -35,7 +51,9 @@ test('a deleted step and an unknown event still read', () => {
 test('waiting, tasks and pending actions get a clock; errors a stop; closing a tick or a cross', () => {
   assert.equal(eventIcon(ev('waiting', 'wait')), 'clock')
   assert.equal(eventIcon(ev('task', 'approve')), 'clock')
-  assert.equal(eventIcon(ev('action', 'approve', { type: 'send_message' })), 'clock')
+  assert.equal(eventIcon(ev('action', 'approve', { type: 'send_message', status: 'pending' })), 'x')
+  assert.equal(eventIcon(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' })), 'clock')
+  assert.equal(eventIcon(ev('action', 'approve', { type: 'send_message', template: 'Record approved', people: 1, skipped: 0 })), null)
   assert.equal(eventIcon(ev('action', 'approve', { type: 'set_status', label: 'x' })), null)
   assert.equal(eventIcon(ev('error', 'approve')), 'stop')
   assert.equal(eventIcon(ev('closed', 'done', { status: 'done' })), 'check')

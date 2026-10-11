@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../data/supabase'
 import type { MutableKind, TemplateKind } from './logic'
+import type { PreviewRecord } from './preview'
 
 export type TemplateRow = {
   id: string; org_id: string; kind: TemplateKind; name: string; channel: 'email' | 'in_app'
@@ -80,3 +81,31 @@ export const setEmailPref = (userId: string, type: MutableKind, enabled: boolean
   supabase.from('notification_prefs')
     .upsert({ user_id: userId, type, email_enabled: enabled, updated_at: new Date().toISOString() }, { onConflict: 'user_id,type' })
     .select('type')
+
+export const useTemplate = (id: string) => useQuery({
+  queryKey: ['template', id],
+  queryFn: async () => {
+    const { data, error } = await supabase.from('message_templates').select(TEMPLATE_COLS).eq('id', id).maybeSingle()
+    if (error) throw error
+    return data as TemplateRow | null
+  },
+})
+export const createTemplate = (orgId: string) => supabase.from('message_templates')
+  .insert({ org_id: orgId, name: 'New template', subject: 'Message from {{org.name}}', body: 'Hello {{recipient.name}},\n\n' })
+  .select('id').single()
+export type TemplateFields = Pick<TemplateRow, 'name' | 'channel' | 'subject' | 'body'>
+/** Conditional on updated_at: zero rows back means someone else saved first. */
+export const updateTemplate = (id: string, f: TemplateFields, updatedAt: string) => supabase.from('message_templates')
+  .update(f).eq('id', id).eq('updated_at', updatedAt).select('updated_at')
+export const deleteTemplate = (id: string) => supabase.from('message_templates').delete().eq('id', id).eq('is_system', false).select('id')
+
+export const usePreviewRecords = (orgId: string | null) => useQuery({
+  queryKey: ['preview-records', orgId],
+  enabled: !!orgId,
+  queryFn: async () => {
+    const { data, error } = await supabase.from('records').select('id, title, data').eq('org_id', orgId!)
+      .order('created_at', { ascending: false }).limit(50)
+    if (error) throw error
+    return data as PreviewRecord[]
+  },
+})

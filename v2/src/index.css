@@ -139,3 +139,10 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .rnr-notice[data-unread="true"] .rnr-notice-title { font-weight: 600; color: var(--ink); }
 .rnr-notice-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 @media (pointer: coarse) { .rnr-notice, .rnr-menu-item { min-height: var(--touch-min); } }
+
+.rnr-menu.rnr-menu--wide { width: min(320px, calc(100vw - 2rem)); max-height: 20rem; overflow-y: auto; }
+.rnr-menu-item--stack { flex-direction: column; align-items: flex-start; gap: 0; }
+.rnr-menu-item[aria-disabled="true"] { color: var(--ink-muted); cursor: default; }
+.rnr-menu-item[aria-disabled="true"]:hover { background: transparent; }
+
+.rnr-preview { padding: var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-200); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -7,11 +7,13 @@ import {
   OUTCOME_LABELS, TYPE_LABELS, UNITS, outcomesOf,
   type Action, type Duration, type Graph, type Outcome, type Unit, type WfNode,
 } from '../logic'
+import { MessageAction } from './MessageAction'
 import { connect, setActions, setNode, stepLabel } from './canvasOps'
 
 export type FormOption = { id: string; name: string; schema: Field[] }
+export type MessageCtx = { templates: { id: string; name: string }[]; canManageTemplates: boolean }
 type Props = {
-  graph: Graph; node: WfNode; open: number; forms: FormOption[]; roles: { id: string; name: string }[]; members: Map<string, string>
+  graph: Graph; node: WfNode; open: number; forms: FormOption[]; roles: { id: string; name: string }[]; members: Map<string, string>; messages: MessageCtx
   onChange(g: Graph): void; onDelete(): void; onSay(text: string): void
   /** In the bottom sheet the sheet itself carries the heading. */
   inSheet?: boolean
@@ -21,7 +23,7 @@ const WHEN: Record<Outcome, string> = {
   submitted: 'When submitted', approved: 'When approved', rejected: 'When rejected', yes: 'If yes', no: 'If no', next: 'Next',
 }
 const ACTION_TITLES = { set_status: 'Set status', send_message: 'Send message', generate_pdf: 'Generate PDF' } as const
-const NOT_ACTIVE = { send_message: 'Not active yet. Available when Communication ships.', generate_pdf: 'Not active yet. Available when Reports ship.' } as const
+const NOT_ACTIVE = { generate_pdf: 'Not active yet. Available when Reports ship.' } as const
 const plural = (n: number) => (n === 1 ? ['record is', 'it'] : ['records are', 'them'])
 
 function Select({ label, value, options, onChange, hint }: { label: string; value: string; options: [string, string][]; onChange(v: string): void; hint?: string }) {
@@ -52,7 +54,10 @@ function DurationInput({ label, value, optional, onChange }: { label: string; va
 }
 
 /** Adding is two steps (choose, then press Add): a closed select fires on every ArrowDown, which would add an action per key. */
-function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; actions: Action[]; onChange(a: Action[]): void; onSay(t: string): void }) {
+function ActionList({ edgeId, actions, onChange, onSay, graph, roles, members, fields, messages }: {
+  edgeId: string; actions: Action[]; onChange(a: Action[]): void; onSay(t: string): void
+  graph: Graph; roles: { id: string; name: string }[]; members: Map<string, string>; fields: Field[]; messages: MessageCtx
+}) {
   const id = useId()
   const focusLater = useFocusAfterRender()
   const [choice, setChoice] = useState('')
@@ -61,7 +66,9 @@ function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; acti
     if (!choice) { setError('Choose an action to add.'); return }
     setError(null)
     const type = choice as Action['type']
-    const next: Action = type === 'set_status' ? { type, label: '' } : ({ type } as Action)
+    const next: Action = type === 'set_status' ? { type, label: '' }
+      : type === 'send_message' ? { type, templateId: '', recipients: [] }
+      : { type: 'generate_pdf' }
     onChange([...actions, next])
     setChoice('')
     onSay(`${ACTION_TITLES[type]} action added.`)
@@ -73,7 +80,7 @@ function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; acti
   return (
     <div className="flex flex-col gap-2">
       <h3 className="label">Actions</h3>
-      <p className="rnr-caption">Actions run in the order you add them. Send message and Generate PDF are recorded on the timeline but not carried out yet: available when Communication and Reports ship.</p>
+      <p className="rnr-caption">Actions run in the order you add them. Generate PDF is recorded on the timeline but not carried out yet: available when Reports ship.</p>
       {actions.map((a, i) => {
         const title = ACTION_TITLES[a.type as keyof typeof ACTION_TITLES] ?? 'Unknown action'
         return (
@@ -86,7 +93,10 @@ function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; acti
             {a.type === 'set_status'
               ? <DraftInput key={a.label} label="Status text" hint="Shown next to the record's status." value={a.label}
                   onCommit={(t) => onChange(actions.map((x, j) => (j === i ? { type: 'set_status', label: t.trim() } : x)))} />
-              : a.type in NOT_ACTIVE && <p className="rnr-caption">{NOT_ACTIVE[a.type as keyof typeof NOT_ACTIVE]}</p>}
+              : a.type === 'send_message'
+                ? <MessageAction action={a} graph={graph} roles={roles} members={members} fields={fields} templates={messages.templates}
+                    canManage={messages.canManageTemplates} onSay={onSay} onChange={(n) => onChange(actions.map((x, j) => (j === i ? n : x)))} />
+                : a.type in NOT_ACTIVE && <p className="rnr-caption">{NOT_ACTIVE[a.type as keyof typeof NOT_ACTIVE]}</p>}
           </div>
         )
       })}
@@ -97,7 +107,7 @@ function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; acti
             onChange={(e) => { setChoice(e.target.value); setError(null) }}>
             <option value="">Choose an action…</option>
             <option value="set_status">Set status</option>
-            <option value="send_message">Send message (not active yet)</option>
+            <option value="send_message">Send message</option>
             <option value="generate_pdf">Generate PDF (not active yet)</option>
           </select>
         </div>
@@ -116,7 +126,7 @@ function usedFields(graph: Graph, forms: FormOption[]): Field[] {
   return [...byKey.values()]
 }
 
-export function SidePanel({ graph, node, open, forms, roles, members, onChange, onDelete, onSay, inSheet }: Props) {
+export function SidePanel({ graph, node, open, forms, roles, members, messages, onChange, onDelete, onSay, inSheet }: Props) {
   const update = (n: WfNode) => onChange(setNode(graph, n))
   const choose: [string, string] = ['', 'Choose…']
   const targets: [string, string][] = graph.nodes.filter((n) => n.type !== 'start').map((n) => [n.id, stepLabel(graph, n)])
@@ -201,7 +211,8 @@ export function SidePanel({ graph, node, open, forms, roles, members, onChange, 
             <legend className="rnr-label" tabIndex={-1}>{WHEN[o]}</legend>
             {/* The keyboard way to connect: same result as dragging from the card's handle. */}
             <Select label="Goes to" value={edge?.to ?? ''} options={[['', 'Not connected'], ...targets]} onChange={(to) => goTo(o, to)} />
-            {edge && <ActionList edgeId={edge.id} actions={edge.actions} onChange={(acts) => onChange(setActions(graph, edge.id, acts))} onSay={onSay} />}
+            {edge && <ActionList edgeId={edge.id} actions={edge.actions} onChange={(acts) => onChange(setActions(graph, edge.id, acts))} onSay={onSay}
+              graph={graph} roles={roles} members={members} fields={fields} messages={messages} />}
           </fieldset>
         )
       })}

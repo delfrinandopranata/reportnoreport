@@ -215,7 +215,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
     : isDraft ? 'Ready to publish' : 'No issues'
   const panel = selected && (
     <SidePanel graph={graph} node={selected} open={counts.data?.get(selected.id) ?? 0} forms={forms.data ?? []}
-      roles={roles.data ?? []} members={members.data ?? new Map()} onChange={setGraph} onDelete={() => setDeleting(selected.id)} onSay={say} inSheet={!isLg} />
+      roles={roles.data ?? []} members={members.data ?? new Map()} messages={{ templates: templates.data ?? [], canManageTemplates: can('comms.manage') }} onChange={setGraph} onDelete={() => setDeleting(selected.id)} onSay={say} inSheet={!isLg} />
   )
   const deletingNode = graph.nodes.find((n) => n.id === deleting)
 

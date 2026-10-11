@@ -24,6 +24,8 @@ import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
 import { AccessPage } from './workflows/AccessPage'
 import { NotificationBell } from './comms/NotificationBell'
 import { SettingsPage } from './comms/SettingsPage'
+import { TemplatesPage } from './comms/TemplatesPage'
+import { TemplateEditor } from './comms/TemplateEditor'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -61,6 +63,8 @@ function Page({ route }: { route: Route }) {
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
     case 'settings': return <SettingsPage />
+    case 'templates': return <TemplatesPage />
+    case 'template': return <TemplateEditor id={route.id} />
     default: return <MembersPage />
   }
 }
@@ -108,6 +112,7 @@ function Shell() {
             {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
+            {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
             {link('#/members', 'Members', route.page === 'members')}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
