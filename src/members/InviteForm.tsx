@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
 import { friendlyError } from '../ui/errors'
 import { CheckIcon } from '../ui/icons'
@@ -14,6 +14,7 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
   const [picked, setPicked] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const { busy, saved, run } = useAction()
+  const form = useRef<HTMLFormElement>(null)
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -24,15 +25,16 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
       if (error) {
         const body = await (error as { context?: Response }).context?.json?.().catch(() => null)
         setError(friendlyError({ message: body?.error }))
-        return
+        return false
       }
       onNotice(data.status === 'existing' ? `${email} is already in this organisation.` : `Invite sent to ${email}.`)
       setEmail(''); setPicked([]); onDone()
+      form.current?.reset() // clears :user-invalid on the emptied required field
     }, true)
   }
 
   return (
-    <form className="rnr-card gap-3" aria-busy={busy} onSubmit={submit}>
+    <form ref={form} className="rnr-card gap-3" aria-busy={busy} onSubmit={submit}>
       <h2 className="dialog-title">Invite someone</h2>
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label className="rnr-field"><span className="rnr-label">Email</span>

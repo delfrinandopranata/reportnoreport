@@ -13,6 +13,8 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
   const { can } = useOrg()
   const { busy, saved, run } = useAction()
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(closeTimer.current), [])
   const nameRef = useRef<HTMLInputElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -32,7 +34,8 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
     return run(async () => {
       setError(null)
       const msg = await onSave({ ...draft, name: draft.name.trim() })
-      if (msg) setError(msg)
+      if (msg) { setError(msg); return false }
+      closeTimer.current = setTimeout(onClose, 1600) // let "Saved" show, then close
     }, true)
   }
 

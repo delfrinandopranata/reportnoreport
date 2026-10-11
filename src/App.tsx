@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './data/supabase'
-import { OrgProvider, useOrg } from './rbac/useOrg'
+import { useQueryClient } from '@tanstack/react-query'
+import { OrgProvider } from './rbac/OrgProvider'
+import { useOrg } from './rbac/useOrg'
+import { guardHash } from './rbac/route'
 import { AuthPage } from './auth/AuthPage'
 import { CreateOrgPage } from './orgs/CreateOrgPage'
 import { OrgSwitcher } from './orgs/OrgSwitcher'
@@ -23,7 +26,9 @@ const useHash = () => {
 
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
-  const hash = useHash()
+  const rawHash = useHash()
+  const hash = loading ? rawHash : guardHash(rawHash, can('roles.manage'))
+  useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
     return (
@@ -76,12 +81,24 @@ function Shell() {
 
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const qc = useQueryClient()
+  const lastUser = useRef<string | undefined>(undefined)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    // A different (or no) user must never see the previous user's cached data.
+    const apply = (s: Session | null) => {
+      const id = s?.user.id
+      if (lastUser.current !== undefined && lastUser.current !== id) {
+        qc.clear()
+        try { localStorage.removeItem('rnr.orgId') } catch { /* private mode */ }
+      }
+      lastUser.current = id ?? ''
+      setSession(s)
+    }
+    supabase.auth.getSession().then(({ data }) => apply(data.session))
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => apply(s))
     return () => data.subscription.unsubscribe()
-  }, [])
+  }, [qc])
   if (session === undefined) return null
   if (!session) return <AuthPage />
-  return <OrgProvider><Shell /></OrgProvider>
+  return <OrgProvider key={session.user.id} userId={session.user.id}><Shell /></OrgProvider>
 }

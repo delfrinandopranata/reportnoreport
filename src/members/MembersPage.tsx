@@ -48,11 +48,12 @@ export function MembersPage() {
     const { error } = await supabase.rpc('remove_member', { p_member_id: removing!.id })
     if (error) { setRemoveError(friendlyError(error)); return }
     setNotice('Member removed.'); setRemoving(null); await refresh()
+    document.getElementById('members-h')?.focus() // the row that opened the dialog is gone
   })
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="members-h">
-      <h1 id="members-h" className="page-title">Members</h1>
+      <h1 id="members-h" tabIndex={-1} className="page-title">Members</h1>
       <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={14} />{notice}</p>}</div>
       <div>{error && <p className="rnr-error" role="alert">{error}</p>}</div>
       {manage && orgId && <InviteForm orgId={orgId} roles={roles.data} onDone={refresh} onNotice={setNotice} />}

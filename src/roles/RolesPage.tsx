@@ -35,8 +35,7 @@ export function RolesPage() {
   async function save(r: RoleDraft): Promise<string | null> {
     const { error } = await supabase.rpc('save_role', { p_org: orgId!, p_role_id: r.id as string, p_name: r.name, p_permissions: r.permissions })
     if (error) return friendlyError(error, { duplicate: 'A role with that name already exists. Choose another name.' })
-    await new Promise((res) => setTimeout(res, 1600)) // let the "Saved" state show
-    setEditing(null); setNotice('Role saved.'); await refresh()
+    setNotice('Role saved.'); await refresh()
     return null
   }
 
