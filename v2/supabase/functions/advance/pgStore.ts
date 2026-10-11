@@ -1,6 +1,6 @@
 import postgres from 'npm:postgres@3.4.5'
 import { MAX_PEOPLE, type MessageRow, type Person, type TemplateRow } from './notify.ts'
-import type { RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
+import type { PdfJob, PdfSourceRow, RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
 
 const RECORD = ['id', 'org_id', 'workflow_id', 'title', 'current_node_id', 'status', 'label', 'error', 'data', 'step', 'started_by']
 const TEMPLATE = ['id', 'org_id', 'kind', 'name', 'channel', 'subject', 'body']
@@ -102,6 +102,58 @@ function pgTx(t: postgres.TransactionSql): Tx {
         sent_at = coalesce(${p.sentAt ?? null}::timestamptz, sent_at),
         provider_id = coalesce(${p.providerId ?? null}::text, provider_id)
         where id = ${id}`
+    },
+    hasReportTemplate: async (wf) => (await t`select 1 from report_templates where workflow_id = ${wf}`).length > 0,
+    queuePdf: async (x) => {
+      // The insert's own row, or the queued row it collided with (the CTE cannot see its own insert in the second branch).
+      const [row] = await t`
+        with ins as (
+          insert into record_pdfs (org_id, record_id, requested_by) values (${x.org_id}, ${x.record_id}, ${x.requested_by})
+          on conflict (record_id) where status = 'queued' do nothing returning id)
+        select id from ins union all select id from record_pdfs where record_id = ${x.record_id} and status = 'queued' limit 1`
+      await t`select wake_render_pdfs()` // pg_net sends after commit; a rollback sends nothing
+      if (row) return row.id as string
+      // A concurrent request committed its queued job after this statement's snapshot: read it now.
+      return (await t`select id from record_pdfs where record_id = ${x.record_id} and status = 'queued'`)[0].id as string
+    },
+    duePdfs: async (now, limit) => (await t`
+      select id from record_pdfs where status = 'queued' and attempts < 3 and next_attempt_at <= ${now}
+      order by next_attempt_at limit ${limit}`).map((r) => r.id as string),
+    claimPdf: (id, now, lease) => one<PdfJob>(t`
+      update record_pdfs set attempts = attempts + 1, next_attempt_at = ${lease}
+      where id = ${id} and status = 'queued' and attempts < 3 and next_attempt_at <= ${now}
+      returning id, org_id, record_id, requested_by, attempts`),
+    expiredPdfs: async (now, limit) => (await t`
+      select id, org_id, record_id, requested_by, attempts from record_pdfs
+      where status = 'queued' and attempts >= 3 and next_attempt_at <= ${now} limit ${limit}`) as unknown as PdfJob[],
+    finishPdf: async (id, p) => (await t`
+      update record_pdfs set status = ${p.status}, error = ${p.error}, path = ${p.path ?? null},
+        next_attempt_at = coalesce(${p.nextAttemptAt ?? null}::timestamptz, next_attempt_at),
+        finished_at = case when ${p.status} = 'queued' then null else now() end
+      where id = ${id} and status = 'queued' returning id`).length === 1,
+    pdfSource: async (recordId) => {
+      const head = await one<Record<string, unknown>>(t`
+        select r.id, r.org_id, r.title, r.status, r.started_by, r.created_at, w.name as workflow_name, w.graph, o.name as org_name,
+               rt.header, rt.fields, rt.signoff
+        from records r join workflows w on w.id = r.workflow_id join orgs o on o.id = r.org_id
+        join report_templates rt on rt.workflow_id = r.workflow_id
+        where r.id = ${recordId}`)
+      if (!head) return null
+      const subs = await t`select node_id, form_id, answers, submitted_by, outcome, created_at from form_submissions
+        where record_id = ${recordId} order by created_at, id`
+      const formIds = [...new Set(subs.map((s) => s.form_id as string))]
+      const forms = formIds.length ? await t`select id, schema from forms where org_id = ${head.org_id as string} and id = any(${formIds}::uuid[])` : []
+      const people = await t`select m.user_id, coalesce(nullif(btrim(m.full_name), ''), m.email::text) as name from members m where m.org_id = ${head.org_id as string}`
+      return {
+        orgId: head.org_id as string, orgName: head.org_name as string, workflowName: head.workflow_name as string, graph: head.graph,
+        record: { id: head.id as string, title: head.title as string, status: head.status as string, started_by: head.started_by as string,
+          created_at: (head.created_at as Date).toISOString() },
+        template: { header: head.header, fields: head.fields, signoff: head.signoff },
+        forms: Object.fromEntries(forms.map((f) => [f.id as string, f.schema])),
+        submissions: subs.map((s) => ({ node_id: s.node_id, answers: s.answers, submitted_by: s.submitted_by, outcome: s.outcome,
+          created_at: (s.created_at as Date).toISOString() })),
+        names: Object.fromEntries(people.map((p) => [p.user_id as string, p.name as string])),
+      } as PdfSourceRow
     },
   }
 }

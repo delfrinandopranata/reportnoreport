@@ -1,4 +1,4 @@
-import type { NewEvent, NewSubmission, RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
+import type { NewEvent, PdfJob, PdfSourceRow, NewSubmission, RecordRow, ScheduledRow, Store, TaskRow, Tx, WorkflowRow } from './engine.ts'
 import { startRecord, submitTask, resumeOne, type Ctx } from './engine.ts'
 import type { MessagePatch, NewMessage, NewNotification, TemplateRow } from './notify.ts'
 import type { Graph } from '../_shared/workflow/graph.ts'
@@ -22,6 +22,9 @@ export type Db = {
   templates: TemplateRow[]
   muted: Set<string> // `${userId}:${kind}` pairs with email turned off
   notifications: NewNotification[]
+  reportTemplates: Set<string> // workflow ids with a report template
+  pdfs: (PdfJob & { status: 'queued' | 'done' | 'failed'; next_attempt_at: Date; path: string | null; error: string | null })[]
+  pdfSources: Map<string, PdfSourceRow> // record id → what pdfSource returns
   messages: (NewMessage & { id: string; status: MessagePatch['status']; attempts: number; error: string | null; next_attempt_at: Date; sent_at: Date | null; provider_id: string | null })[]
 }
 
@@ -142,6 +145,35 @@ export function fakeStore(db: Db): Store {
           if (p.sentAt) m.sent_at = p.sentAt
           if (p.providerId !== undefined) m.provider_id = p.providerId
         },
+        hasReportTemplate: async (wf) => db.reportTemplates.has(wf),
+        queuePdf: async (x) => {
+          const queued = db.pdfs.find((p) => p.record_id === x.record_id && p.status === 'queued')
+          if (queued) return queued.id
+          const p = { ...x, id: id('pdf'), attempts: 0, status: 'queued' as const, next_attempt_at: new Date(0), path: null, error: null }
+          db.pdfs.push(p)
+          return p.id
+        },
+        duePdfs: async (now, limit) => db.pdfs.filter((p) => p.status === 'queued' && p.attempts < 3 && p.next_attempt_at <= now).slice(0, limit).map((p) => p.id),
+        claimPdf: async (pid, now, lease) => {
+          await tick() // let an overlapping run reach the same row
+          const p = db.pdfs.find((x) => x.id === pid && x.status === 'queued' && x.attempts < 3 && x.next_attempt_at <= now)
+          if (!p) return null
+          p.attempts += 1
+          p.next_attempt_at = lease
+          return { id: p.id, org_id: p.org_id, record_id: p.record_id, requested_by: p.requested_by, attempts: p.attempts }
+        },
+        expiredPdfs: async (now, limit) => db.pdfs.filter((p) => p.status === 'queued' && p.attempts >= 3 && p.next_attempt_at <= now).slice(0, limit)
+          .map((p) => ({ id: p.id, org_id: p.org_id, record_id: p.record_id, requested_by: p.requested_by, attempts: p.attempts })),
+        finishPdf: async (pid, patch) => {
+          const p = db.pdfs.find((x) => x.id === pid && x.status === 'queued')
+          if (!p) return false
+          p.status = patch.status
+          p.error = patch.error
+          p.path = patch.path ?? null
+          if (patch.nextAttemptAt) p.next_attempt_at = patch.nextAttemptAt
+          return true
+        },
+        pdfSource: async (rid) => structuredClone(db.pdfSources.get(rid) ?? null),
       }
       try { return await fn(tx) } finally { for (const r of held) r() }
     },
@@ -181,6 +213,7 @@ export function setup(graph: Graph = LEAVE) {
     notifications: [], messages: [],
     holders: new Set([`${ADMIN}:${ROLE_ADMIN}`]),
     starters: new Set([`${MEMBER}:${WF}`]),
+    reportTemplates: new Set([WF]), pdfs: [], pdfSources: new Map(),
     records: [], tasks: [], submissions: [], scheduled: [], events: [],
   }
   const store = fakeStore(db)

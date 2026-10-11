@@ -320,3 +320,36 @@ Deno.test('a role of exactly 500 people is sent to; 501 stops the record with th
     ['error', '"Send message" would send "Record approved" to more than 500 people. Ask a workflow manager to narrow its recipients.'])
   assertEquals(over.db.messages.filter((m) => m.template_id === T_APPROVED).length, 0)
 })
+Deno.test('generate_pdf queues one job and records it on the timeline', async () => {
+  const g = leave()
+  g.edges.find((e) => e.id === 'e5')!.actions = [{ type: 'generate_pdf' }]
+  const { db, start, act, claim } = setup(g)
+  await start(SHORT)
+  await act(claim(), 'approved')
+  const [rec] = db.records
+  assertEquals(rec.status, 'done')
+  assertEquals(db.pdfs.map((p) => [p.record_id, p.status, p.requested_by]), [[rec.id, 'queued', null]])
+  assertEquals(db.events.filter((e) => e.kind === 'action').at(-1)?.detail, { type: 'generate_pdf', edge: 'e5', status: 'queued', job: db.pdfs[0].id })
+})
+
+Deno.test('generate_pdf without a report template stops the record with the reason', async () => {
+  const g = leave()
+  g.edges.find((e) => e.id === 'e5')!.actions = [{ type: 'generate_pdf' }]
+  const { db, start, act, claim } = setup(g)
+  db.reportTemplates.clear()
+  await start(SHORT)
+  await act(claim(), 'approved')
+  assertEquals([db.records[0].status, db.records[0].error], ['error',
+    'This path makes a PDF, but the workflow has no report template. Ask a reports manager to set one up.'])
+  assertEquals(db.pdfs.length, 0)
+})
+
+Deno.test('a second generate_pdf on the same record reuses the queued job', async () => {
+  const g = leave()
+  g.edges.find((e) => e.id === 'e5')!.actions = [{ type: 'generate_pdf' }, { type: 'generate_pdf' }]
+  const { db, start, act, claim } = setup(g)
+  await start(SHORT)
+  await act(claim(), 'approved')
+  const jobs = db.events.filter((e) => e.detail.type === 'generate_pdf').map((e) => e.detail.job)
+  assertEquals([db.pdfs.length, jobs.length, jobs[0] === jobs[1]], [1, 2, true])
+})

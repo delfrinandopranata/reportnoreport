@@ -5,6 +5,7 @@ import {
 } from '../_shared/workflow/graph.ts'
 import { notifyTask, sendAction, type MessagePatch, type MessageRow, type NewMessage, type NewNotification, type Person, type TemplateRow } from './notify.ts'
 import type { TemplateKind } from '../_shared/comms/recipients.ts'
+import type { PdfSource } from '../_shared/reports/pdf.ts'
 
 export type RecordStatus = 'open' | 'done' | 'rejected' | 'error'
 export type RecordRow = {
@@ -25,6 +26,10 @@ export type NewSubmission = {
 }
 export type NewTask = { org_id: string; record_id: string; node_id: string; assignee_role_id: string | null; assignee_user_id: string | null; due_at: Date | null }
 export type NewEvent = { org_id: string; record_id: string; kind: EventKind; node_id: string | null; actor_id: string | null; detail: Record<string, unknown> }
+export type PdfJob = { id: string; org_id: string; record_id: string; requested_by: string | null; attempts: number }
+export type PdfPatch = { status: 'queued' | 'done' | 'failed'; error: string | null; path?: string; nextAttemptAt?: Date }
+/** As stored: render-pdfs validates the template with readTemplate before it builds anything. */
+export type PdfSourceRow = Omit<PdfSource, 'template'> & { template: { header: unknown; fields: unknown; signoff: unknown } }
 
 /** One database transaction. The pg adapter (Task 4) and the test fake both implement it. */
 export interface Tx {
@@ -71,6 +76,16 @@ export interface Tx {
   /** FOR UPDATE SKIP LOCKED, queued and due rows only. */
   lockMessage(id: string, now: Date): Promise<MessageRow | null>
   finishMessage(id: string, patch: MessagePatch): Promise<void>
+  hasReportTemplate(workflowId: string): Promise<boolean>
+  /** The record's queued job, inserting one if there is none; wakes render-pdfs once the transaction commits. */
+  queuePdf(row: { org_id: string; record_id: string; requested_by: string | null }): Promise<string>
+  duePdfs(now: Date, limit: number): Promise<string[]>
+  /** UPDATE … attempts + 1, lease until leaseUntil, WHERE queued and due: an overlapping run gets null. */
+  claimPdf(id: string, now: Date, leaseUntil: Date): Promise<PdfJob | null>
+  expiredPdfs(now: Date, limit: number): Promise<PdfJob[]>
+  /** WHERE status = 'queued': false when another run already finished it. */
+  finishPdf(id: string, patch: PdfPatch): Promise<boolean>
+  pdfSource(recordId: string): Promise<PdfSourceRow | null>
 }
 export interface Store { tx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> }
 export type Ctx = { now: Date; actor: string; appUrl: string; fileExists(path: string): Promise<boolean> }
@@ -227,8 +242,11 @@ async function runAction(tx: Tx, rec: RecordRow, edge: Edge, a: unknown, ctx: Wa
     return ev('action', edge.from, { type: 'send_message', edge: edge.id, ...sent })
   }
   if (isObj(a) && a.type === 'generate_pdf') {
-    // shortcut: recorded as pending only; Phase 5 (Reports) processes pending generate_pdf events.
-    return ev('action', edge.from, { type: a.type, edge: edge.id, status: 'pending', config: a })
+    if (!(await tx.hasReportTemplate(rec.workflow_id))) {
+      throw new StepError('This path makes a PDF, but the workflow has no report template. Ask a reports manager to set one up.')
+    }
+    const job = await tx.queuePdf({ org_id: rec.org_id, record_id: rec.id, requested_by: null })
+    return ev('action', edge.from, { type: 'generate_pdf', edge: edge.id, status: 'queued', job })
   }
   throw new StepError('This path has an action the workflow cannot run. Ask a workflow manager to remove it.')
 }
