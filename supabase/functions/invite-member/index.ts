@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { validateInvite } from './validate.ts'
+import { claimInvite } from './claim.ts'
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } })
@@ -19,13 +20,11 @@ Deno.serve(async (req) => {
   if (permError || !allowed) return json(403, { error: 'You do not have permission to invite members.' })
 
   const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: existing } = await admin.from('members').select('id').eq('org_id', orgId).eq('email', email).maybeSingle()
-  if (existing) return json(200, { memberId: existing.id, status: 'existing' })
-
   const { data: { user: caller } } = await asCaller.auth.getUser()
-  const { data: member, error: insertError } = await admin.from('members')
-    .insert({ org_id: orgId, email, status: 'invited', invited_by: caller?.id }).select('id').single()
-  if (insertError) return json(500, { error: 'Could not create the invite.' })
+  let claim
+  try { claim = await claimInvite(admin, orgId, email, caller?.id) } catch { return json(500, { error: 'Could not create the invite.' }) }
+  if (!claim.created) return json(200, { memberId: claim.id, status: 'existing' })
+  const member = { id: claim.id }
 
   // Role assignment reuses the RPC so the Owner / no-escalation guards apply to invites too.
   const { error: rolesError } = await asCaller.rpc('set_member_roles', { p_member_id: member.id, p_role_ids: roleIds })
