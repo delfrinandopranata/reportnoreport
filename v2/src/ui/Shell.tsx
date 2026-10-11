@@ -54,6 +54,9 @@ export function Shell({ page, perms, email, children }: { page: Route['page']; p
 
   return (
     <div className="rnr-shell">
+      <svg width="0" height="0" aria-hidden="true" className="absolute">
+        <filter id="rnr-rough"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" result="n" /><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" /></filter>
+      </svg>
       <a href="#main" className="rnr-skip rnr-btn rnr-btn-secondary" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <aside className="rnr-side rnr-folder">
         <span className="rnr-folder-tab rnr-side-tab"><Wordmark href="#/inbox" /></span>

@@ -7,7 +7,7 @@ type Series = 'in' | 'out'
 const WORD: Record<Series, string> = { in: 'Opens', out: 'Clicks' }
 const num = (n: number) => n.toLocaleString('en-GB')
 
-/** Opens in --in with circles and a solid line, clicks in --out with squares and a dashed line: never colour alone (design/README dataviz). In-app shows one series, Reads. */
+/** Opens in --series-1 with circles and a solid line, clicks in --series-2 with squares and a dashed line: never colour alone (design/README dataviz). In-app shows one series, Reads. */
 export function CampaignChart({ days, inApp, startedAt }: { days: DayRow[]; inApp: boolean; startedAt: string | null }) {
   const uid = useId()
   const wrap = useRef<HTMLDivElement>(null)
@@ -56,7 +56,7 @@ export function CampaignChart({ days, inApp, startedAt }: { days: DayRow[]; inAp
             <li key={s} onPointerEnter={() => setHover(s)} onPointerLeave={() => setHover(null)}>
               <svg width="24" height="12" aria-hidden="true">
                 <line className="rnr-chart-line" data-series={s} x1="0" x2="24" y1="6" y2="6" />
-                {s === 'in' ? <circle className="rnr-chart-dot" data-series="in" cx="12" cy="6" r="4" /> : <rect className="rnr-chart-dot" data-series="out" x="8" y="2" width="8" height="8" />}
+                {s === 'in' ? <circle className="rnr-chart-dot" data-series="in" cx="12" cy="6" r="4" /> : <rect className="rnr-chart-mark" data-series="out" x="8" y="2" width="8" height="8" />}
               </svg>{word(s)}
             </li>
           ))}
@@ -89,7 +89,7 @@ export function CampaignChart({ days, inApp, startedAt }: { days: DayRow[]; inAp
             <polyline className="rnr-chart-line" data-series="in" points={polyline(g.opens)} onPointerEnter={() => setHover('in')} onPointerLeave={() => setHover(null)} />
             {!inApp && <polyline className="rnr-chart-line" data-series="out" points={polyline(g.clicks)} onPointerEnter={() => setHover('out')} onPointerLeave={() => setHover(null)} />}
             {g.opens.map((p, i) => <circle key={`o${i}`} className="rnr-chart-dot" data-series="in" data-active={tip === i || undefined} cx={p.x} cy={p.y} r={4} />)}
-            {!inApp && g.clicks.map((p, i) => <rect key={`c${i}`} className="rnr-chart-dot" data-series="out" data-active={tip === i || undefined} x={p.x - 4} y={p.y - 4} width={8} height={8} />)}
+            {!inApp && g.clicks.map((p, i) => <rect key={`c${i}`} className="rnr-chart-mark" data-series="out" data-active={tip === i || undefined} x={p.x - 4} y={p.y - 4} width={8} height={8} />)}
             {g.xs.map((x, i) => (
               <rect key={i} className="rnr-chart-hit" x={x - g.step / 2} y={0} width={g.step} height={g.bottom}
                 onPointerEnter={() => setTip(i)} onPointerMove={() => setTip(i)} onClick={() => setTip(i)}

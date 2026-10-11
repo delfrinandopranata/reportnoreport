@@ -5,7 +5,7 @@ import { cellText, shownText } from './text'
 
 const clip = (s: string, max = 12) => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
 
-/** One series in --in, drawn at the measured width so text stays 11px. Values are in the tooltip, the labels, the SVG title and the table; never colour alone (design/README dataviz). */
+/** One series in --series-1, drawn at the measured width so text stays 11px. Values are in the tooltip, the labels, the SVG title and the table; never colour alone (design/README dataviz). */
 export function ChartWidget({ kind, title, data, reportId }: { kind: 'bar' | 'line'; title: string; data: RunResponse; reportId: string }) {
   const uid = useId()
   const wrap = useRef<HTMLDivElement>(null)
