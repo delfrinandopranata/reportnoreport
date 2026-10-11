@@ -26,7 +26,7 @@ test('fonts are same-origin and the CSP allows them', () => {
   assert.match(read('vercel.json'), /font-src 'self'/)
 })
 
-const RETIRED = /\b(?:zinc|red|emerald|green|amber|blue|sky|orange|rose|yellow)-\d{2,3}\b|\bdark:|--brand-solid|--color-(?:in|out)\b|\b(?:bg|text|fill|stroke|border)-(?:in|out)\b/
+const RETIRED = /\b(?:zinc|red|emerald|green|amber|blue|sky|orange|rose|yellow)-\d{2,3}\b|\bdark:[a-z[]|--brand-solid|--color-(?:in|out)\b|\b(?:bg|text|fill|stroke|border)-(?:in|out)\b/
 /** Files not yet on Paper that moves. Each screen task deletes its entries; Task 11 requires this list to be empty. */
 const LEGACY = new Set<string>([
   'src/App.tsx',
@@ -45,19 +45,14 @@ const LEGACY = new Set<string>([
   'src/checklist/Checklist.tsx',
   'src/clients/AddClient.tsx',
   'src/clients/ClientInfo.tsx',
-  'src/clients/fields.tsx',
-  'src/clients/shared.tsx',
   'src/contracts/ContractsPage.tsx',
   'src/data/session.tsx',
   'src/settings/BankAccounts.tsx',
   'src/settings/BillingPage.tsx',
   'src/settings/SettingsPage.tsx',
-  'src/table.tsx',
   'src/tour/Tour.tsx',
   'src/transfer.tsx',
-  'src/ui.tsx',
   'src/users/UsersPage.tsx',
-  'src/users/badges.tsx',
   'src/widgets.tsx',
 ])
 

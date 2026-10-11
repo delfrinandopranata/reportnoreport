@@ -3,43 +3,36 @@ import { addTag, CLIENT_STATUSES, DIAL_CODES, joinPhone, splitPhone, STATUS_LABE
 import { field, Icon, input } from '../ui'
 import { useMembers } from '../data/queries'
 
-const TONE: Record<ClientStatus, string> = {
-  active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-400/20',
-  inactive: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-300 dark:ring-amber-400/20',
-  archived: 'bg-zinc-100 text-zinc-600 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-400/20',
+const VIEW: Record<ClientStatus, { icon: 'check' | 'alert' | 'file'; tone?: 'ok' | 'warn' }> = {
+  active: { icon: 'check', tone: 'ok' },
+  inactive: { icon: 'alert', tone: 'warn' },
+  archived: { icon: 'file' },
 }
-const pill = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset'
 
 export function StatusBadge({ status }: { status: ClientStatus }) {
-  return <span className={`${pill} ${TONE[status]}`}>{STATUS_LABEL[status]}</span>
+  return <span className="rnr-status" data-tone={VIEW[status].tone}><Icon name={VIEW[status].icon} />{STATUS_LABEL[status]}</span>
 }
 
-/** Coloured pill that is really a native <select>, so keyboard and screen readers just work. */
+/** The status chip is really a native <select>, so keyboard and screen readers just work. */
 export function StatusSelect({ status, onChange, disabled }: { status: ClientStatus; onChange: (status: ClientStatus) => void; disabled?: boolean }) {
   if (disabled) return <StatusBadge status={status} />
   return (
-    <span className="relative inline-flex">
-      <select
-        value={status}
-        onChange={(e) => onChange(e.target.value as ClientStatus)}
-        aria-label="Client status"
-        className={`${pill} ${TONE[status]} cursor-pointer appearance-none py-1 pr-7 pl-3 outline-none focus-visible:ring-2`}
-      >
+    <span className="rnr-select inline-block">
+      <select value={status} onChange={(e) => onChange(e.target.value as ClientStatus)} aria-label="Client status" className="rnr-input w-auto min-h-9 py-1">
         {CLIENT_STATUSES.map((s) => (
           <option key={s} value={s}>{STATUS_LABEL[s]}</option>
         ))}
       </select>
-      <Icon name="down" className="pointer-events-none absolute top-1/2 right-2 size-3 -translate-y-1/2" />
     </span>
   )
 }
 
 export function TagPill({ tag, onRemove }: { tag: string; onRemove?: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+    <span className="rnr-chip">
       {tag}
       {onRemove && (
-        <button type="button" onClick={onRemove} aria-label={`Remove tag ${tag}`} className="-mr-1 rounded-full p-0.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white print:hidden">
+        <button type="button" onClick={onRemove} aria-label={`Remove tag ${tag}`} className="-mr-1 grid size-5 place-items-center rounded-(--r-chip) text-ink-3 hover:text-ink print:hidden">
           <Icon name="x" className="size-3" />
         </button>
       )}
@@ -65,7 +58,7 @@ export function TagList({ tags, onChange, label = 'Add tag' }: { tags: string[];
       {tags.map((t) => (
         <TagPill key={t} tag={t} onRemove={onChange && (() => onChange(tags.filter((x) => x !== t)))} />
       ))}
-      {!tags.length && !onChange && <span className="text-zinc-400">—</span>}
+      {!tags.length && !onChange && <span className="rnr-muted">—</span>}
       {onChange && (
         <input
           value={draft}
@@ -75,7 +68,7 @@ export function TagList({ tags, onChange, label = 'Add tag' }: { tags: string[];
           maxLength={24}
           aria-label={label}
           placeholder="+ Add tag"
-          className="w-24 rounded-full bg-transparent px-2 py-0.5 text-xs outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 print:hidden"
+          className="rnr-input w-28 min-h-8 px-2 py-0.5 text-xs print:hidden"
         />
       )}
     </div>
@@ -112,7 +105,7 @@ export function PhoneField({ value, onChange, invalid }: { value: string; onChan
         placeholder="12-345 6789"
         aria-label="Phone number"
         aria-invalid={invalid}
-        className={`${input} min-w-0 tabular-nums`}
+        className={`${input} min-w-0`}
       />
     </div>
   )
