@@ -169,8 +169,20 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "current_member_id":
+            "accept_invites":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"audit":
+{ Args: { "p_action": string,"p_after": Json,"p_before": Json,"p_org": string,"p_target": string }; Returns: undefined
+                           },
+"create_org":
+{ Args: { "p_id"?: string,"p_name": string }; Returns: string
+                           },
+"current_member_id":
 { Args: { "p_org": string }; Returns: string
+                           },
+"delete_role":
+{ Args: { "p_role_id": string }; Returns: undefined
                            },
 "has_permission":
 { Args: { "p_org": string,"p_perm": string }; Returns: boolean
@@ -180,6 +192,21 @@ isOneToOne: false
                            },
 "my_permissions":
 { Args: { "p_org": string }; Returns: string[]
+                           },
+"owner_count":
+{ Args: { "p_org": string }; Returns: number
+                           },
+"remove_member":
+{ Args: { "p_member_id": string }; Returns: undefined
+                           },
+"require_permission":
+{ Args: { "p_org": string,"p_perm": string }; Returns: undefined
+                           },
+"save_role":
+{ Args: { "p_name": string,"p_org": string,"p_permissions": (string)[],"p_role_id": string }; Returns: string
+                           },
+"set_member_roles":
+{ Args: { "p_member_id": string,"p_role_ids": (string)[] }; Returns: undefined
                            }
           }
           Enums: {
