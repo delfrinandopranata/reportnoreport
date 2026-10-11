@@ -1,7 +1,8 @@
-import { CheckIcon, ClockIcon, StopIcon } from '../ui/icons'
+import { CheckIcon, ClockIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import type { Role } from './InviteForm'
 import { toggle } from './toggle'
+import { LoadError } from '../ui/Note.tsx'
 
 export type Member = { id: string; email: string; status: 'invited' | 'active'; user_id: string | null; member_roles: { role_id: string }[] }
 
@@ -14,12 +15,7 @@ type Props = {
 export function MembersTable({ orgName, members, roles, failed, manage, canRemove, busyId, onRetry, onSetRoles, onRemove }: Props) {
   if (failed) {
     return (
-      <div className="rnr-empty" role="alert">
-        <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
-        <h2>Members did not load</h2>
-        <p>Check your connection, then try again.</p>
-        <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onRetry}>Try again</button>
-      </div>
+      <LoadError what="Members" onRetry={onRetry} />
     )
   }
   if (!members || !roles) {

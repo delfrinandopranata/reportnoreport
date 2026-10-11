@@ -79,9 +79,7 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
   /* dashboard: a number widget is a KPI tile whose tab wraps (a widget name is never truncated) */
   .rnr-kpi-widget { display: flex; flex: 1; min-width: 0; }
-  .rnr-kpi-widget > .rnr-folder { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-top: 0; }
-  .rnr-kpi-widget .rnr-folder-tab { position: relative; align-self: flex-start; height: auto; min-height: var(--folder-tab-h); max-width: calc(100% - var(--folder-shoulder)); padding-block: var(--space-2); white-space: normal; overflow-wrap: anywhere; line-height: 16px; }
-  .rnr-kpi-widget .rnr-folder-body { flex: 1; align-content: start; }
+  .rnr-kpi-widget .rnr-folder-body { align-content: start; }
   .rnr-kpi-widget [inert] { display: grid; justify-items: start; gap: var(--space-2-5); }
   .rnr-widget-bar { display: flex; align-items: center; gap: var(--space-1); justify-self: stretch; }
   .rnr-kpi-widget[data-state="editing"] .rnr-folder-body { box-shadow: 0 0 0 4px var(--soft); }

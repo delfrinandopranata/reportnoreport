@@ -4,11 +4,13 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
+import { CheckIcon, NAV_ICONS, PlusIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
 import { useForms, type FormRow } from './api'
+import { LoadError, Note } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 const fieldCount = (f: FormRow) => f.schema.filter((x) => x.type !== 'page_break').length
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -71,25 +73,16 @@ export function FormsPage() {
 
   return (
     <section className="flex flex-col" aria-labelledby="forms-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build</p>
-          <h1 id="forms-h" tabIndex={-1} className="rnr-page-title">Forms</h1>
-        </div>
-        {manage && !firstRun && <div className="rnr-page-actions">{newButton}</div>}
-      </header>
+      <PageHead id="forms-h" crumb="Build" title="Forms">
+        {manage && !firstRun && newButton}
+      </PageHead>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-      {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
+      {error && <Note>{error}</Note>}
       {forms.isPending && (
         <div className="rnr-card"><Skeleton rows={[{ w: '40%' }, { w: '10%' }, { w: '14%' }]} /></div>
       )}
       {forms.isError && (
-        <div className="rnr-empty" role="alert">
-          <span className="rnr-kind"><XIcon size={20} /></span>
-          <h2>Your forms did not load</h2>
-          <p>Check your connection, then try again.</p>
-          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => forms.refetch()}>Try again</button>
-        </div>
+        <LoadError what="Your forms" onRetry={() => forms.refetch()} />
       )}
       {firstRun && (
         <div className="rnr-empty">

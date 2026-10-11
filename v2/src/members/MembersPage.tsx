@@ -4,11 +4,13 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { CheckIcon, XIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
 import { InviteForm, type Role } from './InviteForm'
 import { MembersTable, type Member } from './MembersTable'
+import { Note } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 export function MembersPage() {
   const { orgs, orgId, userId, can } = useOrg()
@@ -57,15 +59,10 @@ export function MembersPage() {
 
   return (
     <section className="rnr-wide" aria-labelledby="members-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Admin</p>
-          <h1 id="members-h" tabIndex={-1} className="rnr-page-title">Members</h1>
-        </div>
-      </header>
+      <PageHead id="members-h" crumb="Admin" title="Members" />
       <div className="flex flex-col gap-4">
         <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={16} />{notice}</p>}</div>
-        <div>{error && <div className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}</div>
+        <div>{error && <Note>{error}</Note>}</div>
         {manage && orgId && <InviteForm orgId={orgId} roles={roles.data} onDone={refresh} onNotice={setNotice} />}
         <MembersTable orgName={orgName} members={members.data} roles={roles.data} failed={members.isError || roles.isError}
           manage={manage} canRemove={canRemove} busyId={busyId} onRetry={() => { members.refetch(); roles.refetch() }}

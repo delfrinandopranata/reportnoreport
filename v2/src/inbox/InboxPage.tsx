@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMemberEmails } from '../members/useMemberEmails'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, ClockIcon, StopIcon, XIcon } from '../ui/icons'
+import { CheckIcon, ClockIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
@@ -12,6 +12,8 @@ import { useNow } from '../ui/useNow'
 import { useNotice } from '../ui/useNotice'
 import { nodeById, nodeName } from '../workflows/logic'
 import { claimTask, useMyTasks, useStartable, type MyTask } from '../workflows/api'
+import { LoadError, Note } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 export function InboxPage() {
   const { orgId, userId } = useOrg()
@@ -50,25 +52,15 @@ export function InboxPage() {
 
   return (
     <section aria-labelledby="inbox-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Work</p>
-          <h1 id="inbox-h" tabIndex={-1} className="rnr-page-title">Your <em>inbox</em></h1>
-        </div>
-      </header>
+      <PageHead id="inbox-h" crumb="Work" title="Your inbox" />
       <div className="flex flex-col gap-8">
         <section className="flex flex-col gap-3" aria-labelledby="tasks-h">
           <h2 id="tasks-h" className="rnr-dialog-title">My tasks</h2>
-          {error && <div className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
+          {error && <Note>{error}</Note>}
           <p className="rnr-status" role="status">{notice && <><CheckIcon size={16} />{notice}</>}</p>
           {tasks.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
           {tasks.isError && (
-            <div className="rnr-empty" role="alert">
-              <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
-              <h3>Your tasks did not load</h3>
-              <p>Check your connection, then try again.</p>
-              <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => tasks.refetch()}>Try again</button>
-            </div>
+            <LoadError what="Your tasks" onRetry={() => tasks.refetch()} />
           )}
           {tasks.data?.length === 0 && (
             <div className="rnr-empty">
@@ -120,12 +112,7 @@ export function InboxPage() {
           <h2 id="new-h" className="rnr-dialog-title">Start new</h2>
           {startable.isPending && <Skeleton rows={[{ w: '100%', h: 48 }]} />}
           {startable.isError && (
-            <div className="rnr-empty" role="alert">
-              <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
-              <h3>The workflows you can start did not load</h3>
-              <p>Check your connection, then try again.</p>
-              <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => startable.refetch()}>Try again</button>
-            </div>
+            <LoadError what="The workflows you can start" onRetry={() => startable.refetch()} />
           )}
           {startable.data?.length === 0 && (
             <div className="rnr-empty">

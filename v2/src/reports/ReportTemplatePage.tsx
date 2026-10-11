@@ -6,7 +6,7 @@ import type { Field } from '../forms/logic'
 import { useWorkflow, type LoadedWorkflow } from '../workflows/api'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { BackIcon, CheckIcon, DownIcon, PencilIcon, TrashIcon, UpIcon, XIcon } from '../ui/icons'
+import { BackIcon, CheckIcon, DownIcon, PencilIcon, TrashIcon, UpIcon, WarningCircleIcon } from '../ui/icons'
 import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
@@ -15,9 +15,10 @@ import { useLeaveGuard } from '../ui/useLeaveGuard'
 import { useNotice } from '../ui/useNotice'
 import { stepFields, type ReportTemplate } from './logic'
 import { createReportTemplate, updateReportTemplate, useReportTemplate, type TemplateRow } from './api'
-import { Empty, Note } from './parts'
+import { Empty, Note } from '../ui/Note'
 import { TemplatePreview } from './TemplatePreview'
 import { hasAnswer, moveAnswer, normaliseTemplate, toggleAnswer, toggleSignoff } from './templateOrder'
+import { PageHead } from '../ui/PageHead'
 
 const MAX_HEADER = 2000
 const CAPTIONS: Record<string, string> = { signature: 'Prints the signature image', file: 'Prints the file name only', group: 'Prints one line per row' }
@@ -32,7 +33,7 @@ export function ReportTemplatePage({ id }: { id: string }) {
   if (wf.isPending || forms.isPending || tpl.isPending) return <Skeleton rows={[{ w: '40%', h: 32 }, { w: '100%', h: 320 }]} />
   if (wf.isError || forms.isError || tpl.isError) {
     return (
-      <Empty icon={XIcon} title="This PDF template did not load" alert
+      <Empty icon={WarningCircleIcon} title="This PDF template did not load" alert
         action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => { void wf.refetch(); void forms.refetch(); void tpl.refetch() }}>Try again</button>}>Check your connection, then try again.</Empty>
     )
   }
@@ -105,13 +106,8 @@ function TemplateForm({ workflow, schemas, saved, mayEditWorkflow, onReload }: {
       {mayEditWorkflow
         ? <a className="rnr-crumb self-start" href="#/workflows"><BackIcon />Back to workflows</a>
         : <a className="rnr-crumb self-start" href="#/reports"><BackIcon />Back to reports</a>}
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">{mayEditWorkflow ? 'Workflows' : 'Reports'}</p>
-          <h1 id={`${uid}-h`} className="rnr-page-title" tabIndex={-1}>PDF template: {workflow.name}</h1>
-          <p className="rnr-lede">Every PDF of this workflow's records uses this template. Questions hidden by their rules are always left out.</p>
-        </div>
-      </header>
+      <PageHead id={`${uid}-h`} crumb={mayEditWorkflow ? 'Workflows' : 'Reports'} title={`PDF template: ${workflow.name}`} accent={false}
+        lede="Every PDF of this workflow's records uses this template. Questions hidden by their rules are always left out." />
       {steps.length === 0 ? (
         <FolderCard tab="PDF template" className="rnr-report-folder max-w-xl">
           <p className="rnr-muted">This workflow has no steps with a form yet. Add a Start form in the workflow editor first.</p>

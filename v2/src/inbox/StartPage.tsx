@@ -12,6 +12,7 @@ import { stoppedBody } from '../records/status'
 import { advance, useStartable, type LoadedWorkflow } from '../workflows/api'
 import { WorkflowGate } from '../workflows/WorkflowGate'
 import type { StartNode } from '../workflows/logic'
+import { PageHead } from '../ui/PageHead'
 
 const SETUP = 'This workflow has a setup problem. Ask a workflow manager to fix it.'
 type Started = Extract<SubmitResult, { ok: true }>
@@ -107,13 +108,7 @@ function Start({ wf }: { wf: LoadedWorkflow }) {
   } else body = <StartForm wf={wf} formId={start.formId} />
   return (
     <section className="rnr-form mx-0 flex flex-col gap-6" aria-labelledby="start-h">
-      <header className="rnr-page-head mb-0">
-        <div>
-          <p className="rnr-micro">Work · Start</p>
-          <h1 id="start-h" tabIndex={-1} className="rnr-page-title">{wf.name}</h1>
-          <p className="rnr-lede">Fill in this form to start a record.</p>
-        </div>
-      </header>
+      <PageHead id="start-h" crumb="Work · Start" title={wf.name} accent={false} lede="Fill in this form to start a record." className="mb-0" />
       {body}
     </section>
   )

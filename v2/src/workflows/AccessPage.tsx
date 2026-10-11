@@ -9,6 +9,8 @@ import { Skeleton } from '../ui/Skeleton'
 import { useNotice } from '../ui/useNotice'
 import { useRoles, type LoadedWorkflow, type RoleRow } from './api'
 import { WorkflowGate } from './WorkflowGate'
+import { Note } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 type Grant = { role_id: string; can_start: boolean; can_view_all: boolean }
 type Key = 'can_start' | 'can_view_all'
@@ -60,17 +62,13 @@ function Access({ wf }: { wf: LoadedWorkflow }) {
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="acc-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build · {wf.name}</p>
-          <h1 id="acc-h" tabIndex={-1} className="rnr-page-title">Workflow <em>access</em></h1>
-        </div>
-        <div className="rnr-page-actions"><a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${wf.id}/edit`}>Edit workflow</a></div>
-      </header>
+      <PageHead id="acc-h" crumb={`Build · ${wf.name}`} title="Workflow access">
+        <a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${wf.id}/edit`}>Edit workflow</a>
+      </PageHead>
       <FolderCard tab={<span>Access</span>}>
         <div className="grid gap-4">
           <p className="rnr-caption">A role also needs Start records or View all records on the Roles page before these take effect. Everyone always sees the records they started, submitted to or have a task on.</p>
-          {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
+          {error && <Note>{error}</Note>}
           <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
           {(roles.isPending || grants.isPending) && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
           {(roles.isError || grants.isError) && (

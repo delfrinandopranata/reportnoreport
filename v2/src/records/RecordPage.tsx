@@ -44,7 +44,7 @@ function RecordView({ rec }: { rec: RecordRow }) {
     <section aria-labelledby="rec-h" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
       <div className="flex flex-col gap-6 min-w-0">
         <FolderCard tab={rec.workflow.name}>
-          {stamp && <span className="absolute top-5 right-4"><Stamp label={stamp} /></span>}
+          {stamp && <Stamp label={stamp} corner="top-right" />}
           <div className={`flex flex-col gap-2 pt-2 ${stamp ? 'pr-28' : ''}`}>
             <h1 id="rec-h" tabIndex={-1} className="rnr-page-title">{rec.title}</h1>
             <p className="rnr-lede">{rec.workflow.name} · started <When iso={rec.created_at} /> by {who(rec.started_by) ?? 'Someone'}</p>

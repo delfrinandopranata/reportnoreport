@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CheckIcon, ClockIcon, DownloadIcon, XIcon } from '../ui/icons'
 import { FolderCard } from '../ui/FolderCard'
-import { Note } from '../comms/Note'
+import { Note } from '../ui/Note'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'

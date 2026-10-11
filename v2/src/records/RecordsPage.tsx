@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useMemberEmails } from '../members/useMemberEmails'
 import { useOrg } from '../rbac/useOrg'
-import { CheckIcon, StopIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { nodeById, nodeName } from '../workflows/logic'
 import { RECORD_LIMIT, useRecords, type RecordFilter, type RecordRow } from '../workflows/api'
 import { RecordStatusMark } from './StatusMark'
+import { LoadError } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 const FILTERS: [RecordFilter, string][] = [['all', 'All'], ['open', 'In progress'], ['error', 'Stopped'], ['closed', 'Closed']]
 
@@ -24,12 +26,7 @@ export function RecordsPage() {
   }
   return (
     <section className="rnr-wide" aria-labelledby="records-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Work</p>
-          <h1 id="records-h" tabIndex={-1} className="rnr-page-title">Records</h1>
-        </div>
-      </header>
+      <PageHead id="records-h" crumb="Work" title="Records" />
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="rnr-seg" role="group" aria-label="Show records">
@@ -43,12 +40,7 @@ export function RecordsPage() {
         </div>
         {list.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
         {list.isError && (
-          <div className="rnr-empty" role="alert">
-            <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
-            <h2>The records did not load</h2>
-            <p>Check your connection, then try again.</p>
-            <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button>
-          </div>
+          <LoadError what="The records" onRetry={() => list.refetch()} />
         )}
         {list.data?.length === 0 && filter === 'all' && (
           <div className="rnr-empty">

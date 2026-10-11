@@ -4,11 +4,13 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { CheckIcon, StopIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
 import { RoleEditor, type RoleDraft } from './RoleEditor'
+import { LoadError } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 const summary = (n: number) => (n === 0 ? 'No permissions' : n === 1 ? '1 permission' : `${n} permissions`)
 
@@ -51,26 +53,15 @@ export function RolesPage() {
 
   return (
     <section aria-labelledby="roles-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Admin</p>
-          <h1 id="roles-h" tabIndex={-1} className="rnr-page-title">Roles</h1>
-        </div>
-        <div className="rnr-page-actions">
-          <button className={`rnr-btn ${editing ? 'rnr-btn-secondary' : 'rnr-btn-primary'}`} type="button"
-            onClick={() => open({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
-        </div>
-      </header>
+      <PageHead id="roles-h" crumb="Admin" title="Roles">
+        <button className={`rnr-btn ${editing ? 'rnr-btn-secondary' : 'rnr-btn-primary'}`} type="button"
+          onClick={() => open({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
+      </PageHead>
       <div className="flex flex-col gap-4">
         <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={16} />{notice}</p>}</div>
         {editing && <RoleEditor key={editing.id ?? 'new'} role={editing} onSave={save} onClose={close} />}
         {roles.isError ? (
-          <div className="rnr-empty" role="alert">
-            <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
-            <h2>Roles did not load</h2>
-            <p>Check your connection, then try again.</p>
-            <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => roles.refetch()}>Try again</button>
-          </div>
+          <LoadError what="Roles" onRetry={() => roles.refetch()} />
         ) : !roles.data ? (
           <div className="rnr-card"><Skeleton rows={[{ w: '30%' }, { w: '20%' }, { w: '12%' }, { w: '25%' }]} /></div>
         ) : (

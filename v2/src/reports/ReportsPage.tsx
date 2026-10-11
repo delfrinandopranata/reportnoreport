@@ -4,14 +4,15 @@ import { useOrg } from '../rbac/useOrg'
 import { useWorkflows } from '../workflows/api'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
+import { NAV_ICONS, PlusIcon, WarningCircleIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
-import { Empty } from './parts'
+import { Empty, FieldError } from '../ui/Note'
 import { createReport, deleteReport, useReports, useWidgets, type ReportListRow } from './api'
+import { PageHead } from '../ui/PageHead'
 
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 
@@ -59,21 +60,15 @@ export function ReportsPage() {
     : `${doomed.name} will be deleted for everyone and cannot be recovered. Records are not changed.`
   return (
     <section className="flex flex-col gap-4" aria-labelledby="reports-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Work</p>
-          <h1 id="reports-h" className="rnr-page-title" tabIndex={-1}>Reports</h1>
-        </div>
+      <PageHead id="reports-h" crumb="Work" title="Reports">
         {manage && !!reports.data?.length && (
-          <div className="rnr-page-actions">
-            <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New report<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>
-          </div>
+          <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New report<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>
         )}
-      </header>
+      </PageHead>
       <p className="rnr-caption" role="status">{notice}</p>
       {reports.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
       {reports.isError && (
-        <Empty icon={XIcon} title="Reports did not load" alert
+        <Empty icon={WarningCircleIcon} title="Reports did not load" alert
           action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void reports.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
       )}
       {firstRun && manage && (
@@ -146,7 +141,8 @@ function NewReportDialog({ onClose }: { onClose(): void }) {
         <h2 id={`${uid}-t`}>New report</h2>
         <button className="rnr-icon-btn" type="button" aria-label="Close dialog" onClick={onClose}><XIcon /></button>
       </div>
-      <form className="rnr-dialog-body" onSubmit={submit} noValidate>
+      <form onSubmit={submit} noValidate>
+<div className="rnr-dialog-body">
         <div className="rnr-field" data-invalid={error?.startsWith('Enter') || undefined}>
           <label className="rnr-label" htmlFor={`${uid}-n`}>Name</label>
           <input id={`${uid}-n`} data-autofocus className="rnr-input" value={name} maxLength={120} aria-invalid={error?.startsWith('Enter') || undefined} aria-describedby={error?.startsWith('Enter') ? `${uid}-e` : undefined} onChange={(e) => setName(e.target.value)} />
@@ -165,14 +161,15 @@ function NewReportDialog({ onClose }: { onClose(): void }) {
             </select>
           </div>
         )}
-        {error && <p id={`${uid}-e`} className="rnr-error" role="alert">{error}</p>}
-        <div className="flex justify-end gap-2">
+        {error && <FieldError id={`${uid}-e`} role="alert">{error}</FieldError>}
+</div>
+<div className="rnr-dialog-foot">
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={act.busy}>
             {act.busy && <span className="rnr-spin" aria-hidden="true" />}{act.busy ? 'Creating…' : 'Create report'}
           </button>
-        </div>
-      </form>
+</div>
+</form>
     </dialog>
   )
 }

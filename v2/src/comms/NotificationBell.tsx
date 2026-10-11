@@ -8,7 +8,7 @@ import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
-import { FieldError } from './Note'
+import { FieldError } from '../ui/Note'
 import { announcement, newArrivals } from './arrivals'
 import { NOTIFICATION_LIMIT, type Notification, markAllRead, markRead, useNotificationFeed, useNotifications, useUnreadCount } from './api'
 

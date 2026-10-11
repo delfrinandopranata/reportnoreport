@@ -8,9 +8,10 @@ const mark = (
   </>
 )
 
-/** The name in Fraunces with the second R struck through (design/components/Wordmark). */
-export function Wordmark({ href }: { href?: string }) {
+/** The name in Fraunces with the second R struck through (design/components/Wordmark). `lg` is the auth pages' size. */
+export function Wordmark({ href, size = 'md' }: { href?: string; size?: 'md' | 'lg' }) {
+  const cls = `rnr-wordmark${size === 'lg' ? ' text-[32px]' : ''}`
   return href
-    ? <a href={href} className="rnr-wordmark" data-draw aria-label="ReportNoReport">{mark}</a>
-    : <span className="rnr-wordmark" data-draw role="img" aria-label="ReportNoReport">{mark}</span>
+    ? <a href={href} className={cls} data-draw aria-label="ReportNoReport">{mark}</a>
+    : <span className={cls} data-draw role="img" aria-label="ReportNoReport">{mark}</span>
 }

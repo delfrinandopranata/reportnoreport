@@ -4,12 +4,14 @@ import { supabase } from '../../data/supabase'
 import { useMemberEmails } from '../../members/useMemberEmails'
 import { useOrg } from '../../rbac/useOrg'
 import { FolderCard } from '../../ui/FolderCard'
+import { LoadError } from '../../ui/Note'
 import { NAV_ICONS } from '../../ui/icons'
 import { Skeleton } from '../../ui/Skeleton'
 import type { Answers, Field } from '../logic'
 import type { LoadedForm } from '../api'
 import { FormGate } from '../FormGate'
 import { AnswerList } from './AnswerList'
+import { PageHead } from '../../ui/PageHead'
 
 type Sub = { id: string; answers: Answers; submitted_by: string; created_at: string }
 const LIMIT = 200 // shortcut: newest 200 only; paging arrives with aggregate reports (Phase 5)
@@ -43,20 +45,10 @@ function Submissions({ form }: { form: LoadedForm }) {
   const n = subs.data?.length ?? 0
   return (
     <section className="flex flex-col gap-4" aria-labelledby="subs-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build · {form.name}</p>
-          <h1 id="subs-h" tabIndex={-1} className="rnr-page-title">{manage ? 'Submissions' : <>Your <em>submissions</em></>}</h1>
-        </div>
-      </header>
+      <PageHead id="subs-h" crumb={`Build · ${form.name}`} title={manage ? 'Submissions' : 'Your submissions'} accent={!manage} />
       {subs.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
       {subs.isError && (
-        <div className="rnr-empty" role="alert">
-          <span className="rnr-kind"><NAV_ICONS.forms size={20} /></span>
-          <h2>The submissions did not load</h2>
-          <p>Check your connection, then try again.</p>
-          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => subs.refetch()}>Try again</button>
-        </div>
+        <LoadError what="The submissions" onRetry={() => subs.refetch()} />
       )}
       {subs.data?.length === 0 && (
         <div className="rnr-empty">

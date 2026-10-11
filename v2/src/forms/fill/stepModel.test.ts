@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { stepLabels } from './steps.ts'
+import { stepLabels } from './stepModel.ts'
 import type { Field } from '../logic'
 
 const f = (key: string, type: string, label?: string) => ({ key, type, label }) as unknown as Field

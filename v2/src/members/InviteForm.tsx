@@ -1,9 +1,10 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, XIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 import { toggle } from './toggle'
+import { Note } from '../ui/Note.tsx'
 
 export type Role = { id: string; name: string; is_owner: boolean }
 
@@ -60,7 +61,7 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
         ) : <div className="rnr-skeleton h-5 w-60" />}
         <span className="rnr-caption">Choose none to add them with no permissions.</span>
       </fieldset>
-      {error && <div id="invite-err" className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
+      {error && <div id="invite-err"><Note>{error}</Note></div>}
     </form>
   )
 }

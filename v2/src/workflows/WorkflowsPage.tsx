@@ -4,7 +4,7 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
+import { CheckIcon, NAV_ICONS, PlusIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -12,6 +12,8 @@ import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
 import { useWorkflows, type WorkflowRow } from './api'
 import { WorkflowStatusMark } from './StatusMark'
+import { LoadError, Note } from '../ui/Note.tsx'
+import { PageHead } from '../ui/PageHead'
 
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 
@@ -67,23 +69,14 @@ export function WorkflowsPage() {
 
   return (
     <section className="flex flex-col" aria-labelledby="wf-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build</p>
-          <h1 id="wf-h" tabIndex={-1} className="rnr-page-title">Workflows</h1>
-        </div>
-        {!firstRun && <div className="rnr-page-actions">{newButton}</div>}
-      </header>
+      <PageHead id="wf-h" crumb="Build" title="Workflows">
+        {!firstRun && newButton}
+      </PageHead>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-      {createError && <p className="rnr-note" data-tone="down" role="alert">{createError}</p>}
+      {createError && <Note>{createError}</Note>}
       {list.isPending && <div className="rnr-card"><Skeleton rows={[{ w: '40%' }, { w: '10%' }, { w: '14%' }]} /></div>}
       {list.isError && (
-        <div className="rnr-empty" role="alert">
-          <span className="rnr-kind"><XIcon size={20} /></span>
-          <h2>The workflows did not load</h2>
-          <p>Check your connection, then try again.</p>
-          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button>
-        </div>
+        <LoadError what="The workflows" onRetry={() => list.refetch()} />
       )}
       {firstRun && (
         <div className="rnr-empty">

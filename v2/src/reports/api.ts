@@ -31,6 +31,7 @@ export const useRecordPdf = (recordId: string) => useQuery({
     return data as PdfRow | null
   },
   refetchInterval: (q) => (q.state.data?.status === 'queued' ? 2000 : false), // a queued PDF is usually ready within seconds
+  refetchIntervalInBackground: true, // TanStack pauses polling in a hidden tab, so a finished PDF only showed after a reload or a refocus
 })
 /** A 5-minute signed link, refreshed before it runs out, so "Open PDF" is a real link and no popup blocker interferes.
  *  With a name the link downloads under that name instead of the object's id. */

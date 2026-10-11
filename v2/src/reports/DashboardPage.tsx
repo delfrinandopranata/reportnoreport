@@ -9,15 +9,16 @@ import { CSS } from '@dnd-kit/utilities'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { GripIcon, MoreIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
+import { GripIcon, MoreIcon, NAV_ICONS, PlusIcon, WarningCircleIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useLeaveGuard } from '../ui/useLeaveGuard'
 import { useMenu } from '../ui/useMenu'
 import { addWidget, readDashboard, removeWidget, saveLayout, useReports, useWidgets, type WidgetKind, type WidgetRow } from './api'
-import { Empty, Note } from './parts'
+import { Empty, FieldError, Note } from '../ui/Note'
 import { WidgetBody, WidgetCard } from './Widget'
+import { PageHead } from '../ui/PageHead'
 
 type Span = 1 | 2 | 4
 type Draft = { rows: WidgetRow[]; version: number }
@@ -108,23 +109,19 @@ export function DashboardPage() {
 
   return (
     <section className="rnr-wide flex flex-col gap-4" aria-labelledby="dash-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Work</p>
-          <h1 id="dash-h" className="rnr-page-title" tabIndex={-1}>Dashboard</h1>
-          <p className="rnr-lede">{draft ? `Layout changes apply to everyone in ${orgName}.` : `This dashboard is shared by everyone in ${orgName}. Each person sees numbers for the records they can see.`}</p>
-        </div>
-        {manage && !draft && count > 0 && <div className="rnr-page-actions"><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => edit()}>Edit layout</button></div>}
+      <PageHead id="dash-h" crumb="Work" title="Dashboard"
+        lede={draft ? `Layout changes apply to everyone in ${orgName}.` : `This dashboard is shared by everyone in ${orgName}. Each person sees numbers for the records they can see.`}>
+        {manage && !draft && count > 0 && <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => edit()}>Edit layout</button>}
         {draft && (
-          <div className="rnr-page-actions">
+          <>
             <button id="dash-add" type="button" className="rnr-btn rnr-btn-secondary" onClick={() => setAdding(true)}><PlusIcon />Add widget</button>
             <button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => leave()}>Cancel</button>
             <button type="button" className="rnr-btn rnr-btn-primary" aria-busy={saving.busy} onClick={() => void save()}>
               {saving.busy && <span className="rnr-spin" aria-hidden="true" />}{saving.busy ? 'Saving…' : 'Save layout'}
             </button>
-          </div>
+          </>
         )}
-      </header>
+      </PageHead>
       <p className="rnr-sr-only" role="status" aria-live="polite">{note}</p>
       {error && (
         <div className="flex flex-col items-start gap-2">
@@ -134,7 +131,7 @@ export function DashboardPage() {
       )}
       {widgets.isPending && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
       {widgets.isError && (
-        <Empty icon={XIcon} title="The dashboard did not load" alert
+        <Empty icon={WarningCircleIcon} title="The dashboard did not load" alert
           action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void widgets.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
       )}
       {widgets.data && count === 0 && manage && (
@@ -279,7 +276,8 @@ function AddWidgetDialog({ position, onClose, onAdded }: { position: number; onC
         <h2 id={`${uid}-t`}>Add widget</h2>
         <button className="rnr-icon-btn" type="button" aria-label="Close dialog" onClick={onClose}><XIcon /></button>
       </div>
-      <form className="rnr-dialog-body" onSubmit={submit} noValidate>
+      <form onSubmit={submit} noValidate>
+<div className="rnr-dialog-body">
         <div className="rnr-field" data-invalid={bad === 'report' || undefined}>
           <label className="rnr-label" htmlFor={`${uid}-r`}>Report</label>
           <select id={`${uid}-r`} data-autofocus className="rnr-input" value={reportId} aria-invalid={bad === 'report' || undefined} aria-describedby={bad ? `${uid}-e` : undefined} onChange={(e) => setReportId(e.target.value)}>
@@ -305,14 +303,15 @@ function AddWidgetDialog({ position, onClose, onAdded }: { position: number; onC
             {([1, 2, 4] as const).map((s) => <option key={s} value={s}>{SPAN_WORDS[s]}</option>)}
           </select>
         </div>
-        {error && <p id={`${uid}-e`} className="rnr-error" role="alert">{error}</p>}
-        <div className="flex justify-end gap-2">
+        {error && <FieldError id={`${uid}-e`} role="alert">{error}</FieldError>}
+</div>
+<div className="rnr-dialog-foot">
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={act.busy}>
             {act.busy && <span className="rnr-spin" aria-hidden="true" />}{act.busy ? 'Adding…' : 'Add widget'}
           </button>
-        </div>
-      </form>
+</div>
+</form>
     </dialog>
   )
 }

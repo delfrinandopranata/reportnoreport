@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
-import { FieldError } from '../comms/Note'
+import { FieldError } from '../ui/Note'
 import { XIcon } from '../ui/icons'
 
 export type Review = {

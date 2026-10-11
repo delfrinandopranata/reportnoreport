@@ -21,6 +21,7 @@ import { Palette } from './Palette'
 import { SidePanel } from './SidePanel'
 import { StepList } from './StepList'
 import { StepSheet } from './StepSheet'
+import { PageHead } from '../../ui/PageHead'
 
 const VIEW_KEY = 'rnr.wfView'
 type View = 'map' | 'list'
@@ -220,12 +221,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="wf-edit-h">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build · Workflows</p>
-          <h1 id="wf-edit-h" tabIndex={-1} className="rnr-page-title">Edit <em>workflow</em></h1>
-        </div>
-      </header>
+      <PageHead id="wf-edit-h" crumb="Build · Workflows" title="Edit workflow" />
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
       <div className="rnr-card gap-3">

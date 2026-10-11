@@ -8,8 +8,9 @@ import { useRoles, useWorkflows } from '../workflows/api'
 import { friendlyError } from '../ui/errors'
 import { BackIcon } from '../ui/icons'
 import { FolderCard } from '../ui/FolderCard'
-import { Note } from '../comms/Note'
-import { PageHead } from '../comms/PageHead'
+import { KpiTile } from '../ui/KpiTile'
+import { Note } from '../ui/Note'
+import { PageHead } from '../ui/PageHead'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -106,11 +107,8 @@ export function CampaignReport({ campaign: c, notice, setNotice }: Props) {
             <h2 className="sr-only">Results</h2>
             <ul className="rnr-campaign-tiles" data-count={tiles.length}>
               {tiles.map((t) => (
-                <li key={t.label} className="flex [&>.rnr-folder]:flex [&>.rnr-folder]:w-full [&_.rnr-folder-body]:flex-1" aria-describedby={t.label === 'Opened' ? 'opens-note' : undefined}>
-                  <FolderCard tab={t.label} className="rnr-kpi-tile">
-                    <p className="rnr-kpi-figure rnr-num" data-empty={t.value === NO_DATA || undefined}>{t.value}</p>
-                    <p className="rnr-caption">{t.caption}</p>
-                  </FolderCard>
+                <li key={t.label} className="flex" aria-describedby={t.label === 'Opened' ? 'opens-note' : undefined}>
+                  <KpiTile label={t.label} value={t.value} caption={t.caption} empty={t.value === NO_DATA} />
                 </li>
               ))}
             </ul>

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { PERMISSION_GROUPS } from '../rbac/permissions'
 import { useOrg } from '../rbac/useOrg'
 import { FolderCard } from '../ui/FolderCard'
-import { CheckIcon, XIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
+import { Note } from '../ui/Note.tsx'
 
 export type RoleDraft = { id: string | null; name: string; permissions: string[]; is_owner: boolean }
 
@@ -71,7 +72,7 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
           ))}
         </div>
         {draft.is_owner && <p className="rnr-muted">The Owner role always has every permission and cannot be changed.</p>}
-        {error && <div id="re-err" className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
+        {error && <div id="re-err"><Note>{error}</Note></div>}
         <div className="flex gap-2">
           {draft.is_owner
             ? <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Close</button>

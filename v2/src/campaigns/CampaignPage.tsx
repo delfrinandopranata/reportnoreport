@@ -1,4 +1,4 @@
-import { LoadError } from '../comms/Note'
+import { LoadError } from '../ui/Note'
 import { Skeleton } from '../ui/Skeleton'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'

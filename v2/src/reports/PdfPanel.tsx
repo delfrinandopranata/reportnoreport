@@ -10,7 +10,7 @@ import { useNotice } from '../ui/useNotice'
 import type { RecordStatus } from '../workflows/api'
 import { requestPdf, usePdfUrl, useRecordPdf, useReportTemplate } from './api'
 import { csvFilename } from './logic'
-import { Note } from './parts'
+import { Note } from '../ui/Note'
 
 const SLOW_MS = 60_000
 

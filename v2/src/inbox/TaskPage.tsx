@@ -18,6 +18,7 @@ import { useMemberEmails } from '../members/useMemberEmails'
 import { nodeById, nodeName, type FormNode } from '../workflows/logic'
 import { stoppedBody } from '../records/status'
 import { advance, claimTask, useRecordSubmissions, useTask, type RecordSubmission, type TaskDetail } from '../workflows/api'
+import { PageHead } from '../ui/PageHead'
 
 type Done = Extract<SubmitResult, { ok: true }>
 const VERB = { submitted: 'submitted', approved: 'approved', rejected: 'rejected' } as const
@@ -185,14 +186,9 @@ function TaskView({ task }: { task: TaskDetail }) {
 
   return (
     <section className="rnr-form mx-0 flex flex-col gap-6" aria-labelledby="task-h">
-      <header className="rnr-page-head mb-0">
-        <div>
-          <p className="rnr-micro">Work · Task</p>
-          <h1 id="task-h" tabIndex={-1} className="rnr-page-title">{task.record.title}</h1>
-          <p className="rnr-lede">{task.record.workflow.name} · {nodeName(node)}{task.due_at && <> · Due <When iso={task.due_at} /></>}</p>
-          {overdue && <p className="rnr-status" data-tone="warn"><ClockIcon size={16} />Overdue</p>}
-        </div>
-      </header>
+      <PageHead id="task-h" crumb="Work · Task" title={task.record.title} accent={false} className="mb-0"
+        lede={<>{task.record.workflow.name} · {nodeName(node)}{task.due_at && <> · Due <When iso={task.due_at} /></>}</>}
+        below={overdue && <p className="rnr-status" data-tone="warn"><ClockIcon size={16} />Overdue</p>} />
       <Earlier task={task} />
       {body}
     </section>

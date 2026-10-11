@@ -4,7 +4,7 @@ import {
   CaretUpIcon, ChartLineUpIcon, CheckIcon as PhCheck, ClockIcon as PhClock, DatabaseIcon, DotsSixVerticalIcon, DotsThreeVerticalIcon,
   DownloadSimpleIcon, EnvelopeSimpleIcon, FileTextIcon, GearSixIcon, GitBranchIcon, ListIcon, MagnifyingGlassIcon, MegaphoneIcon,
   MinusIcon as PhMinus, NotePencilIcon, PencilSimpleIcon, PlusIcon as PhPlus, ShieldCheckIcon, SquaresFourIcon, StopIcon as PhStop,
-  TrashIcon as PhTrash, TrayIcon, UsersThreeIcon, XIcon as PhX, type Icon,
+  TrashIcon as PhTrash, TrayIcon, UsersThreeIcon, WarningCircleIcon as PhWarningCircle, FunnelIcon as PhFunnel, XIcon as PhX, type Icon,
 } from '@phosphor-icons/react'
 import type { NavIcon } from './nav'
 
@@ -33,6 +33,8 @@ export const MenuIcon = icon(ListIcon)
 export const ArrowRightIcon = icon(PhArrowRight)
 export const ArrowUpRightIcon = icon(PhArrowUpRight)
 export const MinusIcon = icon(PhMinus)
+export const WarningCircleIcon = icon(PhWarningCircle)
+export const FunnelIcon = icon(PhFunnel)
 
 export const NAV_ICONS: Record<NavIcon, IconComponent> = {
   inbox: icon(TrayIcon), records: icon(DatabaseIcon), dashboard: icon(SquaresFourIcon), reports: icon(ChartLineUpIcon),

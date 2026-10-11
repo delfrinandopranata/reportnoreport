@@ -2,7 +2,7 @@ import { useId, type ReactNode } from 'react'
 import { useOrg } from '../rbac/useOrg'
 import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
-import { Note } from './parts'
+import { Note } from '../ui/Note'
 import { ReportError, useRunReport, type WidgetRow } from './api'
 import { MAX_BARS } from './chart'
 import { ChartWidget } from './ChartWidget'
@@ -68,7 +68,7 @@ export function WidgetCard({ w, state, handle, menu, link, children }: {
   if (w.kind === 'number') {
     return (
       <div className="rnr-kpi-widget" data-state={state}>
-        <FolderCard tab={w.title} headingId={id} className="rnr-kpi-tile">
+        <FolderCard tab={w.title} headingId={id} className="rnr-kpi-tile" wrap>
           {(handle || menu) && <div className="rnr-widget-bar">{handle}{menu}</div>}
           {children}
           {open}

@@ -8,8 +8,8 @@ import { AppearanceSettings } from '../ui/AppearanceSettings'
 import { useNotice } from '../ui/useNotice'
 import { setOptOut, useOptOut } from '../campaigns/api'
 import { setEmailPref, usePrefs } from './api'
-import { Note } from './Note'
-import { PageHead } from './PageHead'
+import { Note } from '../ui/Note'
+import { PageHead } from '../ui/PageHead'
 import { KIND_LABELS, MUTABLE_KINDS, type MutableKind } from './logic'
 
 const CAPTIONS: Record<MutableKind, string> = {

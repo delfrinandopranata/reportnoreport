@@ -7,7 +7,7 @@ import type { Field, Rule } from '../forms/logic'
 import { useWorkflow } from '../workflows/api'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { BackIcon, CheckIcon, DownIcon, DownloadIcon, NAV_ICONS, PencilIcon, RightIcon, SearchIcon, TrashIcon, UpIcon, XIcon } from '../ui/icons'
+import { BackIcon, CheckIcon, DownIcon, DownloadIcon, FunnelIcon, NAV_ICONS, PencilIcon, RightIcon, TrashIcon, UpIcon, WarningCircleIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
@@ -20,9 +20,10 @@ import {
   type Column, type DataColumn,
 } from './logic'
 import { ReportError, downloadCsv, updateReport, useReport, useRunReport, type ReportFields, type RunBody, type SavedReport } from './api'
-import { Empty, Note } from './parts'
+import { Empty, Note } from '../ui/Note'
 import { ResultTable } from './ResultTable'
 import { lastPage, pageText, skippedText, totalsText } from './text'
+import { PageHead } from '../ui/PageHead'
 
 export function ReportPage({ id }: { id: string }) {
   const report = useReport(id)
@@ -30,7 +31,7 @@ export function ReportPage({ id }: { id: string }) {
   if (report.isPending) return <Skeleton rows={[{ w: '40%', h: 32 }, { w: '100%', h: 320 }]} />
   if (report.isError) {
     return (
-      <Empty icon={XIcon} title="This report did not load" alert
+      <Empty icon={WarningCircleIcon} title="This report did not load" alert
         action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void report.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
     )
   }
@@ -182,15 +183,8 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
   return (
     <section className="rnr-wide flex flex-col gap-4" aria-labelledby={`${uid}-h`}>
       <a className="rnr-crumb self-start" href="#/reports"><BackIcon />Back to reports</a>
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Reports</p>
-          <h1 id={`${uid}-h`} className="rnr-page-title" tabIndex={-1}>{base.name}</h1>
-          <p className="rnr-lede">
-            Records of {wf.data && manage ? <a className="rnr-link" href={`#/workflows/${wf.data.id}/report`}>{wf.data.name}</a> : wf.data?.name ?? 'this workflow'} that you can see.
-          </p>
-        </div>
-      </header>
+      <PageHead id={`${uid}-h`} crumb="Reports" title={base.name} accent={false}
+        lede={<>Records of {wf.data && manage ? <a className="rnr-link" href={`#/workflows/${wf.data.id}/report`}>{wf.data.name}</a> : wf.data?.name ?? 'this workflow'} that you can see.</>} />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <details className="rnr-folder min-w-0" open={wide || panelOpen} onToggle={(e) => setPanelOpen(e.currentTarget.open)}>
           <summary className="rnr-folder-tab rnr-report-tab">{manage ? 'Report settings' : 'About this report'}<RightIcon size={14} /></summary>
@@ -213,15 +207,15 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
           <p className="rnr-sr-only" role="status" aria-live="polite">{announce}</p>
           {noDraft && <div className="rnr-card"><p className="rnr-muted">Finish the settings to see results. {check.ok ? '' : check.error}</p></div>}
           {run.isPending && body && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
-          {failed?.status === 413 && <Empty icon={XIcon} title="Too many records for one report">{failed.message}</Empty>}
+          {failed?.status === 413 && <Empty icon={WarningCircleIcon} title="Too many records for one report">{failed.message}</Empty>}
           {failed && failed.status !== 413 && (
-            <Empty icon={XIcon} title="Results did not load" alert
+            <Empty icon={WarningCircleIcon} title="Results did not load" alert
               action={failed.status === null ? <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void run.refetch()}>Try again</button> : undefined}>{failed.message}</Empty>
           )}
           {run.data && r && r.total === 0 && (
             r.totalRecords === 0 && f.filters.length === 0
               ? <Empty icon={NAV_ICONS.records} title="No records to show yet">Records of {run.data.workflowName} that you can see appear here once people start it.</Empty>
-              : <Empty icon={SearchIcon} title="No records match these filters">Remove or change a filter to see more.</Empty>
+              : <Empty icon={FunnelIcon} title="No records match these filters">Remove or change a filter to see more.</Empty>
           )}
           {run.data && r && r.total > 0 && (
             <ResultTable data={run.data} busy={run.isPlaceholderData || run.isFetching} foot={

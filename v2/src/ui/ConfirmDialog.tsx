@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { XIcon } from './icons'
+import { FieldError } from './Note'
 
 type Props = {
   open: boolean; title: string; body: string; confirmLabel: string; busyLabel: string
@@ -24,13 +25,13 @@ export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy
       </div>
       <div className="rnr-dialog-body">
         <p id={`${uid}-b`} className="rnr-muted">{body}</p>
-        {error && <p className="rnr-error" role="alert">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>{dismissLabel}</button>
-          <button className="rnr-btn rnr-btn-danger" type="button" aria-busy={busy} onClick={onConfirm}>
-            {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? busyLabel : confirmLabel}
-          </button>
-        </div>
+        {error && <FieldError role="alert">{error}</FieldError>}
+      </div>
+      <div className="rnr-dialog-foot">
+        <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>{dismissLabel}</button>
+        <button className="rnr-btn rnr-btn-danger" type="button" aria-busy={busy} onClick={onConfirm}>
+          {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? busyLabel : confirmLabel}
+        </button>
       </div>
     </dialog>
   )

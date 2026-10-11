@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
 import { useOrg } from '../rbac/useOrg'
-import { BackIcon, XIcon } from '../ui/icons'
+import { BackIcon, WarningCircleIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useWorkflow, type LoadedWorkflow } from './api'
 
 function Notice({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
     <div className="rnr-empty" role="alert">
-      <span className="rnr-kind"><XIcon size={20} /></span>
+      <span className="rnr-kind"><WarningCircleIcon size={20} /></span>
       <h1 className="rnr-dialog-title">{title}</h1>
       <p>{body}</p>
       {action}

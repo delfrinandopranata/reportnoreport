@@ -18,6 +18,8 @@ import { FieldList } from './FieldList'
 import { FieldSettings } from './FieldSettings'
 import { Palette, SectionPalette } from './Palette'
 import { TYPE_LABELS, move, newField, typeLabel } from './builderOps'
+import { Note } from '../../ui/Note.tsx'
+import { PageHead } from '../../ui/PageHead'
 
 type Sel = { key: string; child?: string } | null
 const nameOf = (f: Field) => f.label || typeLabel(f.type)
@@ -115,12 +117,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
   const kids = top?.fields ?? []
   return (
     <section aria-labelledby="builder-h" className="flex flex-col gap-4">
-      <header className="rnr-page-head">
-        <div>
-          <p className="rnr-micro">Build · Forms</p>
-          <h1 id="builder-h" tabIndex={-1} className="rnr-page-title">Edit <em>form</em></h1>
-        </div>
-      </header>
+      <PageHead id="builder-h" crumb="Build · Forms" title="Edit form" />
       <div className="rnr-card flex-row flex-wrap items-end gap-3">
         <div className="rnr-field flex-1 min-w-[240px]" data-invalid={nameError ? true : undefined}>
           <label htmlFor="form-name" className="rnr-label">Form name<span aria-hidden="true"> *</span></label>
@@ -136,7 +133,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
       </div>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
       <p className="sr-only" role="status">{note}</p>
-      {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
+      {error && <Note>{error}</Note>}
       {conflict && (
         <div className="rnr-note" data-tone="warn" role="alert">
           <div className="grid gap-3">

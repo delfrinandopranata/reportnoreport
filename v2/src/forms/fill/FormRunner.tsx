@@ -7,8 +7,9 @@ import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { inputId } from '../paths'
 import { FormRenderer } from './FormRenderer'
 import { Steps } from './Steps.tsx'
-import { stepLabels } from './steps.ts'
+import { stepLabels } from './stepModel.ts'
 import type { Uploader } from './FileInput'
+import { Note } from '../../ui/Note.tsx'
 
 type Outcome = { value: string; label: string; busyLabel: string }
 type Props = {
@@ -89,7 +90,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, outcomes, onS
         </div>
       )}
       <FormRenderer fields={page} answers={answers} resolved={resolved} errors={errors} onChange={change} upload={upload} idPrefix={idPrefix} />
-      {formError && <p className="rnr-note" data-tone="down" role="alert">{formError}</p>}
+      {formError && <Note>{formError}</Note>}
       <p className="rnr-status" role="status">{checked && <><CheckIcon size={14} />These answers are valid. The preview does not save them.</>}</p>
       <div className="rnr-actions">
         {current > 0 ? <button type="button" className="rnr-btn rnr-btn-ghost" onClick={back}>Back</button> : <span />}
