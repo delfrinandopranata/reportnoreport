@@ -50,5 +50,5 @@ jobs:
           export RNR_TEST_SUPABASE_URL="$API_URL" RNR_TEST_ANON_KEY="$ANON_KEY" RNR_TEST_DB_URL="$DB_URL"
           deno test --allow-env --allow-net --allow-read \
             supabase/functions/advance/race.test.ts supabase/functions/send-messages/race.test.ts \
-            supabase/functions/send-campaigns/db.test.ts \
+            supabase/functions/send-campaigns/db.test.ts supabase/functions/resend-webhook/db.test.ts \
             supabase/functions/run-report/visibility.test.ts supabase/functions/_integration/realtime.test.ts
