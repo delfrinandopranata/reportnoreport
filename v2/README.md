@@ -123,6 +123,8 @@ Merging to `main` deploys v2 through `.github/workflows/deploy-v2.yml` (CI v2, t
 
 Most are a `shortcut:` in the code naming the point at which to change it.
 
+- **Plans are not enforced yet.** The landing page lists Starter limits (3 workflows, 10 forms, 5 members, 200 records and 500 emails a month, forms/workflows/inbox/records only) and Pro / Enterprise, but there is no billing or plan check: every organisation gets everything. Planned as a follow-up phase after launch (plan per organisation, database-enforced limits, upgrade prompts, payment provider).
+
 - **Fonts.** Inter covers Latin, Greek and Cyrillic; Tamil, Chinese, Japanese and other scripts print as empty boxes in record PDFs (add a Noto subset per script when an organisation needs it). PDF text is drawn without shaping, and times are in UTC.
 - **PDF fonts.** Record PDFs stay in Inter, ink on white, after the Phase 7 identity change.
 - **Report size.** A saved report reads at most 10,000 visible records; more is refused (413), never cut.
