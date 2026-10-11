@@ -29,7 +29,6 @@ test('fonts are same-origin and the CSP allows them', () => {
 const RETIRED = /\b(?:zinc|red|emerald|green|amber|blue|sky|orange|rose|yellow)-\d{2,3}\b|\bdark:[a-z[]|--brand-solid|--color-(?:in|out)\b|\b(?:bg|text|fill|stroke|border)-(?:in|out)\b/
 /** Files not yet on Paper that moves. Each screen task deletes its entries; Task 11 requires this list to be empty. */
 const LEGACY = new Set<string>([
-  'src/App.tsx',
   'src/ClientProfile.tsx',
   'src/ClientsPage.tsx',
   'src/Dashboard.tsx',

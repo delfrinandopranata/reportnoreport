@@ -14,7 +14,7 @@ const GLYPH = {
   in: 'arrow-down-left', out: 'arrow-up-right', trash: 'trash', resize: 'arrows-out-simple', check: 'check', file: 'file-text',
   printer: 'printer', wallet: 'wallet', search: 'magnifying-glass', phone: 'phone', mail: 'envelope-simple', pencil: 'pencil-simple',
   building: 'buildings', person: 'user', layout: 'layout', user: 'user', logout: 'sign-out', sliders: 'sliders-horizontal',
-  sun: 'sun', moon: 'moon', monitor: 'monitor', more: 'dots-three', plans: 'credit-card', alert: 'warning-circle', clock: 'clock',
+  sun: 'sun', moon: 'moon', monitor: 'monitor', more: 'dots-three', plans: 'credit-card', alert: 'warning-circle', clock: 'clock', info: 'info',
 } as const
 
 export function Icon({ name, className = 'size-4' }: { name: keyof typeof GLYPH; className?: string }) {
@@ -23,6 +23,23 @@ export function Icon({ name, className = 'size-4' }: { name: keyof typeof GLYPH;
       <use href={`${sprite}#i-${GLYPH[name]}`} />
     </svg>
   )
+}
+
+/** The name in Fraunces with the second R struck through (v2/design/components/Wordmark). */
+export function Wordmark({ href, size = 'md' }: { href?: string; size?: 'md' | 'lg' }) {
+  const mark = (
+    <>
+      Report<span>No</span>
+      <span className="rnr-wordmark-rr">
+        R<svg className="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3" /></svg>
+      </span>
+      eport
+    </>
+  )
+  const cls = `rnr-wordmark${size === 'lg' ? ' text-[32px]' : ''}`
+  return href
+    ? <a href={href} className={cls} data-draw aria-label="ReportNoReport">{mark}</a>
+    : <span className={cls} data-draw role="img" aria-label="ReportNoReport">{mark}</span>
 }
 
 /** The bundle draws the 3px --focus ring on :focus-visible for every element; this class is kept so call sites need no change. */
