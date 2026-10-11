@@ -67,3 +67,53 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 @media (max-width: 639px) {
   .rnr-sticky-first th:first-child, .rnr-sticky-first td:first-child { position: sticky; left: 0; background: var(--rnr-card-bg); }
 }
+
+/* Phase 3: workflow board (design/phase-3-screens.md §2.6). xyflow chrome is restyled with tokens only. */
+.wf-board { padding: 0; overflow: hidden; background-image: none; }
+.wf-board .react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--ink-muted);
+  --xy-edge-stroke-selected: var(--ink);
+  --xy-edge-stroke-width: 1.5;
+  --xy-edge-label-color: var(--ink-label);
+  --xy-edge-label-background-color: var(--surface-100);
+  --xy-handle-background-color: var(--surface-100);
+  --xy-handle-border-color: var(--ink-label);
+  --xy-controls-button-background-color: var(--surface-100);
+  --xy-controls-button-background-color-hover: var(--surface-200);
+  --xy-controls-button-color: var(--ink-label);
+  --xy-controls-button-border-color: var(--line-200);
+  --xy-attribution-background-color: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-sans);
+}
+.wf-board .react-flow__background-pattern { fill: var(--chart-grid); stroke: none; }
+.wf-board .react-flow__edge-text { font-size: 12px; fill: var(--ink-label); }
+.wf-board .react-flow__edge-textbg { fill: var(--surface-100); stroke: var(--line-200); }
+.wf-board .react-flow__connection-path { stroke: var(--focus-ring); stroke-width: 1.5; }
+.wf-board .react-flow__handle { border-radius: var(--radius-full); background: var(--surface-100); border: 2px solid var(--ink-label); }
+.wf-board .react-flow__handle.connectionindicator:hover, .wf-board .react-flow__handle.connectingfrom { border-color: var(--focus-ring); }
+.wf-board .react-flow__controls { box-shadow: var(--shadow-xs); border: 1px solid var(--line-200); border-radius: var(--radius-lg); overflow: hidden; }
+.wf-board .react-flow__controls-button { background: var(--surface-100); color: var(--ink-label); border-bottom: 1px solid var(--line-100); min-width: 28px; min-height: 28px; }
+.wf-board .react-flow__controls-button:hover { background: var(--surface-200); }
+.wf-board .react-flow__controls-button svg { fill: currentColor; }
+.wf-board .react-flow__attribution { background: transparent; font-size: 12px; }
+.wf-board .react-flow__attribution a { color: var(--ink-muted); }
+.wf-board .react-flow__node:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-xl); }
+.wf-board .react-flow__node.dragging .wf-card { box-shadow: var(--shadow-2xl); border-color: var(--line-300); }
+[data-theme^="bw"] .wf-board .react-flow__node.dragging .wf-card { box-shadow: 6px 6px 0 0 var(--ink); }
+@media (pointer: coarse) { .wf-board .react-flow__controls-button { min-width: var(--touch-min); min-height: var(--touch-min); } }
+@media (pointer: coarse) { .wf-board--readonly { pointer-events: none; } } /* a static picture on touch: page scroll is never trapped */
+
+.wf-card { width: 208px; flex-direction: column; align-items: stretch; gap: var(--space-1); padding: var(--space-3); overflow-wrap: anywhere; }
+.wf-card[data-issue="true"] { border-color: var(--danger); }
+.wf-card[data-current="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
+.wf-card[data-readonly="true"] .react-flow__handle { pointer-events: none; }
+.wf-outs { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.wf-out { position: relative; display: flex; align-items: center; justify-content: flex-end; min-height: 28px; margin-right: calc(-1 * var(--space-3)); padding-right: var(--space-3); }
+.wf-card .react-flow__handle { width: 12px; height: 12px; }
+.wf-card .react-flow__handle::after { content: ''; position: absolute; inset: -8px; }
+.wf-card .react-flow__handle-right { right: -6px; }
+.wf-card .react-flow__handle-left { left: -6px; }
+/* Segmented as a view toggle: the inactive label on the track is 4.4:1 in ink-muted, below AA at 14px. */
+.rnr-seg button[aria-pressed="false"] { color: var(--ink-label); }

@@ -15,6 +15,8 @@ import { FillPage } from './forms/fill/FillPage'
 import { FormBuilder } from './forms/builder/FormBuilder'
 import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
 import { WorkflowsPage } from './workflows/WorkflowsPage'
+import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
+import { AccessPage } from './workflows/AccessPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -41,6 +43,8 @@ function Page({ route }: { route: Route }) {
     case 'roles': return <RolesPage />
     case 'forms': return <FormsPage />
     case 'workflows': return <WorkflowsPage />
+    case 'workflow-edit': return <WorkflowEditor id={route.id} />
+    case 'workflow-access': return <AccessPage id={route.id} />
     case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />

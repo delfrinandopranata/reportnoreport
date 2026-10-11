@@ -8,7 +8,8 @@ const OP_LABELS: Record<Operator, string> = {
   is_not_empty: 'is not empty', gt: 'is more than', lt: 'is less than', within_days: 'is within … days of today',
 }
 
-type Props = { rule?: Rule; scope: Field[]; self: string; onChange(rule?: Rule): void }
+/** `required` drops the on/off checkbox: a workflow Condition always has a rule. */
+type Props = { rule?: Rule; scope: Field[]; self: string; onChange(rule?: Rule): void; required?: boolean; legend?: string }
 
 function ValueControl({ rule, target, onChange }: { rule: Rule; target?: Field; onChange(r: Rule): void }) {
   const id = useId()
@@ -58,25 +59,25 @@ function ValueControl({ rule, target, onChange }: { rule: Rule; target?: Field; 
     value={valueText(rule.value)} onCommit={(t) => onChange({ ...rule, value: parseValue(op, t) })} />
 }
 
-export function RuleEditor({ rule, scope, self, onChange }: Props) {
+export function RuleEditor({ rule, scope, self, onChange, required, legend = 'Show this field' }: Props) {
   const uid = useId()
   const paths = rulePaths(scope, self)
   const missing = rule && !paths.some((p) => p.value === rule.field)
   return (
     <fieldset className="rnr-field">
-      <legend className="rnr-label">Show this field</legend>
-      <label className="rnr-check">
+      <legend className="rnr-label">{legend}</legend>
+      {!required && <label className="rnr-check">
         <input type="checkbox" checked={!!rule} disabled={!rule && !paths.length}
           onChange={(e) => onChange(e.target.checked ? { field: paths[0]?.value ?? '', operator: 'is_not_empty' } : undefined)} />
         Only when a condition is met
-      </label>
-      {!rule && !paths.length && <span className="rnr-hint">Add another field first to use as a condition.</span>}
+      </label>}
+      {!rule && !paths.length && !required && <span className="rnr-hint">Add another field first to use as a condition.</span>}
       {rule && (
         <div className="grid gap-3">
           <div className="rnr-field">
             <label htmlFor={`${uid}-f`} className="rnr-label">Field</label>
             <select id={`${uid}-f`} className="rnr-input" value={rule.field} onChange={(e) => onChange({ field: e.target.value, operator: rule.operator })}>
-              {missing && <option value={rule.field}>{rule.field || 'Choose a field'} (no longer exists)</option>}
+              {missing && <option value={rule.field}>{rule.field ? `${rule.field} (no longer exists)` : 'Choose a field'}</option>}
               {paths.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
           </div>
