@@ -13,6 +13,7 @@ import { RolesPage } from './roles/RolesPage'
 import { FormsPage } from './forms/FormsPage'
 import { FillPage } from './forms/fill/FillPage'
 import { FormBuilder } from './forms/builder/FormBuilder'
+import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -39,6 +40,7 @@ function Page({ route }: { route: Route }) {
     case 'roles': return <RolesPage />
     case 'forms': return <FormsPage />
     case 'form-edit': return <FormBuilder id={route.id} />
+    case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
     default: return <MembersPage />
   }
