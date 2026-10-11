@@ -16,7 +16,7 @@ import { WorkflowStatusMark } from './StatusMark'
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 
 export function WorkflowsPage() {
-  const { orgId, orgs } = useOrg()
+  const { orgId, orgs, can } = useOrg()
   const qc = useQueryClient()
   const list = useWorkflows(orgId)
   const create = useAction()
@@ -105,6 +105,7 @@ export function WorkflowsPage() {
                     <div className="flex justify-end gap-1 whitespace-nowrap">
                       <a className="rnr-btn rnr-btn-secondary" href={`#/workflows/${w.id}/edit`} aria-label={`Edit ${w.name}`}>Edit</a>
                       <a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${w.id}/access`} aria-label={`Access for ${w.name}`}>Access</a>
+                      {can('reports.manage') && <a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${w.id}/report`} aria-label={`PDF template for ${w.name}`}>PDF template</a>}
                       <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Delete ${w.name}`} onClick={() => { setDeleteError(null); setDeleting(w) }}>Delete</button>
                     </div>
                   </td>

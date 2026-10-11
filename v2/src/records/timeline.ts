@@ -23,8 +23,9 @@ export function eventText(e: Ev, graph: Graph, who: string | null): string {
     case 'action':
       if (d.type === 'set_status') return `Status set to “${String(d.label)}”`
       if (d.type === 'send_message') return d.status === 'pending' ? 'Message not sent: recorded before messages were available.' : sentText(d)
-      return 'PDF not made yet. Available when Reports ship.'
-    case 'error': return `Stopped: ${String(d.message)}`
+      if (d.type === 'generate_pdf') return d.status === 'done' ? 'PDF made' : d.status === 'queued' ? 'PDF requested' : 'PDF not made: recorded before reports were available.'
+      return 'The workflow recorded a step'
+    case 'error': return d.type === 'generate_pdf' ? `PDF not made: ${String(d.message)}` : `Stopped: ${String(d.message)}` // on a closed record "Stopped" would be false
     case 'closed': return d.status === 'rejected' ? 'Closed as rejected' : 'Closed as done'
     default: return 'The workflow recorded a step'
   }
@@ -51,9 +52,9 @@ export function eventIcon(e: Ev): EventIcon {
   switch (e.kind) {
     case 'waiting': case 'task': return 'clock'
     case 'action':
-      if (e.detail?.type === 'generate_pdf') return 'clock'
+      if (e.detail?.type === 'generate_pdf') return e.detail.status === 'done' ? 'check' : e.detail.status === 'queued' ? 'clock' : 'x' // a pending one will never be made
       return e.detail?.type === 'send_message' && e.detail?.status === 'pending' ? 'x' : null // a pending message will never send
-    case 'error': return 'stop'
+    case 'error': return e.detail?.type === 'generate_pdf' ? 'x' : 'stop'
     case 'closed': return e.detail?.status === 'rejected' ? 'x' : 'check'
     default: return null
   }

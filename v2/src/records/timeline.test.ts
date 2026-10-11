@@ -26,7 +26,7 @@ test('runtime events say what the workflow did', () => {
 test('actions that are not carried out yet say so', () => {
   assert.equal(eventText(ev('action', 'approve', { type: 'set_status', label: 'Rejected by manager' }), LEAVE, null), 'Status set to “Rejected by manager”')
   assert.equal(eventText(ev('action', 'approve', { type: 'send_message', status: 'pending' }), LEAVE, null), 'Message not sent: recorded before messages were available.')
-  assert.equal(eventText(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' }), LEAVE, null), 'PDF not made yet. Available when Reports ship.')
+  assert.equal(eventText(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' }), LEAVE, null), 'PDF not made: recorded before reports were available.')
 })
 test('sent messages say what was sent, to how many people, and what was skipped', () => {
   const sent = (d: Record<string, unknown>) => ev('action', 'approve', { type: 'send_message', template: 'Record approved', ...d })
@@ -52,11 +52,24 @@ test('waiting, tasks and pending actions get a clock; errors a stop; closing a t
   assert.equal(eventIcon(ev('waiting', 'wait')), 'clock')
   assert.equal(eventIcon(ev('task', 'approve')), 'clock')
   assert.equal(eventIcon(ev('action', 'approve', { type: 'send_message', status: 'pending' })), 'x')
-  assert.equal(eventIcon(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' })), 'clock')
+  assert.equal(eventIcon(ev('action', 'approve', { type: 'generate_pdf', status: 'pending' })), 'x')
   assert.equal(eventIcon(ev('action', 'approve', { type: 'send_message', template: 'Record approved', people: 1, skipped: 0 })), null)
   assert.equal(eventIcon(ev('action', 'approve', { type: 'set_status', label: 'x' })), null)
   assert.equal(eventIcon(ev('error', 'approve')), 'stop')
   assert.equal(eventIcon(ev('closed', 'done', { status: 'done' })), 'check')
   assert.equal(eventIcon(ev('closed', 'rejected', { status: 'rejected' })), 'x')
   assert.equal(eventIcon(ev('started', 'start')), null)
+})
+
+test('a PDF says when it was requested, made, or could not be made', () => {
+  assert.equal(eventText(ev('action', 'approve', { type: 'generate_pdf', status: 'queued', job: 'j' }), LEAVE, null), 'PDF requested')
+  assert.equal(eventText(ev('action', null, { type: 'generate_pdf', status: 'done', job: 'j' }), LEAVE, null), 'PDF made')
+  assert.equal(eventText(ev('error', null, { type: 'generate_pdf', message: 'A signature file is missing.' }), LEAVE, null), 'PDF not made: A signature file is missing.')
+  assert.equal(eventText(ev('error', null, { message: 'Boom' }), LEAVE, null), 'Stopped: Boom')
+  assert.deepEqual([
+    eventIcon(ev('action', 'approve', { type: 'generate_pdf', status: 'queued' })),
+    eventIcon(ev('action', null, { type: 'generate_pdf', status: 'done' })),
+    eventIcon(ev('error', null, { type: 'generate_pdf', message: 'x' })),
+    eventIcon(ev('error', null, { message: 'x' })),
+  ], ['clock', 'check', 'x', 'stop'])
 })

@@ -15,6 +15,8 @@ const SENTENCES: [RegExp, string][] = [
   [/Owner role cannot be (changed|deleted)/, 'The Owner role cannot be changed or deleted.'],
   [/Only failed messages can be retried/, 'Only failed messages can be retried. The list now shows the latest status.'],
   [/A template cannot change its type/, 'A template cannot change its type. Create a new template instead.'],
+  [/no report template yet/, 'This workflow has no PDF template yet. Ask a reports manager to set one up.'],
+  [/dashboard changed/, 'The dashboard changed. Reload to see the latest layout.'],
   [/Not allowed|permission to invite/, 'You do not have permission to do that.'],
   [/Invalid login credentials/, 'That email or password is incorrect. Check them and try again.'],
   [/already registered/i, 'That email already has an account. Sign in instead.'],

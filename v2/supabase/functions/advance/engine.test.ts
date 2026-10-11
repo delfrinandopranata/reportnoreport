@@ -340,7 +340,7 @@ Deno.test('generate_pdf without a report template stops the record with the reas
   await start(SHORT)
   await act(claim(), 'approved')
   assertEquals([db.records[0].status, db.records[0].error], ['error',
-    'This path makes a PDF, but the workflow has no report template. Ask a reports manager to set one up.'])
+    'This path makes a PDF, but the workflow has no PDF template. Ask a reports manager to set one up.'])
   assertEquals(db.pdfs.length, 0)
 })
 

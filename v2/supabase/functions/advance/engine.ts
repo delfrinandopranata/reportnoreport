@@ -243,7 +243,7 @@ async function runAction(tx: Tx, rec: RecordRow, edge: Edge, a: unknown, ctx: Wa
   }
   if (isObj(a) && a.type === 'generate_pdf') {
     if (!(await tx.hasReportTemplate(rec.workflow_id))) {
-      throw new StepError('This path makes a PDF, but the workflow has no report template. Ask a reports manager to set one up.')
+      throw new StepError('This path makes a PDF, but the workflow has no PDF template. Ask a reports manager to set one up.')
     }
     const job = await tx.queuePdf({ org_id: rec.org_id, record_id: rec.id, requested_by: null })
     return ev('action', edge.from, { type: 'generate_pdf', edge: edge.id, status: 'queued', job })

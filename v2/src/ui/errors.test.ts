@@ -33,3 +33,8 @@ test('communication messages', () => {
   assert.equal(friendlyError({ code: 'P0001', message: 'A template cannot change its type.' }),
     'A template cannot change its type. Create a new template instead.')
 })
+
+test('report and PDF messages', () => {
+  assert.equal(friendlyError({ message: 'This workflow has no report template yet.' }), 'This workflow has no PDF template yet. Ask a reports manager to set one up.')
+  assert.equal(friendlyError({ message: 'The dashboard changed. Reload to see the latest layout.' }), 'The dashboard changed. Reload to see the latest layout.')
+})

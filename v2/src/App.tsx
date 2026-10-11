@@ -27,6 +27,7 @@ import { SettingsPage } from './comms/SettingsPage'
 import { TemplatesPage } from './comms/TemplatesPage'
 import { TemplateEditor } from './comms/TemplateEditor'
 import { MessagesPage } from './comms/MessagesPage'
+import { ReportTemplatePage } from './reports/ReportTemplatePage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -60,6 +61,7 @@ function Page({ route }: { route: Route }) {
     case 'workflows': return <WorkflowsPage />
     case 'workflow-edit': return <WorkflowEditor id={route.id} />
     case 'workflow-access': return <AccessPage id={route.id} />
+    case 'workflow-report': return <ReportTemplatePage id={route.id} />
     case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
@@ -74,7 +76,7 @@ function Page({ route }: { route: Route }) {
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
-  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage') })
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: can('reports.view') || can('reports.manage'), reportsManage: can('reports.manage') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {

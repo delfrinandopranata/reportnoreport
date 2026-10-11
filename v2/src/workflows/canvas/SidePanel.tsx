@@ -23,7 +23,7 @@ const WHEN: Record<Outcome, string> = {
   submitted: 'When submitted', approved: 'When approved', rejected: 'When rejected', yes: 'If yes', no: 'If no', next: 'Next',
 }
 const ACTION_TITLES = { set_status: 'Set status', send_message: 'Send message', generate_pdf: 'Generate PDF' } as const
-const NOT_ACTIVE = { generate_pdf: 'Not active yet. Available when Reports ship.' } as const
+const HINTS = { generate_pdf: "Makes a PDF of the record from the workflow's PDF template. If there is no template, the record stops. A reports manager sets it up from the Workflows list." } as const
 const plural = (n: number) => (n === 1 ? ['record is', 'it'] : ['records are', 'them'])
 
 function Select({ label, value, options, onChange, hint }: { label: string; value: string; options: [string, string][]; onChange(v: string): void; hint?: string }) {
@@ -80,7 +80,7 @@ function ActionList({ edgeId, actions, onChange, onSay, graph, roles, members, f
   return (
     <div className="flex flex-col gap-2">
       <h3 className="label">Actions</h3>
-      <p className="rnr-caption">Actions run in the order you add them. Generate PDF is recorded on the timeline but not carried out yet: available when Reports ship.</p>
+      <p className="rnr-caption">Actions run in the order you add them.</p>
       {actions.map((a, i) => {
         const title = ACTION_TITLES[a.type as keyof typeof ACTION_TITLES] ?? 'Unknown action'
         return (
@@ -96,7 +96,7 @@ function ActionList({ edgeId, actions, onChange, onSay, graph, roles, members, f
               : a.type === 'send_message'
                 ? <MessageAction action={a} graph={graph} roles={roles} members={members} fields={fields} templates={messages.templates}
                     canManage={messages.canManageTemplates} onSay={onSay} onChange={(n) => onChange(actions.map((x, j) => (j === i ? n : x)))} />
-                : a.type in NOT_ACTIVE && <p className="rnr-caption">{NOT_ACTIVE[a.type as keyof typeof NOT_ACTIVE]}</p>}
+                : a.type in HINTS && <p className="rnr-caption">{HINTS[a.type as keyof typeof HINTS]}</p>}
           </div>
         )
       })}
@@ -108,7 +108,7 @@ function ActionList({ edgeId, actions, onChange, onSay, graph, roles, members, f
             <option value="">Choose an action…</option>
             <option value="set_status">Set status</option>
             <option value="send_message">Send message</option>
-            <option value="generate_pdf">Generate PDF (not active yet)</option>
+            <option value="generate_pdf">Generate PDF</option>
           </select>
         </div>
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={add}>Add action</button>

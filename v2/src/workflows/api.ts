@@ -105,9 +105,9 @@ export const useTask = (id: string) => useQuery({
 export type RecordFilter = 'all' | 'open' | 'error' | 'closed'
 export type RecordRow = {
   id: string; org_id: string; title: string; status: RecordStatus; label: string | null; error: string | null
-  current_node_id: string | null; started_by: string; created_at: string; workflow: WorkflowRef
+  current_node_id: string | null; started_by: string; created_at: string; workflow_id: string; workflow: WorkflowRef
 }
-const RECORD_COLS = 'id, org_id, title, status, label, error, current_node_id, started_by, created_at, workflow:workflows(name, graph)'
+const RECORD_COLS = 'id, org_id, title, status, label, error, current_node_id, started_by, created_at, workflow_id, workflow:workflows(name, graph)'
 
 export const useRecords = (orgId: string | null, filter: RecordFilter) => useQuery({
   queryKey: ['records', orgId, filter],

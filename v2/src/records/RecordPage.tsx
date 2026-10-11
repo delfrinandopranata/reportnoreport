@@ -8,6 +8,7 @@ import { useMemberEmails } from '../members/useMemberEmails'
 import { nodeById, nodeName } from '../workflows/logic'
 import { useRecord, useRecordEvents, useRecordSubmissions, type RecordRow, type RecordSubmission } from '../workflows/api'
 import { MiniCanvas } from '../workflows/canvas/MiniCanvas'
+import { PdfPanel } from '../reports/PdfPanel'
 import { RecordStatusMark } from './StatusMark'
 import { eventIcon, eventNote, eventText } from './timeline'
 
@@ -49,6 +50,7 @@ function RecordView({ rec }: { rec: RecordRow }) {
           <p className="rnr-muted">Nothing after this step has run. Ask a workflow manager to fix the workflow, then start a new record.</p>
         </div>
       )}
+      <PdfPanel recordId={rec.id} workflowId={rec.workflow_id} recordTitle={rec.title} recordStatus={rec.status} />
       <section className="rnr-card gap-3" aria-labelledby="map-h">
         <h2 id="map-h" className="rnr-card-title">{closed ? `Finished at: ${step}` : `Current step: ${step}`}</h2>
         <MiniCanvas graph={graph} current={rec.current_node_id} />

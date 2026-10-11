@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { guardHash, parseRoute } from './route.ts'
 
 const id = '0000000a-0000-0000-0000-0000000000f1'
-const all = { roles: true, forms: true, workflows: true, comms: true }
-const none = { roles: false, forms: false, workflows: false, comms: false }
+const all = { roles: true, forms: true, workflows: true, comms: true, reports: true, reportsManage: true }
+const none = { roles: false, forms: false, workflows: false, comms: false, reports: false, reportsManage: false }
 
 test('parses every page', () => {
   assert.deepEqual(parseRoute('#/members'), { page: 'members' })
@@ -55,4 +55,18 @@ test('parses templates, messages and settings pages; comms pages need comms.mana
   assert.equal(guardHash('#/messages', none), '#/inbox')
   assert.equal(guardHash('#/messages', all), '#/messages')
   assert.equal(guardHash('#/settings', none), '#/settings')
+})
+
+test('parses report, dashboard and PDF template pages', () => {
+  assert.deepEqual(parseRoute('#/dashboard'), { page: 'dashboard' })
+  assert.deepEqual(parseRoute('#/reports'), { page: 'reports' })
+  assert.deepEqual(parseRoute(`#/reports/${id}`), { page: 'report', id })
+  assert.deepEqual(parseRoute(`#/workflows/${id}/report`), { page: 'workflow-report', id })
+})
+test('report pages need reports.view; the PDF template editor needs reports.manage', () => {
+  for (const h of ['#/dashboard', '#/reports', `#/reports/${id}`, `#/workflows/${id}/report`]) assert.equal(guardHash(h, none), '#/inbox')
+  const viewer = { ...none, reports: true }
+  assert.equal(guardHash(`#/reports/${id}`, viewer), `#/reports/${id}`)
+  assert.equal(guardHash(`#/workflows/${id}/report`, viewer), '#/inbox')
+  assert.equal(guardHash(`#/workflows/${id}/report`, { ...none, reports: true, reportsManage: true }), `#/workflows/${id}/report`)
 })
