@@ -427,3 +427,14 @@ static_files = ["./functions/render-pdfs/fonts/*.ttf"]
 
 [functions.run-report]
 verify_jwt = true
+
+[functions.send-campaigns]
+verify_jwt = false
+
+# Resend signs its calls (Svix); the function verifies them itself.
+[functions.resend-webhook]
+verify_jwt = false
+
+# Opened from an email by someone who may have no account; the signed token is the check.
+[functions.unsubscribe]
+verify_jwt = false

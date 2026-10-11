@@ -101,3 +101,5 @@ insert into saved_reports (id, org_id, workflow_id, name, columns, filters, grou
 insert into dashboard_widgets (org_id, report_id, kind, title, span, position) values
   ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000e001', 'number', 'Leave days taken', 1, 1),
   ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000e001', 'bar', 'Leave days by type', 2, 2);
+-- Phase 6: pg_cron / schedule_campaign → send-campaigns (local value only; hosted projects set their own, see README).
+select vault.create_secret('http://host.docker.internal:54321/functions/v1/send-campaigns', 'send_campaigns_url');

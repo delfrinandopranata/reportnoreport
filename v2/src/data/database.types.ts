@@ -43,6 +43,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"campaigns": {
+                  Row: {
+                    "audience": NonNullable<Json>,"audience_snapshot_at": string | null,"channel": string | null,"created_at": string,"created_by": string | null,"error": string | null,"excluded": NonNullable<Json>,"finished_at": string | null,"id": string,"linked_workflow_id": string | null,"name": string,"org_id": string,"recipients": number | null,"scheduled_at": string | null,"sent_by": string | null,"status": string,"template_id": string | null,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name": string,"org_id": string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name"?: string,"org_id"?: string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "campaigns_linked_workflow_id_org_id_fkey"
+      columns: ["linked_workflow_id","org_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "campaigns_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "campaigns_template_id_org_id_fkey"
+      columns: ["template_id","org_id"]
+isOneToOne: false
+      referencedRelation: "message_templates"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 },"dashboard_versions": {
                   Row: {
                     "org_id": string,"version": number
@@ -81,6 +113,26 @@ isOneToOne: true
 isOneToOne: false
       referencedRelation: "saved_reports"
       referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"email_optouts": {
+                  Row: {
+                    "created_at": string,"email": string,"org_id": string,"reason": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email": string,"org_id": string,"reason": string
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string,"org_id"?: string,"reason"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "email_optouts_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
     }
                   ]
                 },"form_submissions": {
@@ -203,17 +255,23 @@ isOneToOne: false
                   ]
                 },"messages": {
                   Row: {
-                    "attempts": number,"body_html": string,"body_text": string,"bounced_at": string | null,"campaign_id": string | null,"channel": string,"clicked_at": string | null,"complained_at": string | null,"created_at": string,"delivered_at": string | null,"error": string | null,"id": string,"next_attempt_at": string,"opened_at": string | null,"org_id": string,"provider_id": string | null,"recipient_email": string,"recipient_user_id": string | null,"record_id": string | null,"sent_at": string | null,"status": string,"subject": string,"template_id": string | null
+                    "attempts": number,"body_html": string,"body_text": string,"bounced_at": string | null,"campaign_id": string | null,"channel": string,"clicked_at": string | null,"complained_at": string | null,"created_at": string,"delivered_at": string | null,"error": string | null,"id": string,"next_attempt_at": string,"opened_at": string | null,"org_id": string,"provider_id": string | null,"recipient_email": string,"recipient_user_id": string | null,"record_id": string | null,"sent_at": string | null,"status": string,"subject": string,"template_id": string | null,"unsubscribe_url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"body_html": string,"body_text": string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id": string,"provider_id"?: string | null,"recipient_email": string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject": string,"template_id"?: string | null
+                    "attempts"?: number,"body_html": string,"body_text": string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id": string,"provider_id"?: string | null,"recipient_email": string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject": string,"template_id"?: string | null,"unsubscribe_url"?: string | null
                   }
                   Update: {
-                    "attempts"?: number,"body_html"?: string,"body_text"?: string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id"?: string,"provider_id"?: string | null,"recipient_email"?: string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject"?: string,"template_id"?: string | null
+                    "attempts"?: number,"body_html"?: string,"body_text"?: string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id"?: string,"provider_id"?: string | null,"recipient_email"?: string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject"?: string,"template_id"?: string | null,"unsubscribe_url"?: string | null
                   }
                   Relationships: [
                     {
+      foreignKeyName: "messages_campaign_fk"
+      columns: ["campaign_id","org_id"]
+isOneToOne: false
+      referencedRelation: "campaigns"
+      referencedColumns: ["id","org_id"]
+    },{
       foreignKeyName: "messages_org_id_fkey"
       columns: ["org_id"]
 isOneToOne: false
@@ -249,17 +307,23 @@ isOneToOne: false
                   ]
                 },"notifications": {
                   Row: {
-                    "body": string,"created_at": string,"id": string,"kind": string,"link": string,"org_id": string,"read_at": string | null,"title": string,"user_id": string
+                    "body": string,"campaign_id": string | null,"created_at": string,"id": string,"kind": string,"link": string,"org_id": string,"read_at": string | null,"title": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body"?: string,"created_at"?: string,"id"?: string,"kind": string,"link": string,"org_id": string,"read_at"?: string | null,"title": string,"user_id": string
+                    "body"?: string,"campaign_id"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"link": string,"org_id": string,"read_at"?: string | null,"title": string,"user_id": string
                   }
                   Update: {
-                    "body"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"link"?: string,"org_id"?: string,"read_at"?: string | null,"title"?: string,"user_id"?: string
+                    "body"?: string,"campaign_id"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"link"?: string,"org_id"?: string,"read_at"?: string | null,"title"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "notifications_campaign_fk"
+      columns: ["campaign_id","org_id"]
+isOneToOne: false
+      referencedRelation: "campaigns"
+      referencedColumns: ["id","org_id"]
+    },{
       foreignKeyName: "notifications_org_id_fkey"
       columns: ["org_id"]
 isOneToOne: false
@@ -548,8 +612,26 @@ isOneToOne: false
 "bump_dashboard_version":
 { Args: { "p_org": string }; Returns: undefined
                            },
+"campaign_completion":
+{ Args: { "p_campaign": string }; Returns: {
+              "finished": number,"people": number,"started": number
+            }[]
+                           },
+"campaign_daily":
+{ Args: { "p_campaign": string }; Returns: {
+              "clicks": number,"day": number,"opens": number
+            }[]
+                           },
+"campaign_stats":
+{ Args: { "p_org": string }; Returns: {
+              "bounced": number,"campaign_id": string,"clicked": number,"complained": number,"delivered": number,"failed": number,"opened": number,"queued": number,"recipients": number,"sent": number
+            }[]
+                           },
 "can_start":
 { Args: { "w": Omit<Database["public"]['Tables']["workflows"]['Row'], Database["public"]['Tables']["workflows"]['ComputedFields']> }; Returns: boolean
+                           },
+"cancel_campaign":
+{ Args: { "p_campaign": string }; Returns: undefined
                            },
 "claim_task":
 { Args: { "p_task": string }; Returns: undefined
@@ -576,6 +658,9 @@ isOneToOne: false
                            },
 "my_active_orgs":
 { Args: Record<PropertyKey, never>; Returns: string[]
+                           },
+"my_member_email":
+{ Args: { "p_org": string }; Returns: string
                            },
 "my_permissions":
 { Args: { "p_org": string }; Returns: string[]
@@ -617,6 +702,9 @@ isOneToOne: false
 "saved_report_shape_ok":
 { Args: { "p_aggregate": Json,"p_columns": Json,"p_filters": Json,"p_group_by": Json }; Returns: boolean
                            },
+"schedule_campaign":
+{ Args: { "p_at"?: string,"p_campaign": string }; Returns: undefined
+                           },
 "seed_message_templates":
 { Args: { "p_org": string }; Returns: undefined
                            },
@@ -630,6 +718,9 @@ isOneToOne: false
 { Args: { "p_name": string }; Returns: string
                            },
 "wake_render_pdfs":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"wake_send_campaigns":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            }
           }
