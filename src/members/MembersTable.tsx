@@ -3,15 +3,15 @@ import { Skeleton } from '../ui/Skeleton'
 import type { Role } from './InviteForm'
 import { toggle } from './toggle'
 
-export type Member = { id: string; email: string; status: 'invited' | 'active'; member_roles: { role_id: string }[] }
+export type Member = { id: string; email: string; status: 'invited' | 'active'; user_id: string | null; member_roles: { role_id: string }[] }
 
 type Props = {
   orgName: string; members: Member[] | undefined; roles: Role[] | undefined
-  failed: boolean; manage: boolean; busyId: string | null
+  failed: boolean; manage: boolean; canRemove(m: Member): boolean; busyId: string | null
   onRetry(): void; onSetRoles(m: Member, ids: string[]): void; onRemove(m: Member): void
 }
 
-export function MembersTable({ orgName, members, roles, failed, manage, busyId, onRetry, onSetRoles, onRemove }: Props) {
+export function MembersTable({ orgName, members, roles, failed, manage, canRemove, busyId, onRetry, onSetRoles, onRemove }: Props) {
   if (failed) {
     return (
       <div className="rnr-card gap-3">
@@ -55,7 +55,7 @@ export function MembersTable({ orgName, members, roles, failed, manage, busyId, 
                     ))}
                   </div>
                 </td>
-                <td>{manage && <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Remove ${m.email}`} onClick={() => onRemove(m)}>Remove</button>}</td>
+                <td>{manage && canRemove(m) && <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Remove ${m.email}`} onClick={() => onRemove(m)}>Remove</button>}</td>
               </tr>
             )
           })}

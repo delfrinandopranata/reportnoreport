@@ -35,7 +35,7 @@ export function OrgProvider({ userId, children }: { userId: string; children: Re
   const permissions = permsQ.data ?? new Set<string>()
   return (
     <OrgContext.Provider value={{
-      orgs, orgId: activeId, setOrgId: setOrgIdState, permissions,
+      orgs, orgId: activeId, userId, setOrgId: setOrgIdState, permissions,
       can: (p) => canHold(permissions, p), loading: orgsQ.isLoading || permsQ.isLoading,
       failed: orgsQ.isError || permsQ.isError,
     }}>{children}</OrgContext.Provider>

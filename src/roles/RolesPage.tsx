@@ -43,7 +43,7 @@ export function RolesPage() {
     setDeleteError(null)
     const { error } = await supabase.rpc('delete_role', { p_role_id: deleting!.id })
     if (error) {
-      setDeleteError(friendlyError(error, { inUse: `${deleting!.name} is still assigned to members. Remove it from them first.` }))
+      setDeleteError(friendlyError(error))
       return
     }
     setNotice('Role deleted.'); setDeleting(null); await refresh()

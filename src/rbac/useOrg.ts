@@ -5,6 +5,7 @@ export type Org = { id: string; name: string }
 export type Ctx = {
   orgs: Org[]
   orgId: string | null
+  userId: string
   setOrgId(id: string): void
   permissions: ReadonlySet<string>
   can(p: Permission): boolean

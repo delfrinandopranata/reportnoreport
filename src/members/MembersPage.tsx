@@ -11,7 +11,7 @@ import { InviteForm, type Role } from './InviteForm'
 import { MembersTable, type Member } from './MembersTable'
 
 export function MembersPage() {
-  const { orgs, orgId, can } = useOrg()
+  const { orgs, orgId, userId, can } = useOrg()
   const qc = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useNotice()
@@ -28,10 +28,14 @@ export function MembersPage() {
     return data as Role[]
   } })
   const members = useQuery({ queryKey: ['members', orgId], queryFn: async () => {
-    const { data, error } = await supabase.from('members').select('id, email, status, member_roles(role_id)').eq('org_id', orgId!).order('email')
+    const { data, error } = await supabase.from('members').select('id, email, status, user_id, member_roles(role_id)').eq('org_id', orgId!).order('email')
     if (error) throw error
     return data as Member[]
   } })
+  // UI hint only: the database refuses a non-Owner removing an Owner.
+  const ownerId = roles.data?.find((r) => r.is_owner)?.id
+  const isOwner = !!members.data?.find((m) => m.user_id === userId)?.member_roles.some((r) => r.role_id === ownerId)
+  const canRemove = (m: Member) => isOwner || !m.member_roles.some((r) => r.role_id === ownerId)
   const refresh = () => qc.invalidateQueries({ queryKey: ['members', orgId] })
 
   async function setRoles(m: Member, ids: string[]) {
@@ -58,7 +62,7 @@ export function MembersPage() {
       <div>{error && <p className="rnr-error" role="alert">{error}</p>}</div>
       {manage && orgId && <InviteForm orgId={orgId} roles={roles.data} onDone={refresh} onNotice={setNotice} />}
       <MembersTable orgName={orgName} members={members.data} roles={roles.data} failed={members.isError || roles.isError}
-        manage={manage} busyId={busyId} onRetry={() => { members.refetch(); roles.refetch() }}
+        manage={manage} canRemove={canRemove} busyId={busyId} onRetry={() => { members.refetch(); roles.refetch() }}
         onSetRoles={setRoles} onRemove={(m) => { setRemoveError(null); setRemoving(m) }} />
       <ConfirmDialog open={!!removing} title={`Remove ${removing?.email ?? ''}?`}
         body={`They lose access to ${orgName} straight away.`} confirmLabel="Remove member" busyLabel="Removing…"
