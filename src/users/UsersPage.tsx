@@ -8,7 +8,6 @@ import { formatDate } from '../settings/constants'
 import { RoleBadge, STATUS_LABEL, StatusBadge } from './badges'
 import { ACTIONS, can, isValidEmail, ROLE_LABEL, ROLE_SUMMARY, ROLES, type Role, type Status } from './rules'
 
-const card = 'rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900'
 const ASSIGNABLE = ROLES.filter((r) => r !== 'owner')
 const STATUSES: Status[] = ['active', 'invited', 'suspended']
 type SortKey = 'name' | 'email' | 'role' | 'status' | 'active'
@@ -23,7 +22,7 @@ function lastActive(user: Member, dateFormat: 'text' | 'numeric'): string {
 
 const Err = ({ text }: { text: string }) =>
   text ? (
-    <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+    <p className="rnr-error" role="alert">
       {text}
     </p>
   ) : null
@@ -69,11 +68,11 @@ function InviteDialog({ open, onClose, onInvited }: { open: boolean; onClose: ()
               </option>
             ))}
           </select>
-          <span id="invite-role-help" className="text-zinc-500 dark:text-zinc-400">
+          <span id="invite-role-help" className="rnr-hint">
             {ROLE_SUMMARY[role]}
           </span>
         </Field>
-        <p className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-400">They'll get an email with a link to set their password. The link expires in 24 hours; you can resend it from Manage.</p>
+        <p className="rnr-note" data-tone="info"><Icon name="info" className="size-5" /><span>They'll get an email with a link to set their password. The link expires in 24 hours; you can resend it from Manage.</span></p>
         <Err text={error} />
         <div className="flex justify-end gap-2">
           <button type="button" className={btn.ghost} onClick={close}>
@@ -119,7 +118,7 @@ function ManageDialog({ id, members, onClose }: { id: string | null; members: Me
             <Avatar name={target.name} size="size-10" />
             <div className="min-w-0">
               <p className="truncate font-medium">{target.name}</p>
-              <p className="truncate text-zinc-500 dark:text-zinc-400">{target.email}</p>
+              <p className="rnr-muted truncate">{target.email}</p>
             </div>
             <span className="ml-auto">
               <StatusBadge status={target.status} />
@@ -134,30 +133,33 @@ function ManageDialog({ id, members, onClose }: { id: string | null; members: Me
                 </option>
               ))}
             </select>
-            <span className="text-zinc-500 dark:text-zinc-400">{ROLE_SUMMARY[target.role]}</span>
+            <span className="rnr-hint">{ROLE_SUMMARY[target.role]}</span>
           </Field>
 
           <Err text={error} />
-          <p className="text-sm empty:hidden text-emerald-700 dark:text-emerald-400" role="status">{info}</p>
+          <p className="rnr-hint empty:hidden" role="status">{info}</p>
 
           {confirming ? (
-            <div role="alertdialog" aria-label={confirming === 'remove' ? 'Confirm removal' : 'Confirm transfer of ownership'} className={`grid gap-3 rounded-xl border p-4 ${confirming === 'remove' ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/30' : 'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30'}`}>
-              <p>
-                {confirming === 'remove'
-                  ? `Remove ${target.name}? They lose access straight away and can be invited again later.`
-                  : `Make ${target.name} the owner? You become an admin and can’t undo this yourself.`}
+            <div role="alertdialog" aria-label={confirming === 'remove' ? 'Confirm removal' : 'Confirm transfer of ownership'} className="rnr-note grid gap-3" data-tone={confirming === 'remove' ? 'down' : 'warn'}>
+              <p className="flex items-start gap-3">
+                <Icon name="alert" className="size-5 shrink-0" />
+                <span>
+                  {confirming === 'remove'
+                    ? `Remove ${target.name}? They lose access straight away and can be invited again later.`
+                    : `Make ${target.name} the owner? You become an admin and can’t undo this yourself.`}
+                </span>
               </p>
               <div className="flex justify-end gap-2">
                 <button type="button" className={btn.ghost} onClick={() => setConfirming(null)}>
                   Cancel
                 </button>
-                <button type="button" className={confirming === 'remove' ? 'inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500' : btn.primary} onClick={() => run(() => (confirming === 'remove' ? team.remove : team.transferOwnership).mutateAsync(target.id), true)}>
+                <button type="button" className={confirming === 'remove' ? btn.danger : btn.primary} onClick={() => run(() => (confirming === 'remove' ? team.remove : team.transferOwnership).mutateAsync(target.id), true)}>
                   {confirming === 'remove' ? 'Remove user' : 'Transfer ownership'}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+            <div className="rnr-actions mt-0 flex-wrap justify-start">
               {target.status === 'suspended' ? (
                 <button type="button" className={btn.ghost} onClick={() => run(() => team.reactivate.mutateAsync(target.id), false, `${target.name} can sign in again.`)}>
                   Reactivate
@@ -173,11 +175,11 @@ function ManageDialog({ id, members, onClose }: { id: string | null; members: Me
                 </button>
               )}
               {me.role === 'owner' && target.status === 'active' && (
-                <button type="button" className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => setConfirming('transfer')}>
+                <button type="button" className={btn.secondary} onClick={() => setConfirming('transfer')}>
                   Transfer ownership
                 </button>
               )}
-              <button type="button" className={`${btn.danger} ml-auto border border-red-200 dark:border-red-900/60`} onClick={() => setConfirming('remove')}>
+              <button type="button" className={`${btn.danger} ml-auto`} onClick={() => setConfirming('remove')}>
                 <Icon name="trash" /> Remove
               </button>
             </div>
@@ -190,56 +192,55 @@ function ManageDialog({ id, members, onClose }: { id: string | null; members: Me
 
 function RolesPanel() {
   return (
-    <section className={`${card} relative overflow-hidden`} aria-labelledby="roles-heading">
-      <div className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <h2 id="roles-heading" className="font-semibold">
-          Roles and permissions
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">What each role can do. Everyone can view clients, balances and statements.</p>
-      </div>
-      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Roles and permissions table">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead>
-            <tr className="border-b border-zinc-100 text-left align-bottom dark:border-zinc-800">
-              <th scope="col" className="px-5 py-3 font-medium text-zinc-500 dark:text-zinc-400">Permission</th>
-              {ROLES.map((r) => (
-                <th key={r} scope="col" className="px-3 py-3 font-medium">
-                  <RoleBadge role={r} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {ACTIONS.map((a) => (
-              <tr key={a.id}>
-                <th scope="row" className="px-5 py-2.5 text-left font-normal">{a.label}</th>
+    <section className="rnr-folder" aria-labelledby="roles-heading">
+      <span className="rnr-folder-tab" id="roles-heading">Roles and permissions</span>
+      <div className="rnr-folder-body">
+        <div className="rnr-perf" aria-hidden="true" />
+        <p className="rnr-muted mb-4">What each role can do. Everyone can view clients, balances and statements.</p>
+        <div className="rnr-table-bare" tabIndex={0} role="region" aria-label="Roles and permissions table">
+          <table className="rnr-table min-w-[560px]">
+            <thead>
+              <tr>
+                <th scope="col">Permission</th>
                 {ROLES.map((r) => (
-                  <td key={r} className="px-3 py-2.5">
-                    {can(r, a.id) ? (
-                      <span className="text-emerald-600 dark:text-emerald-400">
-                        <Icon name="check" />
-                        <span className="sr-only">Allowed</span>
-                      </span>
-                    ) : (
-                      <span className="text-zinc-500 dark:text-zinc-400">
-                        —<span className="sr-only">Not allowed</span>
-                      </span>
-                    )}
-                  </td>
+                  <th key={r} scope="col">
+                    <RoleBadge role={r} />
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ACTIONS.map((a) => (
+                <tr key={a.id}>
+                  <th scope="row">{a.label}</th>
+                  {ROLES.map((r) => (
+                    <td key={r}>
+                      {can(r, a.id) ? (
+                        <span className="rnr-status" data-tone="ok">
+                          <Icon name="check" />
+                          <span className="rnr-sr-only">Allowed</span>
+                        </span>
+                      ) : (
+                        <span className="rnr-muted">
+                          —<span className="rnr-sr-only">Not allowed</span>
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {ROLES.map((r) => (
+            <div key={r}>
+              <dt className="font-medium">{ROLE_LABEL[r]}</dt>
+              <dd className="rnr-muted">{ROLE_SUMMARY[r]}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
-      <dl className="grid gap-x-6 gap-y-2 border-t border-zinc-100 px-5 py-4 text-sm sm:grid-cols-2 dark:border-zinc-800">
-        {ROLES.map((r) => (
-          <div key={r}>
-            <dt className="font-medium">{ROLE_LABEL[r]}</dt>
-            <dd className="text-zinc-500 dark:text-zinc-400">{ROLE_SUMMARY[r]}</dd>
-          </div>
-        ))}
-      </dl>
     </section>
   )
 }
@@ -270,16 +271,16 @@ export function UsersPage() {
           <Avatar name={u.name} />
           <span className="truncate font-medium" title={u.name}>
             {u.name}
-            {u.id === me.id && <span className="ml-1.5 text-xs font-normal text-zinc-500 dark:text-zinc-400">(you)</span>}
+            {u.id === me.id && <span className="rnr-hint ml-1.5">(you)</span>}
           </span>
         </span>
       ),
       text: (u) => u.name,
     },
-    { id: 'email', label: 'Email', width: 230, sortKey: 'email', cell: (u) => <span className="block truncate text-zinc-600 dark:text-zinc-400" title={u.email}>{u.email}</span>, text: (u) => u.email },
+    { id: 'email', label: 'Email', width: 230, sortKey: 'email', cell: (u) => <span className="rnr-muted block truncate" title={u.email}>{u.email}</span>, text: (u) => u.email },
     { id: 'role', label: 'Role', width: 120, sortKey: 'role', cell: (u) => <RoleBadge role={u.role} />, text: (u) => ROLE_LABEL[u.role] },
     { id: 'status', label: 'Status', width: 120, sortKey: 'status', cell: (u) => <StatusBadge status={u.status} />, text: (u) => STATUS_LABEL[u.status] },
-    { id: 'active', label: 'Last active', width: 150, sortKey: 'active', cell: (u) => <span className="text-zinc-500 dark:text-zinc-400">{lastActive(u, dateFormat)}</span>, text: (u) => lastActive(u, dateFormat) },
+    { id: 'active', label: 'Last active', width: 150, sortKey: 'active', cell: (u) => <span className="rnr-muted">{lastActive(u, dateFormat)}</span>, text: (u) => lastActive(u, dateFormat) },
     {
       id: 'actions',
       label: 'Actions',
@@ -287,7 +288,7 @@ export function UsersPage() {
       align: 'right',
       cell: (u) =>
         canManage && u.id !== me.id && u.role !== 'owner' ? (
-          <button type="button" className={`${btn.ghost} py-1`} onClick={() => setManaging(u.id)} aria-label={`Manage ${u.name}`}>
+          <button type="button" className={btn.ghost} onClick={() => setManaging(u.id)} aria-label={`Manage ${u.name}`}>
             Manage
           </button>
         ) : null,
@@ -296,7 +297,6 @@ export function UsersPage() {
   ]
   const table = useTableLayout('users', columns.filter((c) => c.id !== 'actions' || canManage))
   const visible = table.visible
-  const pad = table.layout.dense ? 'px-4 py-1.5' : 'px-4 py-2.5'
   const minWidth = visible.reduce((sum, c) => sum + table.widthOf(c), 0)
 
   const rows = useMemo(() => {
@@ -312,16 +312,16 @@ export function UsersPage() {
   }, [users, q, role, status, sort])
 
   const filtersActive = !!q || role !== 'all' || status !== 'all'
-  const select = `${field} py-1.5`
+  const select = field
 
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {!canManage && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">{session.can('users.manage') ? (session.writeBlockReason ?? '') : `You’re signed in as ${ROLE_LABEL[me.role]}. Only an owner or admin can change users.`}</p>}
+    <div className="rnr-wide grid grid-cols-1 gap-6">
+      {!canManage && <p className="rnr-note rnr-note--bar" data-tone="warn"><Icon name="alert" className="size-5" /><span>{session.can('users.manage') ? (session.writeBlockReason ?? '') : `You’re signed in as ${ROLE_LABEL[me.role]}. Only an owner or admin can change users.`}</span></p>}
 
-      <div className={`${card} grid gap-4 p-4 print:hidden`}>
+      <div className="rnr-card grid gap-4 print:hidden">
         {/* Actions: Invite user is the one primary action; Columns is a demoted secondary (Fitts's Law) */}
         <div className="flex items-center justify-end gap-2">
-          <button type="button" className={btn.ghost} onClick={() => setDialog('columns')}>
+          <button type="button" className={btn.secondary} onClick={() => setDialog('columns')}>
             <Icon name="columns" /> Columns
           </button>
           {canManage && (
@@ -332,10 +332,10 @@ export function UsersPage() {
         </div>
 
         {/* Search + filters: search leads, as is conventional (Jakob's Law) */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <div className="relative min-w-48 flex-1 sm:max-w-xs">
-            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" aria-label="Search users" className={`${input} py-1.5 pl-9`} />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rnr-input-wrap min-w-48 flex-1 sm:max-w-xs">
+            <Icon name="search" className="size-5" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" aria-label="Search users" className={input} />
           </div>
           <select value={role} onChange={(e) => setRole(e.target.value as Role | 'all')} aria-label="Role" className={select}>
             <option value="all">All roles</option>
@@ -362,54 +362,50 @@ export function UsersPage() {
       </div>
 
       <div role="status">
-        {notice && <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</p>}
+        {notice && <p className="rnr-note" data-tone="ok"><Icon name="check" className="size-5" /><span>{notice}</span></p>}
       </div>
 
-      <div className={`${card} overflow-hidden`}>
-        <div className="border-b border-zinc-100 px-5 py-3 text-sm font-medium dark:border-zinc-800">
-          {isPending ? 'Team' : `${rows.length} ${rows.length === 1 ? 'user' : 'users'}`}
-        </div>
+      <div className="rnr-table-card rnr-card">
         {isPending ? (
-          <p className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+          <p className="rnr-muted p-6 text-center">Loading…</p>
         ) : loadError ? (
-          <p role="alert" className="p-6 text-center text-sm text-red-600">{loadError.message}</p>
+          <p role="alert" className="rnr-error justify-center p-6">{loadError.message}</p>
         ) : rows.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-sm" style={{ minWidth }}>
-              <colgroup>
+          <table className={`rnr-table table-fixed [&_th]:relative ${table.layout.dense ? '[&_td]:py-1.5' : ''}`} style={{ minWidth }}>
+            <caption className="rnr-sr-only">{`${rows.length} ${rows.length === 1 ? 'user' : 'users'}`}</caption>
+            <colgroup>
+              {visible.map((c) => (
+                <col key={c.id} style={c.flex ? { minWidth: table.widthOf(c) } : { width: table.widthOf(c) }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
                 {visible.map((c) => (
-                  <col key={c.id} style={c.flex ? { minWidth: table.widthOf(c) } : { width: table.widthOf(c) }} />
+                  <ColumnHeader key={c.id} column={c} width={table.widthOf(c)} onResize={(w) => table.setWidth(c.id, w)} sort={sort} onSort={(k) => setSort(nextSort(sort, k))} />
                 ))}
-              </colgroup>
-              <thead>
-                <tr className="border-b border-zinc-100 text-left text-xs text-zinc-500 dark:border-zinc-800">
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((u) => (
+                <tr key={u.id}>
                   {visible.map((c) => (
-                    <ColumnHeader key={c.id} column={c} width={table.widthOf(c)} onResize={(w) => table.setWidth(c.id, w)} sort={sort} onSort={(k) => setSort(nextSort(sort, k))} />
+                    <td key={c.id} className={`truncate ${c.align === 'right' ? 'text-right' : ''}`}>
+                      {c.cell(u)}
+                    </td>
                   ))}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {rows.map((u) => (
-                  <tr key={u.id} className="transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    {visible.map((c) => (
-                      <td key={c.id} className={`${pad} truncate ${c.align === 'right' ? 'text-right' : ''}`}>
-                        {c.cell(u)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <p className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">{filtersActive ? 'No one matches these filters.' : 'No users yet.'}</p>
+          <p className="rnr-muted p-6 text-center">{filtersActive ? 'No one matches these filters.' : 'No users yet.'}</p>
         )}
         {!isPending && !loadError && users.length === 1 && users[0].id === me.id && !filtersActive && (
-          <div className="border-t border-zinc-100 px-5 py-5 text-center text-sm dark:border-zinc-800">
-            <p className="font-medium">It's just you so far</p>
-            <p className="mt-1 text-zinc-500 dark:text-zinc-400">{canManage ? 'Invite your partners, accountants or clerks so they can work in the same firm account.' : 'An owner or admin can invite the rest of your team.'}</p>
+          <div className="rnr-empty m-4">
+            <h3>It's just you so far</h3>
+            <p>{canManage ? 'Invite your partners, accountants or clerks so they can work in the same firm account.' : 'An owner or admin can invite the rest of your team.'}</p>
             {canManage && (
-              <button type="button" className={`${btn.primary} mt-3`} onClick={() => setDialog('invite')}>
+              <button type="button" className={btn.primary} onClick={() => setDialog('invite')}>
                 <Icon name="plus" /> Invite your first user
               </button>
             )}
