@@ -1,7 +1,7 @@
 import { PROGRAMMES, ICON, stats, edgeKey, type Programme, type Step } from './programmes'
 import { showState } from './loop'
+import { LANE_W, COL_W, ROW_H, TAIL, pos, route, pathD, placeLabels } from './layout'
 
-const LANE_W = 84, COL_W = 128, ROW_H = 108, CARD_W = 98, CARD_H = 78, PAD_Y = 22, MID = 61, TAIL = 44
 const NS = 'http://www.w3.org/2000/svg'
 
 const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = '') => {
@@ -23,25 +23,6 @@ const icon = (id: string) => {
 const timerText = (st: Step, k?: number) => {
   const t = st.timer as NonNullable<Step['timer']>
   return k === undefined ? `${t.n} ${t.unit}s` : `${t.unit === 'day' ? 'Day' : 'Month'} ${k} of ${t.n}`
-}
-
-const pos = (st: Step) => ({ x: LANE_W + st.col * COL_W + (COL_W - CARD_W) / 2, y: st.lane * ROW_H + PAD_Y })
-
-/** Path between two cards: straight or S-curve going forward, a vertical line within a column, a loop under the lanes going back. */
-function route(a: Step, b: Step, lanes: number) {
-  const pa = pos(a), pb = pos(b)
-  if (b.col > a.col) {
-    const x1 = pa.x + CARD_W, y1 = pa.y + MID, x2 = pb.x, y2 = pb.y + MID, dx = (x2 - x1) / 2
-    return { d: `M${x1} ${y1}C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`, lx: (x1 + x2) / 2, ly: (y1 + y2) / 2 + 3, back: false }
-  }
-  if (b.col === a.col) {
-    const up = b.lane < a.lane
-    const x = pa.x + CARD_W / 2, y1 = up ? pa.y : pa.y + CARD_H, y2 = up ? pb.y + CARD_H : pb.y
-    return { d: `M${x} ${y1}V${y2}`, lx: x, ly: (y1 + y2) / 2, back: false }
-  }
-  const x1 = pa.x + CARD_W / 2, x2 = pb.x + CARD_W / 2, base = lanes * ROW_H - 8
-  const y1 = pa.y + CARD_H, y2 = pb.y + CARD_H, low = Math.max(y1, y2) + 26, floor = Math.min(low, base + 16)
-  return { d: `M${x1} ${y1}C${x1} ${floor} ${x2} ${floor} ${x2} ${y2}`, lx: (x1 + x2) / 2, ly: floor + 8, back: true }
 }
 
 type View = { p: Programme; cards: Map<string, HTMLElement>; items: Map<string, HTMLElement>; ticks: Map<string, HTMLElement>; paths: Map<string, SVGPathElement>; lens: Map<string, number>; pulse: SVGElement; halo: SVGElement; stage: HTMLElement; fit: HTMLElement; root: HTMLElement }
@@ -68,15 +49,16 @@ function build(p: Programme): View {
   const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, fill: 'none', class: 'sl-svg' })
   const paths = new Map<string, SVGPathElement>(), lens = new Map<string, number>()
   const labels = s('g')
-  for (const [a, b, label] of p.edges) {
+  for (const [a, b] of p.edges) {
     const r = route(byId.get(a) as Step, byId.get(b) as Step, p.lanes.length)
-    const path = s('path', { d: r.d, class: `lp-edge${r.back ? ' sl-back' : ''}` }) as SVGPathElement
+    const path = s('path', { d: pathD(r.p), class: `lp-edge${r.back ? ' sl-back' : ''}` }) as SVGPathElement
     svg.append(path); paths.set(edgeKey(a, b), path)
-    if (label) {
-      const t = s('text', { x: r.lx, y: r.ly, class: 'sl-label', 'text-anchor': 'middle' })
-      t.textContent = label
-      labels.append(t)
-    }
+  }
+  for (const r of placeLabels(p).entries()) {
+    const label = p.edges[r[0]][2] as string, box = r[1]
+    const t = s('text', { x: box.x + box.w / 2, y: box.y + box.h - 3, class: 'sl-label', 'text-anchor': 'middle' })
+    t.textContent = label
+    labels.append(t)
   }
   const halo = s('circle', { r: 13, class: 'rnr-halo sl-dot' }), pulse = s('circle', { r: 6, class: 'rnr-pulse sl-dot' })
   svg.append(halo, pulse)
