@@ -15,7 +15,7 @@ import { createReport, deleteReport, useReports, useWidgets, type ReportListRow 
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 
 export function ReportsPage() {
-  const { orgId, can } = useOrg()
+  const { orgId, orgs, can } = useOrg()
   const manage = can('reports.manage')
   const reports = useReports(orgId)
   const widgets = useWidgets(orgId)
@@ -91,7 +91,7 @@ export function ReportsPage() {
       {!!reports.data?.length && (
         <div className="rnr-card rnr-table-card">
           <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Reports in your organisation</caption>
+            <caption className="sr-only">Reports in {orgs.find((o) => o.id === orgId)?.name ?? 'your organisation'}</caption>
             <thead><tr><th scope="col">Name</th><th scope="col">Workflow</th><th scope="col">Kind</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
               {reports.data.map((r) => (
@@ -150,7 +150,7 @@ function NewReportDialog({ onClose }: { onClose(): void }) {
       <form className="rnr-dialog-body" onSubmit={submit} noValidate>
         <div className="rnr-field" data-invalid={error?.startsWith('Enter') || undefined}>
           <label className="rnr-label" htmlFor={`${uid}-n`}>Name</label>
-          <input id={`${uid}-n`} data-autofocus className="rnr-input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />
+          <input id={`${uid}-n`} data-autofocus className="rnr-input" value={name} maxLength={120} aria-invalid={error?.startsWith('Enter') || undefined} aria-describedby={error?.startsWith('Enter') ? `${uid}-e` : undefined} onChange={(e) => setName(e.target.value)} />
         </div>
         {none ? (
           <div className="flex flex-col items-start gap-2">
@@ -160,13 +160,13 @@ function NewReportDialog({ onClose }: { onClose(): void }) {
         ) : (
           <div className="rnr-field" data-invalid={error?.startsWith('Choose') || undefined}>
             <label className="rnr-label" htmlFor={`${uid}-w`}>Workflow</label>
-            <select id={`${uid}-w`} className="rnr-input" value={workflowId} onChange={(e) => setWorkflowId(e.target.value)}>
+            <select id={`${uid}-w`} className="rnr-input" value={workflowId} aria-invalid={error?.startsWith('Choose') || undefined} aria-describedby={error?.startsWith('Choose') ? `${uid}-e` : undefined} onChange={(e) => setWorkflowId(e.target.value)}>
               <option value="">Choose a workflow</option>
               {workflows.data?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
         )}
-        {error && <p className="rnr-error" role="alert">{error}</p>}
+        {error && <p id={`${uid}-e`} className="rnr-error" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={act.busy}>

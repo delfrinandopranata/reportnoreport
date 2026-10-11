@@ -3,7 +3,7 @@ import type { RunResponse } from './api'
 import { MIN_CHART_WIDTH, chartGeometry, chartHeight, chartPoints, labelStep, showLabel, tooltipBox } from './chart'
 import { cellText, shownText } from './text'
 
-const clip = (s: string) => (s.length > 12 ? `${s.slice(0, 11)}…` : s)
+const clip = (s: string, max = 12) => (s.length > max ? `${s.slice(0, max - 1)}…` : s)
 
 /** One series in --in, drawn at the measured width so text stays 11px. Values are in the tooltip, the labels, the SVG title and the table; never colour alone (design/README dataviz). */
 export function ChartWidget({ kind, title, data, reportId }: { kind: 'bar' | 'line'; title: string; data: RunResponse; reportId: string }) {
@@ -46,7 +46,8 @@ export function ChartWidget({ kind, title, data, reportId }: { kind: 'bar' | 'li
     const step = labelStep(band)
     const top = (b: (typeof g.bars)[number]) => (b.value >= 0 ? b.y : b.y + b.h)
     const tip = active !== null ? g.bars[active] : null
-    const box = tip ? tooltipBox([tip.label, valueOf(tip)], tip.cx, top(tip), width, h) : null
+    // Sits above the bar's value label, so it does not hide the number it repeats.
+    const box = tip ? tooltipBox([tip.label, valueOf(tip)], tip.cx, top(tip) - (band >= 36 && tip.value >= 0 ? 18 : 0), width, h) : null
     svg = (
       <svg className="rnr-chart" viewBox={`0 0 ${width} ${h}`} role="img" aria-labelledby={`${uid}-t`} data-kind={kind} data-hovering={active !== null || undefined}>
         <title id={`${uid}-t`}>{summary}</title>
@@ -69,7 +70,7 @@ export function ChartWidget({ kind, title, data, reportId }: { kind: 'bar' | 'li
           <text key={i} className="rnr-chart-value rnr-num" x={b.cx} y={b.value >= 0 ? top(b) - 6 : top(b) + 14} textAnchor="middle">{b.missing && band < 64 ? '0' : valueOf(b)}</text>
         ))}
         {g.bars.map((b, i) => showLabel(i, g.bars.length, step) && (
-          <text key={i} className="rnr-chart-axis" x={b.cx} y={g.bottom + 16} textAnchor="middle">{clip(b.label)}</text>
+          <text key={i} className="rnr-chart-axis" x={b.cx} y={g.bottom + 16} textAnchor="middle">{clip(b.label, Math.min(12, Math.max(4, Math.floor(band / 6.5))))}</text>
         ))}
         {g.bars.map((_b, i) => (
           <rect key={i} className="rnr-chart-hit" x={g.left + i * band} y={0} width={band} height={h}

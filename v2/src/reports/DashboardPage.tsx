@@ -273,7 +273,7 @@ function AddWidgetDialog({ position, onClose, onAdded }: { position: number; onC
   const [error, setError] = useState<string | null>(null)
   const [bad, setBad] = useState<'report' | null>(null)
   const act = useAction()
-  useEffect(() => { ref.current?.showModal() }, [])
+  useEffect(() => { ref.current?.showModal(); ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus() }, [])
   const picked = reports.data?.find((r) => r.id === reportId)
   const pickKind = (k: WidgetKind) => { setKind(k); if (!spanTouched) setSpan(KIND_SPAN[k]) }
   const fail = (msg: string) => { setError(msg); setBad('report'); document.getElementById(`${uid}-r`)?.focus() }
@@ -298,7 +298,7 @@ function AddWidgetDialog({ position, onClose, onAdded }: { position: number; onC
       <form className="rnr-dialog-body" onSubmit={submit} noValidate>
         <div className="rnr-field" data-invalid={bad === 'report' || undefined}>
           <label className="rnr-label" htmlFor={`${uid}-r`}>Report</label>
-          <select id={`${uid}-r`} className="rnr-input" value={reportId} aria-invalid={bad === 'report' || undefined} onChange={(e) => setReportId(e.target.value)}>
+          <select id={`${uid}-r`} data-autofocus className="rnr-input" value={reportId} aria-invalid={bad === 'report' || undefined} aria-describedby={bad ? `${uid}-e` : undefined} onChange={(e) => setReportId(e.target.value)}>
             <option value="">Choose a report</option>
             {reports.data?.map((r) => <option key={r.id} value={r.id}>{r.name}{r.group_by ? ' (grouped)' : ''}</option>)}
           </select>
@@ -321,7 +321,7 @@ function AddWidgetDialog({ position, onClose, onAdded }: { position: number; onC
             {([1, 2, 4] as const).map((s) => <option key={s} value={s}>{SPAN_WORDS[s]}</option>)}
           </select>
         </div>
-        {error && <p className="rnr-error" role="alert">{error}</p>}
+        {error && <p id={`${uid}-e`} className="rnr-error" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={act.busy}>

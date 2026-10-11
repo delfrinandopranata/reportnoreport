@@ -25,6 +25,7 @@ export function WidgetBody({ w }: { w: WidgetRow }) {
   }
   const data = run.data
   const r = data.result
+  if (w.kind === 'number' && r.kind === 'groups' && r.total === 0) return <p className="rnr-muted">{EMPTY}</p> // no groups means no records, which is not "No numbers"
   if (w.kind === 'number') {
     const value = r.kind === 'groups' ? r.grandTotal : r.total
     const label = r.kind === 'groups' && data.aggregateFn === 'sum' ? data.aggregateLabel : 'Records'

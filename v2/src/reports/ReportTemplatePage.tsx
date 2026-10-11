@@ -181,15 +181,15 @@ function TemplateForm({ workflow, schemas, saved, mayEditWorkflow, onReload }: {
                 </div>
               )}
             </div>
-            <fieldset className="rnr-card gap-2">
-              <legend className="dialog-title">Sign-off</legend>
+            <div role="group" aria-labelledby={`${uid}-signoff`} className="rnr-card gap-2">
+              <h2 id={`${uid}-signoff`} className="dialog-title">Sign-off</h2>
               <p className="rnr-caption">Each chosen step prints who completed it, the outcome, the time in UTC and their signature if its form has one.</p>
               {steps.map((s) => (
                 <label key={s.nodeId} className="rnr-check">
                   <input type="checkbox" checked={t.signoff.includes(s.nodeId)} onChange={(e) => setT(toggleSignoff(t, steps, s.nodeId, e.target.checked))} />{s.step}
                 </label>
               ))}
-            </fieldset>
+            </div>
             {error && <p className="rnr-error" role="alert">{error}</p>}
             {conflict && (
               <div className="flex flex-col items-start gap-2" role="alert">

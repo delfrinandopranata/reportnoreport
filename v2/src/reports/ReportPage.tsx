@@ -175,7 +175,7 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
     </form>
   ) : (
     <div className="flex flex-col gap-2">
-      <h2 className="dialog-title">About this report</h2>
+      <h2 className="dialog-title hidden lg:block">About this report</h2>
       <p className="rnr-muted">Columns: {f.columns.map((c) => columnLabel(c, cols)).join(', ')}</p>
       <p className="rnr-muted">{f.filters.length ? `${f.filters.length} ${f.filters.length === 1 ? 'filter' : 'filters'}` : 'No filters'}{f.group_by ? `. Grouped by ${columnLabel(f.group_by, cols)}` : ''}</p>
     </div>
@@ -192,7 +192,7 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <details className="rnr-card min-w-0 lg:self-start" open={wide || panelOpen} onToggle={(e) => setPanelOpen(e.currentTarget.open)}>
-          <summary className="label rnr-focus lg:hidden">Report settings</summary>
+          <summary className="label rnr-focus lg:hidden">{manage ? 'Report settings' : 'About this report'}</summary>
           <div className="pt-3 lg:pt-0">{settings}</div>
         </details>
         <div className="flex flex-col gap-3 min-w-0">

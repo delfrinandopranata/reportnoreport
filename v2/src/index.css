@@ -197,7 +197,11 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 /* Dashboard. */
 .rnr-menu-anchor { position: relative; }
 .rnr-menu.rnr-widget-menu { position: absolute; z-index: 20; top: calc(100% + var(--space-1)); right: 0; max-width: calc(100vw - 2rem); }
-.rnr-drag-overlay > .rnr-card { height: 100%; }
+.rnr-drag-overlay, .rnr-drag-overlay > .rnr-card { height: 100%; }
+/* Width options in the widget menu: a tick plus weight, so the current one is not shown by colour alone. */
+.rnr-menu-item[role="menuitemradio"] { position: relative; padding-left: calc(var(--space-3) + 20px); }
+.rnr-menu-item[role="menuitemradio"][aria-checked="true"] { color: var(--ink); font-weight: 600; }
+.rnr-menu-item[role="menuitemradio"][aria-checked="true"]::before { content: ""; position: absolute; left: var(--space-3); top: 50%; width: 5px; height: 10px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-65%) rotate(45deg); }
 
 /* Chart (single series, --in; geometry in SVG attributes). */
 .rnr-chart-wrap { min-width: 0; }
