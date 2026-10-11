@@ -38,3 +38,14 @@ Deno.test('a signature that is not a PNG is a PdfProblem', async () => {
   await assertRejects(() => renderPdf(SOURCE, NOW, fonts, () => Promise.resolve(new TextEncoder().encode('GIF89a'))), PdfProblem,
     'A signature image could not be read, so the PDF was not made. Ask the person to sign again.')
 })
+
+Deno.test('an 11,000-character answer renders well inside the Edge CPU limit', async () => {
+  const src = structuredClone(SOURCE)
+  // Unique words defeat any measuring cache: the case that took over 2 s when every wrap step shaped a whole line.
+  src.submissions[0].answers.story = Array.from({ length: 1800 }, (_, i) => `w${(i * 7919).toString(36)}`).join(' ')
+  const t = performance.now()
+  const bytes = await renderPdf(src, NOW, fonts, () => Promise.resolve(PNG_1X1))
+  const ms = performance.now() - t
+  assertEquals((await PDFDocument.load(bytes)).getPageCount() >= 3, true)
+  assertEquals(ms < 1500, true, `took ${ms.toFixed(0)} ms`)
+})

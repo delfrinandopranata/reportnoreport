@@ -27,7 +27,19 @@ export async function renderPdf(src: PdfSource, now: Date, fonts: Fonts, loadIma
   const regular = await doc.embedFont(fonts.regular, { subset: true })
   const bold = await doc.embedFont(fonts.bold, { subset: true })
   const font = (b: boolean): PDFFont => (b ? bold : regular)
-  const measure: Measure = (t, size, b) => font(b).widthOfTextAtSize(t, size)
+  // Shaping a whole line per wrap step cost ~1 ms each and blew the Edge CPU limit on long answers, so words are measured
+  // once and lines are summed. Kerning across a space is ignored; the 0.5% margin keeps lines inside the margin regardless.
+  const words = new Map<string, number>()
+  const word = (w: string, size: number, b: boolean) => {
+    const k = `${b ? 1 : 0}${size}|${w}`
+    let n = words.get(k)
+    if (n === undefined) { n = font(b).widthOfTextAtSize(w, size); words.set(k, n) }
+    return n
+  }
+  const measure: Measure = (t, size, b) => {
+    const parts = t.split(' ')
+    return 1.005 * (parts.reduce((n, w) => n + (w ? word(w, size, b) : 0), 0) + (parts.length - 1) * word(' ', size, b))
+  }
   const embedded = new Map<string, PDFImage>()
   const image = async (path: string) => {
     const hit = embedded.get(path)
