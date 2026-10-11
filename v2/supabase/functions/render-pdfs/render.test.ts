@@ -1,5 +1,5 @@
 import { assertEquals, assertRejects } from 'jsr:@std/assert@1'
-import { PDFDocument, PDFName, PDFRawStream } from 'npm:pdf-lib@1.17.1'
+import { PDFDict, PDFDocument, PDFName, PDFRawStream } from 'npm:pdf-lib@1.17.1'
 import { loadFonts, renderPdf } from './render.ts'
 import { PdfProblem } from '../_shared/reports/pdf.ts'
 import { APPROVER_SIG, PNG_1X1, SIG_PATH, SOURCE } from '../_shared/reports/fixture.ts'
@@ -48,4 +48,16 @@ Deno.test('an 11,000-character answer renders well inside the Edge CPU limit', a
   const ms = performance.now() - t
   assertEquals((await PDFDocument.load(bytes)).getPageCount() >= 3, true)
   assertEquals(ms < 1500, true, `took ${ms.toFixed(0)} ms`)
+})
+
+Deno.test('both Inter fonts are embedded as subsets', async () => {
+  const bytes = await renderPdf(SOURCE, NOW, fonts, () => Promise.resolve(PNG_1X1))
+  const doc = await PDFDocument.load(bytes)
+  // A subset carries a six-capital tag on its BaseFont (PDF 32000-1 §9.6.4), which is how pdffonts reports "sub: yes".
+  const names = doc.context.enumerateIndirectObjects().flatMap(([, o]) => {
+    const n = o instanceof PDFDict ? o.get(PDFName.of('BaseFont')) : undefined
+    return n instanceof PDFName ? [n.decodeText()] : []
+  })
+  assertEquals([...new Set(names)].sort(), ['RNRAAA+Inter-Regular', 'RNRAAB+Inter-SemiBold'])
+  assertEquals(bytes.length < 60_000, true, `the full fonts are 830 kB; this PDF is ${bytes.length} bytes`)
 })

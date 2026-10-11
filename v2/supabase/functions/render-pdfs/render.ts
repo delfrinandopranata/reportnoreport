@@ -24,8 +24,8 @@ export async function renderPdf(src: PdfSource, now: Date, fonts: Fonts, loadIma
   doc.setCreator('ReportNoReport')
   doc.setProducer('ReportNoReport')
   doc.setCreationDate(now)
-  const regular = await doc.embedFont(fonts.regular, { subset: true })
-  const bold = await doc.embedFont(fonts.bold, { subset: true })
+  const regular = await doc.embedFont(fonts.regular, { subset: true, customName: 'RNRAAA+Inter-Regular' })
+  const bold = await doc.embedFont(fonts.bold, { subset: true, customName: 'RNRAAB+Inter-SemiBold' }) // the six-capital tag marks a subset to PDF readers; pdf-lib only adds a numeric suffix
   const font = (b: boolean): PDFFont => (b ? bold : regular)
   // Shaping a whole line per wrap step cost ~1 ms each and blew the Edge CPU limit on long answers, so words are measured
   // once and lines are summed. Kerning across a space is ignored; the 0.5% margin keeps lines inside the margin regardless.
