@@ -23,7 +23,7 @@ export function AuthPage() {
       setError(null)
       const { data, error } = signIn
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/app/` } })
       if (error) { setError(friendlyError(error)); passwordRef.current?.focus(); return }
       if (!signIn && !data.session) setConfirmSent(true)
     })
