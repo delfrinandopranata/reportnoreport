@@ -56,7 +56,7 @@ export function FieldInput({ field: f, value, onChange, error, id, upload }: Pro
       return (
         <div className="rnr-field" data-invalid={error ? true : undefined}>
           <label className="rnr-check">
-            <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} {...a11y} />{f.label}{star}
+            <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} {...a11y} /><span>{f.label}{star}</span>
           </label>
           {help}{err}
         </div>

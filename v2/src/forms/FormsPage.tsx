@@ -15,7 +15,7 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'n
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 
 export function FormsPage() {
-  const { orgId, can } = useOrg()
+  const { orgId, orgs, can } = useOrg()
   const qc = useQueryClient()
   const forms = useForms(orgId)
   const manage = can('forms.manage')
@@ -101,7 +101,7 @@ export function FormsPage() {
       {!!forms.data?.length && (
         <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
           <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Forms in this organisation</caption>
+            <caption className="sr-only">Forms in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
             <thead><tr><th scope="col">Name</th><th scope="col" className="num">Fields</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
               {forms.data.map((f) => (
