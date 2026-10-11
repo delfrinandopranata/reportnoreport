@@ -6,7 +6,7 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   /* Chart/series identity: receipts = blue, payments = orange (validated categorical slots 1–2). */
-  --color-in: #2a78d6;
+  --color-in: #2873ce; /* design-system/tokens.json `in` (light): darkened from #2a78d6 for 4.5:1 as text */
   --color-out: #eb6834;
 }
 

@@ -36,6 +36,7 @@ Current status: Plan A (backend) and Plan B (self-serve console) complete on mai
 - **Error handling:** Catch all errors explicitly; never swallow. Use `toUserMessage(error, context)` from `src/data/errors.ts` to format for the UI
 - **React components:** Pure when possible. Use `SessionProvider` for user/firm/role context. Use TanStack Query hooks for data fetching; never `fetch()` in components
 - **CSS:** Tailwind 4 only. No inline styles; no CSS modules. Responsive: mobile-first (`sm:`, `lg:`, etc.)
+- **Design system:** [design-system/README.md](design-system/README.md) is the default for all UI work (ReportNoReport v2): read it before building or changing a screen, and take colours, type, spacing, radii, motion and component patterns from `design-system/tokens.json` and `design-system/components/`. The v2 modes (Black & White themes, glass/neumorphic, density, motion) are specified there but not yet wired into `src/`.
 
 ### Database
 
@@ -157,6 +158,7 @@ All must pass. If a check fails, fix it (don't skip the check).
 | What's the schema? | Generated types | `src/data/database.types.ts` |
 | What are the API contracts? | Supabase RPC types | `src/data/database.types.ts` |
 | What's the UI component library? | Tailwind + custom components | `src/ui.tsx` |
+| What's the design system? | Tokens, brand book, component guidelines | [design-system/README.md](design-system/README.md) |
 | What are the role/permission rules? | Pure functions, no React | `src/users/rules.ts` |
 
 ## Roles and permissions
