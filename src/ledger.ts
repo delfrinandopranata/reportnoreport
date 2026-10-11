@@ -174,7 +174,7 @@ export const today = () => new Date().toLocaleDateString('en-CA')
  * that isn't a plain amount with ≤2 decimals.
  */
 export function parseCents(input: string): number | null {
-  const clean = input.replace(/[,\s]/g, '')
+  const clean = input.replace(/[,\s]/g, '').replace(/\u2212/g, '-') // accept the true minus makeMoney displays
   const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(clean)
   if (!match) return null
   const [, sign, whole, frac] = match

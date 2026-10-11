@@ -400,7 +400,7 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-side-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); margin-top: auto; }
 .rnr-side-body > * { min-width: 0; }
 .rnr-account { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3-5); border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--field); }
-.rnr-account > div { flex: 1 1 6rem; min-width: 6rem; } /* a name keeps 6rem; the buttons wrap below it instead of squeezing it to an ellipsis */
+.rnr-account > div { flex: 1 1 100%; min-width: 0; } /* the name takes its own row; the buttons wrap below it, so it never squeezes to an ellipsis */
 .rnr-account-email { flex: 1; min-width: 0; font: var(--type-body-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rnr-org { display: flex; align-items: center; gap: var(--space-2-5); width: 100%; min-height: var(--touch); padding: 0 var(--space-3-5); border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--field); color: var(--ink); font: var(--type-body-sm); font-weight: 500; text-align: left; cursor: pointer; }
 .rnr-org-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

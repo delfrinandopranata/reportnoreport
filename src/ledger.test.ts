@@ -14,6 +14,11 @@ const txn = (clientId: string, kind: Txn['kind'], amount: number, date: string):
   updatedAt: '',
 })
 
+test('parseCents accepts the true minus it displays', () => {
+  assert.equal(parseCents('\u22127'), -700)
+  assert.equal(parseCents('\u22121,234.50'), -123450)
+})
+
 test('parseCents avoids float rounding and rejects bad input', () => {
   assert.equal(parseCents('12.34'), 1234)
   assert.equal(parseCents('1,234.5'), 123450)
