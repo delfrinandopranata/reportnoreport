@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src",
-    "test": "node --test 'src/**/*.test.ts'",
+    "test": "node --test 'src/**/*.test.ts' 'supabase/functions/_shared/**/*.test.ts'",
     "db:types": "supabase gen types typescript --local > src/data/database.types.ts"
   },
   "dependencies": {
