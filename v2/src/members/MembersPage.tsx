@@ -4,7 +4,7 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { CheckIcon } from '../ui/icons'
+import { CheckIcon, XIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
 import { InviteForm, type Role } from './InviteForm'
@@ -56,14 +56,21 @@ export function MembersPage() {
   })
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="members-h">
-      <h1 id="members-h" tabIndex={-1} className="page-title">Members</h1>
-      <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={14} />{notice}</p>}</div>
-      <div>{error && <p className="rnr-error" role="alert">{error}</p>}</div>
-      {manage && orgId && <InviteForm orgId={orgId} roles={roles.data} onDone={refresh} onNotice={setNotice} />}
-      <MembersTable orgName={orgName} members={members.data} roles={roles.data} failed={members.isError || roles.isError}
-        manage={manage} canRemove={canRemove} busyId={busyId} onRetry={() => { members.refetch(); roles.refetch() }}
-        onSetRoles={setRoles} onRemove={(m) => { setRemoveError(null); setRemoving(m) }} />
+    <section className="rnr-wide" aria-labelledby="members-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Admin</p>
+          <h1 id="members-h" tabIndex={-1} className="rnr-page-title">Members</h1>
+        </div>
+      </header>
+      <div className="flex flex-col gap-4">
+        <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={16} />{notice}</p>}</div>
+        <div>{error && <div className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}</div>
+        {manage && orgId && <InviteForm orgId={orgId} roles={roles.data} onDone={refresh} onNotice={setNotice} />}
+        <MembersTable orgName={orgName} members={members.data} roles={roles.data} failed={members.isError || roles.isError}
+          manage={manage} canRemove={canRemove} busyId={busyId} onRetry={() => { members.refetch(); roles.refetch() }}
+          onSetRoles={setRoles} onRemove={(m) => { setRemoveError(null); setRemoving(m) }} />
+      </div>
       <ConfirmDialog open={!!removing} title={`Remove ${removing?.email ?? ''}?`}
         body={`They lose access to ${orgName} straight away.`} confirmLabel="Remove member" busyLabel="Removing…"
         busy={removal.busy} error={removeError} onConfirm={confirmRemove} onClose={() => setRemoving(null)} />

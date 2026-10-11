@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMemberEmails } from '../members/useMemberEmails'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, ClockIcon } from '../ui/icons'
+import { CheckIcon, ClockIcon, StopIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
@@ -49,90 +49,103 @@ export function InboxPage() {
   }
 
   return (
-    <section className="flex flex-col gap-6" aria-labelledby="inbox-h">
-      <h1 id="inbox-h" tabIndex={-1} className="page-title">Inbox</h1>
-      <section className="flex flex-col gap-3" aria-labelledby="tasks-h">
-        <h2 id="tasks-h" className="dialog-title">My tasks</h2>
-        {error && <p className="rnr-error" role="alert">{error}</p>}
-        <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-        {tasks.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
-        {tasks.isError && (
-          <div className="rnr-card gap-3">
-            <p role="alert">Your tasks did not load. Check your connection and try again.</p>
-            <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => tasks.refetch()}>Try again</button></div>
-          </div>
-        )}
-        {tasks.data?.length === 0 && (
-          <div className="rnr-card gap-2">
-            <h3 className="dialog-title">Nothing to do</h3>
-            <p className="rnr-muted">When a step needs you, or a role you hold, it appears here. You can start a workflow below.</p>
-          </div>
-        )}
-        {!!tasks.data?.length && (
-          <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
-            <table className="rnr-table rnr-sticky-first">
-              <caption className="sr-only">Your open tasks</caption>
-              <thead><tr><th scope="col">Record</th><th scope="col">Step</th><th scope="col" className="num">Due</th><th scope="col"><span className="sr-only">Action</span></th></tr></thead>
-              <tbody>
-                {tasks.data.map((t) => {
-                  const mine = t.assignee_user_id === userId || t.claimed_by === userId
-                  const overdue = !!t.due_at && Date.parse(t.due_at) < now
-                  const line = who(t)
-                  const busy = claiming.has(t.id)
-                  return (
-                    <tr key={t.id}>
-                      <td><span className="label">{t.record.title}</span><br /><span className="rnr-caption">{t.record.workflow.name}</span></td>
-                      <td>{nodeName(nodeById(t.record.workflow.graph, t.node_id))}{line && <><br /><span className="rnr-caption">{line}</span></>}</td>
-                      <td className="num">
-                        {t.due_at ? <When iso={t.due_at} /> : <span className="rnr-muted">No due date</span>}
-                        {overdue && <div className="rnr-status justify-end"><ClockIcon size={14} />Overdue</div>}
-                      </td>
-                      <td>
-                        <div className="flex justify-end">
-                          {mine
-                            ? <a id={`open-${t.id}`} className="rnr-btn rnr-btn-secondary" href={`#/tasks/${t.id}`} aria-label={`Open ${t.record.title}`}>Open</a>
-                            : !t.claimed_by && (
-                              <button className="rnr-btn rnr-btn-secondary" type="button" aria-busy={busy} aria-label={`Claim ${t.record.title}`} onClick={() => take(t)}>
-                                {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? 'Claiming…' : 'Claim'}
-                              </button>
-                            )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+    <section aria-labelledby="inbox-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Work</p>
+          <h1 id="inbox-h" tabIndex={-1} className="rnr-page-title">Your <em>inbox</em></h1>
+        </div>
+      </header>
+      <div className="flex flex-col gap-8">
+        <section className="flex flex-col gap-3" aria-labelledby="tasks-h">
+          <h2 id="tasks-h" className="rnr-dialog-title">My tasks</h2>
+          {error && <div className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
+          <p className="rnr-status" role="status">{notice && <><CheckIcon size={16} />{notice}</>}</p>
+          {tasks.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
+          {tasks.isError && (
+            <div className="rnr-empty" role="alert">
+              <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
+              <h3>Your tasks did not load</h3>
+              <p>Check your connection, then try again.</p>
+              <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => tasks.refetch()}>Try again</button>
+            </div>
+          )}
+          {tasks.data?.length === 0 && (
+            <div className="rnr-empty">
+              <span className="rnr-kind" aria-hidden="true"><CheckIcon size={24} /></span>
+              <h3>Nothing to do</h3>
+              <p>When a step needs you, or a role you hold, it appears here. You can start a workflow below.</p>
+            </div>
+          )}
+          {!!tasks.data?.length && (
+            <div className="rnr-card rnr-table-card">
+              <table className="rnr-table rnr-sticky-first">
+                <caption className="rnr-sr-only">Your open tasks</caption>
+                <thead><tr><th scope="col">Record</th><th scope="col">Step</th><th scope="col" className="num">Due</th><th scope="col"><span className="rnr-sr-only">Action</span></th></tr></thead>
+                <tbody>
+                  {tasks.data.map((t) => {
+                    const mine = t.assignee_user_id === userId || t.claimed_by === userId
+                    const overdue = !!t.due_at && Date.parse(t.due_at) < now
+                    const line = who(t)
+                    const busy = claiming.has(t.id)
+                    return (
+                      <tr key={t.id}>
+                        <th scope="row"><span className="font-medium">{t.record.title}</span><br /><span className="rnr-caption">{t.record.workflow.name}</span></th>
+                        <td>{nodeName(nodeById(t.record.workflow.graph, t.node_id))}{line && <><br /><span className="rnr-caption">{line}</span></>}</td>
+                        <td className="num">
+                          {t.due_at ? <When iso={t.due_at} /> : <span className="rnr-muted">No due date</span>}
+                          {overdue && <div className="rnr-status justify-end" data-tone="warn"><ClockIcon size={16} />Overdue</div>}
+                        </td>
+                        <td>
+                          <div className="flex justify-end">
+                            {mine
+                              ? <a id={`open-${t.id}`} className="rnr-btn rnr-btn-secondary" href={`#/tasks/${t.id}`} aria-label={`Open ${t.record.title}`}>Open</a>
+                              : !t.claimed_by && (
+                                <button className="rnr-btn rnr-btn-secondary" type="button" aria-busy={busy} aria-label={`Claim ${t.record.title}`} onClick={() => take(t)}>
+                                  {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? 'Claiming…' : 'Claim'}
+                                </button>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="new-h">
-        <h2 id="new-h" className="dialog-title">Start new</h2>
-        {startable.isPending && <Skeleton rows={[{ w: '100%', h: 48 }]} />}
-        {startable.isError && (
-          <div className="rnr-card gap-3">
-            <p role="alert">The workflows you can start did not load. Check your connection and try again.</p>
-            <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => startable.refetch()}>Try again</button></div>
-          </div>
-        )}
-        {startable.data?.length === 0 && (
-          <div className="rnr-card gap-2">
-            <h3 className="dialog-title">No workflows to start</h3>
-            <p className="rnr-muted">When a workflow manager publishes a workflow you have access to, it appears here.</p>
-          </div>
-        )}
-        {!!startable.data?.length && (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {startable.data.map((w) => (
-              <li key={w.id} className="rnr-card gap-2">
-                <span className="label">{w.name}</span>
-                <div><a className="rnr-btn rnr-btn-secondary" href={`#/start/${w.id}`} aria-label={`Start ${w.name}`}>Start</a></div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="flex flex-col gap-3" aria-labelledby="new-h">
+          <h2 id="new-h" className="rnr-dialog-title">Start new</h2>
+          {startable.isPending && <Skeleton rows={[{ w: '100%', h: 48 }]} />}
+          {startable.isError && (
+            <div className="rnr-empty" role="alert">
+              <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
+              <h3>The workflows you can start did not load</h3>
+              <p>Check your connection, then try again.</p>
+              <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => startable.refetch()}>Try again</button>
+            </div>
+          )}
+          {startable.data?.length === 0 && (
+            <div className="rnr-empty">
+              <span className="rnr-kind is-out" aria-hidden="true"><ClockIcon size={24} /></span>
+              <h3>No workflows to start</h3>
+              <p>When a workflow manager publishes a workflow you have access to, it appears here.</p>
+            </div>
+          )}
+          {!!startable.data?.length && (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {startable.data.map((w) => (
+                <li key={w.id} className="rnr-card flex-row items-center justify-between gap-3">
+                  <span className="font-medium min-w-0 [overflow-wrap:anywhere]">{w.name}</span>
+                  <a className="rnr-btn rnr-btn-secondary" href={`#/start/${w.id}`} aria-label={`Start ${w.name}`}>Start</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </section>
   )
 }

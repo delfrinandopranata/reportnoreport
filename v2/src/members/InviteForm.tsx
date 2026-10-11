@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon } from '../ui/icons'
+import { CheckIcon, XIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 import { toggle } from './toggle'
 
@@ -34,8 +34,8 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
   }
 
   return (
-    <form ref={form} className="rnr-card gap-3" aria-busy={busy} onSubmit={submit}>
-      <h2 className="dialog-title">Invite someone</h2>
+    <form ref={form} className="rnr-card gap-4" aria-busy={busy} onSubmit={submit}>
+      <h2 className="rnr-dialog-title">Invite someone</h2>
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label className="rnr-field"><span className="rnr-label">Email</span>
           <input className="rnr-input" type="email" name="email" required placeholder="name@school.edu" autoComplete="off"
@@ -57,10 +57,10 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
               </label>
             ))}
           </div>
-        ) : <div className="rnr-skeleton" style={{ height: 20, width: 240 }} />}
+        ) : <div className="rnr-skeleton h-5 w-60" />}
         <span className="rnr-caption">Choose none to add them with no permissions.</span>
       </fieldset>
-      {error && <p id="invite-err" className="rnr-error" role="alert">{error}</p>}
+      {error && <div id="invite-err" className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
     </form>
   )
 }

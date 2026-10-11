@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
 import { friendlyError } from '../ui/errors'
+import { XIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 import { Wordmark } from '../ui/Wordmark'
 
@@ -31,18 +32,24 @@ export function AuthPage() {
 
   return (
     <main className="min-h-screen grid place-items-center p-4 sm:p-6">
-      <div className="w-full max-w-[400px] flex flex-col gap-6">
+      <div className="w-full max-w-[440px] flex flex-col items-center gap-6">
         <Wordmark />
-        <form className="rnr-card gap-3" aria-busy={busy} onSubmit={submit} noValidate={false}>
+        <form className="rnr-paper rnr-paper--panel w-full flex flex-col gap-4 p-6 pt-8" aria-busy={busy} onSubmit={submit} noValidate={false}>
           {confirmSent ? (
             <>
-              <h1 className="page-title">Check your email</h1>
-              <p role="status" className="rnr-muted">A link was sent to {email}. Open it to finish creating your account.</p>
+              <header className="rnr-page-head mb-0" data-align="center">
+                <div><h1 className="rnr-page-title text-[40px]">Check your <em>email</em></h1></div>
+              </header>
+              <p role="status" className="rnr-lede text-center mx-auto">A link was sent to {email}. Open it to finish creating your account.</p>
             </>
           ) : (
             <>
-              <h1 className="page-title">{signIn ? 'Sign in' : 'Create account'}</h1>
-              <p className="rnr-muted">{signIn ? 'Welcome back. Sign in to your organisation.' : 'Create an account to set up or join an organisation.'}</p>
+              <header className="rnr-page-head mb-0" data-align="center">
+                <div>
+                  <h1 className="rnr-page-title text-[40px]">{signIn ? <>Sign <em>in</em></> : <>Create <em>account</em></>}</h1>
+                  <p className="rnr-lede">{signIn ? 'Welcome back. Sign in to your organisation.' : 'Create an account to set up or join an organisation.'}</p>
+                </div>
+              </header>
               <label className="rnr-field"><span className="rnr-label">Email</span>
                 <input ref={emailRef} className="rnr-input" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
                 <span className="rnr-error-text">Enter a valid email address.</span></label>
@@ -53,7 +60,7 @@ export function AuthPage() {
                   aria-invalid={error ? true : undefined} aria-describedby={error ? 'auth-err' : undefined}
                   onChange={(e) => setPassword(e.target.value)} />
                 <span className="rnr-error-text">Enter at least 8 characters.</span></label>
-              {error && <p id="auth-err" className="rnr-error" role="alert">{error}</p>}
+              {error && <div id="auth-err" className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
               <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={busy}>
                 {busy && <span className="rnr-spin" aria-hidden="true" />}
                 {signIn ? (busy ? 'Signing in…' : 'Sign in') : (busy ? 'Creating account…' : 'Create account')}

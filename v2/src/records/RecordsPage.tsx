@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMemberEmails } from '../members/useMemberEmails'
 import { useOrg } from '../rbac/useOrg'
+import { CheckIcon, StopIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { nodeById, nodeName } from '../workflows/logic'
@@ -22,61 +23,69 @@ export function RecordsPage() {
     return r.status === 'done' || r.status === 'rejected' ? <><span className="rnr-muted">Finished at </span>{name}</> : name
   }
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="records-h">
-      <h1 id="records-h" tabIndex={-1} className="page-title">Records</h1>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="rnr-seg" role="group" aria-label="Show records">
-          {FILTERS.map(([value, label]) => (
-            <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>
-          ))}
+    <section className="rnr-wide" aria-labelledby="records-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Work</p>
+          <h1 id="records-h" tabIndex={-1} className="rnr-page-title">Records</h1>
         </div>
-        <p className="rnr-caption" role="status">
-          {list.data && (n === RECORD_LIMIT ? `Showing the newest ${RECORD_LIMIT} records.` : `${n} ${n === 1 ? 'record' : 'records'}`)}
-        </p>
-      </div>
-      {list.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
-      {list.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The records did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button></div>
-        </div>
-      )}
-      {list.data?.length === 0 && filter === 'all' && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <span className="label">Leave approval · Jo Tan</span><span className="rnr-muted">In progress</span>
+      </header>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rnr-seg" role="group" aria-label="Show records">
+            {FILTERS.map(([value, label]) => (
+              <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>
+            ))}
           </div>
-          <h2 className="dialog-title">No records yet</h2>
-          <p className="rnr-muted">Records appear here when you start a workflow or a step needs you.</p>
-          <div><a className="rnr-btn rnr-btn-primary" href="#/inbox">Go to inbox</a></div>
+          <p className="rnr-caption" role="status">
+            {list.data && (n === RECORD_LIMIT ? `Showing the newest ${RECORD_LIMIT} records.` : `${n} ${n === 1 ? 'record' : 'records'}`)}
+          </p>
         </div>
-      )}
-      {list.data?.length === 0 && filter !== 'all' && (
-        <div className="rnr-card gap-3">
-          <h2 className="dialog-title">No records match this filter</h2>
-          <p className="rnr-muted">Show every record you can view.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={reset}>Show all records</button></div>
-        </div>
-      )}
-      {n > 0 && (
-        <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
-          <table className="rnr-table rnr-sticky-first" aria-busy={list.isPlaceholderData}>
-            <caption className="sr-only">Records</caption>
-            <thead><tr><th scope="col">Record</th><th scope="col">Status</th><th scope="col">Step</th><th scope="col">Started by</th><th scope="col" className="num">Started</th></tr></thead>
-            <tbody>
-              {list.data!.map((r) => (
-                <tr key={r.id}>
-                  <td><a href={`#/records/${r.id}`}>{r.title}</a><br /><span className="rnr-caption">{r.workflow.name}</span></td>
-                  <td><RecordStatusMark status={r.status} label={r.label} /></td>
-                  <td>{step(r)}</td>
-                  <td>{who(r.started_by)}</td>
-                  <td className="num"><Day iso={r.created_at} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {list.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
+        {list.isError && (
+          <div className="rnr-empty" role="alert">
+            <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
+            <h2>The records did not load</h2>
+            <p>Check your connection, then try again.</p>
+            <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button>
+          </div>
+        )}
+        {list.data?.length === 0 && filter === 'all' && (
+          <div className="rnr-empty">
+            <span className="rnr-kind" aria-hidden="true"><CheckIcon size={24} /></span>
+            <h2>No records yet</h2>
+            <p>Records appear here when you start a workflow or a step needs you.</p>
+            <a className="rnr-btn rnr-btn-primary" href="#/inbox">Go to inbox</a>
+          </div>
+        )}
+        {list.data?.length === 0 && filter !== 'all' && (
+          <div className="rnr-empty">
+            <span className="rnr-kind is-out" aria-hidden="true"><CheckIcon size={24} /></span>
+            <h2>No records match this filter</h2>
+            <p>Show every record you can view.</p>
+            <button className="rnr-btn rnr-btn-secondary" type="button" onClick={reset}>Show all records</button>
+          </div>
+        )}
+        {n > 0 && (
+          <div className="rnr-card rnr-table-card">
+            <table className="rnr-table rnr-sticky-first" aria-busy={list.isPlaceholderData}>
+              <caption className="rnr-sr-only">Records</caption>
+              <thead><tr><th scope="col">Record</th><th scope="col">Status</th><th scope="col">Step</th><th scope="col">Started by</th><th scope="col" className="num">Started</th></tr></thead>
+              <tbody>
+                {list.data!.map((r) => (
+                  <tr key={r.id}>
+                    <th scope="row"><a className="rnr-link" href={`#/records/${r.id}`}>{r.title}</a><br /><span className="rnr-caption">{r.workflow.name}</span></th>
+                    <td><RecordStatusMark status={r.status} label={r.label} /></td>
+                    <td>{step(r)}</td>
+                    <td>{who(r.started_by)}</td>
+                    <td className="num"><Day iso={r.created_at} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </section>
   )
 }

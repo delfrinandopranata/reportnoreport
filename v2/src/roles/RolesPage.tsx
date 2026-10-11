@@ -4,7 +4,7 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
-import { CheckIcon } from '../ui/icons'
+import { CheckIcon, StopIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
@@ -50,41 +50,49 @@ export function RolesPage() {
   })
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="roles-h">
-      <div className="flex items-center gap-3">
-        <h1 id="roles-h" className="page-title">Roles</h1>
-        <button className={`rnr-btn ml-auto ${editing ? 'rnr-btn-secondary' : 'rnr-btn-primary'}`} type="button"
-          onClick={() => open({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
-      </div>
-      <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={14} />{notice}</p>}</div>
-      {editing && <RoleEditor key={editing.id ?? 'new'} role={editing} onSave={save} onClose={close} />}
-      {roles.isError ? (
-        <div className="rnr-card gap-3">
-          <p role="alert">Roles did not load. Reload the page to try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => roles.refetch()}>Try again</button></div>
+    <section aria-labelledby="roles-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Admin</p>
+          <h1 id="roles-h" tabIndex={-1} className="rnr-page-title">Roles</h1>
         </div>
-      ) : !roles.data ? (
-        <div className="rnr-card"><Skeleton rows={[{ w: '30%' }, { w: '20%' }, { w: '12%' }, { w: '25%' }]} /></div>
-      ) : (
-        <ul className="rnr-card" style={{ padding: 0 }}>
-          {roles.data.map((r, i) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3"
-              style={i < roles.data.length - 1 ? { borderBottom: '1px solid var(--line-100)' } : undefined}>
-              <span className="label">{r.name}</span>
-              {r.is_system && <span className="rnr-chip">Default</span>}
-              <span className="rnr-muted">{r.is_owner ? 'All permissions' : summary(r.role_permissions.length)}</span>
-              <div className="ml-auto flex gap-2">
-                <button className="rnr-btn rnr-btn-ghost" type="button" aria-label={`${r.is_owner ? 'View' : 'Edit'} ${r.name} role`}
-                  onClick={() => open({ id: r.id, name: r.name, is_owner: r.is_owner, permissions: r.role_permissions.map((p) => p.permission) })}>
-                  {r.is_owner ? 'View' : 'Edit'}
-                </button>
-                {!r.is_owner && <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Delete ${r.name} role`}
-                  onClick={() => { setDeleteError(null); setDeleting({ id: r.id, name: r.name }) }}>Delete</button>}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+        <div className="rnr-page-actions">
+          <button className={`rnr-btn ${editing ? 'rnr-btn-secondary' : 'rnr-btn-primary'}`} type="button"
+            onClick={() => open({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
+        </div>
+      </header>
+      <div className="flex flex-col gap-4">
+        <div aria-live="polite">{notice && <p role="status" className="rnr-status"><CheckIcon size={16} />{notice}</p>}</div>
+        {editing && <RoleEditor key={editing.id ?? 'new'} role={editing} onSave={save} onClose={close} />}
+        {roles.isError ? (
+          <div className="rnr-empty" role="alert">
+            <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
+            <h2>Roles did not load</h2>
+            <p>Check your connection, then try again.</p>
+            <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => roles.refetch()}>Try again</button>
+          </div>
+        ) : !roles.data ? (
+          <div className="rnr-card"><Skeleton rows={[{ w: '30%' }, { w: '20%' }, { w: '12%' }, { w: '25%' }]} /></div>
+        ) : (
+          <ul className="grid gap-3">
+            {roles.data.map((r) => (
+              <li key={r.id} className="rnr-card flex-row flex-wrap items-center gap-3">
+                <span className="font-medium">{r.name}</span>
+                {r.is_system && <span className="rnr-chip">Default</span>}
+                <span className="rnr-muted">{r.is_owner ? 'All permissions' : summary(r.role_permissions.length)}</span>
+                <div className="ml-auto flex gap-2">
+                  <button className="rnr-btn rnr-btn-ghost" type="button" aria-label={`${r.is_owner ? 'View' : 'Edit'} ${r.name} role`}
+                    onClick={() => open({ id: r.id, name: r.name, is_owner: r.is_owner, permissions: r.role_permissions.map((p) => p.permission) })}>
+                    {r.is_owner ? 'View' : 'Edit'}
+                  </button>
+                  {!r.is_owner && <button className="rnr-btn rnr-btn-ghost" type="button" aria-label={`Delete ${r.name} role`}
+                    onClick={() => { setDeleteError(null); setDeleting({ id: r.id, name: r.name }) }}>Delete</button>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <ConfirmDialog open={!!deleting} title={`Delete the ${deleting?.name ?? ''} role?`}
         body="Members who hold it lose its permissions. This cannot be undone." confirmLabel="Delete role" busyLabel="Deleting…"
         busy={deletion.busy} error={deleteError} onConfirm={confirmDelete} onClose={() => setDeleting(null)} />

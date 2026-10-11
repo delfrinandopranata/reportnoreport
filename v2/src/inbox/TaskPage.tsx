@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
 import { BackIcon, CheckIcon, ClockIcon, StopIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -33,8 +34,8 @@ function EarlierRow({ sub, task, initiallyOpen, who }: { sub: RecordSubmission; 
   return (
     <li className="rnr-card">
       <details open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-        <summary className="rnr-focus" style={{ cursor: 'pointer' }}>
-          <span className="label">{nodeName(nodeById(task.record.workflow.graph, sub.node_id))}</span>{' '}
+        <summary className="rnr-focus cursor-pointer">
+          <span className="font-medium">{nodeName(nodeById(task.record.workflow.graph, sub.node_id))}</span>{' '}
           <span className="rnr-muted">· {who} {VERB[sub.outcome]} · <When iso={sub.created_at} /></span>
         </summary>
         {open && sub.form && <div className="pt-3"><AnswerList fields={sub.form.schema} answers={sub.answers} createdAt={sub.created_at} by={who} /></div>}
@@ -53,7 +54,7 @@ function Earlier({ task }: { task: TaskDetail }) {
   if (!subs.data.length) return null
   return (
     <section className="flex flex-col gap-2" aria-labelledby="earlier-h">
-      <h2 id="earlier-h" className="dialog-title">Earlier steps</h2>
+      <h2 id="earlier-h" className="rnr-dialog-title">Earlier steps</h2>
       <ul className="flex flex-col gap-2">
         {subs.data.map((s, i) => <EarlierRow key={s.id} sub={s} task={task} initiallyOpen={i === subs.data.length - 1} who={who(s.submitted_by)} />)}
       </ul>
@@ -67,8 +68,8 @@ function MyForm({ task, node, onDone, onRefused }: { task: TaskDetail; node: For
   if (form.isPending) return <Skeleton rows={[{ w: '100%', h: 240 }]} />
   if (form.isError || !form.data || validateSchema(form.data.schema).length) return <Card><p className="rnr-error" role="alert">{SETUP}</p></Card>
   return (
-    <section className="rnr-card gap-4" aria-labelledby="mine-h">
-      <h2 id="mine-h" tabIndex={-1} className="dialog-title">{node.mode === 'approve' ? 'Your decision' : 'Your answers'}</h2>
+    <FolderCard tab={nodeName(node)}>
+      <h2 id="mine-h" tabIndex={-1} className="rnr-dialog-title mb-4">{node.mode === 'approve' ? 'Your decision' : 'Your answers'}</h2>
       <FormRunner fields={form.data.schema} idPrefix="task" filePrefix={`${task.org_id}/${userId}/`}
         upload={(blob, name) => uploadFile(task.org_id, userId, blob, name)}
         outcomes={node.mode === 'approve' ? APPROVE : undefined}
@@ -78,7 +79,7 @@ function MyForm({ task, node, onDone, onRefused }: { task: TaskDetail; node: For
           return res
         }}
         onDone={onDone} />
-    </section>
+    </FolderCard>
   )
 }
 
@@ -105,7 +106,7 @@ function Completed({ task, done }: { task: TaskDetail; done: Done }) {
   return (
     <Card>
       {stopped ? <span aria-hidden="true"><StopIcon size={24} /></span> : <span className="rnr-pop" aria-hidden="true"><CheckIcon size={24} /></span>}
-      <h2 ref={heading} tabIndex={-1} className="dialog-title">Step completed</h2>
+      <h2 ref={heading} tabIndex={-1} className="rnr-dialog-title">Step completed</h2>
       <p className="rnr-muted">
         {stopped ? stoppedBody(done.recordError)
           : closed ? `${task.record.title} has closed as ${done.status}.` : `${task.record.title} has moved on.`}
@@ -183,12 +184,15 @@ function TaskView({ task }: { task: TaskDetail }) {
   } else body = <Card><p>This task is assigned to someone else. Only they can complete it.</p></Card>
 
   return (
-    <section className="flex flex-col gap-4 max-w-2xl" aria-labelledby="task-h">
-      <div className="flex flex-col gap-1">
-        <h1 id="task-h" tabIndex={-1} className="page-title">{task.record.title}</h1>
-        <p className="rnr-muted">{task.record.workflow.name} · {nodeName(node)}{task.due_at && <> · Due <When iso={task.due_at} /></>}</p>
-        {overdue && <p className="rnr-status"><ClockIcon size={14} />Overdue</p>}
-      </div>
+    <section className="rnr-form mx-0 flex flex-col gap-6" aria-labelledby="task-h">
+      <header className="rnr-page-head mb-0">
+        <div>
+          <p className="rnr-micro">Work · Task</p>
+          <h1 id="task-h" tabIndex={-1} className="rnr-page-title">{task.record.title}</h1>
+          <p className="rnr-lede">{task.record.workflow.name} · {nodeName(node)}{task.due_at && <> · Due <When iso={task.due_at} /></>}</p>
+          {overdue && <p className="rnr-status" data-tone="warn"><ClockIcon size={16} />Overdue</p>}
+        </div>
+      </header>
       <Earlier task={task} />
       {body}
     </section>
@@ -199,11 +203,11 @@ export function TaskPage({ id }: { id: string }) {
   const { orgId } = useOrg()
   const task = useTask(id)
   const notice = (title: string, text: string, action?: ReactNode) => (
-    <div className="rnr-card gap-3 max-w-xl"><h1 className="page-title">{title}</h1><p className="rnr-muted">{text}</p>{action && <div>{action}</div>}</div>
+    <div className="rnr-empty"><h1 className="rnr-heading">{title}</h1><p>{text}</p>{action}</div>
   )
   return (
     <div className="flex flex-col gap-4">
-      <a className="rnr-btn rnr-btn-ghost self-start" href="#/inbox"><BackIcon />Back to inbox</a>
+      <a className="rnr-crumb self-start" href="#/inbox"><BackIcon />Back to inbox</a>
       {task.isPending && <Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />}
       {task.isError && notice('This task did not load', 'Check your connection and try again.',
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => task.refetch()}>Try again</button>)}

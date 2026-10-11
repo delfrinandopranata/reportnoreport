@@ -1,4 +1,4 @@
-import { CheckIcon, ClockIcon } from '../ui/icons'
+import { CheckIcon, ClockIcon, StopIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import type { Role } from './InviteForm'
 import { toggle } from './toggle'
@@ -14,9 +14,11 @@ type Props = {
 export function MembersTable({ orgName, members, roles, failed, manage, canRemove, busyId, onRetry, onSetRoles, onRemove }: Props) {
   if (failed) {
     return (
-      <div className="rnr-card gap-3">
-        <p role="alert">Members did not load. Reload the page to try again.</p>
-        <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={onRetry}>Try again</button></div>
+      <div className="rnr-empty" role="alert">
+        <span className="rnr-kind is-out" aria-hidden="true"><StopIcon size={24} /></span>
+        <h2>Members did not load</h2>
+        <p>Check your connection, then try again.</p>
+        <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onRetry}>Try again</button>
       </div>
     )
   }
@@ -28,23 +30,34 @@ export function MembersTable({ orgName, members, roles, failed, manage, canRemov
     )
   }
   if (!members.length) {
-    return <div className="rnr-card"><p className="rnr-muted">Invite your first member to start sharing work.</p></div>
+    return (
+      <div className="rnr-empty">
+        <span className="rnr-kind" aria-hidden="true"><CheckIcon size={24} /></span>
+        <h2>No members yet</h2>
+        <p>Invite your first member to start sharing work.</p>
+      </div>
+    )
   }
   return (
-    <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
-      <table className="rnr-table">
-        <caption className="sr-only">Members of {orgName}</caption>
+    <div className="rnr-card rnr-table-card">
+      <table className="rnr-table rnr-sticky-first">
+        <caption className="rnr-sr-only">Members of {orgName}</caption>
         <thead><tr>
           <th scope="col">Email</th><th scope="col">Status</th><th scope="col">Roles</th>
-          <th scope="col"><span className="sr-only">Actions</span></th>
+          <th scope="col"><span className="rnr-sr-only">Actions</span></th>
         </tr></thead>
         <tbody>
           {members.map((m) => {
             const held = m.member_roles.map((r) => r.role_id)
             return (
               <tr key={m.id} aria-busy={busyId === m.id}>
-                <td style={{ position: 'sticky', left: 0, background: 'var(--rnr-card-bg)', minWidth: 96 }}>{m.email}</td>
-                <td><span className="rnr-status">{m.status === 'invited' ? <ClockIcon size={14} /> : <CheckIcon size={14} />}{m.status === 'invited' ? 'Invited' : 'Active'}</span></td>
+                <th scope="row" className="min-w-56">
+                  <span className="flex items-center gap-3 min-w-0">
+                    <span className="rnr-avatar rnr-avatar--sm" aria-hidden="true">{m.email.slice(0, 2).toUpperCase()}</span>
+                    <span className="[overflow-wrap:anywhere]">{m.email}</span>
+                  </span>
+                </th>
+                <td><span className="rnr-status">{m.status === 'invited' ? <ClockIcon size={16} /> : <CheckIcon size={16} />}{m.status === 'invited' ? 'Invited' : 'Active'}</span></td>
                 <td>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {roles.map((r) => (
@@ -55,7 +68,7 @@ export function MembersTable({ orgName, members, roles, failed, manage, canRemov
                     ))}
                   </div>
                 </td>
-                <td>{manage && canRemove(m) && <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Remove ${m.email}`} onClick={() => onRemove(m)}>Remove</button>}</td>
+                <td>{manage && canRemove(m) && <button className="rnr-btn rnr-btn-ghost" type="button" aria-label={`Remove ${m.email}`} onClick={() => onRemove(m)}>Remove</button>}</td>
               </tr>
             )
           })}

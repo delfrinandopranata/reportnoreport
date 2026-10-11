@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { PERMISSION_GROUPS } from '../rbac/permissions'
 import { useOrg } from '../rbac/useOrg'
-import { CheckIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
+import { CheckIcon, XIcon } from '../ui/icons'
 import { useAction } from '../ui/useAction'
 
 export type RoleDraft = { id: string | null; name: string; permissions: string[]; is_owner: boolean }
@@ -16,7 +17,7 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => () => clearTimeout(closeTimer.current), [])
   const nameRef = useRef<HTMLInputElement>(null)
-  const sectionRef = useRef<HTMLElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     sectionRef.current?.scrollIntoView({ block: 'nearest' })
     if (role.is_owner) sectionRef.current?.querySelector<HTMLElement>('h2')?.focus()
@@ -41,11 +42,12 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
 
   const title = draft.is_owner ? 'Owner role' : draft.id ? `Edit ${role.name}` : 'New role'
   return (
-    <section ref={sectionRef} className="rnr-card gap-4" aria-labelledby="re-h">
-      <h2 id="re-h" tabIndex={-1} className="dialog-title">{title}</h2>
-      <form className="flex flex-col gap-4" aria-busy={busy} onSubmit={submit}>
+    <div ref={sectionRef}>
+    <FolderCard tab="Role">
+      <h2 id="re-h" tabIndex={-1} className="rnr-dialog-title mb-4">{title}</h2>
+      <form className="flex flex-col gap-5" aria-busy={busy} onSubmit={submit}>
         <label className="rnr-field"><span className="rnr-label">Role name</span>
-          <input ref={nameRef} className="rnr-input" required maxLength={60} style={{ maxWidth: 320 }}
+          <input ref={nameRef} className="rnr-input max-w-80" required maxLength={60}
             readOnly={draft.is_owner} value={draft.name} aria-invalid={error ? true : undefined}
             aria-describedby={error ? 're-err' : undefined} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <span className="rnr-error-text">Enter a name for this role.</span></label>
@@ -69,7 +71,7 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
           ))}
         </div>
         {draft.is_owner && <p className="rnr-muted">The Owner role always has every permission and cannot be changed.</p>}
-        {error && <p id="re-err" className="rnr-error" role="alert">{error}</p>}
+        {error && <div id="re-err" className="rnr-note" data-tone="down" role="alert"><XIcon size={20} /><div>{error}</div></div>}
         <div className="flex gap-2">
           {draft.is_owner
             ? <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Close</button>
@@ -82,6 +84,7 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
             </>}
         </div>
       </form>
-    </section>
+    </FolderCard>
+    </div>
   )
 }

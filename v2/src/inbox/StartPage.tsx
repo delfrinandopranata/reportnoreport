@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { CheckIcon, StopIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
 import { useForm, type SubmitResult } from '../forms/api'
 import { FormRunner } from '../forms/fill/FormRunner'
@@ -27,7 +28,7 @@ function Success({ wf, done }: { wf: LoadedWorkflow; done: Started }) {
   return (
     <Card>
       {stopped ? <span aria-hidden="true"><StopIcon size={24} /></span> : <span className="rnr-pop" aria-hidden="true"><CheckIcon size={24} /></span>}
-      <h2 ref={heading} tabIndex={-1} className="dialog-title">{stopped ? 'Saved, but the record stopped' : closed ? 'Record started and closed' : 'Record started'}</h2>
+      <h2 ref={heading} tabIndex={-1} className="rnr-dialog-title">{stopped ? 'Saved, but the record stopped' : closed ? 'Record started and closed' : 'Record started'}</h2>
       <p className="rnr-muted">
         {stopped ? stoppedBody(done.recordError)
           : closed ? `Your answers were saved and the record is already ${done.status}.`
@@ -59,7 +60,7 @@ function StartForm({ wf, formId }: { wf: LoadedWorkflow; formId: string }) {
   if (!form.data || validateSchema(form.data.schema).length) return <Card><p className="rnr-error" role="alert">{SETUP}</p></Card>
   if (done) return <Success wf={wf} done={done} />
   return (
-    <div className="rnr-card gap-4">
+    <FolderCard tab="New record">
       <FormRunner fields={form.data.schema} idPrefix="start" filePrefix={`${wf.org_id}/${userId}/`}
         upload={(blob, name) => uploadFile(wf.org_id, userId, blob, name)}
         submitLabel={{ idle: 'Start record', busy: 'Starting…' }}
@@ -69,7 +70,7 @@ function StartForm({ wf, formId }: { wf: LoadedWorkflow; formId: string }) {
           qc.invalidateQueries({ queryKey: ['my-tasks', orgId] })
           qc.invalidateQueries({ queryKey: ['records', orgId] })
         }} />
-    </div>
+    </FolderCard>
   )
 }
 
@@ -99,17 +100,20 @@ function Start({ wf }: { wf: LoadedWorkflow }) {
   } else if (!startable.data.some((w) => w.id === wf.id)) {
     body = (
       <Card>
-        <h2 className="dialog-title">You cannot start this workflow</h2>
+        <h2 className="rnr-dialog-title">You cannot start this workflow</h2>
         <p className="rnr-muted">Ask a workflow manager to give your role access.</p>
       </Card>
     )
   } else body = <StartForm wf={wf} formId={start.formId} />
   return (
-    <section className="flex flex-col gap-4 max-w-2xl" aria-labelledby="start-h">
-      <div>
-        <h1 id="start-h" tabIndex={-1} className="page-title">{wf.name}</h1>
-        <p className="rnr-muted">Fill in this form to start a record.</p>
-      </div>
+    <section className="rnr-form mx-0 flex flex-col gap-6" aria-labelledby="start-h">
+      <header className="rnr-page-head mb-0">
+        <div>
+          <p className="rnr-micro">Work · Start</p>
+          <h1 id="start-h" tabIndex={-1} className="rnr-page-title">{wf.name}</h1>
+          <p className="rnr-lede">Fill in this form to start a record.</p>
+        </div>
+      </header>
       {body}
     </section>
   )
