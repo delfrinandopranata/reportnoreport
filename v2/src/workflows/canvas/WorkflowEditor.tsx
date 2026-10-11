@@ -15,7 +15,7 @@ import { NODE_TYPES, OUTCOME_LABELS, TYPE_LABELS, checkGraph, nodeName, type Nod
 import { saveWorkflow, useOpenCounts, useRoles, type LoadedWorkflow } from '../api'
 import { WorkflowStatusMark } from '../StatusMark'
 import { WorkflowGate } from '../WorkflowGate'
-import { DRAG_TYPE, addNode, connect, issuesByNode, moveNode, removeNode, snap, toFlow, type CardNode } from './canvasOps'
+import { DRAG_TYPE, addNode, connect, nextSpot, issuesByNode, moveNode, removeNode, toFlow, type CardNode } from './canvasOps'
 import { CARD_TYPES, EDGE_DEFAULTS } from './flowDefaults'
 import { Palette } from './Palette'
 import { SidePanel } from './SidePanel'
@@ -124,9 +124,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
     if (view === 'map') {
       const r = board.current!.getBoundingClientRect()
       at = flow.screenToFlowPosition(screen ?? { x: r.left + r.width / 2 - 104, y: r.top + r.height / 2 - 40 })
-    } else if (graph.nodes.length) {
-      at = snap({ x: Math.max(...graph.nodes.map((n) => n.position.x)) + 240, y: 0 })
-    }
+    } else at = nextSpot(graph)
     const { graph: g, id } = addNode(graph, type, at)
     setGraph(g)
     setSel(id)
@@ -269,7 +267,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
                 onEdgeClick={onEdgeClick} onPaneClick={() => setSel(null)} snapToGrid snapGrid={[16, 16]} deleteKeyCode={null}
                 selectionKeyCode={null} multiSelectionKeyCode={null} edgesFocusable={false} selectNodesOnDrag={false}
                 nodesDraggable={isMd} nodesConnectable={isMd} proOptions={{ hideAttribution: false }} defaultEdgeOptions={EDGE_DEFAULTS}
-                ariaLabelConfig={ARIA} minZoom={0.3} fitView fitViewOptions={{ duration: 0 }}>
+                ariaLabelConfig={ARIA} minZoom={0.3} fitView fitViewOptions={{ duration: 0, minZoom: 0.55, maxZoom: 1, padding: 0.1 }}>
                 <Background gap={16} size={1} color="var(--chart-grid)" />
                 <Controls showInteractive={false} />
               </ReactFlow>

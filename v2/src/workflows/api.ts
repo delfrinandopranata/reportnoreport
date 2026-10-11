@@ -156,14 +156,14 @@ export const useRecordSubmissions = (recordId: string) => useQuery({
   },
 })
 
-type Reply = { ok: true; data: Record<string, unknown> } | { ok: false; body: Record<string, unknown> }
+type Reply = { ok: true; data: Record<string, unknown> } | { ok: false; body: Record<string, unknown>; status?: number }
 /** The Edge Functions write their own user-facing sentences; anything else falls back to `fallback`. */
 async function call(fn: string, body: Record<string, unknown>, fallback: string): Promise<Reply> {
   const { data, error } = await supabase.functions.invoke(fn, { body })
   if (!error) return { ok: true, data }
   if (error instanceof FunctionsHttpError) {
     const b = await error.context.json().catch(() => null)
-    if (typeof b?.error === 'string') return { ok: false, body: b }
+    if (typeof b?.error === 'string') return { ok: false, body: b, status: error.context.status }
   }
   return { ok: false, body: { error: fallback } }
 }
@@ -184,7 +184,7 @@ export type AdvanceBody =
 export async function advance(body: AdvanceBody): Promise<SubmitResult> {
   const r = await call('advance', { ...body }, 'We could not save this step. Try again.')
   if (r.ok) return { ok: true, id: r.data.recordId as string, status: r.data.status as RecordStatus, recordError: (r.data.error as string | null) ?? null }
-  return { ok: false, error: r.body.error as string, fieldErrors: r.body.fieldErrors as Record<string, string> | undefined }
+  return { ok: false, error: r.body.error as string, fieldErrors: r.body.fieldErrors as Record<string, string> | undefined, terminal: r.status === 403 || r.status === 404 || r.status === 409 }
 }
 
 export async function claimTask(id: string): Promise<void> {

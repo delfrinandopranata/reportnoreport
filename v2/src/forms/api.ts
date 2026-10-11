@@ -28,7 +28,8 @@ export const useForm = (id: string) => useQuery({
 /** `id` is the submission, or the record for a workflow start; `status` / `recordError` come from `advance` only. */
 export type SubmitResult =
   | { ok: true; id: string; status?: 'open' | 'done' | 'rejected' | 'error'; recordError?: string | null }
-  | { ok: false; error: string; fieldErrors?: Record<string, string> }
+  /** `terminal`: the server refused for good (task done, no access); retrying the same form cannot work. */
+  | { ok: false; error: string; fieldErrors?: Record<string, string>; terminal?: boolean }
 
 /** submit-form writes its own user-facing sentences; anything else falls back to the generic one. */
 export async function submitAnswers(formId: string, answers: Answers): Promise<SubmitResult> {

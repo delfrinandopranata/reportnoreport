@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { addNode, connect, issuesByNode, removeNode, setActions, snap, stepOrder, toFlow } from './canvasOps.ts'
+import { STEP_GAP, addNode, connect, issuesByNode, nextSpot, removeNode, setActions, snap, stepLabel, stepOrder, toFlow } from './canvasOps.ts'
 import { LEAVE, leave } from '../../../supabase/functions/_shared/workflow/fixture.ts'
 
 test('new steps get unique ids and snap to the 16px grid', () => {
@@ -60,4 +60,14 @@ test('the step list follows the path from Start, then lists unreachable steps ap
   assert.deepEqual(o.reached.map((n) => n.id), ['start'])
   assert.deepEqual(o.loose.map((n) => n.id), ['long', 'wait', 'done', 'rejected'])
   assert.deepEqual(stepOrder({ nodes: [], edges: [] }), { reached: [], loose: [] })
+})
+test('unnamed steps read as a numbered default, named ones keep their name', () => {
+  const g = addNode(addNode(addNode({ nodes: [], edges: [] }, 'form', { x: 0, y: 0 }).graph, 'form', { x: 400, y: 0 }).graph, 'condition', { x: 800, y: 0 }).graph
+  assert.deepEqual(g.nodes.map((n) => stepLabel(g, n)), ['Form 1', 'Form 2', 'Condition 1'])
+  assert.equal(stepLabel(LEAVE, LEAVE.nodes[1]), 'Manager approval')
+})
+test('new steps added without a pointer go one card gap to the right of the rightmost step', () => {
+  assert.deepEqual(nextSpot({ nodes: [], edges: [] }), { x: 0, y: 0 })
+  assert.deepEqual(nextSpot(LEAVE), { x: 960 + STEP_GAP, y: 0 })
+  assert.ok(STEP_GAP >= 208 + 96) // room for a card plus its edge labels
 })

@@ -61,7 +61,7 @@ function Earlier({ task }: { task: TaskDetail }) {
   )
 }
 
-function MyForm({ task, node, onDone }: { task: TaskDetail; node: FormNode; onDone(r: Done): void }) {
+function MyForm({ task, node, onDone, onRefused }: { task: TaskDetail; node: FormNode; onDone(r: Done): void; onRefused(message: string): void }) {
   const { userId } = useOrg()
   const form = useForm(node.formId)
   if (form.isPending) return <Skeleton rows={[{ w: '100%', h: 240 }]} />
@@ -72,9 +72,28 @@ function MyForm({ task, node, onDone }: { task: TaskDetail; node: FormNode; onDo
       <FormRunner fields={form.data.schema} idPrefix="task" filePrefix={`${task.org_id}/${userId}/`}
         upload={(blob, name) => uploadFile(task.org_id, userId, blob, name)}
         outcomes={node.mode === 'approve' ? APPROVE : undefined}
-        onSubmit={(answers, outcome) => advance({ action: 'submit', taskId: task.id, outcome: outcome === 'approved' || outcome === 'rejected' ? outcome : 'submitted', answers })}
+        onSubmit={async (answers, outcome) => {
+          const res = await advance({ action: 'submit', taskId: task.id, outcome: outcome === 'approved' || outcome === 'rejected' ? outcome : 'submitted', answers })
+          if (!res.ok && res.terminal) onRefused(res.error)
+          return res
+        }}
         onDone={onDone} />
     </section>
+  )
+}
+
+/** A terminal refusal (task already done, no access): the form is replaced, not left live to fail again. */
+function Refused({ task, message }: { task: TaskDetail; message: string }) {
+  const note = useRef<HTMLParagraphElement>(null)
+  useEffect(() => { note.current?.focus() }, [])
+  return (
+    <Card>
+      <p ref={note} tabIndex={-1} className="rnr-error" role="alert">{message}</p>
+      <div className="flex flex-wrap gap-2">
+        <a className="rnr-btn rnr-btn-primary" href="#/inbox">Back to inbox</a>
+        <a className="rnr-btn rnr-btn-ghost" href={`#/records/${task.record_id}`}>View record</a>
+      </div>
+    </Card>
   )
 }
 
@@ -108,6 +127,7 @@ function TaskView({ task }: { task: TaskDetail }) {
   const now = useNow()
   const [claimError, setClaimError] = useState<string | null>(null)
   const [done, setDone] = useState<Done | null>(null)
+  const [refused, setRefused] = useState<string | null>(null)
   const node = nodeById(task.record.workflow.graph, task.node_id)
   const mine = task.assignee_user_id === userId || task.claimed_by === userId
   const overdue = task.status === 'open' && !!task.due_at && Date.parse(task.due_at) < now
@@ -122,6 +142,10 @@ function TaskView({ task }: { task: TaskDetail }) {
     }
     await Promise.all([qc.invalidateQueries({ queryKey: ['task', task.id] }), qc.invalidateQueries({ queryKey: ['my-tasks', orgId] })])
   })
+  const refuse = (message: string) => {
+    setRefused(message)
+    for (const key of [['my-tasks', orgId], ['task', task.id], ['records', orgId]]) qc.invalidateQueries({ queryKey: key })
+  }
   const finished = (r: Done) => {
     setDone(r)
     for (const key of [['my-tasks', orgId], ['task', task.id], ['record', task.record_id], ['record-events', task.record_id], ['record-submissions', task.record_id], ['records', orgId]]) {
@@ -131,10 +155,11 @@ function TaskView({ task }: { task: TaskDetail }) {
 
   let body: ReactNode
   if (done) body = <Completed task={task} done={done} />
-  else if (task.status === 'done') body = <Card><p>This task is already done.</p><div><a className="rnr-btn rnr-btn-secondary" href={`#/records/${task.record_id}`}>View record</a></div></Card>
-  else if (task.status === 'cancelled') body = <Card><p>This task was cancelled because the record moved on.</p><div><a className="rnr-btn rnr-btn-secondary" href={`#/records/${task.record_id}`}>View record</a></div></Card>
+  else if (refused) body = <Refused task={task} message={refused} />
+  else if (task.status === 'done') body = <Card><p>This task is already done.</p><div className="flex flex-wrap gap-2"><a className="rnr-btn rnr-btn-primary" href="#/inbox">Back to inbox</a><a className="rnr-btn rnr-btn-ghost" href={`#/records/${task.record_id}`}>View record</a></div></Card>
+  else if (task.status === 'cancelled') body = <Card><p>This task was cancelled because the record moved on.</p><div className="flex flex-wrap gap-2"><a className="rnr-btn rnr-btn-primary" href="#/inbox">Back to inbox</a><a className="rnr-btn rnr-btn-ghost" href={`#/records/${task.record_id}`}>View record</a></div></Card>
   else if (!node || node.type !== 'form') body = <Card><p className="rnr-error" role="alert">{SETUP}</p></Card>
-  else if (mine) body = <MyForm task={task} node={node} onDone={finished} />
+  else if (mine) body = <MyForm task={task} node={node} onDone={finished} onRefused={refuse} />
   else if (task.assignee_user_id) body = <Card><p>This task is assigned to someone else. Only they can complete it.</p></Card>
   else if (task.claimed_by) {
     body = (

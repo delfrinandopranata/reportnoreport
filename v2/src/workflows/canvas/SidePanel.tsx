@@ -4,10 +4,10 @@ import { DraftInput } from '../../forms/builder/DraftInput'
 import { RuleEditor } from '../../forms/builder/RuleEditor'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import {
-  OUTCOME_LABELS, TYPE_LABELS, UNITS, nodeName, outcomesOf,
+  OUTCOME_LABELS, TYPE_LABELS, UNITS, outcomesOf,
   type Action, type Duration, type Graph, type Outcome, type Unit, type WfNode,
 } from '../logic'
-import { connect, setActions, setNode } from './canvasOps'
+import { connect, setActions, setNode, stepLabel } from './canvasOps'
 
 export type FormOption = { id: string; name: string; schema: Field[] }
 type Props = {
@@ -119,13 +119,13 @@ function usedFields(graph: Graph, forms: FormOption[]): Field[] {
 export function SidePanel({ graph, node, open, forms, roles, members, onChange, onDelete, onSay, inSheet }: Props) {
   const update = (n: WfNode) => onChange(setNode(graph, n))
   const choose: [string, string] = ['', 'Choose…']
-  const targets: [string, string][] = graph.nodes.filter((n) => n.type !== 'start').map((n) => [n.id, `${nodeName(n)} (${TYPE_LABELS[n.type]})`])
+  const targets: [string, string][] = graph.nodes.filter((n) => n.type !== 'start').map((n) => [n.id, stepLabel(graph, n)])
   const fields = usedFields(graph, forms)
-  const name = nodeName(node)
+  const name = stepLabel(graph, node)
   const goTo = (o: Outcome, to: string) => {
     onChange(connect(graph, node.id, o, to))
     const target = graph.nodes.find((n) => n.id === to)
-    onSay(target ? `${OUTCOME_LABELS[o]} of ${name} now goes to ${nodeName(target)}.` : `${OUTCOME_LABELS[o]} of ${name} is not connected.`)
+    onSay(target ? `${OUTCOME_LABELS[o]} of ${name} now goes to ${stepLabel(graph, target)}.` : `${OUTCOME_LABELS[o]} of ${name} is not connected.`)
   }
   const [recordsAre, them] = plural(open)
   return (
@@ -155,7 +155,7 @@ export function SidePanel({ graph, node, open, forms, roles, members, onChange, 
           {'user' in node.assignee && <Select label="Person" value={node.assignee.user} options={[choose, ...[...members].map(([id, email]): [string, string] => [id, email])]}
             onChange={(user) => update({ ...node, assignee: { user } })} />}
           {'step' in node.assignee && <Select label="Earlier step" value={node.assignee.step}
-            options={[choose, ...graph.nodes.filter((n) => (n.type === 'start' || n.type === 'form') && n.id !== node.id).map((n): [string, string] => [n.id, nodeName(n)])]}
+            options={[choose, ...graph.nodes.filter((n) => (n.type === 'start' || n.type === 'form') && n.id !== node.id).map((n): [string, string] => [n.id, stepLabel(graph, n)])]}
             onChange={(step) => update({ ...node, assignee: { step } })} />}
           <DurationInput label="Due" optional value={node.due} onChange={(due) => update({ ...node, due })} />
         </>

@@ -3,6 +3,8 @@ import { OUTCOME_LABELS, TYPE_LABELS, nodeName, outcomesOf, type Action, type Gr
 
 export const DRAG_TYPE = 'application/x-rnr-step'
 export const GRID = 16
+/** Card width (208) plus room for the Yes/No labels and arrowheads between cards. */
+export const STEP_GAP = 320
 export const snap = (p: { x: number; y: number }) => ({ x: Math.round(p.x / GRID) * GRID, y: Math.round(p.y / GRID) * GRID })
 
 export function newId(prefix: string, taken: Iterable<string>): string {
@@ -19,6 +21,16 @@ const DEFAULTS: Record<NodeType, (id: string, position: At) => WfNode> = {
   condition: (id, position) => ({ id, type: 'condition', rule: { field: '', operator: 'is', value: '' }, position }),
   time: (id, position) => ({ id, type: 'time', after: { amount: 1, unit: 'days' }, position }),
   end: (id, position) => ({ id, type: 'end', status: 'done', position }),
+}
+
+/** Where a step goes when there is no pointer (List view): right of the rightmost step. */
+export const nextSpot = (g: Graph): At => (g.nodes.length ? snap({ x: Math.max(...g.nodes.map((n) => n.position.x)) + STEP_GAP, y: 0 }) : { x: 0, y: 0 })
+
+/** The step's own name, or "Form 2" / "Condition 1" counted by type in node order. */
+export function stepLabel(g: Graph, n: WfNode): string {
+  const own = n.label?.trim()
+  if (own) return own
+  return `${TYPE_LABELS[n.type]} ${g.nodes.filter((x) => x.type === n.type).indexOf(n) + 1}`
 }
 
 /** A card already within one grid step is a stack the eye cannot see: nudge by 32px until the spot is free. */

@@ -1,5 +1,5 @@
-import { OUTCOME_LABELS, TYPE_LABELS, nodeById, nodeName, outcomesOf, type Graph, type WfNode } from '../logic'
-import { stepOrder } from './canvasOps'
+import { OUTCOME_LABELS, TYPE_LABELS, nodeById, outcomesOf, type Graph, type WfNode } from '../logic'
+import { stepLabel, stepOrder } from './canvasOps'
 import { RightIcon } from '../../ui/icons'
 
 type Props = {
@@ -12,11 +12,11 @@ function Row({ graph, node, selected, issues, open, onSelect }: { graph: Graph; 
     <li className="rnr-block" data-selected={selected ? 'true' : 'false'}>
       <button type="button" id={`step-row-${node.id}`} className="rnr-pick rnr-focus" aria-pressed={selected} onClick={() => onSelect(node.id)}>
         <span className="rnr-caption block">{TYPE_LABELS[node.type]}</span>
-        <span className="label block">{nodeName(node)}</span>
+        <span className="label block">{stepLabel(graph, node)}</span>
         {outcomesOf(node).map((o) => {
           const to = graph.edges.find((e) => e.from === node.id && e.outcome === o)?.to
           return (
-            <span key={o} className="rnr-caption flex items-center gap-1"><RightIcon size={14} />{OUTCOME_LABELS[o]}: {to ? nodeName(nodeById(graph, to)) : 'Not connected'}</span>
+            <span key={o} className="rnr-caption flex items-center gap-1"><RightIcon size={14} />{OUTCOME_LABELS[o]}: {to ? stepLabel(graph, nodeById(graph, to)!) : 'Not connected'}</span>
           )
         })}
         {node.type === 'end' && <span className="rnr-caption block">Closes as {node.status}</span>}
