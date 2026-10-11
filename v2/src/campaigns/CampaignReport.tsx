@@ -13,8 +13,9 @@ import { useAction } from '../ui/useAction'
 import { createCampaign, statsOf, useCampaign, useCampaignCompletion, useCampaignDaily, useCampaignStats, type Campaign } from './api'
 import { CampaignChart } from './CampaignChart'
 import { markFocus } from './focus'
-import { audienceText, channelWord, notOpenedCount } from './labels'
+import { audienceText, channelWord } from './labels'
 import { campaignTiles, excludedText, pct, pctText, readAudience, type FollowupWho } from './logic'
+import { followUpCount } from '../../supabase/functions/_shared/comms/followup.ts'
 import { RecipientTable } from './RecipientTable'
 import { CampaignStatusMark } from './StatusMark'
 import { useSendToOptions } from './sendTo'
@@ -62,7 +63,7 @@ export function CampaignReport({ campaign: c, notice, setNotice }: Props) {
     campaigns: new Map(earlier.data ? [[earlier.data.id, earlier.data.name]] : []), fields: new Map(sendTo.options.map((o) => [o.path, o.label])), workflow,
   }), [roles.data, reports.data, earlier.data, sendTo.options, workflow])
   const template = templates.data?.find((t) => t.id === c.template_id)?.name ?? 'A template that no longer exists'
-  const notOpened = notOpenedCount(s)
+  const notOpened = followUpCount(s)
 
   const followUp = (who: FollowupWho) => act.run(async () => {
     setError(null)

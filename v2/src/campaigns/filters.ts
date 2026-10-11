@@ -1,9 +1,7 @@
 import type { RecipientFilter } from './api'
+import { NOT_OPENED, type Op } from '../../supabase/functions/_shared/comms/followup.ts'
 
-export type Op = readonly ['eq' | 'is' | 'notnull', string, string | null]
-
-/** One definition of "not opened": the follow-up audience (send-campaigns pgStore.parentRecipients) selects the same rows, complained included. */
-export const NOT_OPENED: readonly Op[] = [['eq', 'status', 'sent'], ['is', 'opened_at', null], ['is', 'bounced_at', null], ['is', 'complained_at', null]]
+export type { Op }
 
 export const recipientOps = (f: RecipientFilter): readonly Op[] =>
   f === 'not_opened' ? NOT_OPENED : f === 'bounced' ? [['notnull', 'bounced_at', null]] : f === 'failed' ? [['eq', 'status', 'failed']] : []

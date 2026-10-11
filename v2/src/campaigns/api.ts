@@ -57,7 +57,7 @@ export const useCampaignStats = (orgId: string | null, live = false) => useQuery
   queryFn: async () => {
     const { data, error } = await supabase.rpc('campaign_stats', { p_org: orgId! })
     if (error) throw error
-    return new Map((data ?? []).map(({ campaign_id, ...s }) => [campaign_id, s as Stats]))
+    return new Map((data ?? []).map(({ campaign_id, not_opened, ...s }) => [campaign_id, { ...s, notOpened: not_opened } as Stats]))
   },
 })
 export const statsOf = (m: Map<string, Stats> | undefined, id: string): Stats => m?.get(id) ?? NO_STATS

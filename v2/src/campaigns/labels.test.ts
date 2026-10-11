@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { audienceText, channelWord, notOpenedCount, recipientStatus } from './labels.ts'
+import { audienceText, channelWord, recipientStatus } from './labels.ts'
 
 const names = { roles: new Map([['r1', 'Member']]), reports: new Map([['p1', 'Leave requests']]), campaigns: new Map([['c1', 'Term starts']]), fields: new Map([['email', 'Contact email']]), workflow: 'Leave approval' }
 
@@ -24,8 +24,3 @@ test('channels and recipient statuses use the words of the Messages page', () =>
   assert.equal(recipientStatus({ ...row, status: 'failed' }), 'failed')
 })
 
-test('the not-opened count never goes below zero', () => {
-  const s = { recipients: 10, queued: 0, sent: 10, failed: 0, delivered: 9, opened: 4, clicked: 1, bounced: 1, complained: 0 }
-  assert.equal(notOpenedCount(s), 5)
-  assert.equal(notOpenedCount({ ...s, opened: 10, bounced: 3 }), 0)
-})

@@ -1,10 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { NOT_OPENED, applyOps, recipientOps } from './filters.ts'
+import { NOT_OPENED } from '../../supabase/functions/_shared/comms/followup.ts'
+import { applyOps, recipientOps } from './filters.ts'
 
-test('not opened excludes bounced and complained, exactly like the follow-up audience', () => {
+test('the Not opened list uses the shared follow-up definition', () => {
   assert.deepEqual(recipientOps('not_opened'), NOT_OPENED)
-  assert.deepEqual(NOT_OPENED.map(([, c]) => c), ['status', 'opened_at', 'bounced_at', 'complained_at'])
   assert.deepEqual(recipientOps('all'), [])
 })
 

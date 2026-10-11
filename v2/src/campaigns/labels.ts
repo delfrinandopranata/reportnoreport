@@ -1,4 +1,4 @@
-import type { Audience, RecipientRow, Stats } from './logic.ts'
+import type { Audience, RecipientRow } from './logic.ts'
 
 export type AudienceNames = {
   roles: Map<string, string>; reports: Map<string, string>; campaigns: Map<string, string>
@@ -22,5 +22,3 @@ export const channelWord = (c: 'email' | 'in_app' | null) => (c === 'in_app' ? '
 export const recipientStatus = (r: RecipientRow): 'queued' | 'sent' | 'failed' | 'bounced' =>
   r.bounced_at ? 'bounced' : (r.status === 'queued' || r.status === 'failed' ? r.status : 'sent')
 
-/** Whoever was sent to and has neither opened nor bounced; the exact list is taken when the follow-up is sent. */
-export const notOpenedCount = (s: Stats) => Math.max(0, s.sent - s.opened - s.bounced)
