@@ -10,14 +10,14 @@ select is(appearance_from_legacy('dark', null)->>'accent', 'midnight', 'no firm 
 select is(appearance_from_legacy('Dark', 'x')->>'theme', 'system', 'invalid theme -> system');
 select is(appearance_from_legacy(null, null)->>'theme', 'system', 'no theme -> system');
 
--- Backfill over the seeded data (profiles exist only after seed, so the migration's own call ran on an empty table).
+-- Own fixture: clear whatever a seed or a manual backfill left, so the test is order-independent. The transaction rolls back at the end, which tears it down.
+delete from user_preferences where key in ('theme', 'appearance');
 select is((select count(*)::int from user_preferences where key = 'appearance'), 0, 'fixture cleared');
 
 
 -- Fixtures as superuser: three profiles in alpha, one with a theme pref, plus one in a firm per design system.
 update firms set design_system = 'forest' where id = '0000000a-0000-0000-0000-000000000001';
 update firms set design_system = 'ocean' where name like 'Beta%';
-delete from user_preferences where key in ('theme', 'appearance');
 insert into user_preferences (profile_id, key, value) values
   ((select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a1'), 'theme', '"dark"'),
   ((select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a2'), 'theme', '"bogus"');

@@ -42,8 +42,8 @@ export function Wordmark({ href, size = 'md' }: { href?: string; size?: 'md' | '
     : <span className={cls} data-draw role="img" aria-label="ReportNoReport">{mark}</span>
 }
 
-/** The bundle draws the 3px --focus ring on :focus-visible for every element; this class is kept so call sites need no change. */
-export const ring = 'rnr-focus'
+/** @deprecated The bundle draws the focus ring on every :focus-visible. Empty now; delete with its last import (checklist/Checklist.tsx). */
+export const ring = ''
 
 const THEME_CYCLE = { light: 'dark', dark: 'system', system: 'light' } as const
 const THEME_ICON = { light: 'sun', dark: 'moon', system: 'monitor' } as const
@@ -143,7 +143,7 @@ export function Menu({
   align = 'down',
   side = 'right',
   className = '',
-  triggerClassName = `${ring} min-w-0 rounded-(--r-ctl)`,
+  triggerClassName = 'min-w-0 rounded-(--r-ctl)',
   width = 'w-56',
 }: {
   trigger: ReactNode

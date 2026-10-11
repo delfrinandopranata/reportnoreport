@@ -383,7 +383,7 @@ function DataCard() {
       <span className="rnr-folder-tab" id="data-heading">Data</span>
       <div className="rnr-folder-body">
         <div className="rnr-perf" aria-hidden="true" />
-        <p className="rnr-muted">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to a server.' : 'Your data is stored securely on our servers and backed up daily. Nothing to set up here.'}</p>
+        <p className="rnr-muted">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to a server.' : 'Your data is stored securely and backed up daily. Nothing to set up here.'}</p>
       </div>
     </section>
   )
@@ -393,7 +393,7 @@ export function SettingsPage() {
   const s = useSession()
   const disabledReason = s.can('settings.manage') && s.canWrite ? null : (s.writeBlockReason ?? "Your role can't change settings")
   return (
-    <div className="grid max-w-3xl grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <AppearanceSettings />
       <BillingPage />
       <OrganisationCard disabledReason={disabledReason} />

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Avatar, btn, Dialog, Icon, Menu, menuItemClass, Wordmark } from '../ui'
 import { AppearancePanel } from '../settings/AppearanceSettings'
+import { useAppearance } from '../useAppearance'
 import { FirmsTable } from './FirmsTable'
 import { CreateFirmDialog } from './CreateFirmDialog'
 import { SupportView } from './SupportView'
@@ -58,6 +59,8 @@ export function AdminConsole({ profileId, name, onSignOut }: { profileId: string
   const [route, setRouteState] = useState(readRoute)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showAppearance, setShowAppearance] = useState(false)
+  // Loads and applies the saved choice at once, so a fresh device shows it before the Appearance dialog is ever opened.
+  useAppearance(profileId)
   const desktop = useDesktop()
   const drawer = useRef<HTMLDialogElement>(null)
 

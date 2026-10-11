@@ -21,6 +21,8 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 /* v1 paper: batch 7 — clients, ledger, statements (Task 7 only) */
 @layer components {
   .rnr-ledger tfoot td:empty::after { content: none; }
+  /* A link inside a banner (demo "Sign in", "Pay") is a 44px target on touch screens. */
+  @media (pointer: coarse) { .rnr-note--bar .rnr-link { display: inline-flex; align-items: center; min-height: var(--touch); } }
   .rnr-statement-summary dd[data-neg] { color: var(--sheet-down); }
   /* Cells borrowed from the on-screen ledger must not bring theme or accent colour onto the sheet. */
   .rnr-statement .rnr-muted, .rnr-statement .rnr-link, .rnr-statement .rnr-status, .rnr-statement .rnr-chip { color: inherit; background: none; border: 0; padding: 0; text-decoration: none; }
@@ -72,7 +74,7 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
     margin: 14mm;
   }
   /* A printed page is paper: no theme canvas behind it, in any theme or accent. */
-  html, body, .rnr-shell, .rnr-page {
+  .rnr-shell, .rnr-page {
     background: var(--sheet-paper);
   }
   .rnr-shell { min-height: 0; }

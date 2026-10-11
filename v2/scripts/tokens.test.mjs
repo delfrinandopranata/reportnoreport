@@ -188,3 +188,18 @@ test('every component has a README and a preview', () => {
   assert.deepEqual(missing, [])
   assert.ok(!existsSync(new URL('../design/components/Cover', import.meta.url)))
 })
+
+test('text on a tinted row never uses ink-3 (Saffron dark measured 4.2:1); ink-2 on tint is contrast-tested for all 16 combinations', () => {
+  assert.match(bundle, /\.rnr-checklist-item\[data-state="current"\] \.rnr-caption \{ color: var\(--ink-2\); \}/)
+})
+test('a printed page is white in every theme: color-scheme is forced light under print', () => {
+  const print = bundle.slice(bundle.indexOf('@media print {'))
+  assert.match(print, /html \{ color-scheme: light !important; \}/)
+  assert.match(print, /html, body \{ background: var\(--sheet-paper\) !important; \}/)
+})
+
+test('coarse pointers get 44px hit areas for selects, sort buttons, resize handles and chip remove buttons', () => {
+  const coarse = bundle.match(/@media \(pointer: coarse\) \{[^@]*?\n\}/g)?.join('\n') ?? ''
+  for (const re of [/\.rnr-input:not\(textarea\) \{ min-height: var\(--touch\) !important; \}/, /\.rnr-th-sort::before/, /\.rnr-chip button::before/, /\.rnr-ledger-resize::before/]) assert.match(bundle, re)
+  assert.ok(coarse.length > 0)
+})

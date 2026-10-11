@@ -44,7 +44,7 @@ export function AppearancePanel({ profileId }: { profileId: string }) {
   )
 
   return (
-    <section className="rnr-folder rnr-folder--panel rnr-appearance" aria-labelledby="appearance-h">
+    <section className="rnr-folder rnr-folder--panel rnr-appearance w-full" aria-labelledby="appearance-h">
       <span className="rnr-folder-tab" id="appearance-h">Settings · Appearance</span>
       <div className="rnr-folder-body">
         <div className="rnr-perf" aria-hidden="true" />

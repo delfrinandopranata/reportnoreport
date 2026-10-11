@@ -27,12 +27,19 @@ test('fonts are same-origin and the CSP allows them', () => {
 })
 
 const RETIRED = /\b(?:zinc|red|emerald|green|amber|blue|sky|orange|rose|yellow)-\d{2,3}\b|\bdark:[a-z[]|--brand-solid|--color-(?:in|out)\b|\b(?:bg|text|fill|stroke|border)-(?:in|out)\b/
-/** Files not yet on Paper that moves. Each screen task deletes its entries; Task 11 requires this list to be empty. */
-const LEGACY = new Set<string>([
-])
-
 test('no screen uses the retired palette', () => {
-  const offenders = walk('src').filter((p) => p.endsWith('.tsx') && !LEGACY.has(p) && RETIRED.test(read(p)))
+  const offenders = walk('src').filter((p) => p.endsWith('.tsx') && RETIRED.test(read(p)))
   assert.deepEqual(offenders, [])
-  for (const p of LEGACY) assert.ok(RETIRED.test(read(p)), `${p} is migrated: remove it from LEGACY`)
+})
+
+test('the admin console applies the saved appearance itself', () => {
+  assert.match(read('src/admin/AdminConsole.tsx'), /useAppearance\(profileId\)/)
+})
+
+/** Library-driven exceptions (v2/design/README.md): dnd-kit transforms and the resizable column widths. The tour sets custom properties through setProperty, not a style attribute. */
+const INLINE_STYLE_OK = new Set(['src/Dashboard.tsx', 'src/table.tsx', 'src/users/UsersPage.tsx'])
+
+test('inline style attributes appear only where a library or a drag drives them', () => {
+  const offenders = walk('src').filter((p) => p.endsWith('.tsx') && !INLINE_STYLE_OK.has(p) && /\bstyle=\{/.test(read(p)))
+  assert.deepEqual(offenders, [])
 })

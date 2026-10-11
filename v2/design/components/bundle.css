@@ -184,6 +184,12 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-check-desc { display: block; font: var(--type-caption); color: var(--ink-3); }
 @media (pointer: coarse) {
   .rnr-check, .rnr-btn-sm, a.rnr-wordmark { min-height: var(--touch); }
+  /* Compact selects and inputs (utility min-h-9 and friends) still reach 44px: important in this layer beats those utilities. */
+  .rnr-input:not(textarea) { min-height: var(--touch) !important; }
+  /* Small controls inside a mark keep their look; the hit area grows around them. */
+  .rnr-th-sort, .rnr-chip button { position: relative; }
+  .rnr-th-sort::before { content: ""; position: absolute; inset: -6px 0; }
+  .rnr-chip button::before { content: ""; position: absolute; inset: -12px; }
   summary:not(.rnr-folder-tab) { min-height: var(--touch); padding-block: var(--space-2-5); box-sizing: border-box; }
   .rnr-folder:has(> summary.rnr-folder-tab) { --folder-tab-h: var(--touch); } /* a tab that is a button is 44px high; the folder body moves down with it */
 }
@@ -393,7 +399,8 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-side-link .rnr-dot { margin-left: auto; }
 .rnr-side-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); margin-top: auto; }
 .rnr-side-body > * { min-width: 0; }
-.rnr-account { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3-5); border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--field); }
+.rnr-account { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3-5); border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--field); }
+.rnr-account > div { flex: 1 1 6rem; min-width: 6rem; } /* a name keeps 6rem; the buttons wrap below it instead of squeezing it to an ellipsis */
 .rnr-account-email { flex: 1; min-width: 0; font: var(--type-body-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rnr-org { display: flex; align-items: center; gap: var(--space-2-5); width: 100%; min-height: var(--touch); padding: 0 var(--space-3-5); border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--field); color: var(--ink); font: var(--type-body-sm); font-weight: 500; text-align: left; cursor: pointer; }
 .rnr-org-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -662,7 +669,10 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-ledger-resize:hover::after, .rnr-ledger-resize:focus-visible::after, .rnr-ledger-resize[data-active]::after { background: var(--ink); }
 .rnr-ledger-resize:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 @media (hover: hover) { .rnr-ledger tbody tr:hover td { background: var(--hover); } }
-@media (pointer: coarse) { .rnr-ledger-resize { width: 24px; } }
+@media (pointer: coarse) {
+  .rnr-ledger-resize { width: 24px; }
+  .rnr-ledger-resize::before { content: ""; position: absolute; inset: 0 -10px; } /* 44px wide hit area, same look */
+}
 @media (max-width: 639px) { .rnr-ledger th:first-child, .rnr-ledger td:first-child { position: sticky; left: 0; background: var(--surface); } .rnr-ledger thead th:first-child { z-index: calc(var(--z-sticky) + 1); } }
 
 /* ---------- v1 statement: A4, ink on white in every theme and accent ---------- */
@@ -690,6 +700,9 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-statement tfoot td, .rnr-statement tfoot th { border-top: 1pt solid var(--sheet-ink); border-bottom: 0; font-weight: 600; }
 .rnr-statement-foot { margin-top: 8mm; padding-top: 3mm; border-top: 0.5pt solid var(--sheet-rule); color: var(--sheet-ink-3); font-size: 8pt; }
 @media print {
+  /* A printed page is paper in every theme and accent: color-scheme: dark would otherwise paint the canvas (and the page margins) near-black. Important in this layer beats the unlayered token rule. */
+  html { color-scheme: light !important; }
+  html, body { background: var(--sheet-paper) !important; }
   .rnr-no-print { display: none !important; }
   .rnr-statement-frame { padding: 0; background: none; overflow: visible; }
   .rnr-statement, .rnr-statement[data-orientation="landscape"] { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; } /* the landscape selector is more specific than the screen size, so it needs its own reset */
@@ -752,6 +765,7 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-checklist-item[data-state="done"] { color: var(--ink-3); }
 .rnr-checklist-item[data-state="current"] { background: var(--tint); color: var(--ink); font-weight: 500; }
 .rnr-checklist-item[data-state="current"] .rnr-checklist-state { color: var(--ink-2); }
+.rnr-checklist-item[data-state="current"] .rnr-caption { color: var(--ink-2); } /* ink-3 on the tint measured 4.2:1 in Saffron dark */
 .rnr-checklist-item[data-state="current"] > svg { color: var(--ok-ink); }
 .rnr-checklist-item[data-state="skipped"] { color: var(--ink-3); }
 .rnr-checklist-summary .rnr-caption { white-space: nowrap; }
