@@ -10,7 +10,7 @@ import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
 import { CAMPAIGN_LIST_LIMIT, createCampaign, deleteCampaign, statsOf, useCampaignStats, useCampaigns, type Campaign } from './api'
-import { takeFocus } from './focus'
+import { markFocus, takeFocus } from './focus'
 import { pct, pctText } from './logic'
 import { CampaignStatusMark } from './StatusMark'
 
@@ -156,6 +156,7 @@ function NewCampaignDialog({ onClose }: { onClose(): void }) {
       const { data, error: e2 } = await createCampaign(orgId!, { name: name.trim() })
       if (e2) { setError(friendlyError(e2)); return }
       await qc.invalidateQueries({ queryKey: ['campaigns', orgId] }) // the list must not show its old first-run state when the person comes back
+      markFocus(data.id) // the editor's heading takes focus: the dialog that held it is gone
       location.hash = `#/campaigns/${data.id}`
     })
   }
