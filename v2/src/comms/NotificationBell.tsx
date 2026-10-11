@@ -13,7 +13,8 @@ import { NOTIFICATION_LIMIT, type Notification, markAllRead, markRead, useNotifi
 
 const MARK_FAILED = 'Your notifications were not marked as read. Try again.'
 
-export function NotificationBell() {
+/** `side` is the labelled sidebar row (its panel opens beside the sidebar); `icon` is the top-bar button. */
+export function NotificationBell({ variant = 'icon' }: { variant?: 'icon' | 'side' }) {
   const { orgId, orgs, userId } = useOrg()
   useNotificationFeed(orgId, userId)
   const unread = useUnreadCount(orgId, userId)
@@ -78,15 +79,16 @@ export function NotificationBell() {
   })
 
   return (
-    <div ref={box} className="sm:relative" onBlur={(e) => { if (open && e.relatedTarget && !box.current?.contains(e.relatedTarget as Node)) setOpen(false) }}>
-      <button ref={button} type="button" className="rnr-icon-btn rnr-bell" aria-expanded={open} aria-controls={open ? panelId : undefined}
+    <div ref={box} className="relative" onBlur={(e) => { if (open && e.relatedTarget && !box.current?.contains(e.relatedTarget as Node)) setOpen(false) }}>
+      <button ref={button} type="button" className={`rnr-bell ${variant === 'side' ? 'rnr-side-link' : 'rnr-icon-btn'}`} aria-expanded={open} aria-controls={open ? panelId : undefined}
         aria-label={n ? `Notifications, ${n} unread` : 'Notifications'} onClick={() => { setError(null); setOpen((o) => !o) }}>
         <BellIcon size={20} />
-        {n > 0 && <span className="rnr-chip rnr-num" aria-hidden="true">{n > 99 ? '99+' : n}</span>}
+        {variant === 'side' && 'Notifications'}
+        {n > 0 && <span className={`rnr-chip rnr-chip--count rnr-num ${variant === 'side' ? 'ml-auto' : 'absolute -right-1 -top-1'}`} aria-hidden="true">{n > 99 ? '99+' : n}</span>}
       </button>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{said}</p>
       {open && (
-        <section id={panelId} aria-labelledby="bell-h" className="rnr-menu rnr-notices">
+        <section id={panelId} aria-labelledby="bell-h" className={`rnr-menu rnr-notices ${variant === 'side' ? 'sm:bottom-0 sm:left-full sm:right-auto sm:top-auto sm:ml-3' : ''}`}>
           <div className="rnr-notices-head">
             <h2 id="bell-h" tabIndex={-1} className="label">Notifications</h2>
             {n > 0 && (

@@ -7,7 +7,6 @@ import { useOrg } from './rbac/useOrg'
 import { guardHash, parseRoute, type Route } from './rbac/route'
 import { AuthPage } from './auth/AuthPage'
 import { CreateOrgPage } from './orgs/CreateOrgPage'
-import { OrgSwitcher } from './orgs/OrgSwitcher'
 import { MembersPage } from './members/MembersPage'
 import { RolesPage } from './roles/RolesPage'
 import { FormsPage } from './forms/FormsPage'
@@ -22,7 +21,6 @@ import { RecordPage } from './records/RecordPage'
 import { WorkflowsPage } from './workflows/WorkflowsPage'
 import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
 import { AccessPage } from './workflows/AccessPage'
-import { NotificationBell } from './comms/NotificationBell'
 import { SettingsPage } from './comms/SettingsPage'
 import { TemplatesPage } from './comms/TemplatesPage'
 import { TemplateEditor } from './comms/TemplateEditor'
@@ -33,10 +31,9 @@ import { ReportsPage } from './reports/ReportsPage'
 import { ReportPage } from './reports/ReportPage'
 import { CampaignsPage } from './campaigns/CampaignsPage'
 import { CampaignPage } from './campaigns/CampaignPage'
-import { Wordmark } from './ui/Wordmark'
+import { Shell as AppShell } from './ui/Shell'
 import { Skeleton } from './ui/Skeleton'
-import { useAction } from './ui/useAction'
-import { blocksNavigation, guarded } from './ui/navGuard'
+import { blocksNavigation } from './ui/navGuard'
 
 const useHash = () => {
   const [hash, setHash] = useState(location.hash || '#/inbox')
@@ -83,13 +80,12 @@ function Page({ route }: { route: Route }) {
   }
 }
 
-function Shell() {
+function Signed({ email }: { email: string }) {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
   const mayReport = can('reports.view') || can('reports.manage')
   const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: mayReport, reportsManage: can('reports.manage'), broadcast: can('comms.broadcast') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
-  const out = useAction()
   if (loading) {
     return (
       <div className="p-6 mx-auto max-w-5xl flex flex-col gap-6">
@@ -111,44 +107,11 @@ function Shell() {
   }
   if (!orgs.length || hash === '#/new-org') return <CreateOrgPage />
   const route = parseRoute(hash)
-  const link = (href: string, label: string, current: boolean) => (
-    <a href={href} aria-current={current ? 'page' : undefined}
-      className={`rnr-btn ${current ? 'rnr-btn-secondary' : 'rnr-btn-ghost'}`}>{label}</a>
-  )
   return (
-    <>
-      <a href="#main" className="sr-only focus:not-sr-only rnr-btn rnr-btn-secondary">Skip to content</a>
-      <header className="relative bg-surface-100 border-b border-line-200">
-        <div className="mx-auto max-w-5xl flex flex-wrap items-center gap-4 px-6 py-3">
-          <Wordmark href="#/inbox" />
-          <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
-          <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
-            {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
-            {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
-            {mayReport && link('#/dashboard', 'Dashboard', route.page === 'dashboard')}
-            {mayReport && link('#/reports', 'Reports', route.page === 'reports' || route.page === 'report')}
-            {link('#/forms', 'Forms', route.page.startsWith('form'))}
-            {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
-            {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
-            {can('comms.manage') && link('#/messages', 'Messages', route.page === 'messages')}
-            {can('comms.broadcast') && link('#/campaigns', 'Campaigns', route.page === 'campaigns' || route.page === 'campaign')}
-            {link('#/members', 'Members', route.page === 'members')}
-            {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
-          </nav>
-          <div className="ml-auto flex items-center gap-1">
-            <NotificationBell />
-            {link('#/settings', 'Settings', route.page === 'settings')}
-            <button className="rnr-btn rnr-btn-ghost" type="button" aria-busy={out.busy}
-              onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
-              {out.busy && <span className="rnr-spin" aria-hidden="true" />}{out.busy ? 'Signing out…' : 'Sign out'}
-            </button>
-          </div>
-        </div>
-      </header>
-      <main id="main" className="mx-auto max-w-5xl p-6">
-        <Page key={`${orgId}${hash}`} route={route} />
-      </main>
-    </>
+    <AppShell page={route.page} email={email}
+      perms={{ reports: mayReport, workflows: can('workflows.manage'), comms: can('comms.manage'), broadcast: can('comms.broadcast'), roles: can('roles.manage') }}>
+      <Page key={`${orgId}${hash}`} route={route} />
+    </AppShell>
   )
 }
 
@@ -173,5 +136,5 @@ export default function App() {
   }, [qc])
   if (session === undefined) return null
   if (!session) return <AuthPage />
-  return <OrgProvider key={session.user.id} userId={session.user.id}><Shell /></OrgProvider>
+  return <OrgProvider key={session.user.id} userId={session.user.id}><Signed email={session.user.email ?? ''} /></OrgProvider>
 }
