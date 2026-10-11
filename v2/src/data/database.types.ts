@@ -43,6 +43,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"dashboard_widgets": {
+                  Row: {
+                    "created_at": string,"id": string,"kind": string,"org_id": string,"position": number,"report_id": string,"span": number,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"kind": string,"org_id": string,"position"?: number,"report_id": string,"span"?: number,"title": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"kind"?: string,"org_id"?: string,"position"?: number,"report_id"?: string,"span"?: number,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dashboard_widgets_report_id_org_id_fkey"
+      columns: ["report_id","org_id"]
+isOneToOne: false
+      referencedRelation: "saved_reports"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 },"form_submissions": {
                   Row: {
                     "answers": NonNullable<Json>,"created_at": string,"form_id": string,"id": string,"node_id": string | null,"org_id": string,"outcome": string,"record_id": string | null,"submitted_by": string,"task_id": string | null
@@ -275,6 +295,26 @@ isOneToOne: false
       referencedColumns: ["id","org_id"]
     }
                   ]
+                },"record_pdfs": {
+                  Row: {
+                    "attempts": number,"created_at": string,"error": string | null,"finished_at": string | null,"id": string,"next_attempt_at": string,"org_id": string,"path": string | null,"record_id": string,"requested_by": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"next_attempt_at"?: string,"org_id": string,"path"?: string | null,"record_id": string,"requested_by"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"next_attempt_at"?: string,"org_id"?: string,"path"?: string | null,"record_id"?: string,"requested_by"?: string | null,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "record_pdfs_record_id_org_id_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 },"records": {
                   Row: {
                     "created_at": string,"current_node_id": string | null,"data": NonNullable<Json>,"error": string | null,"id": string,"label": string | null,"org_id": string,"started_by": string,"status": string,"step": number,"title": string,"updated_at": string,"workflow_id": string
@@ -289,6 +329,26 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "records_workflow_id_org_id_fkey"
+      columns: ["workflow_id","org_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"report_templates": {
+                  Row: {
+                    "created_at": string,"fields": NonNullable<Json>,"header": string,"id": string,"org_id": string,"signoff": NonNullable<Json>,"updated_at": string,"updated_by": string | null,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"fields"?: NonNullable<Json>,"header"?: string,"id"?: string,"org_id": string,"signoff"?: NonNullable<Json>,"updated_at"?: string,"updated_by"?: string | null,"workflow_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"fields"?: NonNullable<Json>,"header"?: string,"id"?: string,"org_id"?: string,"signoff"?: NonNullable<Json>,"updated_at"?: string,"updated_by"?: string | null,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "report_templates_workflow_id_org_id_fkey"
       columns: ["workflow_id","org_id"]
 isOneToOne: false
       referencedRelation: "workflows"
@@ -339,6 +399,26 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "orgs"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"saved_reports": {
+                  Row: {
+                    "aggregate": Json | null,"columns": NonNullable<Json>,"created_at": string,"created_by": string | null,"filters": NonNullable<Json>,"group_by": Json | null,"id": string,"name": string,"org_id": string,"updated_at": string,"updated_by": string | null,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "aggregate"?: Json | null,"columns"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"filters"?: NonNullable<Json>,"group_by"?: Json | null,"id"?: string,"name": string,"org_id": string,"updated_at"?: string,"updated_by"?: string | null,"workflow_id": string
+                  }
+                  Update: {
+                    "aggregate"?: Json | null,"columns"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"filters"?: NonNullable<Json>,"group_by"?: Json | null,"id"?: string,"name"?: string,"org_id"?: string,"updated_at"?: string,"updated_by"?: string | null,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "saved_reports_workflow_id_org_id_fkey"
+      columns: ["workflow_id","org_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id","org_id"]
     }
                   ]
                 },"scheduled_actions": {
@@ -488,11 +568,17 @@ isOneToOne: false
 "remove_member":
 { Args: { "p_member_id": string }; Returns: undefined
                            },
+"request_record_pdf":
+{ Args: { "p_record": string }; Returns: string
+                           },
 "require_permission":
 { Args: { "p_org": string,"p_perm": string }; Returns: undefined
                            },
 "retry_message":
 { Args: { "p_message": string }; Returns: undefined
+                           },
+"save_dashboard_layout":
+{ Args: { "p_layout": Json,"p_org": string }; Returns: undefined
                            },
 "save_role":
 { Args: { "p_name": string,"p_org": string,"p_permissions": (string)[],"p_role_id": string }; Returns: string
@@ -505,6 +591,12 @@ isOneToOne: false
                            },
 "storage_path_org":
 { Args: { "p_name": string }; Returns: string
+                           },
+"storage_path_record":
+{ Args: { "p_name": string }; Returns: string
+                           },
+"wake_render_pdfs":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            }
           }
           Enums: {

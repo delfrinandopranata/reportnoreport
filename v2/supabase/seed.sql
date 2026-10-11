@@ -83,3 +83,21 @@ select vault.create_secret('local-cron-secret', 'cron_secret');
 
 -- Phase 4: pg_cron → send-messages (local values only; hosted projects set their own, see README).
 select vault.create_secret('http://host.docker.internal:54321/functions/v1/send-messages', 'send_messages_url');
+-- Phase 5: pg_cron / request_record_pdf → render-pdfs (local value only; hosted projects set their own, see README).
+select vault.create_secret('http://host.docker.internal:54321/functions/v1/render-pdfs', 'render_pdfs_url');
+
+-- The seeded Leave approval gets a report template, a saved report and a two-widget dashboard.
+insert into report_templates (org_id, workflow_id, header, fields, signoff, updated_by) values
+  ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000c001',
+   E'Leave record\nAlpha School, Human Resources',
+   '[{"nodeId":"start","key":"name"},{"nodeId":"start","key":"leave_type"},{"nodeId":"start","key":"reason"},
+     {"nodeId":"start","key":"start"},{"nodeId":"start","key":"end"},{"nodeId":"start","key":"days"},
+     {"nodeId":"start","key":"claims"},{"nodeId":"start","key":"total"},{"nodeId":"approve","key":"comment"}]',
+   '["start","approve"]', '00000000-0000-0000-0000-0000000000a1');
+insert into saved_reports (id, org_id, workflow_id, name, columns, filters, group_by, aggregate, created_by, updated_by) values
+  ('0000000a-0000-0000-0000-00000000e001', '0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000c001',
+   'Leave days by type', '[{"meta":"title"},{"field":"leave_type"},{"field":"days"},{"meta":"status"}]', '[]',
+   '{"field":"leave_type"}', '{"fn":"sum","field":"days"}', '00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1');
+insert into dashboard_widgets (org_id, report_id, kind, title, span, position) values
+  ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000e001', 'number', 'Leave days taken', 1, 1),
+  ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-00000000e001', 'bar', 'Leave days by type', 2, 2);

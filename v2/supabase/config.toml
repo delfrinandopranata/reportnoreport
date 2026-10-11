@@ -420,3 +420,10 @@ verify_jwt = false
 
 [functions.send-messages]
 verify_jwt = false
+
+[functions.render-pdfs]
+verify_jwt = false
+static_files = ["./functions/render-pdfs/fonts/*.ttf"]
+
+[functions.run-report]
+verify_jwt = true
