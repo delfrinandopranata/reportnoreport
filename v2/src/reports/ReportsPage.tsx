@@ -4,12 +4,13 @@ import { useOrg } from '../rbac/useOrg'
 import { useWorkflows } from '../workflows/api'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { PlusIcon, XIcon } from '../ui/icons'
+import { NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
+import { Empty } from './parts'
 import { createReport, deleteReport, useReports, useWidgets, type ReportListRow } from './api'
 
 const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
@@ -58,52 +59,50 @@ export function ReportsPage() {
     : `${doomed.name} will be deleted for everyone and cannot be recovered. Records are not changed.`
   return (
     <section className="flex flex-col gap-4" aria-labelledby="reports-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 id="reports-h" className="page-title" tabIndex={-1}>Reports</h1>
-        {manage && !!reports.data?.length && <button type="button" className="rnr-btn rnr-btn-primary ml-auto" onClick={() => setCreating(true)}><PlusIcon />New report<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>}
-      </div>
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Work</p>
+          <h1 id="reports-h" className="rnr-page-title" tabIndex={-1}>Reports</h1>
+        </div>
+        {manage && !!reports.data?.length && (
+          <div className="rnr-page-actions">
+            <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New report<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>
+          </div>
+        )}
+      </header>
       <p className="rnr-caption" role="status">{notice}</p>
       {reports.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
       {reports.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The reports did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void reports.refetch()}>Try again</button></div>
-        </div>
+        <Empty icon={XIcon} title="Reports did not load" alert
+          action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void reports.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
       )}
       {firstRun && manage && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <h3 className="rnr-card-title">Leave days by type</h3>
-            <p className="rnr-muted">Grouped · Leave approval</p>
-          </div>
-          <h2 className="dialog-title">Build your first report</h2>
-          <p className="rnr-muted">Count, add up and export the records of a workflow. Build a report here, then show it on the dashboard.</p>
-          <div><button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New report</button></div>
-        </div>
+        <Empty icon={NAV_ICONS.reports} title="Build your first report"
+          action={<button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New report</button>}>
+          Count, add up and export the records of a workflow. Build a report here, then show it on the dashboard.
+        </Empty>
       )}
       {firstRun && !manage && (
-        <div className="rnr-card gap-3">
-          <h2 className="dialog-title">No reports yet</h2>
-          <p className="rnr-muted">No reports yet. Ask a reports manager to create one.</p>
-          <div><a className="rnr-btn rnr-btn-secondary" href="#/inbox">Go to inbox</a></div>
-        </div>
+        <Empty icon={NAV_ICONS.reports} title="No reports yet" action={<a className="rnr-btn rnr-btn-secondary" href="#/inbox">Go to inbox</a>}>
+          No reports yet. Ask a reports manager to create one.
+        </Empty>
       )}
       {!!reports.data?.length && (
         <div className="rnr-card rnr-table-card">
           <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Reports in {orgs.find((o) => o.id === orgId)?.name ?? 'your organisation'}</caption>
-            <thead><tr><th scope="col">Name</th><th scope="col">Workflow</th><th scope="col">Kind</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+            <caption className="rnr-sr-only">Reports in {orgs.find((o) => o.id === orgId)?.name ?? 'your organisation'}</caption>
+            <thead><tr><th scope="col">Name</th><th scope="col">Workflow</th><th scope="col">Kind</th><th scope="col" className="num">Updated</th><th scope="col"><span className="rnr-sr-only">Actions</span></th></tr></thead>
             <tbody>
               {reports.data.map((r) => (
                 <tr key={r.id}>
-                  <td>{r.name}</td>
+                  <th scope="row">{r.name}</th>
                   <td>{r.workflow?.name ?? 'A workflow you cannot see'}</td>
                   <td>{r.group_by ? 'Grouped' : 'Table'}</td>
                   <td className="num"><Day iso={r.updated_at} /></td>
                   <td>
                     <div className="flex justify-end gap-1 whitespace-nowrap">
-                      <a className="rnr-btn rnr-btn-secondary" href={`#/reports/${r.id}`} aria-label={`Open ${r.name}`}>Open</a>
-                      {manage && <button type="button" className="rnr-btn rnr-btn-danger" aria-label={`Delete ${r.name}`} onClick={() => { setDeleteError(null); setDoomed(r) }}>Delete</button>}
+                      <a className="rnr-btn rnr-btn-secondary rnr-btn-sm" href={`#/reports/${r.id}`} aria-label={`Open ${r.name}`}>Open</a>
+                      {manage && <button type="button" className="rnr-btn rnr-btn-ghost rnr-btn-sm" aria-label={`Delete ${r.name}`} onClick={() => { setDeleteError(null); setDoomed(r) }}>Delete</button>}
                     </div>
                   </td>
                 </tr>

@@ -7,7 +7,7 @@ import type { Field, Rule } from '../forms/logic'
 import { useWorkflow } from '../workflows/api'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { BackIcon, CheckIcon, DownIcon, DownloadIcon, PencilIcon, TrashIcon, UpIcon } from '../ui/icons'
+import { BackIcon, CheckIcon, DownIcon, DownloadIcon, NAV_ICONS, PencilIcon, RightIcon, SearchIcon, TrashIcon, UpIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
@@ -20,6 +20,7 @@ import {
   type Column, type DataColumn,
 } from './logic'
 import { ReportError, downloadCsv, updateReport, useReport, useRunReport, type ReportFields, type RunBody, type SavedReport } from './api'
+import { Empty, Note } from './parts'
 import { ResultTable } from './ResultTable'
 import { lastPage, pageText, skippedText, totalsText } from './text'
 
@@ -29,13 +30,11 @@ export function ReportPage({ id }: { id: string }) {
   if (report.isPending) return <Skeleton rows={[{ w: '40%', h: 32 }, { w: '100%', h: 320 }]} />
   if (report.isError) {
     return (
-      <div className="rnr-card gap-3 max-w-xl">
-        <p role="alert">This report did not load. Check your connection and try again.</p>
-        <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void report.refetch()}>Try again</button></div>
-      </div>
+      <Empty icon={XIcon} title="This report did not load" alert
+        action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void report.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
     )
   }
-  if (!report.data) return <div className="rnr-card gap-3 max-w-xl"><h1 className="page-title">This report does not exist</h1><p className="rnr-muted">It may have been deleted.</p></div>
+  if (!report.data) return <div className="rnr-empty"><h1 className="rnr-page-title">This report does not exist</h1><p>It may have been deleted.</p></div>
   return <ReportView key={generation} saved={report.data} onReload={async () => { await report.refetch(); setGeneration((g) => g + 1) }} />
 }
 
@@ -155,16 +154,16 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
           )}
         </fieldset>
       )}
-      {error && <p className="rnr-error" role="alert">{error}</p>}
+      {error && <Note>{error}</Note>}
       {conflict && (
-        <div className="flex flex-col items-start gap-2" role="alert">
-          <p className="rnr-error">This report was changed by someone else. Reload to see their changes.</p>
-          <button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={reloading.busy} onClick={() => void reloading.run(onReload)}>
+        <>
+          <Note>This report was changed by someone else. Reload to see their changes.</Note>
+          <button type="button" className="rnr-btn rnr-btn-secondary self-start" aria-busy={reloading.busy} onClick={() => void reloading.run(onReload)}>
             {reloading.busy && <span className="rnr-spin" aria-hidden="true" />}{reloading.busy ? 'Reloading…' : 'Reload report'}
           </button>
-        </div>
+        </>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="rnr-actions">
         <button type="submit" className="rnr-btn rnr-btn-primary" aria-busy={save.busy}>
           {save.busy && <span className="rnr-spin" aria-hidden="true" />}
           {save.saved && !save.busy && <span className="rnr-pop" aria-hidden="true"><CheckIcon /></span>}
@@ -175,59 +174,57 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
     </form>
   ) : (
     <div className="flex flex-col gap-2">
-      <h2 className="dialog-title hidden lg:block">About this report</h2>
       <p className="rnr-muted">Columns: {f.columns.map((c) => columnLabel(c, cols)).join(', ')}</p>
       <p className="rnr-muted">{f.filters.length ? `${f.filters.length} ${f.filters.length === 1 ? 'filter' : 'filters'}` : 'No filters'}{f.group_by ? `. Grouped by ${columnLabel(f.group_by, cols)}` : ''}</p>
     </div>
   )
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby={`${uid}-h`}>
-      <div className="flex flex-col gap-1">
-        <a className="rnr-btn rnr-btn-ghost self-start" href="#/reports"><BackIcon />Back to reports</a>
-        <h1 id={`${uid}-h`} className="page-title" tabIndex={-1}>{base.name}</h1>
-        <p className="rnr-muted">
-          Records of {wf.data && manage ? <a className="underline" href={`#/workflows/${wf.data.id}/report`}>{wf.data.name}</a> : wf.data?.name ?? 'this workflow'} that you can see.
-        </p>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <details className="rnr-card min-w-0 lg:self-start" open={wide || panelOpen} onToggle={(e) => setPanelOpen(e.currentTarget.open)}>
-          <summary className="label rnr-focus lg:hidden">{manage ? 'Report settings' : 'About this report'}</summary>
-          <div className="pt-3 lg:pt-0">{settings}</div>
+    <section className="rnr-wide flex flex-col gap-4" aria-labelledby={`${uid}-h`}>
+      <a className="rnr-crumb self-start" href="#/reports"><BackIcon />Back to reports</a>
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Reports</p>
+          <h1 id={`${uid}-h`} className="rnr-page-title" tabIndex={-1}>{base.name}</h1>
+          <p className="rnr-lede">
+            Records of {wf.data && manage ? <a className="rnr-link" href={`#/workflows/${wf.data.id}/report`}>{wf.data.name}</a> : wf.data?.name ?? 'this workflow'} that you can see.
+          </p>
+        </div>
+      </header>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+        <details className="rnr-folder min-w-0" open={wide || panelOpen} onToggle={(e) => setPanelOpen(e.currentTarget.open)}>
+          <summary className="rnr-folder-tab rnr-report-tab">{manage ? 'Report settings' : 'About this report'}<RightIcon size={14} /></summary>
+          <div className="rnr-folder-body">
+            <div className="rnr-perf" aria-hidden="true" />
+            {settings}
+          </div>
         </details>
-        <div className="flex flex-col gap-3 min-w-0">
+        <div className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <p className="label">{r ? totalsText(r) : ''}</p>
+            <p className="rnr-label">{r ? totalsText(r) : ''}</p>
             <button type="button" className="rnr-btn rnr-btn-secondary ml-auto" aria-busy={csv.busy} onClick={exportCsv}>
               {csv.busy ? <span className="rnr-spin" aria-hidden="true" /> : <DownloadIcon />}{csv.busy ? 'Preparing CSV…' : 'Download CSV'}
             </button>
           </div>
           {r?.kind === 'groups' && r.skipped > 0 && <p>{skippedText(r.skipped)}</p>}
           <p className="rnr-caption">Saves every row as {filename}, not just this page.{dirty ? ' It includes your unsaved changes.' : ''}</p>
-          {csvError && <p className="rnr-error" role="alert">{csvError}</p>}
+          {csvError && <Note>{csvError}</Note>}
           <p className="rnr-caption" role="status">{notice}</p>
-          <p className="sr-only" role="status" aria-live="polite">{announce}</p>
+          <p className="rnr-sr-only" role="status" aria-live="polite">{announce}</p>
           {noDraft && <div className="rnr-card"><p className="rnr-muted">Finish the settings to see results. {check.ok ? '' : check.error}</p></div>}
           {run.isPending && body && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
-          {failed?.status === 413 && (
-            <div className="rnr-card gap-2"><h2 className="dialog-title">Too many records for one report</h2><p className="rnr-muted">{failed.message}</p></div>
-          )}
+          {failed?.status === 413 && <Empty icon={XIcon} title="Too many records for one report">{failed.message}</Empty>}
           {failed && failed.status !== 413 && (
-            <div className="rnr-card gap-3">
-              <p role="alert">{failed.message}</p>
-              {failed.status === null && <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void run.refetch()}>Try again</button></div>}
-            </div>
+            <Empty icon={XIcon} title="Results did not load" alert
+              action={failed.status === null ? <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void run.refetch()}>Try again</button> : undefined}>{failed.message}</Empty>
           )}
           {run.data && r && r.total === 0 && (
-            <div className="rnr-card gap-2">
-              {r.totalRecords === 0 && f.filters.length === 0
-                ? <><h2 className="dialog-title">No records to show yet</h2><p className="rnr-muted">Records of {run.data.workflowName} that you can see appear here once people start it.</p></>
-                : <><h2 className="dialog-title">No records match these filters</h2><p className="rnr-muted">Remove or change a filter to see more.</p></>}
-            </div>
+            r.totalRecords === 0 && f.filters.length === 0
+              ? <Empty icon={NAV_ICONS.records} title="No records to show yet">Records of {run.data.workflowName} that you can see appear here once people start it.</Empty>
+              : <Empty icon={SearchIcon} title="No records match these filters">Remove or change a filter to see more.</Empty>
           )}
           {run.data && r && r.total > 0 && (
-            <>
-              <ResultTable data={run.data} busy={run.isPlaceholderData || run.isFetching} />
+            <ResultTable data={run.data} busy={run.isPlaceholderData || run.isFetching} foot={
               <nav className="rnr-pager" aria-label="Results pages">
                 <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page <= 1 || undefined} onClick={() => page > 1 && setPage(page - 1)}>Previous</button>
                 <span className="rnr-num" aria-live="polite">{pageText(page, pageSize, r.total)}</span>
@@ -238,8 +235,7 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
                     {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
-              </nav>
-            </>
+              </nav>} />
           )}
         </div>
       </div>
@@ -332,7 +328,7 @@ function ColumnList({ columns, cols, onChange, onNote }: { columns: Column[]; co
         <button ref={addButton} type="button" className="rnr-btn rnr-btn-secondary" aria-haspopup="menu" aria-expanded={menuOpen}
           aria-disabled={full || undefined} onClick={full ? undefined : toggleMenu} onKeyDown={full ? undefined : onButtonKey}>Add column</button>
         {menuOpen && !full && (
-          <div role="menu" aria-label="Add column" className="rnr-menu rnr-menu--wide absolute z-20 mt-1" onKeyDown={onMenuKey}>
+          <div role="menu" aria-label="Add column" className="rnr-menu rnr-menu--wide left-0 right-auto" onKeyDown={onMenuKey}>
             <div role="group" aria-label="Record">
               {meta.map((k) => <button key={k} type="button" role="menuitem" {...slot(n++)} className="rnr-menu-item" onClick={() => add({ meta: k })}>{META_LABELS[k]}</button>)}
             </div>

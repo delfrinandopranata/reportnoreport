@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { friendlyError } from '../ui/errors'
-import { DownloadIcon, XIcon } from '../ui/icons'
+import { CheckIcon, DownloadIcon, XIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
 import type { RecordStatus } from '../workflows/api'
 import { requestPdf, usePdfUrl, useRecordPdf, useReportTemplate } from './api'
 import { csvFilename } from './logic'
+import { Note } from './parts'
 
 const SLOW_MS = 60_000
 
@@ -49,20 +51,19 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
   if (template.isPending || pdf.isPending) return null // the record page is already painted; the panel appears when known
   if (pdf.isError || template.isError) {
     return (
-      <section className="rnr-card gap-2" aria-label="PDF">
-        <p role="alert">The PDF for this record did not load. Check your connection and try again.</p>
+      <FolderCard tab="PDF" headingId="pdf-h" className="rnr-report-folder">
+        <Note>The PDF for this record did not load. Check your connection and try again.</Note>
         <div><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => { void pdf.refetch(); void template.refetch() }}>Try again</button></div>
-      </section>
+      </FolderCard>
     )
   }
   if (!template.data && !latest) {
     if (!can('reports.manage')) return null
     return (
-      <section className="rnr-card gap-2" aria-labelledby="pdf-h">
-        <h2 id="pdf-h" className="dialog-title">PDF</h2>
+      <FolderCard tab="PDF" headingId="pdf-h" className="rnr-report-folder">
         <p className="rnr-muted">This workflow has no PDF template yet, so its records cannot be made into PDFs.</p>
         <div><a className="rnr-btn rnr-btn-secondary" href={`#/workflows/${workflowId}/report`}>Set up a PDF template</a></div>
-      </section>
+      </FolderCard>
     )
   }
   if (!latest && !mayRequest) return null
@@ -81,22 +82,21 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
   }
   const primaryGenerate = status !== 'done'
   return (
-    <section className="rnr-card gap-3" aria-labelledby="pdf-h">
-      <h2 id="pdf-h" className="dialog-title">PDF</h2>
+    <FolderCard tab="PDF" headingId="pdf-h" className="rnr-report-folder">
       {!latest && <p className="rnr-muted">No PDF has been made for this record yet.</p>}
       {queued && <p className="rnr-status"><span className="rnr-spin" aria-hidden="true" />Making the PDF…</p>}
       {queued && slowJob === latest?.id && <p className="rnr-caption">This is taking longer than usual. You can leave this page. The PDF appears here when it is ready.</p>}
-      {status === 'done' && <p className="rnr-muted">Made <When iso={made} />.</p>}
+      {status === 'done' && <p className="rnr-status" data-tone="ok"><CheckIcon /><span>Made <When iso={made} />.</span></p>}
       {status === 'failed' && (
         <>
-          <p className="rnr-status" data-wrap><XIcon size={14} />PDF not made</p>
+          <p className="rnr-status" data-tone="down" data-wrap><XIcon />PDF not made</p>
           <p className="rnr-muted">{latest?.error ?? 'The PDF could not be made.'}</p>
           {recordStatus === 'error' && <p className="rnr-caption">The record stays stopped. A new PDF does not restart it.</p>}
         </>
       )}
       <div className="flex flex-wrap items-center gap-2">
         {status === 'done' && open.data && (
-          <a className="rnr-btn rnr-btn-primary" href={open.data} target="_blank" rel="noopener noreferrer">Open PDF<span className="sr-only"> (opens in a new tab)</span></a>
+          <a className="rnr-btn rnr-btn-primary" href={open.data} target="_blank" rel="noopener noreferrer">Open PDF<span className="rnr-sr-only"> (opens in a new tab)</span></a>
         )}
         {status === 'done' && save.data && <a className="rnr-btn rnr-btn-secondary" href={save.data} download={downloadName}><DownloadIcon />Download PDF</a>}
         {mayRequest && template.data && (
@@ -108,9 +108,9 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
       </div>
       <p className="rnr-caption">Times in the PDF are shown in UTC.</p>
       <p className="rnr-caption">Names and answers in Tamil, Chinese, Japanese and other scripts the PDF font does not cover print as empty boxes.</p>
-      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announce}</p>
-      {(open.isError || save.isError) && <p className="rnr-error" role="alert">The PDF did not open. Reload the page and try again.</p>}
-      {error && <p className="rnr-error" role="alert">{error}</p>}
-    </section>
+      <p className="rnr-sr-only" role="status" aria-live="polite" aria-atomic="true">{announce}</p>
+      {(open.isError || save.isError) && <Note>The PDF did not open. Reload the page and try again.</Note>}
+      {error && <Note>{error}</Note>}
+    </FolderCard>
   )
 }

@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import type { RunResponse } from './api'
 import { cellText, keyText } from './text'
 
 const numeric = (cells: (string | number | null)[]) => cells.some((c) => typeof c === 'number') && cells.every((c) => c === null || typeof c === 'number')
 
-/** Rows or groups, exactly as run-report returned them. The caller states totals and paging. `bare` is for inside a widget card. */
-export function ResultTable({ data, busy, bare }: { data: RunResponse; busy: boolean; bare?: boolean }) {
+/** Rows or groups, exactly as run-report returned them. The caller states totals and paging. `bare` is for inside a widget card; `foot` (the pager) sits under the table inside the card. */
+export function ResultTable({ data, busy, bare, foot }: { data: RunResponse; busy: boolean; bare?: boolean; foot?: ReactNode }) {
   const r = data.result
   const isSum = data.aggregateFn === 'sum'
   const left = r.kind === 'groups' && r.skipped > 0
@@ -58,5 +59,5 @@ export function ResultTable({ data, busy, bare }: { data: RunResponse; busy: boo
       )}
     </table>
   )
-  return bare ? <div className="rnr-table-bare" aria-busy={busy}>{body}</div> : <div className="rnr-card rnr-table-card" aria-busy={busy}>{body}</div>
+  return bare ? <div className="rnr-table-bare" aria-busy={busy}>{body}</div> : <div className="rnr-card rnr-table-card" aria-busy={busy}>{body}{foot}</div>
 }

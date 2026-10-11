@@ -65,3 +65,41 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 }
 /* phase 7: batch 8 — comms, campaigns (Task 8 only) */
 /* phase 7: batch 9 — reports (Task 9 only) */
+@layer components {
+  /* folders on the report screens stack their content */
+  .rnr-report-folder .rnr-folder-body { display: grid; gap: var(--space-3); }
+  .rnr-report-folder .rnr-folder-body > .rnr-perf { margin-bottom: 0; }
+
+  /* report settings: the folder tab is the <summary> on narrow screens, a plain label from 1024px (the panel is then always open) */
+  .rnr-report-tab { gap: var(--space-2); cursor: pointer; list-style: none; }
+  .rnr-report-tab::-webkit-details-marker { display: none; }
+  .rnr-report-tab svg { transition: transform var(--t-fast) var(--ease); }
+  details[open] > .rnr-report-tab svg { transform: rotate(90deg); }
+  @media (min-width: 1024px) { .rnr-report-tab { cursor: default; pointer-events: none; } .rnr-report-tab svg { display: none; } }
+
+  /* dashboard: a number widget is a KPI tile whose tab wraps (a widget name is never truncated) */
+  .rnr-kpi-widget { display: flex; flex: 1; min-width: 0; }
+  .rnr-kpi-widget > .rnr-folder { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-top: 0; }
+  .rnr-kpi-widget .rnr-folder-tab { position: relative; align-self: flex-start; height: auto; min-height: var(--folder-tab-h); max-width: calc(100% - var(--folder-shoulder)); padding-block: var(--space-2); white-space: normal; overflow-wrap: anywhere; line-height: 16px; }
+  .rnr-kpi-widget .rnr-folder-body { flex: 1; align-content: start; }
+  .rnr-kpi-widget [inert] { display: grid; justify-items: start; gap: var(--space-2-5); }
+  .rnr-widget-bar { display: flex; align-items: center; gap: var(--space-1); justify-self: stretch; }
+  .rnr-kpi-widget[data-state="editing"] .rnr-folder-body { box-shadow: 0 0 0 4px var(--soft); }
+  .rnr-kpi-widget[data-state="placeholder"] { opacity: var(--opacity-placeholder); }
+  .rnr-kpi-widget[data-state="placeholder"] .rnr-folder-body { outline: 1.5px dashed var(--line-strong); outline-offset: -1px; }
+  .rnr-kpi-widget[data-state="overlay"] { transform: rotate(1deg); cursor: grabbing; }
+  .rnr-kpi-widget[data-state="overlay"] .rnr-folder-body { box-shadow: var(--sh-menu); }
+  [data-motion="flat"] .rnr-kpi-widget[data-state="overlay"] { transform: none; }
+  .rnr-drag-overlay > .rnr-kpi-widget { height: 100%; }
+
+  /* The PDF page preview: ink on white in Inter, the same in every theme and accent, because the file it previews is (design/README section 14). Literal colours on purpose. */
+  .rnr-pdf-page { --pdf-ink: #111; --pdf-soft: #555; --pdf-rule: #c9c9c9; display: grid; gap: var(--space-2); padding: var(--space-5); border: 1px solid var(--pdf-rule); border-radius: var(--r-key); background: #fff; color: var(--pdf-ink); font: 400 13px/18px Inter, system-ui, sans-serif; overflow-wrap: anywhere; }
+  .rnr-pdf-page p, .rnr-pdf-page h3 { margin: 0; }
+  .rnr-pdf-page-note { font-size: 12px; line-height: 16px; color: var(--pdf-soft); }
+  .rnr-pdf-page-title { font-size: 18px; line-height: 24px; font-weight: 600; }
+  .rnr-pdf-page-step { font-size: 14px; line-height: 20px; font-weight: 600; }
+  .rnr-pdf-page-header { white-space: pre-wrap; }
+  .rnr-pdf-page-label { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--pdf-soft); }
+  .rnr-pdf-page-rule { margin: 0; border: 0; border-top: 1px solid var(--pdf-rule); }
+  .rnr-pdf-page-sig { width: 120px; height: 48px; border-bottom: 1px solid var(--pdf-soft); }
+}

@@ -9,14 +9,15 @@ import { CSS } from '@dnd-kit/utilities'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { GripIcon, MoreIcon, PlusIcon, XIcon } from '../ui/icons'
+import { GripIcon, MoreIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useLeaveGuard } from '../ui/useLeaveGuard'
 import { useMenu } from '../ui/useMenu'
 import { addWidget, readDashboard, removeWidget, saveLayout, useReports, useWidgets, type WidgetKind, type WidgetRow } from './api'
-import { WidgetBody } from './Widget'
+import { Empty, Note } from './parts'
+import { WidgetBody, WidgetCard } from './Widget'
 
 type Span = 1 | 2 | 4
 type Draft = { rows: WidgetRow[]; version: number }
@@ -106,12 +107,16 @@ export function DashboardPage() {
   })
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="dash-h">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 id="dash-h" className="page-title" tabIndex={-1}>Dashboard</h1>
-        {manage && !draft && count > 0 && <button type="button" className="rnr-btn rnr-btn-secondary ml-auto" onClick={() => edit()}>Edit layout</button>}
+    <section className="rnr-wide flex flex-col gap-4" aria-labelledby="dash-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Work</p>
+          <h1 id="dash-h" className="rnr-page-title" tabIndex={-1}>Dashboard</h1>
+          <p className="rnr-lede">{draft ? `Layout changes apply to everyone in ${orgName}.` : `This dashboard is shared by everyone in ${orgName}. Each person sees numbers for the records they can see.`}</p>
+        </div>
+        {manage && !draft && count > 0 && <div className="rnr-page-actions"><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => edit()}>Edit layout</button></div>}
         {draft && (
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="rnr-page-actions">
             <button id="dash-add" type="button" className="rnr-btn rnr-btn-secondary" onClick={() => setAdding(true)}><PlusIcon />Add widget</button>
             <button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => leave()}>Cancel</button>
             <button type="button" className="rnr-btn rnr-btn-primary" aria-busy={saving.busy} onClick={() => void save()}>
@@ -119,43 +124,29 @@ export function DashboardPage() {
             </button>
           </div>
         )}
-      </div>
-      <p className="rnr-muted">{draft ? `Layout changes apply to everyone in ${orgName}.` : `This dashboard is shared by everyone in ${orgName}. Each person sees numbers for the records they can see.`}</p>
-      <p className="sr-only" role="status" aria-live="polite">{note}</p>
+      </header>
+      <p className="rnr-sr-only" role="status" aria-live="polite">{note}</p>
       {error && (
-        <div className="flex flex-col items-start gap-2" role="alert">
-          <p className="rnr-error">{error}</p>
+        <div className="flex flex-col items-start gap-2">
+          <Note>{error}</Note>
           {stale && <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void reload()}>Reload dashboard</button>}
         </div>
       )}
       {widgets.isPending && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
       {widgets.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The dashboard did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void widgets.refetch()}>Try again</button></div>
-        </div>
+        <Empty icon={XIcon} title="The dashboard did not load" alert
+          action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void widgets.refetch()}>Try again</button>}>Check your connection, then try again.</Empty>
       )}
       {widgets.data && count === 0 && manage && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <header className="rnr-card-head"><h3 className="rnr-card-title">Leave days by type</h3></header>
-            <p className="rnr-kpi">12</p>
-            <p className="rnr-caption">Records</p>
-          </div>
-          <h2 className="dialog-title">Build your dashboard</h2>
-          <p className="rnr-muted">{reports.data?.length === 0 ? 'Create a report first, then add it here.' : `Show a saved report as a number, a table or a chart. Everyone in ${orgName} sees the same layout.`}</p>
-          <div>
-            {reports.data?.length === 0
-              ? <a className="rnr-btn rnr-btn-secondary" href="#/reports">Go to reports</a>
-              : <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => edit(() => setAdding(true))}><PlusIcon />Add widget</button>}
-          </div>
-        </div>
+        <Empty icon={NAV_ICONS.dashboard} title="Build your dashboard"
+          action={reports.data?.length === 0
+            ? <a className="rnr-btn rnr-btn-secondary" href="#/reports">Go to reports</a>
+            : <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => edit(() => setAdding(true))}><PlusIcon />Add widget</button>}>
+          {reports.data?.length === 0 ? 'Create a report first, then add it here.' : `Show a saved report as a number, a table or a chart. Everyone in ${orgName} sees the same layout.`}
+        </Empty>
       )}
       {widgets.data && count === 0 && !manage && (
-        <div className="rnr-card gap-3">
-          <h2 className="dialog-title">Nothing on the dashboard yet</h2>
-          <p className="rnr-muted">Ask a reports manager to add widgets.</p>
-        </div>
+        <Empty icon={NAV_ICONS.dashboard} title="Nothing on the dashboard yet">Ask a reports manager to add widgets.</Empty>
       )}
       {count > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={({ active }: DragStartEvent) => setDragging(active.id)} onDragEnd={onDragEnd}
@@ -170,7 +161,7 @@ export function DashboardPage() {
             },
           }}>
           <SortableContext items={shown.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <ol ref={grid} className="rnr-grid grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" aria-label="Dashboard widgets">
+            <ol ref={grid} className="rnr-grid" aria-label="Dashboard widgets">
               {shown.map((w, i) => (draft
                 ? (
                   <EditCard key={w.id} w={w} first={i === 0} last={i === count - 1}
@@ -179,26 +170,18 @@ export function DashboardPage() {
                     onRemove={() => setDoomed(w)} />
                 )
                 : (
-                  <li key={w.id} className={`rnr-card ${SPAN[w.span]}`}>
-                    <header className="rnr-card-head">
-                      <h2 className="rnr-card-title">{w.title}</h2>
-                      <a className="rnr-btn rnr-btn-ghost ml-auto shrink-0 whitespace-nowrap" href={`#/reports/${w.report_id}`} aria-label={`Open report: ${w.title}`}>Open report</a>
-                    </header>
-                    <WidgetBody w={w} />
+                  <li key={w.id} className={`flex ${SPAN[w.span]}`}>
+                    <WidgetCard w={w} link><WidgetBody w={w} /></WidgetCard>
                   </li>
                 )))}
             </ol>
           </SortableContext>
           <DragOverlay>
             {dragging !== null && shown.find((w) => w.id === dragging) && (
-              <div className="rnr-drag-overlay">
-                <div className="rnr-card" data-state="overlay">
-                  <header className="rnr-card-head">
-                    <span className="rnr-handle" aria-hidden="true"><GripIcon /></span>
-                    <h2 className="rnr-card-title">{title(dragging)}</h2>
-                  </header>
+              <div className="rnr-drag-overlay flex">
+                <WidgetCard w={shown.find((w) => w.id === dragging)!} state="overlay" handle={<span className="rnr-handle" aria-hidden="true"><GripIcon /></span>}>
                   <div inert><WidgetBody w={shown.find((w) => w.id === dragging)!} /></div>
-                </div>
+                </WidgetCard>
               </div>
             )}
           </DragOverlay>
@@ -231,31 +214,32 @@ function EditCard({ w, first, last, onStep, onSpan, onRemove }: {
   const act = (fn: () => void) => () => { close(false); fn() }
   return (
     // dnd-kit positions the sorted card with an inline transform; nothing else here is styled inline.
-    <li ref={setNodeRef} data-id={w.id} className={`rnr-card ${SPAN[w.span]}`} data-state={isDragging ? 'placeholder' : 'editing'}
+    <li ref={setNodeRef} data-id={w.id} className={`flex ${SPAN[w.span]}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}>
-      <header className="rnr-card-head">
-        <button ref={setActivatorNodeRef} type="button" className="rnr-handle" data-ctl="handle" aria-label={`Drag ${w.title}`} {...attributes} {...listeners}><GripIcon /></button>
-        <h2 className="rnr-card-title">{w.title}</h2>
-        <div ref={box} className="rnr-menu-anchor ml-auto">
-          <button ref={button} type="button" className="rnr-icon-btn" data-ctl="options" aria-haspopup="menu" aria-expanded={open} aria-label={`Options for ${w.title}`}
-            onClick={toggle} onKeyDown={onButtonKey}><MoreIcon size={14} /></button>
-          {open && (
-            <div role="menu" aria-label={`Options for ${w.title}`} className="rnr-menu rnr-widget-menu" onKeyDown={onMenuKey}>
-              <button type="button" role="menuitem" {...slot(0)} className="rnr-menu-item" aria-disabled={first || undefined} onClick={act(() => onStep(-1))}>Move up</button>
-              <button type="button" role="menuitem" {...slot(1)} className="rnr-menu-item" aria-disabled={last || undefined} onClick={act(() => onStep(1))}>Move down</button>
-              <div className="rnr-menu-sep" role="separator" />
-              <div role="group" aria-label="Width">
-                {([1, 2, 4] as const).map((s, i) => (
-                  <button key={s} type="button" role="menuitemradio" aria-checked={w.span === s} {...slot(2 + i)} className="rnr-menu-item" onClick={act(() => onSpan(s))}>{SPAN_WORDS[s]}</button>
-                ))}
+      <WidgetCard w={w} state={isDragging ? 'placeholder' : 'editing'}
+        handle={<button ref={setActivatorNodeRef} type="button" className="rnr-handle" data-ctl="handle" aria-label={`Drag ${w.title}`} {...attributes} {...listeners}><GripIcon /></button>}
+        menu={(
+          <div ref={box} className="rnr-menu-anchor ml-auto">
+            <button ref={button} type="button" className="rnr-icon-btn" data-ctl="options" aria-haspopup="menu" aria-expanded={open} aria-label={`Options for ${w.title}`}
+              onClick={toggle} onKeyDown={onButtonKey}><MoreIcon size={20} /></button>
+            {open && (
+              <div role="menu" aria-label={`Options for ${w.title}`} className="rnr-menu rnr-widget-menu" onKeyDown={onMenuKey}>
+                <button type="button" role="menuitem" {...slot(0)} className="rnr-menu-item" aria-disabled={first || undefined} onClick={act(() => onStep(-1))}>Move up</button>
+                <button type="button" role="menuitem" {...slot(1)} className="rnr-menu-item" aria-disabled={last || undefined} onClick={act(() => onStep(1))}>Move down</button>
+                <div className="rnr-menu-sep" role="separator" />
+                <div role="group" aria-label="Width">
+                  {([1, 2, 4] as const).map((s, i) => (
+                    <button key={s} type="button" role="menuitemradio" aria-checked={w.span === s} {...slot(2 + i)} className="rnr-menu-item" onClick={act(() => onSpan(s))}>{SPAN_WORDS[s]}</button>
+                  ))}
+                </div>
+                <div className="rnr-menu-sep" role="separator" />
+                <button type="button" role="menuitem" {...slot(5)} className="rnr-menu-item is-danger" onClick={() => { close(); onRemove() }}>Remove widget</button>
               </div>
-              <div className="rnr-menu-sep" role="separator" />
-              <button type="button" role="menuitem" {...slot(5)} className="rnr-menu-item is-danger" onClick={() => { close(); onRemove() }}>Remove widget</button>
-            </div>
-          )}
-        </div>
-      </header>
-      <div inert><WidgetBody w={w} /></div>
+            )}
+          </div>
+        )}>
+        <div inert><WidgetBody w={w} /></div>
+      </WidgetCard>
     </li>
   )
 }
