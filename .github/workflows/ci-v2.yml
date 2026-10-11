@@ -41,7 +41,8 @@ jobs:
       - run: supabase test db
       - uses: denoland/setup-deno@v2
         with: { deno-version: v2.x }
-      # Real-database tests the plain `deno test` job skips: advance and send-messages races, run-report visibility, Realtime isolation.
+      # Real-database tests the plain `deno test` job skips: advance and send-messages races, campaign exactly-once and
+      # audience visibility, run-report visibility, Realtime isolation.
       - name: Env-gated Edge tests
         env: { DENO_NO_PACKAGE_JSON: "1" }
         run: |
@@ -49,4 +50,5 @@ jobs:
           export RNR_TEST_SUPABASE_URL="$API_URL" RNR_TEST_ANON_KEY="$ANON_KEY" RNR_TEST_DB_URL="$DB_URL"
           deno test --allow-env --allow-net --allow-read \
             supabase/functions/advance/race.test.ts supabase/functions/send-messages/race.test.ts \
+            supabase/functions/send-campaigns/db.test.ts \
             supabase/functions/run-report/visibility.test.ts supabase/functions/_integration/realtime.test.ts
