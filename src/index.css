@@ -24,3 +24,6 @@
 }
 
 body { background: var(--surface-000); color: var(--ink); font-family: var(--font-sans); }
+
+dialog.rnr-dialog { margin: auto; padding: 0; width: calc(100% - 2rem); }
+dialog.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
