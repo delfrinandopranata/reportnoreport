@@ -46,17 +46,17 @@ export function InviteForm({ orgId, roles, onDone, onNotice }: {
         </button>
       </div>
       <fieldset className="grid gap-2">
-        <legend className="rnr-label" style={{ color: 'var(--ink-label)' }}>Roles</legend>
+        <legend className="rnr-fieldset-label">Roles</legend>
         {roles ? (
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {roles.filter((r) => !r.is_owner).map((r) => (
-              <label key={r.id} className="flex items-center gap-2 text-ink-label min-h-[var(--touch-min)] pointer-coarse:min-h-[44px]">
-                <input type="checkbox" className="accent-brand" checked={picked.includes(r.id)} onChange={() => setPicked(toggle(picked, r.id))} />{r.name}
+              <label key={r.id} className="rnr-check">
+                <input type="checkbox" checked={picked.includes(r.id)} onChange={() => setPicked(toggle(picked, r.id))} />{r.name}
               </label>
             ))}
           </div>
         ) : <div className="rnr-skeleton" style={{ height: 20, width: 240 }} />}
-        <span className="rnr-hint">Choose none to add them with no permissions.</span>
+        <span className="rnr-caption">Choose none to add them with no permissions.</span>
       </fieldset>
       {error && <p id="invite-err" className="rnr-error" role="alert">{error}</p>}
     </form>

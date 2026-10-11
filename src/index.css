@@ -27,3 +27,16 @@ body { background: var(--surface-000); color: var(--ink); font-family: var(--fon
 
 dialog.rnr-dialog { margin: auto; padding: 0; width: calc(100% - 2rem); }
 dialog.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
+
+/* Native checkboxes in labels: ink tint (brand-solid is reserved), readable size, touch-sized rows on phones. */
+input[type="checkbox"] { width: 16px; height: 16px; flex: none; accent-color: var(--ink); }
+.rnr-check { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-label); font-size: 14px; line-height: 20px; }
+.rnr-check:has(:focus-visible) input { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.rnr-fieldset-label { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ink-label); }
+.rnr-caption { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+a:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (pointer: coarse) {
+  .rnr-btn, .rnr-input { min-height: var(--touch-min); }
+  .rnr-check { min-height: var(--touch-min); }
+  input[type="checkbox"] { width: 20px; height: 20px; }
+}

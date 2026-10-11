@@ -11,7 +11,7 @@ export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy
   useEffect(() => {
     const d = ref.current
     if (!d) return
-    if (open && !d.open) d.showModal()
+    if (open && !d.open) { d.showModal(); d.querySelector<HTMLElement>('[data-autofocus]')?.focus() } // safe default: Cancel
     if (!open && d.open) d.close()
   }, [open])
   return (
@@ -25,7 +25,7 @@ export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy
         <p id="cd-b" className="rnr-muted">{body}</p>
         {error && <p className="rnr-error" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button className="rnr-btn rnr-btn-secondary" type="button" autoFocus data-autofocus onClick={onClose}>Cancel</button>
+          <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-danger" type="button" aria-busy={busy} onClick={onConfirm}>
             {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? busyLabel : confirmLabel}
           </button>

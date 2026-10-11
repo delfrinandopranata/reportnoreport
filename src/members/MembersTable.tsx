@@ -48,8 +48,8 @@ export function MembersTable({ orgName, members, roles, failed, manage, busyId, 
                 <td>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {roles.map((r) => (
-                      <label key={r.id} className="flex items-center gap-2 text-ink-label">
-                        <input type="checkbox" className="accent-brand" disabled={!manage} checked={held.includes(r.id)}
+                      <label key={r.id} className="rnr-check">
+                        <input type="checkbox" disabled={!manage} checked={held.includes(r.id)}
                           onChange={() => onSetRoles(m, toggle(held, r.id))} />{r.name}
                       </label>
                     ))}

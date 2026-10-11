@@ -49,16 +49,16 @@ export function RoleEditor({ role, onSave, onClose }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           {PERMISSION_GROUPS.map((g) => (
             <fieldset key={g.group} className="grid gap-2 content-start">
-              <legend className="rnr-label">{g.group}</legend>
+              <legend className="rnr-fieldset-label">{g.group}</legend>
               {g.items.map((i) => {
                 const lacking = !draft.is_owner && !can(i.key)
                 return (
                   <div key={i.key} className="grid gap-1">
-                    <label className="flex items-start gap-2 text-ink-label">
-                      <input type="checkbox" className="accent-brand mt-1" checked={draft.is_owner || draft.permissions.includes(i.key)}
+                    <label className="rnr-check">
+                      <input type="checkbox" checked={draft.is_owner || draft.permissions.includes(i.key)}
                         disabled={draft.is_owner || lacking} onChange={() => toggle(i.key)} />{i.label}
                     </label>
-                    {lacking && <span className="rnr-hint">You do not hold this permission, so you cannot grant it.</span>}
+                    {lacking && <span className="rnr-caption">You do not hold this permission, so you cannot grant it.</span>}
                   </div>
                 )
               })}
