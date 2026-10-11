@@ -28,6 +28,8 @@ import { TemplatesPage } from './comms/TemplatesPage'
 import { TemplateEditor } from './comms/TemplateEditor'
 import { MessagesPage } from './comms/MessagesPage'
 import { ReportTemplatePage } from './reports/ReportTemplatePage'
+import { ReportsPage } from './reports/ReportsPage'
+import { ReportPage } from './reports/ReportPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -62,6 +64,8 @@ function Page({ route }: { route: Route }) {
     case 'workflow-edit': return <WorkflowEditor id={route.id} />
     case 'workflow-access': return <AccessPage id={route.id} />
     case 'workflow-report': return <ReportTemplatePage id={route.id} />
+    case 'reports': return <ReportsPage />
+    case 'report': return <ReportPage id={route.id} />
     case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
@@ -76,7 +80,8 @@ function Page({ route }: { route: Route }) {
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
-  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: can('reports.view') || can('reports.manage'), reportsManage: can('reports.manage') })
+  const mayReport = can('reports.view') || can('reports.manage')
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: mayReport, reportsManage: can('reports.manage') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
@@ -114,6 +119,7 @@ function Shell() {
           <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
             {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
             {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
+            {mayReport && link('#/reports', 'Reports', route.page === 'reports' || route.page === 'report')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
             {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
