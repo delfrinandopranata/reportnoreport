@@ -150,3 +150,16 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .rnr-table tbody tr:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 /* sr-only cells are absolutely positioned: without a positioned scroll container they sit at the table's far edge and widen the page. */
 .rnr-card:has(> table.rnr-table) { position: relative; }
+/* Inbox "Overdue" under the due time: the bundle's inline-flex beats the Tailwind `flex` utility (layer trap), so it sat beside the date. */
+.rnr-table td.num > .rnr-status { display: flex; }
+/* Menu panels scroll or clip, so the 2px outer ring is cut off: draw it inside, and mark the roving item even when focus was set by script. */
+.rnr-menu .rnr-menu-item:focus-visible { outline-offset: -2px; }
+.rnr-menu [role="menuitem"]:focus { background: var(--surface-200); }
+/* A status that wraps onto a second line (unknown variables): keep the icon full size and on the first line. */
+.rnr-status svg { flex: none; }
+.rnr-status[data-wrap] { align-items: flex-start; }
+.rnr-status[data-wrap] svg { margin-top: 3px; }
+/* Action blocks stack their rows full width: the bundle's align-items: flex-start beats the Tailwind items-stretch utility (layer trap). */
+.rnr-block.flex-col { align-items: stretch; }
+/* .rnr-bell's 36px minimum comes later in the cascade than the bundle's 44px coarse-pointer rule. */
+@media (pointer: coarse) { .rnr-bell { min-width: var(--touch-min); min-height: var(--touch-min); } }

@@ -182,7 +182,7 @@ function Editor({ tpl, reloaded, onReload }: { tpl: TemplateRow; reloaded: boole
           </div>
           <VariableMenu answers={answerKeys} recordTitle={record?.title ?? null} target={target === 'subject' ? 'subject' : 'message'} onPick={insert} />
           {unknownShown.length > 0 && (
-            <p className="rnr-status" aria-live="polite"><StopIcon size={14} />Not a variable, so it will be left empty: {unknownShown.map((u) => `{{${u}}}`).join(', ')}</p>
+            <p className="rnr-status" data-wrap aria-live="polite"><StopIcon size={14} />Not a variable, so it will be left empty: {unknownShown.map((u) => `{{${u}}}`).join(', ')}</p>
           )}
           {error && <p className="rnr-error" role="alert">{error}</p>}
           {conflict && (

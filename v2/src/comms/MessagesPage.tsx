@@ -95,7 +95,7 @@ export function MessagesPage() {
                   return (
                     <tr key={m.id} id={`msg-${m.id}`} tabIndex={-1}>
                       <td><span className="label">{m.recipient_email}</span><br /><span className="rnr-caption">{m.subject}</span></td>
-                      <td>
+                      <td className="whitespace-nowrap">
                         <span className="rnr-status"><Icon size={14} />{word}</span>
                         {tried && <><br /><span className="rnr-caption">{tried}</span></>}
                       </td>
@@ -103,7 +103,7 @@ export function MessagesPage() {
                         {m.error}
                         {hint && <>{m.error && <br />}<span className="rnr-caption">{hint}</span></>}
                       </td>
-                      <td className="num"><When iso={m.sent_at ?? m.created_at} /></td>
+                      <td className="num whitespace-nowrap"><When iso={m.sent_at ?? m.created_at} /></td>
                       <td>
                         <div className="flex justify-end whitespace-nowrap">
                           {m.status === 'failed' && (

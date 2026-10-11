@@ -78,7 +78,7 @@ export function TemplatesPage() {
                 <tr key={t.id}>
                   <td><span className="label">{t.name}</span>{t.is_system && <> <span className="rnr-chip">System</span></>}</td>
                   <td>{CHANNEL_WORDS[t.channel]}</td>
-                  <td className="num"><When iso={t.updated_at} /></td>
+                  <td className="num whitespace-nowrap"><When iso={t.updated_at} /></td>
                   <td>
                     <div className="flex justify-end gap-1 whitespace-nowrap">
                       <a className="rnr-btn rnr-btn-secondary" href={`#/templates/${t.id}`} aria-label={`Edit ${t.name}`}>Edit</a>
