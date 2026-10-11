@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { toStatement } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClient, useFirstTxnDate, useLedger, useLogoUrl } from './data/queries'
@@ -16,9 +16,8 @@ function useDates() {
   return { longDate: (date: string) => formatDate(date, dateFormat, true), shortDate: (date: string) => formatDate(date, dateFormat) }
 }
 
-const cell = 'px-3 py-2'
-const num = `${cell} text-right whitespace-nowrap tabular-nums`
-const neg = (value: number) => (value < 0 ? 'text-red-700' : '')
+/** Sheet figures: a negative balance is data-neg (--sheet-down) as well as carrying its minus sign. */
+const neg = (value: number) => (value < 0 ? true : undefined)
 
 /** Period controls, issuer, print button and the A4 paper wrapper shared by every statement. */
 export function StatementLayout({
@@ -29,6 +28,7 @@ export function StatementLayout({
   period,
   setPeriod,
   ready,
+  landscape = false,
   children,
 }: {
   back: { href: string; label: string; onClick?: () => void }
@@ -38,6 +38,8 @@ export function StatementLayout({
   period: Period
   setPeriod: (period: Period) => void
   ready: boolean
+  /** Wide ledgers (more columns than the single-client statement) print A4 landscape. */
+  landscape?: boolean
   children: ReactNode
 }) {
   const invalid = period.from > period.to
@@ -53,34 +55,36 @@ export function StatementLayout({
   }, [docTitle])
 
   return (
-    <div className="grid grid-cols-1 gap-6" data-tour="statement">
-      <div className="grid gap-4 print:hidden">
-        <a href={back.href} onClick={back.onClick ? (e) => { e.preventDefault(); back.onClick?.() } : undefined} className="inline-flex items-center gap-1 justify-self-start text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+    <div className={`grid grid-cols-1 gap-6 ${landscape ? 'rnr-wide print-landscape' : ''}`} data-tour="statement">
+      <div className="rnr-no-print grid gap-4">
+        <a href={back.href} onClick={back.onClick ? (e) => { e.preventDefault(); back.onClick?.() } : undefined} className="rnr-crumb justify-self-start">
           <Icon name="back" /> {back.label}
         </a>
-        <header className="flex flex-wrap items-end gap-3">
-          <div className="mr-auto">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            <p className="text-sm text-zinc-500">Choose the statement period, then print or save as PDF.</p>
+        <header className="rnr-page-head">
+          <div>
+            <h1 className="rnr-page-title">{title}</h1>
+            <p className="rnr-lede">Choose the statement period, then print or save as PDF.</p>
           </div>
-          <button type="button" className={`${btn.primary} max-sm:w-full`} onClick={() => print()} disabled={invalid || !ready} aria-describedby={invalid ? 'period-error' : undefined}>
-            <Icon name="printer" /> Print / Save PDF
-          </button>
+          <div className="rnr-page-actions">
+            <button type="button" className={btn.primary} onClick={() => print()} disabled={invalid || !ready} aria-describedby={invalid ? 'period-error' : undefined}>
+              <Icon name="printer" /> Print / Save PDF
+            </button>
+          </div>
         </header>
 
-        <div className="grid gap-4 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rnr-card grid gap-4">
           <PeriodPicker period={period} onChange={setPeriod} firstDate={firstDate} />
-          <p className="text-sm text-zinc-500">
-            Issuer, registration, bank and footer details come from <a href="#settings" className="font-medium underline">Settings</a>.
+          <p className="rnr-muted">
+            Issuer, registration, bank and footer details come from <a href="#settings" className="rnr-link font-medium">Settings</a>.
           </p>
-          {invalid && <p id="period-error" className="text-sm text-red-600 dark:text-red-400" role="alert">The start date must be on or before the end date.</p>}
+          {invalid && <p id="period-error" className="rnr-error" role="alert"><Icon name="alert" />The start date must be on or before the end date.</p>}
         </div>
       </div>
 
-      {/* The document itself: fixed light palette so print and screen match regardless of theme. */}
-      <article className="mx-auto w-full max-w-[210mm] overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-900 shadow-sm sm:p-10 print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:p-0 print:shadow-none">
-        <div className="min-w-[560px] print:min-w-0">{children}</div>
-      </article>
+      {/* The document itself: ink on white in every theme and accent, so print and screen match. */}
+      <div className="rnr-statement-frame">
+        <article className="rnr-statement" data-orientation={landscape ? 'landscape' : undefined} aria-label={title}>{children}</article>
+      </div>
     </div>
   )
 }
@@ -92,26 +96,26 @@ function DocHeader({ title, subtitle, meta }: { title: string; subtitle: string;
   const address = [o.address1, o.address2, [o.postcode, o.city].filter(Boolean).join(' '), o.state !== o.city ? o.state : '', o.country !== 'Malaysia' ? o.country : ''].filter(Boolean)
   const reg = o.showRegistrationOnStatement ? [o.registrationNo && `Reg. no. ${o.registrationNo}`, o.sstNo && `SST no. ${o.sstNo}`].filter(Boolean) : []
   return (
-    <header className="flex items-start justify-between gap-6 border-b-2 border-zinc-900 pb-5">
+    <header className="rnr-statement-head">
       <div className="flex gap-3">
-        {logo && <img src={logo} alt="" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-32 shrink-0 object-contain" />}
-        <div className="text-zinc-600">
-          <p className="text-lg font-semibold text-zinc-900">{o.name || 'Your business name'}</p>
+        {logo && <img src={logo} alt={o.name} onError={(e) => (e.currentTarget.hidden = true)} className="rnr-statement-logo shrink-0" />}
+        <div className="text-(--sheet-ink-2)">
+          <p className="text-[11pt] font-semibold text-(--sheet-ink)">{o.name || 'Your business name'}</p>
           {o.tradingName && <p>Trading as {o.tradingName}</p>}
           {reg.length > 0 && <p>{reg.join(' · ')}</p>}
           {address.length > 0 && <p>{address.join(', ')}</p>}
           {(o.phone || o.email) && <p>{[o.phone, o.email].filter(Boolean).join(' · ')}</p>}
-          <p className="mt-0.5 text-zinc-500">{subtitle}</p>
+          <p className="text-(--sheet-ink-3)">{subtitle}</p>
         </div>
       </div>
       <div className="shrink-0 text-right">
-        <h2 className="text-xl font-semibold tracking-wide uppercase">{title}</h2>
-        <dl className="mt-2 grid grid-cols-[auto_auto] justify-end gap-x-4 gap-y-0.5 text-zinc-600">
+        <h2 className="uppercase">{title}</h2>
+        <dl className="rnr-statement-meta mt-2 mb-0 justify-end">
           {[['Statement date', longDate(today())], ...meta, ['Currency', o.currency.split(' ')[0]]].map(([k, v]) => (
-            <div key={k} className="contents">
+            <Fragment key={k}>
               <dt>{k}</dt>
-              <dd className="text-zinc-900 tabular-nums">{v}</dd>
-            </div>
+              <dd className="text-(--sheet-ink)">{v}</dd>
+            </Fragment>
           ))}
         </dl>
       </div>
@@ -128,30 +132,30 @@ function Summary({ opening, receipts, payments, closing }: Statement) {
     ['Closing balance', closing],
   ] as const
   return (
-    <section className="mb-6 grid grid-cols-4 overflow-hidden rounded-lg border border-zinc-200 print:break-inside-avoid">
-      {items.map(([label, value], i) => (
-        <div key={label} className={`p-3 ${i ? 'border-l border-zinc-200' : ''} ${i === 3 ? 'bg-zinc-50' : ''}`}>
-          <p className="text-xs text-zinc-500">{label}</p>
-          <p className={`mt-0.5 font-semibold tabular-nums ${i === 3 ? 'text-base' : ''} ${neg(value)}`}>{fmt(value)}</p>
+    <dl className="rnr-statement-summary">
+      {items.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd data-neg={neg(value)}>{fmt(value)}</dd>
         </div>
       ))}
-    </section>
+    </dl>
   )
 }
 
-const Label = ({ children }: { children: ReactNode }) => <p className="mb-1 text-xs font-medium tracking-wide text-zinc-500 uppercase">{children}</p>
+const Label = ({ children }: { children: ReactNode }) => <p className="mb-1 font-mono text-[7.5pt] tracking-wider text-(--sheet-ink-3) uppercase">{children}</p>
 
 function DocFooter({ children }: { children: ReactNode }) {
   const { firm: o } = useSession()
   const { data: banks = [] } = useBankAccounts()
   const bank = banks.find((b) => b.isDefault)
   return (
-    <footer className="mt-10 border-t border-zinc-200 pt-4 text-xs leading-relaxed text-zinc-500 print:break-inside-avoid">
+    <footer className="rnr-statement-foot print:break-inside-avoid">
       {children}
       <p className="mt-1">{o.statementNote.replace('{days}', String(o.discrepancyDays))}</p>
       {bank?.accountNo && (
         <p className="mt-3">
-          <span className="font-medium text-zinc-700">Settlement details:</span> {[bank.bankName, bank.accountName, bank.accountNo].filter(Boolean).join(' · ')}
+          <span className="font-medium text-(--sheet-ink-2)">Settlement details:</span> {[bank.bankName, bank.accountName, bank.accountNo].filter(Boolean).join(' · ')}
         </p>
       )}
       <p className="mt-4">This is a computer-generated statement. No signature is required.</p>
@@ -164,50 +168,51 @@ function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
   const { shortDate } = useDates()
   // Fixed widths keep columns aligned when several ledgers stack on one statement.
   return (
-    <table className="w-full table-fixed">
+    <table className="table-fixed">
+      <caption className="rnr-sr-only">Statement of account</caption>
       <colgroup>
-        <col className="w-[17%]" />
+        <col className="w-[15%]" />
         <col />
-        <col className="w-[16%]" />
-        <col className="w-[16%]" />
-        <col className="w-[17%]" />
+        <col className="w-[19%]" />
+        <col className="w-[19%]" />
+        <col className="w-[19%]" />
       </colgroup>
       <thead>
-        <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600">
-          <th className={`${cell} font-medium`}>Date</th>
-          <th className={`${cell} font-medium`}>Description</th>
-          <th className={`${num} font-medium`}>Receipts</th>
-          <th className={`${num} font-medium`}>Payments</th>
-          <th className={`${num} font-medium`}>Balance</th>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Description</th>
+          <th scope="col" className="num">Receipts</th>
+          <th scope="col" className="num">Payments</th>
+          <th scope="col" className="num">Balance</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-zinc-100">
-        <tr className="text-zinc-600">
-          <td className={`${cell} whitespace-nowrap tabular-nums`}>{shortDate(period.from)}</td>
-          <td className={`${cell} italic`} colSpan={3}>Balance brought forward</td>
-          <td className={`${num} font-medium text-zinc-900`}>{fmt(soa.opening)}</td>
+      <tbody>
+        <tr>
+          <td className="whitespace-nowrap">{shortDate(period.from)}</td>
+          <td className="italic" colSpan={3}>Balance brought forward</td>
+          <td className="num font-medium" data-neg={neg(soa.opening)}>{fmt(soa.opening)}</td>
         </tr>
         {soa.lines.map((l) => (
           <tr key={l.id} className="print:break-inside-avoid">
-            <td className={`${cell} whitespace-nowrap tabular-nums`}>{shortDate(l.date)}</td>
-            <td className={cell}>{l.note || (l.kind === 'in' ? 'Receipt' : 'Payment')}</td>
-            <td className={num}>{l.kind === 'in' ? fmt(l.amount) : ''}</td>
-            <td className={num}>{l.kind === 'out' ? fmt(l.amount) : ''}</td>
-            <td className={`${num} ${neg(l.balance)}`}>{fmt(l.balance)}</td>
+            <td className="whitespace-nowrap">{shortDate(l.date)}</td>
+            <td>{l.note || (l.kind === 'in' ? 'Receipt' : 'Payment')}</td>
+            <td className="num">{l.kind === 'in' ? fmt(l.amount) : ''}</td>
+            <td className="num">{l.kind === 'out' ? fmt(l.amount) : ''}</td>
+            <td className="num" data-neg={neg(l.balance)}>{fmt(l.balance)}</td>
           </tr>
         ))}
         {!soa.lines.length && (
           <tr>
-            <td className={`${cell} text-zinc-500`} colSpan={5}>No transactions in this period.</td>
+            <td colSpan={5}>No transactions in this period.</td>
           </tr>
         )}
       </tbody>
       <tfoot>
-        <tr className="border-t-2 border-zinc-900 font-semibold">
-          <td className={cell} colSpan={2}>Closing balance as at {shortDate(period.to)}</td>
-          <td className={num}>{fmt(soa.receipts)}</td>
-          <td className={num}>{fmt(soa.payments)}</td>
-          <td className={`${num} ${neg(soa.closing)}`}>{fmt(soa.closing)}</td>
+        <tr>
+          <td colSpan={2}>Closing balance as at {shortDate(period.to)}</td>
+          <td className="num">{fmt(soa.receipts)}</td>
+          <td className="num">{fmt(soa.payments)}</td>
+          <td className="num" data-neg={neg(soa.closing)}>{fmt(soa.closing)}</td>
         </tr>
       </tfoot>
     </table>
@@ -215,7 +220,7 @@ function LedgerTable({ soa, period }: { soa: Statement; period: Period }) {
 }
 
 const Missing = () => (
-  <div className="grid place-items-center gap-3 py-24 text-center">
+  <div className="rnr-empty">
     <p className="font-medium">This client doesn’t exist any more.</p>
     <a href="#clients" className={btn.primary}>Back to clients</a>
   </div>
@@ -228,7 +233,7 @@ export function StatementPage({ id }: { id: string }) {
       <div role="status" aria-label="Loading statement" className="grid gap-4">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-16 w-full max-w-md" />
-        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full" />
         <span className="sr-only">Loading…</span>
       </div>
     )
@@ -274,18 +279,21 @@ function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: C
   const qc = useQueryClient()
   if (error) {
     return (
-      <div role="alert" className="grid justify-items-start gap-2 py-6">
-        <p className="font-medium text-red-700">We couldn’t load this statement.</p>
-        <p className="text-zinc-600">{error.message}</p>
-        <button type="button" className="rounded-lg border border-zinc-300 px-3 py-1.5 font-medium hover:bg-zinc-50" onClick={() => qc.invalidateQueries()}>Try again</button>
+      <div role="alert" className="rnr-note" data-tone="down">
+        <Icon name="alert" />
+        <div className="grid justify-items-start gap-2">
+          <p className="font-medium">We couldn’t load this statement.</p>
+          <p>{error.message}</p>
+          <button type="button" className={btn.secondary} onClick={() => qc.invalidateQueries()}>Try again</button>
+        </div>
       </div>
     )
   }
   if (!ready || !balances || !lines) {
     return (
-      <div role="status" aria-label="Preparing statement" className="grid animate-pulse gap-4 py-2">
-        <div className="h-24 rounded-md bg-zinc-100" /><div className="h-16 rounded-md bg-zinc-100" /><div className="h-40 rounded-md bg-zinc-100" />
-        <span className="text-sm text-zinc-500">Preparing statement…</span>
+      <div role="status" aria-label="Preparing statement" className="grid gap-4 py-2">
+        <Skeleton className="h-24 w-full" /><Skeleton className="h-16 w-full" /><Skeleton className="h-40 w-full" />
+        <span>Preparing statement…</span>
       </div>
     )
   }
@@ -298,7 +306,7 @@ function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: C
                 <Label>Statement to</Label>
                 <p className="font-semibold">{client.name}</p>
                 {client.contact && <p>Attn: {client.contact}</p>}
-                {client.email && <p className="text-zinc-600">{client.email}</p>}
+                {client.email && <p className="text-(--sheet-ink-2)">{client.email}</p>}
               </div>
               <div>
                 <Label>Statement period</Label>
@@ -332,7 +340,7 @@ type ConsolidatedStatementProps<R> = {
 /** The Clients table as shown — same columns, groups and filters — laid out as a printable statement. */
 export function ConsolidatedStatement<R>({ period, summary, columns, sections, total, preparedFrom, clientCount, rowKey }: ConsolidatedStatementProps<R>) {
   const { longDate } = useDates()
-  const align = (c: Column<R>) => (c.align === 'right' ? num : cell)
+  const align = (c: Column<R>) => (c.align === 'right' ? 'num' : undefined)
   const totalRow = (label: string, values: Record<string, ReactNode>, className: string) => (
     <tr className={className}>
       {columns.map((c, i) => (
@@ -355,19 +363,20 @@ export function ConsolidatedStatement<R>({ period, summary, columns, sections, t
       </section>
       <Summary {...summary} />
       {/* Cells use the table's own renderers so the statement matches the screen; nothing in it is clickable. */}
-      <table className="pointer-events-none w-full">
+      <table className="pointer-events-none">
+        <caption className="rnr-sr-only">Consolidated statement</caption>
         <thead>
-          <tr className="border-y border-zinc-300 bg-zinc-50 text-left text-xs text-zinc-600">
+          <tr>
             {columns.map((c) => (
-              <th key={c.id} className={`${align(c)} font-medium`}>{c.label}</th>
+              <th key={c.id} scope="col" className={align(c)}>{c.label}</th>
             ))}
           </tr>
         </thead>
         {sections.map((s) => (
-          <tbody key={s.key} className="divide-y divide-zinc-100">
+          <tbody key={s.key}>
             {s.heading && (
               <tr className="print:break-after-avoid">
-                <th colSpan={columns.length} className={`${cell} pt-5 text-left font-semibold`}>{s.heading}</th>
+                <td colSpan={columns.length} className="pt-5 font-semibold">{s.heading}</td>
               </tr>
             )}
             {s.rows.map((r) => (
@@ -377,10 +386,10 @@ export function ConsolidatedStatement<R>({ period, summary, columns, sections, t
                 ))}
               </tr>
             ))}
-            {s.subtotal && totalRow(`Subtotal – ${s.heading}`, s.subtotal, 'border-t border-zinc-300 font-medium')}
+            {s.subtotal && totalRow(`Subtotal – ${s.heading}`, s.subtotal, 'font-medium')}
           </tbody>
         ))}
-        <tfoot>{totalRow('Total', total, 'border-t-2 border-zinc-900 font-semibold')}</tfoot>
+        <tfoot>{totalRow('Total', total, '')}</tfoot>
       </table>
       <DocFooter>
         <p>This statement lists the client-account entries shown on screen when it was prepared.</p>

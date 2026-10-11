@@ -18,7 +18,7 @@ import {
 } from './ledger'
 import { AddClient } from './clients/AddClient'
 import { StatusBadge, TagList } from './clients/fields'
-import { card, LoadError, monthLabel, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
+import { LoadError, monthLabel, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useBankAccounts, useClients, useDeleteTxn, useFirstTxnDate, useLedger, fetchAttachmentsForExport } from './data/queries'
@@ -29,7 +29,6 @@ import { buildSections, countClients, preparedFrom } from './clients/consolidate
 import { AttachmentsButton } from './attachments/Attachments'
 import { downloadCsv, downloadZip, ImportDialog } from './transfer'
 import { Avatar, btn, Dialog, Icon, input, KindBadge, Menu, menuItemClass, nextSort, PeriodPicker, useLocalState, type Sort } from './ui'
-import { Empty } from './widgets'
 import type { Txn } from './ledger'
 
 type View = 'transactions' | 'balances'
@@ -149,16 +148,16 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   }, [txnRows, mode, txnSort, showBalance, balances, summary]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const txnColumns: Column<StatementLine, TxnSort>[] = [
-    { id: 'date', label: 'Date', width: 136, sortKey: 'date', cell: (t) => <span className="text-zinc-500 tabular-nums">{shortDate(t.date)}</span>, text: (t) => t.date },
+    { id: 'date', label: 'Date', width: 136, sortKey: 'date', cell: (t) => <span className="rnr-muted">{shortDate(t.date)}</span>, text: (t) => t.date },
     {
       id: 'client',
       label: 'Client',
       width: 190,
       sortKey: 'client',
-      cell: (t) => <a href={`#clients/${t.clientId}`} className="font-medium hover:underline">{nameOf(t.clientId)}</a>,
+      cell: (t) => <a href={`#clients/${t.clientId}`} className="rnr-link font-medium">{nameOf(t.clientId)}</a>,
       text: (t) => nameOf(t.clientId),
     },
-    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (t) => <span className="text-zinc-500 tabular-nums">{accountNo(t.clientId)}</span>, text: (t) => accountNo(t.clientId) },
+    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (t) => <span className="rnr-muted">{accountNo(t.clientId)}</span>, text: (t) => accountNo(t.clientId) },
     {
       id: 'description',
       label: 'Description',
@@ -169,17 +168,17 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           <KindBadge kind={t.kind} />
           <span className="truncate">{t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}</span>
           {fixedClientId && (
-            <span className="ml-auto flex shrink-0 items-center">
+            <span className="ml-auto flex shrink-0 items-center print:hidden">
               <AttachmentsButton transactionId={t.id} />
               <button
                 type="button"
                 disabled={!deleteTxn.ok}
                 title={deleteTxn.title}
                 onClick={() => setConfirmDeleteTxn(t)}
-                className="shrink-0 rounded p-1 text-zinc-400 transition hover:text-red-600 disabled:opacity-40 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 print:hidden"
+                className="rnr-icon-btn"
                 aria-label={`Delete ledger entry ${t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}, ${shortDate(t.date)}`}
               >
-                <Icon name="trash" className="size-3.5" />
+                <Icon name="trash" />
               </button>
             </span>
           )}
@@ -188,18 +187,18 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
       text: (t) => t.note,
     },
     { id: 'type', label: 'Type', width: 100, hidden: true, cell: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment'), text: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment') },
-    { id: 'receipts', label: 'In', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
-    { id: 'payments', label: 'Out', width: 140, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
+    { id: 'receipts', label: 'In', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
+    { id: 'payments', label: 'Out', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
     {
       id: 'balance',
       label: 'Balance',
-      width: 150,
+      width: 170,
       align: 'right',
       cell: (t) =>
         showBalance ? (
-          <span className="font-medium">{money(balances.get(t.id) ?? 0)}</span>
+          money(balances.get(t.id) ?? 0)
         ) : (
-          <span className="text-zinc-400" title="Running balance isn't available with this filter">—</span>
+          <span className="rnr-muted" title="Running balance isn't available with this filter">—</span>
         ),
       text: (t) => (showBalance ? plainAmount(balances.get(t.id) ?? 0) : ''),
     },
@@ -238,28 +237,28 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           <Avatar name={r.client.name} />
           <span className="min-w-0">
             <span className="block truncate font-medium">{r.client.name}</span>
-            <span className="block truncate text-xs text-zinc-500">{r.client.contact || r.client.email || '—'}</span>
+            <span className="rnr-muted block truncate text-xs">{r.client.contact || r.client.email || '—'}</span>
           </span>
         </a>
       ),
       text: (r) => r.client.name,
     },
-    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (r) => <span className="text-zinc-500 tabular-nums">{accountNo(r.client.id)}</span>, text: (r) => accountNo(r.client.id) },
+    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (r) => <span className="rnr-muted">{accountNo(r.client.id)}</span>, text: (r) => accountNo(r.client.id) },
     { id: 'contact', label: 'Primary contact', width: 160, hidden: true, cell: (r) => r.client.contact || '—', text: (r) => r.client.contact },
     { id: 'email', label: 'Email', width: 220, hidden: true, cell: (r) => r.client.email || '—', text: (r) => r.client.email },
     { id: 'status', label: 'Status', width: 110, hidden: true, cell: (r) => <StatusBadge status={r.client.status} />, text: (r) => STATUS_LABEL[r.client.status] },
     { id: 'tags', label: 'Tags', width: 200, hidden: true, cell: (r) => <TagList tags={r.client.tags} />, text: (r) => r.client.tags.join('; ') },
     { id: 'assignee', label: 'Assigned member', width: 180, hidden: true, cell: (r) => assigneeName(r.client.assignedUserId) || '—', text: (r) => assigneeName(r.client.assignedUserId) },
-    { id: 'phone', label: 'Phone', width: 150, hidden: true, cell: (r) => <span className="tabular-nums">{formatPhone(r.client.phone) || '—'}</span>, text: (r) => formatPhone(r.client.phone) },
+    { id: 'phone', label: 'Phone', width: 150, hidden: true, cell: (r) => <span>{formatPhone(r.client.phone) || '—'}</span>, text: (r) => formatPhone(r.client.phone) },
     { id: 'registration', label: 'Registration no.', width: 190, hidden: true, cell: (r) => r.client.registrationNo || '—', text: (r) => r.client.registrationNo },
     { id: 'clientCode', label: 'Client ID', width: 150, hidden: true, cell: (r) => r.client.clientCode || '—', text: (r) => r.client.clientCode },
     { id: 'industry', label: 'Industry', width: 170, hidden: true, cell: (r) => r.client.industry || '—', text: (r) => r.client.industry },
-    { id: 'opening', label: 'Opening balance', width: 150, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
-    { id: 'receipts', label: 'In', width: 140, align: 'right', sortKey: 'in', cell: (r) => <span className="text-in">{fmt(r.soa.receipts)}</span>, text: (r) => plainAmount(r.soa.receipts) },
-    { id: 'payments', label: 'Out', width: 140, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
-    { id: 'closing', label: 'Closing balance', width: 150, align: 'right', sortKey: 'closing', cell: (r) => <span className="font-semibold">{money(r.soa.closing)}</span>, text: (r) => plainAmount(r.soa.closing) },
+    { id: 'opening', label: 'Opening balance', width: 180, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
+    { id: 'receipts', label: 'In', width: 170, align: 'right', sortKey: 'in', cell: (r) => fmt(r.soa.receipts), text: (r) => plainAmount(r.soa.receipts) },
+    { id: 'payments', label: 'Out', width: 170, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
+    { id: 'closing', label: 'Closing balance', width: 180, align: 'right', sortKey: 'closing', cell: (r) => money(r.soa.closing), text: (r) => plainAmount(r.soa.closing) },
     { id: 'count', label: 'Transactions', width: 120, align: 'right', sortKey: 'count', hidden: true, cell: (r) => r.count, text: (r) => String(r.count) },
-    { id: 'last', label: 'Last transaction', width: 140, align: 'right', sortKey: 'last', cell: (r) => <span className="text-zinc-500">{r.last ? shortDate(r.last) : '—'}</span>, text: (r) => r.last },
+    { id: 'last', label: 'Last transaction', width: 170, align: 'right', sortKey: 'last', cell: (r) => <span className="rnr-muted">{r.last ? shortDate(r.last) : '—'}</span>, text: (r) => r.last },
   ]
 
   const txnTable = useTableLayout(fixedClientId ? 'client-transactions' : 'transactions', txnColumns)
@@ -268,7 +267,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const balanceVisible = balanceTable.visible
   const table = isTxns ? txnTable : balanceTable
   const dense = table.layout.dense
-  const pad = dense ? 'px-4 py-1.5' : 'px-4 py-2.5'
   const rowLimit = printing ? Infinity : limit
 
   /* ---------- Actions ---------- */
@@ -322,13 +320,21 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
   /* ---------- Render helpers ---------- */
 
+  // shortcut: widths are user-resized at runtime, so they reach CSS as custom properties, never static classes.
   const colgroup = <R, K extends string>(cols: Column<R, K>[], widthOf: (c: Column<R, K>) => number) => (
     <colgroup>
-      {cols.map((c) => <col key={c.id} style={{ width: c.flex ? undefined : widthOf(c) }} />)}
+      {cols.map((c) => <col key={c.id} className={c.flex ? undefined : 'w-(--col-w)'} ref={(el) => el?.style.setProperty('--col-w', `${widthOf(c)}px`)} />)}
     </colgroup>
   )
   const minWidth = (isTxns ? txnVisible.map(txnTable.widthOf) : balanceVisible.map(balanceTable.widthOf)).reduce((a, b) => a + b, 0)
-  const cellClass = (align?: 'right') => `${pad} truncate ${align === 'right' ? 'text-right tabular-nums' : ''}`
+  // Receipts and payments carry data-series, amounts are .num, and a negative figure is data-neg beside its true minus.
+  const cellProps = (id: string, align: 'right' | undefined, negative = false) => ({
+    className: `truncate${align === 'right' ? ' num' : ''}${id === 'balance' || id === 'closing' ? ' bal' : ''}`,
+    'data-series': id === 'receipts' ? 'in' : id === 'payments' ? 'out' : undefined,
+    'data-neg': negative || undefined,
+  })
+  const txnNeg = (id: string, t: StatementLine) => id === 'balance' && showBalance && (balances.get(t.id) ?? 0) < 0
+  const balNeg = (id: string, r: ClientBalance) => (id === 'opening' && r.soa.opening < 0) || (id === 'closing' && r.soa.closing < 0)
 
   // Page through rows across groups; collapsed groups use none of the page.
   const paged = groups.reduce<{ left: number; list: (typeof groups[number] & { open: boolean; shown: StatementLine[] })[] }>(
@@ -343,7 +349,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const truncated = isTxns ? paged.some((g) => g.open && g.shown.length < g.rows.length) : shownBalances.length < balanceRows.length
   // Mobile card list: flat (no group headers), every column's data shown regardless of the desktop hidden-column state.
   const shownTxns = paged.flatMap((g) => g.shown)
-  const amountCell = (t: StatementLine) => (t.kind === 'in' ? <span className="text-in">{fmt(t.amount)}</span> : <span>{fmt(t.amount)}</span>)
+  const amountCell = (t: StatementLine) => fmt(t.amount)
   const txnCardFields = (t: StatementLine) =>
     txnTable.all
       .filter((c) => c.id !== 'description' && (c.id !== 'client' || (mode !== 'client' && !fixedClientId)))
@@ -353,22 +359,22 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   const txnBody = paged.map((g) => {
     const { open, shown: visible } = g
     const subtotal: Record<string, ReactNode> = {
-      receipts: <span className="text-in">{fmt(g.receipts)}</span>,
+      receipts: fmt(g.receipts),
       payments: fmt(g.payments),
-      balance: g.closing === undefined ? <span className="text-zinc-400" title="Running balance isn't available with this filter">—</span> : money(g.closing),
+      balance: g.closing === undefined ? <span className="rnr-muted" title="Running balance isn't available with this filter">—</span> : money(g.closing),
     }
     return (
-      <tbody key={g.key} className="divide-y divide-zinc-100 dark:divide-zinc-800">
+      <tbody key={g.key}>
         {mode !== 'none' && (
-          <tr className="bg-zinc-50 font-medium dark:bg-zinc-800/40 print:break-after-avoid">
+          <tr className="bg-soft font-medium print:break-after-avoid">
             {txnVisible.map((c, i) => (
-              <td key={c.id} className={i === 0 ? `${pad} overflow-visible whitespace-nowrap` : cellClass(c.align)}>
+              <td key={c.id} {...cellProps(c.id, c.align, c.id === 'balance' && (g.closing ?? 0) < 0)} className={i === 0 ? 'overflow-visible whitespace-nowrap' : cellProps(c.id, c.align).className}>
                 {i === 0 ? (
                   <button type="button" onClick={() => toggleGroup(g.key)} aria-expanded={open} className="relative z-[1] flex items-center gap-2 text-left">
-                    <Icon name={open ? 'down' : 'right'} className="size-3.5 text-zinc-400 print:hidden" />
+                    <Icon name={open ? 'down' : 'right'} className="size-3.5 print:hidden" />
                     {mode === 'client' && <Avatar name={g.label} size="size-6 text-[10px]" />}
                     <span>{g.label}</span>
-                    <span className="font-normal text-zinc-500">· {g.rows.length}</span>
+                    <span className="rnr-muted font-normal">· {g.rows.length}</span>
                   </button>
                 ) : (
                   subtotal[c.id] ?? ''
@@ -378,8 +384,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </tr>
         )}
         {visible.map((t) => (
-          <tr key={t.id} className="group transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50 print:break-inside-avoid">
-            {txnVisible.map((c) => <td key={c.id} className={cellClass(c.align)}>{c.cell(t)}</td>)}
+          <tr key={t.id} className="print:break-inside-avoid">
+            {txnVisible.map((c) => <td key={c.id} {...cellProps(c.id, c.align, txnNeg(c.id, t))}>{c.cell(t)}</td>)}
           </tr>
         ))}
       </tbody>
@@ -387,7 +393,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   })
 
   const txnFooter: Record<string, ReactNode> = {
-    receipts: <span className="text-in">{fmt(totals(txnRows).in)}</span>,
+    receipts: fmt(totals(txnRows).in),
     payments: fmt(totals(txnRows).out),
     balance: money(summary.closing),
   }
@@ -397,7 +403,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   )
   const balanceFooter: Record<string, ReactNode> = {
     opening: money(balanceTotals.opening),
-    receipts: <span className="text-in">{fmt(balanceTotals.receipts)}</span>,
+    receipts: fmt(balanceTotals.receipts),
     payments: fmt(balanceTotals.payments),
     closing: money(balanceTotals.closing),
     count: balanceTotals.count,
@@ -422,6 +428,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
         period={period}
         setPeriod={setPeriod}
         ready={true}
+        landscape={(isTxns ? txnVisible : balanceVisible).length > 5}
       >
         {isTxns ? (
           <ConsolidatedStatement
@@ -451,24 +458,24 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   }
 
   return (
-    <div className="print-landscape grid grid-cols-1 gap-4">
+    <div className="print-landscape rnr-wide grid grid-cols-1 gap-4">
       {/* Print-only heading: what this sheet is, for whom, and which filters produced it. */}
-      <header className="hidden border-b-2 border-zinc-900 pb-3 print:block">
+      <header className="hidden border-b-2 border-black pb-3 print:block">
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-lg font-semibold">{session.firm.tradingName || session.firm.name}</p>
             <h1 className="text-xl font-semibold">{isTxns ? 'Client ledger' : 'Client balances'}{fixedClientId && ` — ${nameOf(fixedClientId)}`}</h1>
           </div>
-          <div className="text-right text-sm text-zinc-600">
+          <div className="text-right text-sm">
             <p>Period {shortDate(period.from)} – {shortDate(period.to)}</p>
             <p>Printed {shortDate(today())} · Currency {currency}</p>
           </div>
         </div>
-        {filterNote.length > 0 && <p className="mt-1 text-sm text-zinc-600">Filtered: {filterNote.join(' · ')}</p>}
+        {filterNote.length > 0 && <p className="mt-1 text-sm">Filtered: {filterNote.join(' · ')}</p>}
       </header>
 
-      <div className={`${card} flex flex-wrap items-center gap-2 p-4 print:hidden`}>
-        <div role="group" aria-label="Filters" className="flex flex-1 flex-wrap items-center gap-2 rounded-xl bg-zinc-50 p-2 dark:bg-zinc-800/40">
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
+        <div role="group" aria-label="Filters" className="flex flex-1 flex-wrap items-center gap-2">
           {!fixedClientId && <Segmented<View>
             label="View"
             value={view}
@@ -481,8 +488,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               ['transactions', 'Transactions'],
             ]}
           />}
-          <div className="relative w-full sm:w-48">
-            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
+          <div className="relative w-full sm:w-56">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-3" />
             <input
               value={query}
               onChange={(e) => {
@@ -491,7 +498,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               }}
               placeholder={fixedClientId ? 'Search description' : isTxns ? 'Search description or client' : 'Search name, contact or email'}
               aria-label="Search"
-              className={`${input} py-1.5 pl-9`}
+              className={`${input} pl-9`}
             />
           </div>
           <PeriodPicker
@@ -504,17 +511,17 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           />
           {!fixedClientId && (
             <>
-              <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={`${select} sm:w-36`}>
+              <select value={clientFilter} onChange={(e) => setClientId(e.target.value)} aria-label="Client" className={`${select} sm:w-40`}>
                 <option value="all">All clients</option>
                 {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
-              <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={`${select} sm:w-36`}>
+              <select value={bankAccountId ?? 'all'} onChange={(e) => setBankAccountId(e.target.value === 'all' ? undefined : e.target.value)} aria-label="Bank account" className={`${select} sm:w-40`}>
                 <option value="all">All bank accounts</option>
                 {banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
-              <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={`${select} sm:w-36`}>
+              <select value={status} onChange={(e) => setStatus(e.target.value as ClientStatus | 'all')} aria-label="Status" className={`${select} sm:w-40`}>
                 {CLIENT_STATUSES.map((st) => (
                   <option key={st} value={st}>{STATUS_LABEL[st]}</option>
                 ))}
@@ -526,10 +533,10 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           {isTxns && (
             <>
               <div className="flex items-center gap-2">
-                <span className="text-sm whitespace-nowrap text-zinc-500">Type</span>
+                <span className="rnr-muted whitespace-nowrap">Type</span>
                 <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'In'], ['out', 'Out']]} />
               </div>
-              <label className="flex items-center gap-2 text-sm whitespace-nowrap text-zinc-500">
+              <label className="rnr-muted flex items-center gap-2 whitespace-nowrap">
                 Group by
                 <select
                   value={mode}
@@ -553,63 +560,61 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           )}
         </div>
 
-        <div className="flex basis-full justify-end sm:basis-auto">
-          <div role="group" aria-label="Actions" className="flex items-center gap-2 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-            <Menu
-              trigger={<Icon name="more" />}
-              triggerLabel="More actions"
-              menuLabel="More actions"
-              triggerClassName={`${btn.ghost} px-2`}
-            >
-              {(close) => (
-                <>
-                  {!fixedClientId && (
-                    <button role="menuitem" type="button" className={menuItemClass} disabled={!post.ok} title={post.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => { close(); setDialog('import') }}>
-                      <Icon name="upload" /> Import
-                    </button>
-                  )}
-                  <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); exportCsv() }} disabled={!rowsCount || exporting} title={rowsCount ? 'Export' : 'Nothing to export'}>
-                    <Icon name="download" /> {exporting ? 'Exporting…' : 'Export'}
+        <div role="group" aria-label="Actions" className="flex items-center gap-2">
+          <Menu
+            trigger={<Icon name="more" />}
+            triggerLabel="More actions"
+            menuLabel="More actions"
+            triggerClassName={`${btn.ghost} px-2`}
+          >
+            {(close) => (
+              <>
+                {!fixedClientId && (
+                  <button role="menuitem" type="button" className={menuItemClass} disabled={!post.ok} title={post.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => { close(); setDialog('import') }}>
+                    <Icon name="upload" /> Import
                   </button>
-                  <label role="menuitemcheckbox" aria-checked={includeAttachments} className={`${menuItemClass} cursor-pointer`}>
-                    <input type="checkbox" checked={includeAttachments} onChange={(e) => setIncludeAttachments(e.target.checked)} className="accent-zinc-900" />
-                    Include attachments
-                  </label>
-                  <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); print() }} disabled={!rowsCount} title={rowsCount ? 'Print' : 'Nothing to print'}>
-                    <Icon name="printer" /> Print
-                  </button>
-                </>
-              )}
-            </Menu>
-            {!fixedClientId && (
-              <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
-                <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
-              </button>
+                )}
+                <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); exportCsv() }} disabled={!rowsCount || exporting} title={rowsCount ? 'Export' : 'Nothing to export'}>
+                  <Icon name="download" /> {exporting ? 'Exporting…' : 'Export'}
+                </button>
+                <label role="menuitemcheckbox" aria-checked={includeAttachments} className={`${menuItemClass} rnr-check cursor-pointer`}>
+                  <input type="checkbox" checked={includeAttachments} onChange={(e) => setIncludeAttachments(e.target.checked)} />
+                  Include attachments
+                </label>
+                <button role="menuitem" type="button" className={menuItemClass} onClick={() => { close(); print() }} disabled={!rowsCount} title={rowsCount ? 'Print' : 'Nothing to print'}>
+                  <Icon name="printer" /> Print
+                </button>
+              </>
             )}
-            {!fixedClientId && (
-              <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
-                <Icon name="plus" /> Add client
-              </button>
-            )}
-          </div>
+          </Menu>
+          {!fixedClientId && (
+            <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
+              <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
+            </button>
+          )}
+          {!fixedClientId && (
+            <button type="button" className={btn.primary} disabled={!editClients.ok} title={editClients.title} aria-describedby={gateHint ? 'ledger-gate' : undefined} onClick={() => setDialog('add')}>
+              <Icon name="plus" /> Add client
+            </button>
+          )}
         </div>
-        {gateHint && <p id="ledger-gate" className="basis-full text-xs text-zinc-500">{gateHint}</p>}
-        {exportError && <p className="basis-full text-sm text-red-600 dark:text-red-400" role="alert">{exportError}</p>}
+        {gateHint && <p id="ledger-gate" className="rnr-muted basis-full text-xs">{gateHint}</p>}
+        {exportError && <p className="rnr-error basis-full" role="alert"><Icon name="alert" />{exportError}</p>}
       </div>
 
-      <div className={`${card} overflow-hidden print:overflow-visible print:rounded-none print:border-0`}>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-zinc-100 px-5 py-3 text-sm dark:border-zinc-800 print:hidden">
+      <div className="rnr-card rnr-table-card print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-soft px-5 py-3 text-sm print:hidden">
           <span className="font-medium">{isTxns ? plural(txnRows.length, 'transaction') : plural(balanceRows.length, 'client')}</span>
-          <span className="text-zinc-500">{shortDate(period.from)} – {shortDate(period.to)}</span>
-          {removeTxn.error && <span className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</span>}
-          {isTxns && !showBalance && <span className="basis-full text-xs text-zinc-500">Running balance shows when sorted by date with no search, type or status filter, unless one client is selected.</span>}
+          <span className="rnr-muted">{shortDate(period.from)} – {shortDate(period.to)}</span>
+          {removeTxn.error && <span className="rnr-error" role="alert"><Icon name="alert" />{removeTxn.error.message}</span>}
+          {isTxns && !showBalance && <span className="rnr-muted basis-full text-xs">Running balance shows when sorted by date with no search, type or status filter, unless one client is selected.</span>}
           <div className="ml-auto flex items-center gap-1">
             {isTxns && mode !== 'none' && groups.length > 0 && (
-              <button type="button" className={`${btn.ghost} py-1`} onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)))}>
+              <button type="button" className={btn.ghost} onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)))}>
                 {allCollapsed ? 'Expand all' : 'Collapse all'}
               </button>
             )}
-            <button type="button" className={`${btn.ghost} py-1`} onClick={() => setDialog('columns')}>
+            <button type="button" className={btn.ghost} onClick={() => setDialog('columns')}>
               <Icon name="columns" /> Columns
             </button>
           </div>
@@ -642,21 +647,23 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
                         <Avatar name={r.client.name} />
                         <span className="min-w-0">
                           <span className="block truncate font-medium">{r.client.name}</span>
-                          <span className="block truncate text-xs text-zinc-500">{r.client.contact || r.client.email || '—'}</span>
+                          <span className="rnr-muted block truncate text-xs">{r.client.contact || r.client.email || '—'}</span>
                         </span>
                       </span>
                     }
                     figureLabel="Closing balance"
                     figure={money(r.soa.closing)}
+                    negative={r.soa.closing < 0}
                     fields={balanceCardFields(r)}
                   />
                 ))}
           </div>
           <div className="hidden overflow-x-auto sm:block print:block print:overflow-visible">
-            <table className="w-full table-fixed text-sm print:text-xs" style={{ minWidth: printing ? undefined : minWidth }}>
+            <table className={`rnr-ledger w-full table-fixed print:min-w-0 print:text-xs ${dense ? '[--row-pad:var(--space-2)]' : ''} ${printing ? '' : 'min-w-(--tbl-w)'}`} ref={(el) => el?.style.setProperty('--tbl-w', `${minWidth}px`)}>
+              <caption className="rnr-sr-only">{isTxns ? 'Client ledger' : 'Client balances'}</caption>
               {isTxns ? colgroup(txnVisible, txnTable.widthOf) : colgroup(balanceVisible, balanceTable.widthOf)}
               <thead>
-                <tr className="border-b border-zinc-100 text-left text-xs text-zinc-500 dark:border-zinc-800 print:border-zinc-400">
+                <tr>
                   {isTxns
                     ? txnVisible.map((c) => (
                         <ColumnHeader key={c.id} column={c} width={txnTable.widthOf(c)} onResize={(w) => txnTable.setWidth(c.id, w)} sort={txnSort} onSort={(k) => {
@@ -675,18 +682,18 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               {isTxns ? (
                 txnBody
               ) : (
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tbody>
                   {shownBalances.map((r) => (
-                    <tr key={r.client.id} className="cursor-pointer transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50 print:break-inside-avoid" onClick={() => (location.hash = `clients/${r.client.id}`)}>
-                      {balanceVisible.map((c) => <td key={c.id} className={cellClass(c.align)}>{c.cell(r)}</td>)}
+                    <tr key={r.client.id} className="cursor-pointer print:break-inside-avoid" onClick={() => (location.hash = `clients/${r.client.id}`)}>
+                      {balanceVisible.map((c) => <td key={c.id} {...cellProps(c.id, c.align, balNeg(c.id, r))}>{c.cell(r)}</td>)}
                     </tr>
                   ))}
                 </tbody>
               )}
               <tfoot>
-                <tr className="border-t-2 border-zinc-200 font-semibold dark:border-zinc-700 print:border-zinc-900">
+                <tr>
                   {(isTxns ? txnVisible : balanceVisible).map((c, i) => (
-                    <td key={c.id} className={i === 0 ? `${pad} overflow-visible whitespace-nowrap` : cellClass(c.align)}>
+                    <td key={c.id} {...cellProps(c.id, c.align, (isTxns ? c.id === 'balance' && summary.closing < 0 : (c.id === 'opening' && balanceTotals.opening < 0) || (c.id === 'closing' && balanceTotals.closing < 0)))} className={i === 0 ? 'overflow-visible whitespace-nowrap' : cellProps(c.id, c.align).className}>
                       {i === 0 ? `Total${filtersActive ? ' (filtered)' : ''}` : ((isTxns ? txnFooter : balanceFooter)[c.id] ?? '')}
                     </td>
                   ))}
@@ -695,7 +702,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             </table>
           </div>
           {truncated && (
-            <div className="border-t border-zinc-100 p-3 text-center dark:border-zinc-800 print:hidden">
+            <div className="rnr-pager justify-center print:hidden">
               <button type="button" className={btn.ghost} onClick={() => setLimit(limit + PAGE)}>
                 Showing first {limit} · Show {PAGE} more
               </button>
@@ -704,27 +711,25 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </>
         ) : (
           <div className="p-6">
-            <Empty
-              text={
-                filtersActive
+            <div className="rnr-empty">
+              <p>
+                {filtersActive
                   ? 'Nothing matches these filters. Widen the search or clear the filters to see more.'
                   : !fixedClientId && clients.length === 0
                     ? 'No clients yet. Add your first client, or import a CSV of existing transactions.'
                     : isTxns
                       ? 'No transactions in this period. Choose a different period above, or record one.'
-                      : 'No client balances to show for this period.'
-              }
-              action={
-                filtersActive ? (
-                  <button type="button" className={btn.primary} onClick={clearFilters}><Icon name="x" /> Clear filters</button>
-                ) : !fixedClientId && clients.length === 0 ? (
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <button type="button" className={btn.primary} disabled={!editClients.ok} onClick={() => setDialog('add')} data-tour="add-client"><Icon name="plus" /> Add client</button>
-                    <button type="button" className={btn.ghost} disabled={!post.ok} onClick={() => setDialog('import')} data-tour="import-export"><Icon name="upload" /> Import CSV</button>
-                  </div>
-                ) : undefined
-              }
-            />
+                      : 'No client balances to show for this period.'}
+              </p>
+              {filtersActive ? (
+                <button type="button" className={btn.primary} onClick={clearFilters}><Icon name="x" /> Clear filters</button>
+              ) : !fixedClientId && clients.length === 0 ? (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button type="button" className={btn.primary} disabled={!editClients.ok} onClick={() => setDialog('add')} data-tour="add-client"><Icon name="plus" /> Add client</button>
+                  <button type="button" className={btn.ghost} disabled={!post.ok} onClick={() => setDialog('import')} data-tour="import-export"><Icon name="upload" /> Import CSV</button>
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
       </div>
@@ -739,7 +744,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
       <Dialog open={!!confirmDeleteTxn} onClose={() => setConfirmDeleteTxn(null)} title="Delete ledger entry">
         {confirmDeleteTxn && (
-          <div className="grid gap-4 text-sm">
+          <div className="grid gap-4">
             <p>
               Delete {confirmDeleteTxn.note || (confirmDeleteTxn.kind === 'in' ? 'Receipt' : 'Payment')} of {money(confirmDeleteTxn.amount)} on {shortDate(confirmDeleteTxn.date)}? This can't be undone.
             </p>
@@ -747,14 +752,14 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               <button type="button" className={btn.ghost} onClick={() => setConfirmDeleteTxn(null)}>Cancel</button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500"
+                className={btn.danger}
                 disabled={removeTxn.isPending}
                 onClick={() => removeTxn.mutate(confirmDeleteTxn.id, { onSuccess: () => setConfirmDeleteTxn(null) })}
               >
                 {removeTxn.isPending ? 'Deleting…' : 'Delete entry'}
               </button>
             </div>
-            {removeTxn.error && <p className="text-red-600 dark:text-red-400" role="alert">{removeTxn.error.message}</p>}
+            {removeTxn.error && <p className="rnr-error" role="alert"><Icon name="alert" />{removeTxn.error.message}</p>}
           </div>
         )}
       </Dialog>
@@ -762,29 +767,28 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
   )
 }
 
-/** Same shape as the loaded page (KPI row, toolbar, table) so nothing jumps when data lands. */
 /** Mobile reflow of one table row: heading + prominent figure up top, every other column below as label:value. */
-function MobileCard({ heading, figure, figureLabel, fields, href }: { heading: ReactNode; figure: ReactNode; figureLabel: string; fields: { label: string; value: ReactNode }[]; href?: string }) {
+function MobileCard({ heading, figure, figureLabel, fields, href, negative }: { heading: ReactNode; figure: ReactNode; figureLabel: string; fields: { label: string; value: ReactNode }[]; href?: string; negative?: boolean }) {
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">{heading}</div>
         <div className="shrink-0 text-right">
-          <p className="text-xs text-zinc-500">{figureLabel}</p>
-          <p className="font-semibold tabular-nums">{figure}</p>
+          <p className="rnr-muted text-xs">{figureLabel}</p>
+          <p className="rnr-amt" data-neg={negative || undefined}>{figure}</p>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-zinc-100 pt-2 text-xs dark:border-zinc-800">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-soft pt-2 text-xs">
         {fields.map((f, i) => (
           <div key={i} className="min-w-0">
-            <dt className="text-zinc-500">{f.label}</dt>
+            <dt className="rnr-muted">{f.label}</dt>
             <dd className="truncate">{f.value || '—'}</dd>
           </div>
         ))}
       </dl>
     </>
   )
-  const className = `${card} grid gap-2 p-4`
+  const className = 'rnr-card grid gap-2'
   return href ? <a href={href} className={className}>{body}</a> : <div className={className}>{body}</div>
 }
 
@@ -793,11 +797,11 @@ function LedgerSkeleton() {
     <div role="status" aria-label="Loading clients" className="grid grid-cols-1 gap-4">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={`${card} grid gap-2 p-5`}><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-20" /></div>
+          <div key={i} className="rnr-card grid gap-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-20" /></div>
         ))}
       </div>
-      <div className={`${card} grid gap-3 p-4`}><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /></div>
-      <div className={`${card} grid gap-3 p-5`}>{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
+      <div className="rnr-card grid gap-3"><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /></div>
+      <div className="rnr-card grid gap-3">{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
       <span className="sr-only">Loading…</span>
     </div>
   )

@@ -22,6 +22,15 @@
 body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
 /* v1 paper: batch 7 — clients, ledger, statements (Task 7 only) */
+@layer components {
+  .rnr-ledger tfoot td:empty::after { content: none; }
+  .rnr-statement-summary dd[data-neg] { color: var(--sheet-down); }
+  /* Cells borrowed from the on-screen ledger must not bring theme or accent colour onto the sheet. */
+  .rnr-statement .rnr-muted, .rnr-statement .rnr-link, .rnr-statement .rnr-status, .rnr-statement .rnr-chip { color: inherit; background: none; border: 0; padding: 0; text-decoration: none; }
+  .rnr-statement .rnr-avatar, .rnr-statement .rnr-kind { display: none; }
+}
+/* Unlayered on purpose: it must beat the text-down utility that money cells carry. */
+.rnr-statement .text-down { color: var(--sheet-down); }
 /* v1 paper: batch 8 — dashboard, checklist, tour (Task 8 only) */
 @layer components {
   /* A KPI widget is a folder whose tab is the title; the tab wraps instead of clipping. */
@@ -67,9 +76,13 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
     size: A4;
     margin: 14mm;
   }
-  body {
-    background: white;
+  /* A printed page is paper: no theme canvas behind it, in any theme or accent. */
+  html, body, .rnr-shell, .rnr-page {
+    background: var(--sheet-paper);
   }
+  .rnr-shell { min-height: 0; }
+  /* The bundle's landscape sheet is 297 x 210mm on paper too, which overflows the 14mm page margins and adds a blank page. */
+  .rnr-statement[data-orientation="landscape"] { width: auto; min-height: 0; }
 }
 
 /* Wide ledgers print landscape; statements keep the portrait A4 default. */
