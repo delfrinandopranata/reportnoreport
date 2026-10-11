@@ -38,8 +38,8 @@
   </head>
   <body class="rnr">
     <script>
-      // Old app bookmarks were /#/members; the app now lives at /app.
-      if (location.hash.startsWith('#/')) location.replace('/app/' + location.hash)
+      // Old app bookmarks (/#/members) and auth email links (#access_token, #error, ?code) belong to the app at /app.
+      if (/^#(\/|access_token=|error=)/.test(location.hash) || /[?&]code=/.test(location.search)) location.replace('/app/' + location.search + location.hash)
     </script>
     <header class="site-header">
       <a href="/" class="flex items-center gap-3" aria-label="ReportNoReport home">

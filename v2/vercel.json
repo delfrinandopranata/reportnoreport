@@ -3,7 +3,6 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "cleanUrls": true,
-  "trailingSlash": false,
   "redirects": [{ "source": "/app", "destination": "/app/", "permanent": true }],
   "rewrites": [{ "source": "/app/:path*", "destination": "/app/index.html" }],
   "headers": [
