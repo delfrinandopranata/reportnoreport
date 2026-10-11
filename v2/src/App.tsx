@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './data/supabase'
 import { useQueryClient } from '@tanstack/react-query'
@@ -34,6 +34,7 @@ import { ReportPage } from './reports/ReportPage'
 import { CampaignsPage } from './campaigns/CampaignsPage'
 import { CampaignPage } from './campaigns/CampaignPage'
 import { Wordmark } from './ui/Wordmark'
+import { CampaignIcon, DashboardIcon, FlowIcon, FormIcon, InboxIcon, LogoutIcon, MessageIcon, PeopleIcon, RecordsIcon, ReportIcon, SettingsIcon, ShieldIcon, TemplateIcon } from './ui/icons'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
 import { blocksNavigation, guarded } from './ui/navGuard'
@@ -92,7 +93,7 @@ function Shell() {
   const out = useAction()
   if (loading) {
     return (
-      <div className="p-6 mx-auto max-w-5xl flex flex-col gap-6">
+      <div className="rnr-main flex flex-col gap-6">
         <Skeleton rows={[{ w: '160px', h: 40 }]} />
         <Skeleton rows={[{ w: '200px', h: 32 }, { w: '100%', h: 240 }]} />
       </div>
@@ -111,44 +112,45 @@ function Shell() {
   }
   if (!orgs.length || hash === '#/new-org') return <CreateOrgPage />
   const route = parseRoute(hash)
-  const link = (href: string, label: string, current: boolean) => (
-    <a href={href} aria-current={current ? 'page' : undefined}
-      className={`rnr-btn ${current ? 'rnr-btn-secondary' : 'rnr-btn-ghost'}`}>{label}</a>
+  const link = (href: string, label: string, current: boolean, icon: ReactNode) => (
+    <a href={href} aria-current={current ? 'page' : undefined} className="rnr-nav-link">{icon}<span>{label}</span></a>
   )
   return (
-    <>
+    <div className="rnr-shell">
       <a href="#main" className="sr-only focus:not-sr-only rnr-btn rnr-btn-secondary">Skip to content</a>
-      <header className="relative bg-surface-100 border-b border-line-200">
-        <div className="mx-auto max-w-5xl flex flex-wrap items-center gap-4 px-6 py-3">
+      <aside className="rnr-side" aria-label="Workspace">
+        <div className="rnr-side-top">
           <Wordmark href="#/inbox" />
-          <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
-          <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
-            {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
-            {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
-            {mayReport && link('#/dashboard', 'Dashboard', route.page === 'dashboard')}
-            {mayReport && link('#/reports', 'Reports', route.page === 'reports' || route.page === 'report')}
-            {link('#/forms', 'Forms', route.page.startsWith('form'))}
-            {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
-            {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
-            {can('comms.manage') && link('#/messages', 'Messages', route.page === 'messages')}
-            {can('comms.broadcast') && link('#/campaigns', 'Campaigns', route.page === 'campaigns' || route.page === 'campaign')}
-            {link('#/members', 'Members', route.page === 'members')}
-            {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
-          </nav>
-          <div className="ml-auto flex items-center gap-1">
-            <NotificationBell />
-            {link('#/settings', 'Settings', route.page === 'settings')}
-            <button className="rnr-btn rnr-btn-ghost" type="button" aria-busy={out.busy}
-              onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
-              {out.busy && <span className="rnr-spin" aria-hidden="true" />}{out.busy ? 'Signing out…' : 'Sign out'}
-            </button>
-          </div>
+          <OrgSwitcher />
         </div>
-      </header>
-      <main id="main" className="mx-auto max-w-5xl p-6">
-        <Page key={`${orgId}${hash}`} route={route} />
-      </main>
-    </>
+        <nav aria-label="Main" className="rnr-nav">
+          {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task', <InboxIcon size={18} />)}
+          {link('#/records', 'Records', route.page === 'records' || route.page === 'record', <RecordsIcon size={18} />)}
+          {mayReport && link('#/dashboard', 'Dashboard', route.page === 'dashboard', <DashboardIcon size={18} />)}
+          {mayReport && link('#/reports', 'Reports', route.page === 'reports' || route.page === 'report', <ReportIcon size={18} />)}
+          {link('#/forms', 'Forms', route.page.startsWith('form'), <FormIcon size={18} />)}
+          {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'), <FlowIcon size={18} />)}
+          {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template', <TemplateIcon size={18} />)}
+          {can('comms.manage') && link('#/messages', 'Messages', route.page === 'messages', <MessageIcon size={18} />)}
+          {can('comms.broadcast') && link('#/campaigns', 'Campaigns', route.page === 'campaigns' || route.page === 'campaign', <CampaignIcon size={18} />)}
+          {link('#/members', 'Members', route.page === 'members', <PeopleIcon size={18} />)}
+          {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles', <ShieldIcon size={18} />)}
+        </nav>
+      </aside>
+      <div className="rnr-stage">
+        <header className="rnr-topbar">
+          <NotificationBell />
+          {link('#/settings', 'Settings', route.page === 'settings', <SettingsIcon size={18} />)}
+          <button className="rnr-btn rnr-btn-ghost" type="button" aria-busy={out.busy}
+            onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
+            {out.busy ? <span className="rnr-spin" aria-hidden="true" /> : <LogoutIcon size={16} />}{out.busy ? 'Signing out…' : 'Sign out'}
+          </button>
+        </header>
+        <main id="main" className="rnr-main">
+          <Page key={`${orgId}${hash}`} route={route} />
+        </main>
+      </div>
+    </div>
   )
 }
 

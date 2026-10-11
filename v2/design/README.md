@@ -1,4 +1,16 @@
-ReportNoReport v2 is a drag-and-drop SaaS for building forms, dashboards and reports, used by school admins and HR teams. It is quiet and neutral by default, so people's own data is the colour on screen. Each person can change the look through five modes: theme, colour preset, surface style, density and motion.
+ReportNoReport v2 is a drag-and-drop SaaS for building forms, dashboards and reports, used by school admins and HR teams. It has two faces. **Aether** (light) is calm and optical: frosted glass panes and pill controls on a soft pearl ground, with charcoal as the only accent. **Lumen Edge** (dark) is quiet and technical: graphite surfaces lit softly from below, with controls outlined by a thin line of light. People's own data — teal and amber — is the only colour on screen.
+
+## What this look is not
+
+Admin products in this space tend to share one look. Avoid every part of it:
+
+- **No royal blue.** No blue buttons, blue active tabs, blue nav highlights or underlined blue numbers. The accent is charcoal in light and light itself in dark.
+- **No icon tiles.** KPIs never sit beside a pastel square holding an icon, and cards don't carry a ↗ corner button.
+- **No donuts.** Splits are shown with a segmented `Meter`.
+- **No underline tabs.** Tabs are a pill track.
+- **No tinted status pills.** Status is a grey icon plus a word; groups are outlined mono tags.
+- **No plain white page with nested white cards.** Cards float as glass on a pearl or graphite ground, one level deep.
+- **No Inter.** Geist for text, Geist Mono for every figure.
 
 ## Content fundamentals
 
@@ -17,79 +29,65 @@ ReportNoReport v2 is a drag-and-drop SaaS for building forms, dashboards and rep
 
 ### Colour
 
-- Pages sit on `surface-000`. Cards, widgets, dialogs, menus and fields sit on `surface-100`. Tracks, hover rows and icon tiles use `surface-200`. Builders draw their board on `surface-canvas`.
-- Body text is `ink`. Labels are `ink-label`. Hints, widget titles and table headers are `ink-muted`. Placeholders are `ink-faint`, which is decorative only.
-- On `neu-ground`, secondary text steps up to `ink-label`, because `ink-muted` fails contrast there. `bundle.css` does this for you.
-- Hairlines inside a card use `line-100`. Field and card borders use `line-200`. Edit-mode and dashed placeholders use `line-300`.
-- `brand-solid` (with `brand-solid-ink` on top) is used for exactly four things: primary buttons, active nav, the sidebar mark and the focus ring. Nothing else is brand-coloured.
-- **Presets** swap `brand-solid` for a firm-wide colour:
-  - `default`: zinc-900 in light, white in dark
-  - `brand-ocean`
-  - `brand-forest`
-  - `brand-sunset`
-  
-  Each preset has its own light and dark value, and dark fills take dark ink.
-- **Data series:** `in` (blue) is series 1, money in and positive flows. `out` (orange) is series 2, money out. Blue against orange is the colour-blind-safe pair. Always add an arrow icon or a label, and use these colours for fills and icons, not small text.
-- `success` and `danger` always come with a word or an icon. Never rely on colour alone. `danger` also draws the strike-mark.
+- The page sits on `surface-000`: cool pearl in light, near-black graphite in dark. The ground carries one soft radial light: from the top in light, from below in dark.
+- Cards, menus and fields are glass by default: `glass-surface` with 20px backdrop blur, a `glass-edge` hairline and an `edge-light` inner highlight along the top. `surface-100` is the solid fallback.
+- Body text is `ink`. Labels are `ink-label`. Hints, KPI labels and table headers are `ink-muted`. Placeholders are `ink-faint`, decorative only.
+- `brand-solid` (charcoal in light, near-white in dark) is the only accent. Use it for primary pills, the active nav item and the mark.
+- `lumen` is Lumen Edge's line of light (`#a5f3fc` in dark, charcoal in light). Use it for focus rings, selected blocks, active outlines and the beam in the mark. In dark, focus is a 1px line of `lumen` with a soft glow (`shadow-lumen`).
+- **Data:** `in` (teal) is series 1: money in, on time, attended. `out` (amber) is series 2: money out, late, absent. Teal against amber is colour-blind safe. Use them for fills, icons and bars, not small text.
+- `success` and `danger` always come with a sign, word or icon.
+- **Presets** swap `brand-solid` for a firm accent: `brand-ocean` (deep teal), `brand-forest` (olive), `brand-sunset` (burnt amber). Each has a light and a dark value.
 
 ### Themes (`data-theme`)
 
 | Theme | When |
 |---|---|
-| `light` | Default. |
-| `dark` | The person picks Dark, or picks System and their OS is dark. Apply it before first paint. |
-| `bw-light`, `bw-dark` | **Black & White.** Pure black and white with one mid-grey for `out` and muted text. Presets collapse to black or white. Borders become hard 1px `line-200`. Soft shadows become 6px offset solid shadows on overlays. Glass and neumorphic surfaces flatten. In B&W charts, the `out` series also gets a hatch. |
+| `light` | Aether. Default. |
+| `dark` | Lumen Edge. When the person picks Dark, or picks System and their OS is dark. Apply before first paint. |
+| `bw-light`, `bw-dark` | **Black & White.** Pure black and white with one mid-grey. Hard 1px borders, no blur or soft shadows, and a hatch for the `out` series. |
 
 ### Surface style (`data-style`)
 
-- **`solid`** (default): `surface-100` on `line-200` with `shadow-xs`. This is the current app's look.
-- **`glass`**: a `glass-surface` fill, 16px backdrop blur and a `glass-edge` border with `shadow-glass`. Paint the page `glass-tint` so the blur has something behind it. Keep text on solid tokens and never put body text over raw imagery. Don't use colour gradients.
-- **`neu`** (neumorphic): every element shares `neu-ground`. Raised elements use `shadow-neu-raised`. Fields, tracks and pressed buttons use `shadow-neu-inset`, with no borders. Neumorphism is low-contrast, so the focus ring and `ink-label` text carry state. Never rely on the shadow alone.
+- **`glass`** (default): translucent panes, 20px blur, hairline edge, inner highlight, soft ambient shadow (`shadow-card`).
+- **`solid`**: the same shapes on opaque `surface-100`. Use it on low-powered devices or when printing.
+- **`neu`** (neumorphic): every element shares `neu-ground`, with raised and inset shadows instead of borders. Secondary text steps up to `ink-label`.
 - Style changes only the surface. Spacing, type, content and behaviour stay the same.
 
 ### Type
 
-- Use **Inter** (Google Fonts, weights 400/500/600/700) for everything. `type.families.sans` falls back to the system UI font.
-- Set UI text in `body` (14/20). Use `label` (14/20, 500) for labels, widget titles and buttons, and `caption` (12/16) for hints, chips and tooltips.
-- Give each view one `page-title`. Set widget figures in `kpi` (24/32, 600, −0.025em).
-- `display` and `headline` are for the marketing site only.
-- Every number in tables, KPIs, fields and chart axes uses tabular numerals (`rnr-num`).
+- **Geist** (400/500/600) for all text, with tight tracking on titles: `page-title` 26/32 at −0.025em, `display` 72 at −0.045em.
+- **Geist Mono** for every figure, date, ID and label that reads like a ledger:
+  - `kpi`: 32/36, 500 weight, −0.03em.
+  - `overline`: 11px uppercase, +0.08em. Use it for KPI labels, table headers and status eyebrows.
+  - `data`: 13px, for numbers in tables.
+- UI text is `body` 14/20. Buttons and labels use `label` (500).
 
-### Spacing, density and layout
+### Shape and elevation
 
-- Spacing is on a 4px base. The source also uses half steps: `space-1.5`, `space-2.5`, `space-3.5`.
-- **Density** (`data-density`):
-
-  | | `comfortable` (default) | `compact` |
-  |---|---|---|
-  | Controls | `control-h` 36px | `control-h-compact` 32px |
-  | Card padding | `space-5` | `space-4` |
-  | Table rows | `row-comfortable` 10px | `row-compact` 6px |
-  
-  The setting is remembered per person.
-- Lay out mobile-first. Dashboards use a grid of 1 column, 2 from `sm:` and 4 from `lg:`. Widgets span 1, 2 or 4 columns.
-- On phones:
-  - every widget is full width
-  - the builder palette becomes a bottom sheet
-  - tables scroll inside their card with the first column sticky
-- Hit areas grow to `touch-min` (44px) on coarse pointers.
-- Dialogs keep a 1rem gutter (`calc(100% - 2rem)`).
-
-### Radii and elevation
-
-| Radius | Used for |
+| Token | Used for |
 |---|---|
-| `radius-lg` (8px) | Buttons, fields, menus, tooltips |
-| `radius-xl` (12px) | Icon tiles, palette blocks, drop zones |
-| `radius-2xl` (16px) | Widgets, dialogs, panels |
-| `radius-full` | Avatars, chips, kind badges |
+| `radius-full` | Every button, input, select, segmented track, tab, chip and avatar: they are all pills |
+| `radius-xl` (20px) | Cards, widgets, the mark |
+| `radius-2xl` (28px) | Dialogs, sheets, the landing page's product window |
+| `radius-lg` (14px) | Menus, text areas, builder blocks |
 
 | Shadow | Used for |
 |---|---|
-| `shadow-xs` | At rest |
-| `shadow-sm` | Primary buttons, selected segments, edit mode |
-| `shadow-lg` | Menus, tooltips |
-| `shadow-2xl` | Dialogs, the widget being dragged |
+| `shadow-card` | Cards. A bevel highlight plus soft ambient shadow in light; a top edge of light plus deep shadow in dark |
+| `shadow-lg` | Menus, popovers, dialogs, the dragged widget |
+| `shadow-lumen` | Focus and active states in dark |
+
+Never nest a card inside a card. Group with spacing and hairlines instead.
+
+### Spacing, density and layout
+
+- Spacing is on a 4px base, with half steps `space-1.5`, `space-2.5` and `space-3.5`.
+- **Density** (`data-density`): controls are 40px comfortable and 34px compact; cards are `space-5` / `space-4`; table rows are `row-comfortable` / `row-compact`.
+- **Layout:**
+  - The app fills the window. A floating glass sidebar (240px) sits beside the content, which has no max-width.
+  - Dashboards use a fluid grid of 280px minimum columns.
+  - On phones the sidebar becomes a bottom bar, the builder palette becomes a bottom sheet, and tables scroll inside their card.
+- Hit areas are at least `touch-min` (44px) on coarse pointers.
 
 ### Motion (`data-motion`) and micro-interactions
 
@@ -141,6 +139,38 @@ ReportNoReport v2 is a drag-and-drop SaaS for building forms, dashboards and rep
 
 ### Focus and accessibility
 
+- Every focusable control shows `focus-ring`: a 2px charcoal outline in light, and a `lumen` line with glow in dark.
+- Text holds 4.5:1 on its grounds in light and dark: `ink-muted` is 5.6:1 on pearl and 6.1–6.6:1 on graphite. `out` is for fills only (4.3:1).
+- Glass never carries text over imagery. Panes sit on the flat ground, so contrast is measured against `surface-000`.
+- Every drag has a keyboard path and a menu path, and moves are announced in a live region.
+
+### Interaction rules
+
+- **Feedback within 400ms.**
+  - Paint `rnr-skeleton` shapes the moment a view opens.
+  - Update cheap, reversible actions (approve, rename, reorder) optimistically.
+  - Wait for the server on money and anything irreversible.
+- **Don't disable submit.**
+  - Keep the button live and validate on click.
+  - Mark the blocking fields and move focus to the first one.
+  - While a request runs, set `aria-busy="true"` and show `rnr-spin`. The button keeps focus and its place.
+- **Validate from the DOM.** `.rnr-field:has(:user-invalid)` turns the border and label `danger` and shows `.rnr-error-text`. Errors appear after the person leaves the field, never on first render.
+- **One accent, used sparingly.**
+  - `brand-solid` marks only the primary action, the current place and the mark.
+  - Status is a grey icon plus a word (`rnr-status`), not a coloured pill.
+  - `in` and `out` are for data series.
+- **Alignment.**
+  - Labels and names go left; numbers and dates go right (`.num`).
+  - Put 16px icons on the text line, and keep to the 4px grid.
+- **Shortcuts.** Show the keyboard shortcut next to the actions people repeat, in `rnr-kbd`. Use ⌘K for search and N for new form.
+- **Empty states.**
+  - Write four kinds, each with its own copy and one primary action: first run, no results, filtered out, error.
+  - Show a small illustration or a ghost preview of a real item.
+  - Never a bare "No data".
+- **Touch.** Hit areas are at least `touch-min` (44px) on coarse pointers, while icons stay 16–20px.
+
+### Focus and accessibility
+
 - Every focusable control gets a 2px `focus-ring` outline at a 2px offset. The ring follows the preset.
 - Body text holds 4.5:1 on its named grounds in all four themes. These source colours fall short and are kept exactly as in the code; their token notes say how to use them:
   - `danger` on `danger-surface` is about 4.4:1
@@ -151,57 +181,41 @@ ReportNoReport v2 is a drag-and-drop SaaS for building forms, dashboards and rep
 
 ## Iconography
 
-- Use the app's own 24×24 stroke set: 34 glyphs, 2px stroke, round caps and joins, `currentColor`. It is copied verbatim into the **Icon** component from `src/ui.tsx`.
-- Sizes:
-
-  | Size | Where |
-  |---|---|
-  | 16px | Buttons and menus |
-  | 14px | Icon buttons and segments |
-  | 20px | Nav |
-- Mark decorative icons `aria-hidden`. Every icon-only button needs an `aria-label`.
-- In and out are always the diagonal arrows `in` and `out`. The drag handle is always `grip`.
-- No emoji, and no second icon library.
+- Use the ReportNoReport duotone set (see **Icon**): a rounded 2px stroke over a soft 14% fill of the same colour, on a 24×24 grid, in `currentColor`.
+- Sizes: 16px in buttons and menus, 18px in nav, 22px in empty states.
+- In Black & White the fill drops out and only the stroke remains.
+- Decorative icons are `aria-hidden`. Icon-only buttons get an `aria-label`. No emoji and no second icon set.
 
 ## Wordmark
 
-- There is no drawn logo file. Set the name in type: "Report**No**Report" in the `wordmark` style, with "No" in `ink-faint`.
-- Pair it with a 40px `radius-lg` tile in `brand-solid` holding a bold "R" in `brand-solid-ink`.
-- Don't redraw it as an image.
+- **The mark:** a rounded `brand-solid` tile holding two report lines crossed by a single beam ("report, no report").
+- **The wordmark:** "Report**No**Report" in Geist 600 at −0.02em, with "No" in `ink-faint`.
+- The plain "R" tile is retired.
 
 ## Components
 
-The component sheet is `components/bundle.css`. Its classes all start with `rnr-` and read only tokens. Put the five mode attributes on `<html>`.
+The stylesheet is `components/bundle.css`. Its classes start with `rnr-` and read only tokens. Put the mode attributes on `<html>`.
 
 | Component | What it is |
 |---|---|
-| Button | Primary, secondary, ghost and danger buttons |
-| Field | A form control with its label |
-| Segmented | A row of linked options, one selected |
-| Widget | A dashboard card |
+| Button | Pill buttons: primary, secondary, ghost, danger, plus a busy state |
+| Field | Pill input wells with labels and errors |
+| Segmented | Pill tracks for tabs, choices and toggles |
+| Kpi | Mono label, mono figure, delta pill and sparkline |
+| Meter | Segmented bar with a legend, replacing donut charts |
+| Widget | A dashboard card with drag states |
 | Canvas | The drag-and-drop builder board |
-| DataTable | A sortable data table |
-| Dialog | A modal window |
-| Menu | A dropdown list of actions |
-| Badge | Small status marks |
-| Icon | The icon set |
-| Wordmark | The name set in type |
-| AppearancePanel | The settings for theme, preset, style, density and motion |
+| DataTable | Tables with mono headers, status and tags |
+| Dialog | A glass modal sheet |
+| Menu | A glass dropdown |
+| Badge | Tags, status, chips, deltas, kind marks, avatars and key hints |
+| Icon | The duotone icon set |
+| Wordmark | The mark and the name in type |
+| AppearancePanel | Theme, accent, surface, density and motion settings |
 
 ## Not synced
 
-- **Source:** `delfrinandopranata/reportnoreport` at `main@846662a`. Tokens come from `src/index.css`, `src/ui.tsx`, `src/Dashboard.tsx`, `src/table.tsx` and `index.html`. The neutrals are Tailwind zinc, as the code uses them.
-- **Added for v2** (designed from the brief, not from the code):
-  - the `bw-light` and `bw-dark` themes
-  - glass and neumorphic surfaces
-  - compact control heights and card padding (the code sets only row padding)
-  - the motion modes
-  - the canvas and builder tokens
-  - the AppearancePanel and Canvas components
-  - `in` in light is `#2873ce`, darkened from the app's `#2a78d6` so it reaches 4.5:1 as text (update `--color-in` in `src/index.css` to match)
-- **Not carried over:**
-  - the six avatar tint pairs (Tailwind sky, amber, emerald, violet, rose and teal)
-  - Tailwind's `blue-100`/`blue-700` "sample data" chip, which maps to `info-surface`/`info-ink`
-- **Fonts:** Inter is loaded from Google Fonts, so there are no font files to copy.
-- **Logos:** the repository has none. `public/favicon.svg` is Vite's default mark and was not imported.
-- **Components:** the code is Tailwind utility classes in React, with no packaged library. The components here are hand-written as static HTML/CSS from `src/ui.tsx`, `src/Dashboard.tsx` and `src/table.tsx`. No React bundle was built.
+- **Source:** `delfrinandopranata/reportnoreport` at `main@846662a`. Spacing, density, motion, the Black & White themes and the interaction rules come from there and from the B&W audit.
+- **Look v2** (11 Oct 2026), designed to move away from the zinc and Inter look and from the common blue admin look. It covers colours, type, shapes, shadows, icons, the mark, the KPI and Meter patterns, and glass as the default surface.
+- **Fonts:** Geist and Geist Mono from Google Fonts; there are no font files.
+- **Components:** hand-written as HTML and CSS. No React bundle.

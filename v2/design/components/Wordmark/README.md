@@ -1,10 +1,7 @@
 # Wordmark
 
-The product name set in type — there is no drawn logo file in the repository.
+The mark is a rounded tile in `brand-solid` holding two report lines crossed by one beam — "report, no report". Next to it, "Report**No**Report" in Geist 600, −0.02em, with "No" in `ink-faint`.
 
-Recreated from the landing page header and hero in `index.html` (the favicon in `public/` is Vite's default, not a brand mark).
-
-## Rules
-- Lockup: a 40px `radius-lg` tile in `brand-solid` with a bold 14px "R" in `brand-solid-ink`, 12px gap, then "Report**No**Report" in the `wordmark` style with "No" in `ink-faint`.
-- Screen readers get `aria-label="ReportNoReport"`.
-- The hero joke "Report without repo~~r~~t." uses `rnr-strike`: a `danger` bar drawn in over 500ms after a 450ms delay (static in flat motion).
+- Tile: 32px with 10px radius in the app bar; 56px / 18px on its own.
+- The lines sit at 55% opacity; the beam is full strength.
+- Never recolour the beam, never add a gradient, never return to the plain "R" tile.

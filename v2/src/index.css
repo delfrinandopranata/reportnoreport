@@ -20,13 +20,17 @@
   --color-out: var(--out);
   --color-success: var(--success);
   --color-danger: var(--danger);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
+
+/* Look v2 retired shadow-2xl; dragged items and dialogs use the large shadow. */
+:root { --shadow-2xl: var(--shadow-lg); }
 
 body { background: var(--surface-000); color: var(--ink); font-family: var(--font-sans); }
 
 dialog.rnr-dialog { margin: auto; padding: 0; width: calc(100% - 2rem); }
-dialog.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
+dialog.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(8px); }
 
 /* Native checkboxes in labels: ink tint (brand-solid is reserved), readable size, touch-sized rows on phones. */
 input[type="checkbox"] { width: 16px; height: 16px; flex: none; accent-color: var(--ink); }
@@ -45,11 +49,11 @@ a:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible { ou
 
 /* Phase 2 form fields (design/phase-2-screens.md §0, §5). */
 .rnr-field[data-invalid="true"] > .rnr-label, fieldset[data-invalid="true"] > legend { color: var(--danger); }
-textarea.rnr-input { height: auto; padding: var(--space-2) var(--space-3); resize: vertical; }
-input[type="file"].rnr-input { height: auto; padding: var(--space-2) var(--space-3); }
+textarea.rnr-input { height: auto; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); resize: vertical; }
+input[type="file"].rnr-input { height: auto; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); }
 /* Segmented inactive label: ink-muted on the track is 4.4:1, below AA for 14px text. */
 .rnr-field .rnr-seg button[aria-checked="false"] { color: var(--ink-label); }
-.rnr-readout { display: flex; align-items: center; min-height: var(--rnr-control-h); padding: 0 var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-200); color: var(--ink); font-variant-numeric: tabular-nums; }
+.rnr-readout { display: flex; align-items: center; min-height: var(--rnr-control-h); padding: 0 var(--space-4); border: 1px solid var(--line-200); border-radius: var(--radius-full); background: var(--rnr-track-bg); color: var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .rnr-sign { display: block; width: 100%; aspect-ratio: 5 / 2; border: 1px solid var(--line-200); border-radius: var(--radius-xl); touch-action: none; }
 
 /* Builder canvas and palette (design/phase-2-screens.md §0, §2). */
@@ -261,3 +265,32 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 }
 /* The bundle's .rnr-seg is one grid row; four filters run past a phone-width card, so below sm it becomes two columns (unlayered, so utilities cannot do this). */
 @media (max-width: 639px) { .rnr-seg[role="group"] { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; } }
+
+/* Look v2 app shell: a floating glass sidebar beside a full-width stage. Below lg the sidebar becomes a top bar with a scrolling pill nav. */
+.rnr-shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.rnr-side { min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--rnr-card-border); background: var(--rnr-card-bg); backdrop-filter: var(--rnr-blur); -webkit-backdrop-filter: var(--rnr-blur); position: sticky; top: 0; z-index: 10; }
+.rnr-side-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.rnr-side-top select { max-width: 200px; min-width: 0; }
+.rnr-nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--space-2)); padding: 0 var(--space-2); }
+.rnr-nav-link { display: inline-flex; align-items: center; gap: 10px; flex: none; min-height: 36px; padding: 0 12px; border-radius: var(--radius-full); color: var(--ink-label); font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background-color var(--rnr-t-hover), color var(--rnr-t-hover); }
+.rnr-nav-link .rnr-ico { color: var(--ink-muted); }
+.rnr-nav-link[aria-current="page"] { background: var(--brand-solid); color: var(--brand-solid-ink); }
+.rnr-nav-link[aria-current="page"] .rnr-ico { color: currentColor; }
+[data-theme="dark"] .rnr-nav-link[aria-current="page"] { background: var(--surface-200); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(165,243,252,0.28), 0 0 14px rgba(165,243,252,0.08); }
+[data-theme="dark"] .rnr-nav-link[aria-current="page"] .rnr-ico { color: var(--lumen); }
+@media (hover: hover) { .rnr-nav-link:not([aria-current="page"]):hover { background: var(--rnr-track-bg); color: var(--ink); } }
+.rnr-nav-link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.rnr-stage { min-width: 0; display: flex; flex-direction: column; }
+.rnr-topbar { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-1); padding: var(--space-3) var(--space-4) 0; position: relative; }
+.rnr-topbar .rnr-nav-link { min-height: 36px; }
+.rnr-main { width: 100%; box-sizing: border-box; padding: var(--space-4) var(--space-4) var(--space-8); }
+@media (min-width: 640px) { .rnr-main { padding: var(--space-6) var(--space-8) var(--space-8); } .rnr-topbar { padding: var(--space-4) var(--space-8) 0; } }
+@media (min-width: 1024px) {
+  .rnr-shell { grid-template-columns: 252px minmax(0, 1fr); grid-template-rows: none; }
+  .rnr-side { position: sticky; top: 12px; height: calc(100dvh - 24px); margin: 12px 0 12px 12px; padding: var(--space-5) var(--space-3); border: 1px solid var(--rnr-card-border); border-radius: var(--radius-2xl); box-shadow: var(--rnr-card-shadow); overflow-y: auto; }
+  .rnr-side-top { flex-direction: column; align-items: stretch; gap: var(--space-4); padding: 0 var(--space-2); }
+  .rnr-side-top select { max-width: none !important; width: 100% !important; }
+  .rnr-nav { flex-direction: column; overflow: visible; margin: 0; padding: 0; }
+  .rnr-nav-link { min-height: 40px; }
+}
+[data-theme^="bw"] .rnr-side { box-shadow: none; }
