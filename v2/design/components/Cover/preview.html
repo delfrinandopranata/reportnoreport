@@ -1,0 +1,33 @@
+<!-- @dsCard height=300 -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:var(--surface-000);font-family:var(--font-sans)}
+.c{position:relative;width:960px;height:300px;overflow:hidden}
+svg{position:absolute;left:0;top:0}
+.ink{fill:var(--ink)} .ocean{fill:var(--brand-ocean)} .in{fill:var(--in)} .out{fill:var(--out)} .forest{fill:var(--brand-forest)} .sunset{fill:var(--brand-sunset)} .tint{fill:var(--surface-200)}
+.r2{rx:var(--radius-2xl);ry:var(--radius-2xl)} .rl{rx:var(--radius-lg);ry:var(--radius-lg)}
+.dot{fill:var(--surface-100)}
+.ghost{fill:none;stroke:var(--line-300);stroke-width:2;stroke-dasharray:8 6}
+.t{position:absolute;left:48px;bottom:40px;right:48px}
+.n{margin:0;font-size:64px;line-height:.95;font-weight:700;letter-spacing:-0.03em;color:var(--ink);white-space:nowrap}
+.n span{color:var(--ink-faint)}
+.g{margin:12px 0 0;font-size:14px;line-height:20px;color:var(--ink-muted);max-width:440px}
+</style></head><body><div class="c">
+<svg width="960" height="300" viewBox="0 0 960 300" aria-hidden="true">
+<!-- blocks: ink 264x120, in 168x96, out 120x120, ocean 200x104 (tilted, mid-drag), tint 136x72; forest + sunset 56x56 — all radius-2xl / radius-lg
+     arrangement: top band, a row of dashboard widgets bleeding off the top edge, one lifted and tilted 1deg beside its dashed drop placeholder
+     pattern: geometric, modular, dense UI → tiles cut by the radius tokens plus the 2x3 drag-grip dots, because the product is drag-and-drop widgets
+     steps & radii: gaps space-4 (16px), grip pitch space-2 (8px); radius-2xl widgets, radius-lg preset tiles -->
+<rect class="ink r2" x="-16" y="-24" width="264" height="136"/>
+<circle class="dot" cx="24" cy="24" r="3"/><circle class="dot" cx="32" cy="24" r="3"/><circle class="dot" cx="24" cy="32" r="3"/><circle class="dot" cx="32" cy="32" r="3"/><circle class="dot" cx="24" cy="40" r="3"/><circle class="dot" cx="32" cy="40" r="3"/>
+<rect class="in r2" x="264" y="-24" width="168" height="120"/>
+<rect class="ghost r2" x="448" y="8" width="200" height="104"/>
+<g transform="rotate(1 560 56)"><rect class="ocean r2" x="460" y="-8" width="200" height="104"/>
+<circle class="dot" cx="484" cy="16" r="3"/><circle class="dot" cx="492" cy="16" r="3"/><circle class="dot" cx="484" cy="24" r="3"/><circle class="dot" cx="492" cy="24" r="3"/><circle class="dot" cx="484" cy="32" r="3"/><circle class="dot" cx="492" cy="32" r="3"/></g>
+<rect class="out r2" x="680" y="-24" width="120" height="136"/>
+<rect class="tint r2" x="816" y="-24" width="160" height="72"/>
+<rect class="forest rl" x="816" y="64" width="56" height="48"/>
+<rect class="sunset rl" x="888" y="64" width="56" height="48"/>
+</svg>
+<div class="t"><p class="n">Report<span>No</span>Report v2</p><p class="g">Report without complicated reporting — forms, dashboards and reports for school admins and HR.</p></div>
+</div></body></html>

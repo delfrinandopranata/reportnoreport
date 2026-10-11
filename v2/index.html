@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportNoReport</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (() => {
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
+        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
+        const h = document.documentElement
+        h.dataset.theme = s.bw ? (dark ? 'bw-dark' : 'bw-light') : (dark ? 'dark' : 'light')
+        h.dataset.preset = s.preset || 'default'
+        h.dataset.style = s.style || 'solid'
+        h.dataset.density = s.density || 'comfortable'
+        h.dataset.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : (s.motion || 'full')
+      })()
+    </script>
+  </head>
+  <body class="rnr rnr-ground">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
