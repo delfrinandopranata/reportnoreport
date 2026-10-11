@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { FALLBACK, friendlyError } from '../ui/errors'
 import { Skeleton } from '../ui/Skeleton'
+import { AppearanceSettings } from '../ui/AppearanceSettings'
 import { useNotice } from '../ui/useNotice'
 import { setOptOut, useOptOut } from '../campaigns/api'
 import { setEmailPref, usePrefs } from './api'
@@ -47,6 +48,7 @@ export function SettingsPage() {
   return (
     <section className="flex max-w-2xl flex-col gap-4" aria-labelledby="settings-h">
       <h1 className="page-title" id="settings-h" tabIndex={-1}>Settings</h1>
+      <AppearanceSettings />
       <section className="rnr-card gap-4" aria-labelledby="email-h">
         <h2 id="email-h" className="dialog-title">Email notifications</h2>
         <p className="rnr-muted">

@@ -34,6 +34,7 @@ import { CampaignPage } from './campaigns/CampaignPage'
 import { Shell as AppShell } from './ui/Shell'
 import { Skeleton } from './ui/Skeleton'
 import { blocksNavigation } from './ui/navGuard'
+import { syncFromSession, useFollowSystem } from './ui/useAppearance'
 
 const useHash = () => {
   const [hash, setHash] = useState(location.hash || '#/inbox')
@@ -116,6 +117,7 @@ function Signed({ email }: { email: string }) {
 }
 
 export default function App() {
+  useFollowSystem()
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const qc = useQueryClient()
   const lastUser = useRef<string | undefined>(undefined)
@@ -126,6 +128,11 @@ export default function App() {
       if (lastUser.current !== undefined && lastUser.current !== id) {
         qc.clear()
         try { localStorage.removeItem('rnr.orgId') } catch { /* private mode */ }
+      }
+      if (s && lastUser.current !== id) {
+        // The cached session can be an hour old; ask once per sign-in so another device's choice shows after a reload.
+        syncFromSession(s.user.user_metadata)
+        void supabase.auth.getUser().then(({ data: { user } }) => { if (user && user.id === id) syncFromSession(user.user_metadata) })
       }
       lastUser.current = id ?? ''
       setSession(s)
