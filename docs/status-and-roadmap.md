@@ -32,6 +32,7 @@
 
 - All 34 rulings from Plan A ledger captured in [decisions.md](./decisions.md)
 - No tech debt with hard deadlines
+- Deferred (after Paper-that-moves go-live is verified): a follow-up migration drops `firms.design_system` (deprecated, unused since `20261012000001_appearance`) and the old `theme` rows in `user_preferences`; then remove the `designSystem` mapper field and `DesignSystemCard`.
 - Deferred minors (low-cost items for later): otp_expiry comment, logo <img> missing-file fallback, network-failure English-only, stray deno.lock, README APP_URL step
 
 ---

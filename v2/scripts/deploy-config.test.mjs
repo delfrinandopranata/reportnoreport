@@ -4,9 +4,10 @@ import { readFileSync } from 'node:fs'
 
 const wf = (name) => readFileSync(new URL(`../../.github/workflows/${name}`, import.meta.url), 'utf8')
 
-test('v1 deploy skips v2 changes and points at the ledger subdomain', () => {
+test('v1 deploy ignores v2 except its design system and points at the ledger subdomain', () => {
   const v1 = wf('deploy.yml')
-  assert.match(v1, /paths-ignore:\s*\[\s*'v2\/\*\*',\s*'\.github\/workflows\/deploy-v2\.yml',\s*'\.github\/workflows\/ci-v2\.yml'\s*\]/)
+  assert.doesNotMatch(v1, /paths-ignore/)
+  assert.match(v1, /paths:\s*\[\s*'\*\*',\s*'!v2\/\*\*',\s*'v2\/design\/\*\*',\s*'!\.github\/workflows\/deploy-v2\.yml',\s*'!\.github\/workflows\/ci-v2\.yml'\s*\]/)
   assert.match(v1, /APP_URL=https:\/\/ledger\.reportnoreport\.com\/app\//)
   assert.match(v1, /url: https:\/\/ledger\.reportnoreport\.com/)
   assert.doesNotMatch(v1, /APP_URL=https:\/\/reportnoreport\.com/)

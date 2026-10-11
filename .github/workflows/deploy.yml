@@ -3,7 +3,8 @@ name: Deploy
 on:
   push:
     branches: [main]
-    paths-ignore: ['v2/**', '.github/workflows/deploy-v2.yml', '.github/workflows/ci-v2.yml']
+    # v1 imports v2/design (docs/superpowers/plans/2026-10-12-v1-paper-that-moves.md decision 1), so a design change redeploys v1.
+    paths: ['**', '!v2/**', 'v2/design/**', '!.github/workflows/deploy-v2.yml', '!.github/workflows/ci-v2.yml']
   workflow_dispatch:
 
 permissions:
