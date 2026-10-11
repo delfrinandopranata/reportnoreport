@@ -51,7 +51,8 @@ supabase/tests/02_isolation.test.sql
 supabase/tests/03_rbac_guards.test.sql
 src/main.tsx, src/App.tsx, src/index.css
 src/data/supabase.ts          client + readEnv
-src/data/supabase.test.ts
+src/data/readEnv.ts          pure env guard
+src/data/readEnv.test.ts
 src/rbac/permissions.ts       PERMISSIONS, groups, can()
 src/rbac/permissions.test.ts
 src/rbac/useOrg.tsx           current org + permission set (context)
