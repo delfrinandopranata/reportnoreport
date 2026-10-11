@@ -15,7 +15,7 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 | 3 | Analytics: **Vercel Web Analytics**, loaded only after consent |
 | 4 | Approach: **Vite multi-page build** — public pages are static HTML, no React/Supabase |
 | 5 | Domain: `https://reportnoreport.com` |
-| 6 | Legal entity: `[Company name]` placeholder; build fails while it remains |
+| 6 | Legal entity: **ReportNoReport**; governing law still to confirm (Terms keeps a `[Governing law]` placeholder) |
 
 ## 1. Pages and routing
 
@@ -66,7 +66,7 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 2. an internal `href`/`src` in `dist/**/*.html` that does not resolve to a file
 3. `<img>` without `alt`
 4. image file > 200 KB
-5. `[Company name]` still present
+5. `[Governing law]` still present
 
 One script, no new dependency. Unit test: `scripts/check-dist.test.mjs` with fixture HTML for each rule.
 
@@ -80,5 +80,5 @@ Content-Security-Policy · a CMS for legal text · i18n · server-side rendering
 - Unknown path returns HTTP 404 with the custom page.
 - Sharing `https://reportnoreport.com` shows title, description and `og.png`.
 - No analytics request before Accept; one after.
-- `pnpm build` fails on each of the five check rules.
+- `pnpm build` fails on each of the five check rules (rule 5 until governing law is filled in).
 - Lighthouse ≥95 ×4 on public pages.
