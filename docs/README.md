@@ -52,6 +52,7 @@
 | Check mailbox | Mailpit: `http://127.0.0.1:54324` |
 | Deploy frontend | Vercel (auto on push to main); `pnpm build` produces `dist/` |
 | Deploy functions | `supabase functions deploy admin` / `supabase functions deploy team` / `supabase functions deploy stripe-webhook` / `supabase functions deploy billing-checkout` |
+| Design system | [v2/design/README.md](../v2/design/README.md): the only design system for v1 and v2. v1 imports it by relative path; never copy it. |
 | Check for lint and type errors | `npx oxlint src` and `npx tsc -p tsconfig.app.json --noEmit` |
 
 ## Ongoing work and decisions

@@ -1,62 +1,30 @@
+@import "../v2/design/fonts/fonts.css";
+@import "../v2/design/tokens.css";
+@import "../v2/design/components/bundle.css";
 @import "tailwindcss";
 
-/* dark: responds to <html class="dark"> (set by useTheme); OS default is bootstrapped in app/index.html before paint. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* v2/design owns every rnr-* class (in @layer components). Never write unlayered CSS that targets rnr-* here. v1 imports it by relative path; never copy it. Spec: v2/design/README.md */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Chart/series identity: receipts = blue, payments = orange (validated categorical slots 1–2). */
-  --color-in: #2873ce; /* design-system/tokens.json `in` (light): darkened from #2a78d6 for 4.5:1 as text */
-  --color-out: #eb6834;
+@theme inline {
+  --color-canvas: var(--canvas); --color-surface: var(--surface); --color-field: var(--field); --color-soft: var(--soft);
+  --color-line: var(--line); --color-line-strong: var(--line-strong); --color-edge: var(--edge);
+  --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-ink-3: var(--ink-3);
+  --color-acc-a: var(--acc-a); --color-on-acc: var(--on-acc); --color-down: var(--down); --color-down-bg: var(--down-bg);
+  --color-ok-ink: var(--ok-ink); --color-tint: var(--tint); --color-stamp: var(--stamp); --color-strike: var(--strike);
+  --color-link: var(--link); --color-series-1: var(--series-1); --color-series-2: var(--series-2);
+  /* Compat until the screen tasks (7-10) move off bg-in / text-out and var(--brand-solid); then delete these three lines. */
+  --color-in: var(--series-1); --color-out: var(--series-2);
+  --font-sans: var(--font-ui);
 }
+:root { --brand-solid: var(--acc-a); --brand-solid-ink: var(--on-acc); }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-in: #3987e5;
-    --color-out: #d95926;
-  }
-}
+body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
-/* Firm-level design system (brand colour): sidebar mark, primary buttons, active nav, focus ring.
-   Set via [data-design] on <html>, independent of the .dark class. "default" = the plain fallback
-   below, so an unknown/loading firm still renders the original look. Each system carries its own
-   light and dark shade so text/icons on top keep enough contrast against both. */
-:root {
-  --brand-solid: #18181b; /* zinc-900 */
-  --brand-solid-ink: #ffffff;
-}
-:root.dark {
-  --brand-solid: #ffffff;
-  --brand-solid-ink: #18181b; /* zinc-900 */
-}
-:root[data-design="ocean"] {
-  --brand-solid: #2563eb; /* blue-600 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="ocean"].dark {
-  --brand-solid: #3b82f6; /* blue-500 */
-  --brand-solid-ink: #18181b;
-}
-:root[data-design="forest"] {
-  --brand-solid: #047857; /* emerald-700 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="forest"].dark {
-  --brand-solid: #10b981; /* emerald-500 */
-  --brand-solid-ink: #18181b;
-}
-:root[data-design="sunset"] {
-  --brand-solid: #b45309; /* amber-700 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="sunset"].dark {
-  --brand-solid: #f59e0b; /* amber-500 */
-  --brand-solid-ink: #18181b;
-}
-
-body {
-  @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
-}
+/* v1 paper: batch 7 — clients, ledger, statements (Task 7 only) */
+/* v1 paper: batch 8 — dashboard, checklist, tour (Task 8 only) */
+/* v1 paper: batch 9 — settings, users, contracts (Task 9 only) */
+/* v1 paper: batch 10 — auth, admin, homepage (Task 10 only) */
 
 @media print {
   @page {
