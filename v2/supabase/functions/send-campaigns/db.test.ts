@@ -11,7 +11,7 @@ const url = Deno.permissions.querySync({ name: 'env', variable: 'RNR_TEST_DB_URL
   : undefined
 const ALPHA = '0000000a-0000-0000-0000-000000000001'
 const VIEWER = '00000000-0000-0000-0000-0000000000a4'
-const UNSUB = { url: 'http://127.0.0.1:54321/functions/v1/unsubscribe', secret: 'a-local-unsubscribe-secret-of-32+chars' }
+const UNSUB = { url: 'http://127.0.0.1:54321/functions/v1/unsubscribe', page: 'http://127.0.0.1:5173/unsubscribe', secret: 'a-local-unsubscribe-secret-of-32+chars' }
 
 async function campaign(sql: postgres.Sql, name: string, audience: unknown, sentBy: string): Promise<string> {
   const [c] = await sql`

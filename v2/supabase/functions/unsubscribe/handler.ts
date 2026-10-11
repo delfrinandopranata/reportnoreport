@@ -1,36 +1,29 @@
 import { checkUnsubscribe } from '../_shared/comms/campaign.ts'
-import { escapeHtml } from '../_shared/comms/render.ts'
 
 export type UnsubscribeStore = {
   message(id: string): Promise<{ org_id: string; org_name: string; email: string } | null>
   isOptedOut(orgId: string, email: string): Promise<boolean>
   optOut(orgId: string, email: string): Promise<void>
 }
-export type Page = { status: number; html: string }
+export type Answer = { status: number; body: Record<string, unknown> }
 
-const page = (status: number, title: string, body: string): Page => ({
-  status,
-  html: `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">`
-    + `<title>${title}</title></head><body><main><h1>${title}</h1>${body}</main></body></html>`,
-})
+const NOT_VALID = 'This unsubscribe link is not valid. Copy the whole link from the email and try again.'
+const EXPIRED = 'This unsubscribe link has expired. Reply to the email and ask the sender to stop sending you campaigns.'
 
-/** GET asks, POST does: link scanners fetch every URL in an email, so only the button (or a one-click POST) unsubscribes. */
-export async function handleUnsubscribe(method: string, url: URL, deps: { secret: string; store: UnsubscribeStore }): Promise<Page> {
-  if (method !== 'GET' && method !== 'POST') return page(405, 'Not available', '<p>Open the unsubscribe link from the email.</p>')
-  const id = url.searchParams.get('m')
-  if (!(await checkUnsubscribe(deps.secret, id, url.searchParams.get('t')))) {
-    return page(400, 'This link is not valid', '<p>The unsubscribe link is incomplete. Copy the whole link from the email and try again.</p>')
-  }
-  const m = await deps.store.message(id as string)
-  if (!m) return page(404, 'This link has expired', '<p>Reply to the email and ask the sender to stop sending you campaigns.</p>')
-  const org = escapeHtml(m.org_name)
+/**
+ * JSON only: the page that asks lives on the public site. GET checks the link so the page can name the organisation;
+ * POST unsubscribes. POST takes `{ t }` from the page, or RFC 8058's form body with the token in the URL (query).
+ */
+export async function handleUnsubscribe(method: string, queryToken: string | null, body: unknown, deps: { secret: string; store: UnsubscribeStore }): Promise<Answer> {
+  if (method !== 'GET' && method !== 'POST') return { status: 405, body: { error: 'Open the unsubscribe link from the email.' } }
+  const fromBody = body && typeof body === 'object' ? (body as { t?: unknown }).t : undefined
+  const id = await checkUnsubscribe(deps.secret, method === 'POST' && fromBody !== undefined ? fromBody : queryToken)
+  if (!id) return { status: 400, body: { error: NOT_VALID } }
+  const m = await deps.store.message(id)
+  if (!m) return { status: 404, body: { error: EXPIRED } }
   if (method === 'POST') {
     await deps.store.optOut(m.org_id, m.email)
-    return page(200, 'Unsubscribed', `<p>You are unsubscribed from ${org} campaign emails. Emails about your own tasks and records still arrive.</p>`)
+    return { status: 200, body: { done: true, org: m.org_name } }
   }
-  if (await deps.store.isOptedOut(m.org_id, m.email)) {
-    return page(200, 'Unsubscribed', `<p>You are already unsubscribed from ${org} campaign emails.</p>`)
-  }
-  return page(200, 'Unsubscribe', `<p>Stop receiving campaign emails from ${org}? Emails about your own tasks and records still arrive.</p>`
-    + '<form method="post"><button type="submit">Unsubscribe</button></form>')
+  return { status: 200, body: { valid: true, org: m.org_name, already: await deps.store.isOptedOut(m.org_id, m.email) } }
 }

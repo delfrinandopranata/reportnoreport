@@ -37,6 +37,10 @@ Email: every email is a queued `messages` row. `send-messages` (pg_cron, every m
 
 Hosted projects: set the function secrets `CRON_SECRET` (16+ characters), `APP_URL` (`https://reportnoreport.com/app/`), `EMAIL_TRANSPORT=resend`, `EMAIL_FROM` (a sender on a domain verified in Resend) and `RESEND_API_KEY`, and create the Vault secrets `resume_url` (`https://<ref>.supabase.co/functions/v1/resume`), `send_messages_url` (`https://<ref>.supabase.co/functions/v1/send-messages`), `render_pdfs_url` (`https://<ref>.supabase.co/functions/v1/render-pdfs`) and `cron_secret` (same value as `CRON_SECRET`). A missing or malformed email setting stops `send-messages` at boot.
 
+## Campaign unsubscribe
+
+The `unsubscribe` function answers JSON only (hosted Supabase serves function HTML as plain text). The page people open is `<APP_URL origin>/unsubscribe?t=<token>`, a static page on the public site that calls the function: `GET ?t=` returns `{ valid, org, already }`, `POST { t }` returns `{ done, org }`. Mail clients' one-click `List-Unsubscribe` POST goes straight to the function URL (`UNSUBSCRIBE_URL`). CORS allows only the `APP_URL` origin; set `APP_URL` for both `send-campaigns` and `unsubscribe`.
+
 ## Deploy
 
 Set the Vercel project Root Directory to `v2/`. Vercel builds with `pnpm build`, which fails if `scripts/check-dist.mjs` finds a leaked secret, a broken internal link, an `<img>` without `alt`, an image over 200 KB or a `[…]` placeholder.

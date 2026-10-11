@@ -147,11 +147,14 @@ export function sameText(a: string, b: string): boolean {
 const b64url = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const token = async (secret: string, messageId: string) => b64url(await hmacSha256(enc.encode(secret), `unsubscribe:${messageId}`))
 
-/** The message id, not the address, goes in the URL: no email address ever appears in a link (decision 5). */
-export const unsubscribeLink = async (base: string, secret: string, messageId: string) => `${base}?m=${messageId}&t=${await token(secret, messageId)}`
-export async function checkUnsubscribe(secret: string, messageId: unknown, t: unknown): Promise<boolean> {
-  if (!isUuid(messageId) || typeof t !== 'string') return false
-  return sameText(await token(secret, messageId), t)
+/** The token is `<message id>.<signature>`: it names the message but never the address, so no email address appears in a link (decision 5). */
+export const unsubscribeLink = async (base: string, secret: string, messageId: string) => `${base}?t=${messageId}.${await token(secret, messageId)}`
+/** The message id the token was signed for, or null when it is malformed or forged. */
+export async function checkUnsubscribe(secret: string, t: unknown): Promise<string | null> {
+  if (typeof t !== 'string') return null
+  const [id, sig, ...rest] = t.split('.')
+  if (rest.length || !isUuid(id) || !sig) return null
+  return sameText(await token(secret, id), sig) ? id : null
 }
 /** Read when a function boots; throws so a bad setting stops it before it serves. */
 export function readUnsubscribeConfig(url: string | undefined, secret: string | undefined): { url: string; secret: string } {

@@ -6,7 +6,7 @@ import type { Result } from '../advance/engine.ts'
 import { MAX_SCAN } from '../run-report/handler.ts'
 import type { CampaignMessage, CampaignNotice, CampaignRow, CampaignStore, CampaignTx } from './store.ts'
 
-export type Deps = { authorised: boolean; store: CampaignStore; now(): Date; unsubscribe: { url: string; secret: string } }
+export type Deps = { authorised: boolean; store: CampaignStore; now(): Date; unsubscribe: { url: string; page: string; secret: string } }
 /** A reason the campaign cannot be sent as it stands; its message is stored and shown as it is. */
 export class CampaignProblem extends Error {}
 function fail(message: string): never { throw new CampaignProblem(message) }
@@ -64,7 +64,8 @@ async function prepare(tx: CampaignTx, id: string, deps: Deps, now: Date): Promi
     const messageId = crypto.randomUUID() // known before the insert, so the unsubscribe link can name it
     const out = render(t, campaignContext(org, r.name))
     const link = t.channel === 'email' ? await unsubscribeLink(deps.unsubscribe.url, deps.unsubscribe.secret, messageId) : null
-    const body = link ? withFooter(out, org, link) : out
+    // The header link posts straight to the function (RFC 8058); the footer link opens the public page.
+    const body = link ? withFooter(out, org, await unsubscribeLink(deps.unsubscribe.page, deps.unsubscribe.secret, messageId)) : out
     rows.push({
       id: messageId, org_id: c.org_id, campaign_id: c.id, template_id: t.id, recipient_user_id: r.userId, recipient_email: r.email,
       channel: t.channel, status: t.channel === 'email' ? 'queued' : 'sent', subject: out.subject || t.name,

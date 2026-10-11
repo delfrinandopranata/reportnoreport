@@ -94,19 +94,18 @@ test('the footer escapes the organisation name and links the unsubscribe page', 
   assert.doesNotMatch(`${out.html}${out.text}`, /\bwe\b/i)
 })
 
-test('unsubscribe tokens verify for their message only', async () => {
+test('unsubscribe tokens name their message and verify for it only', async () => {
   const secret = 'a-local-unsubscribe-secret-of-32+chars'
   const m1 = '00000000-0000-4000-8000-000000000001'
-  const link = await unsubscribeLink('https://x.test/functions/v1/unsubscribe', secret, m1)
-  const u = new URL(link)
-  assert.equal(u.searchParams.get('m'), m1)
+  const u = new URL(await unsubscribeLink('https://x.test/unsubscribe', secret, m1))
+  assert.equal(u.pathname + u.search.slice(0, 3), '/unsubscribe?t=')
   const t = u.searchParams.get('t')!
-  assert.match(t, /^[A-Za-z0-9_-]{43}$/)
-  assert.equal(await checkUnsubscribe(secret, m1, t), true)
-  assert.equal(await checkUnsubscribe(secret, '00000000-0000-4000-8000-000000000002', t), false)
-  assert.equal(await checkUnsubscribe('another-secret-of-thirty-two-chars!!', m1, t), false)
-  assert.equal(await checkUnsubscribe(secret, 'not-a-uuid', t), false)
-  assert.equal(await checkUnsubscribe(secret, m1, null), false)
+  assert.match(t, new RegExp(`^${m1}\\.[A-Za-z0-9_-]{43}$`))
+  assert.equal(await checkUnsubscribe(secret, t), m1)
+  assert.equal(await checkUnsubscribe(secret, t.replace(m1, '00000000-0000-4000-8000-000000000002')), null)
+  assert.equal(await checkUnsubscribe('another-secret-of-thirty-two-chars!!', t), null)
+  assert.equal(await checkUnsubscribe(secret, 'not-a-uuid.abc'), null)
+  assert.equal(await checkUnsubscribe(secret, null), null)
 })
 
 test('readUnsubscribeConfig refuses a relative URL, a query and a short secret', () => {

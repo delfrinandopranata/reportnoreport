@@ -16,7 +16,7 @@ const WF = '0000000a-0000-0000-0000-00000000c001'
 const ADMIN = '00000000-0000-0000-0000-0000000000a2'
 const MEMBER = '00000000-0000-0000-0000-0000000000a3'
 const NOW = new Date('2026-10-11T12:00:00Z')
-const UNSUB = { url: 'https://x.test/functions/v1/unsubscribe', secret: 'a-local-unsubscribe-secret-of-32+chars' }
+const UNSUB = { url: 'https://x.test/functions/v1/unsubscribe', page: 'https://x.test/unsubscribe', secret: 'a-local-unsubscribe-secret-of-32+chars' }
 const EMAIL_T: TemplateRow = { id: 't1', org_id: ORG, kind: 'custom', name: 'Term news', channel: 'email', subject: 'News from {{org.name}}', body: 'Hello {{recipient.name}}' }
 const person = (i: number): Person => ({ userId: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, email: `p${i}@alpha.test`, name: `Person ${i}` })
 const people = (n: number) => Array.from({ length: n }, (_, i) => person(i))
@@ -97,9 +97,11 @@ Deno.test('a role campaign queues one email per member with the footer and an un
   assertEquals(w.messages.map((m) => [m.recipient_email, m.subject, m.status, m.channel]),
     [['p1@alpha.test', 'News from Alpha School', 'queued', 'email'], ['p2@alpha.test', 'News from Alpha School', 'queued', 'email']])
   const m = w.messages[0]
-  assertMatch(m.unsubscribe_url!, new RegExp(`^https://x\\.test/functions/v1/unsubscribe\\?m=${m.id}&t=[A-Za-z0-9_-]{43}$`))
+  // header link: the function (one-click POST); footer link: the public page
+  assertMatch(m.unsubscribe_url!, new RegExp(`^https://x\\.test/functions/v1/unsubscribe\\?t=${m.id}\\.[A-Za-z0-9_-]{43}$`))
+  const page = m.unsubscribe_url!.replace('functions/v1/unsubscribe', 'unsubscribe')
   assertMatch(m.body_text, /^Hello Person 1\n\n--\n/)
-  assert(m.body_text.endsWith(`Unsubscribe from Alpha School campaign emails: ${m.unsubscribe_url}`))
+  assert(m.body_text.endsWith(`Unsubscribe from Alpha School campaign emails: ${page}`))
   assertEquals(w.finished, { recipients: 2, excluded: ZERO, channel: 'email', status: 'sending', at: NOW })
   assertEquals(w.campaign.status, 'sending')
 })
