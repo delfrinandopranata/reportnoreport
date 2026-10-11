@@ -1,0 +1,23 @@
+<div class="rnr-card rnr-table-card rnr-wide"><table class="rnr-table rnr-ledger">
+  <caption class="rnr-sr-only">Transactions for Tan &amp; Co, 1 to 30 September 2026</caption>
+  <thead><tr>
+    <th scope="col" aria-sort="ascending" data-resizable><button class="rnr-th-sort" type="button">Date{{i:sort-ascending}}</button><button class="rnr-ledger-resize" type="button" aria-label="Resize Date column"></button></th>
+    <th scope="col" data-resizable>Description<button class="rnr-ledger-resize" type="button" aria-label="Resize Description column"></button></th>
+    <th scope="col" class="num" data-series="in">{{i:arrow-down-left}}Receipts</th>
+    <th scope="col" class="num" data-series="out">{{i:arrow-up-right}}Payments</th>
+    <th scope="col" class="num">Balance</th></tr></thead>
+  <tbody>
+    <tr data-open><td>1 Sep 2026</td><td>Opening balance</td><td class="num"></td><td class="num"></td><td class="num bal">MYR 2,000.00</td></tr>
+    <tr class="rnr-ledger-day"><th scope="colgroup" colspan="5">Thursday 3 September</th></tr>
+    <tr><td>3 Sep 2026</td><td>Deposit from client</td><td class="num" data-series="in"><span class="rnr-amt"><span class="rnr-amt-dir">{{i:arrow-down-left}}Receipt</span>MYR 5,000.00</span></td><td class="num"></td><td class="num bal">MYR 7,000.00</td></tr>
+    <tr aria-selected="true"><td>8 Sep 2026</td><td>Stamp duty, lease</td><td class="num"></td><td class="num" data-series="out"><span class="rnr-amt"><span class="rnr-amt-dir" data-dir="out">{{i:arrow-up-right}}Payment</span>MYR 1,250.50</span></td><td class="num bal">MYR 5,749.50</td></tr>
+    <tr><td>21 Sep 2026</td><td>Filing fee, overpaid in error</td><td class="num"></td><td class="num" data-series="out"><span class="rnr-amt"><span class="rnr-amt-dir" data-dir="out">{{i:arrow-up-right}}Payment</span>MYR 6,000.00</span></td><td class="num bal" data-neg>−MYR 250.50</td></tr>
+  </tbody>
+  <tfoot><tr><th scope="row" colspan="2">Closing balance</th><td class="num">MYR 5,000.00</td><td class="num">MYR 7,250.50</td><td class="num" data-neg>−MYR 250.50</td></tr></tfoot></table></div>
+<p class="pv-state">Receipts carry a solid edge mark and an arrow-in icon; payments a hatched mark and an arrow-out icon. A negative balance is red <em>and</em> has the true minus. Drag a handle (or focus it and press the arrow keys) to resize. Balances view uses the same classes with one amount column.</p>
+<h3 class="pv-h">Balances view</h3>
+<div class="rnr-card rnr-table-card rnr-wide"><table class="rnr-table rnr-ledger"><caption class="rnr-sr-only">Funds held per client</caption>
+  <thead><tr><th scope="col">Client</th><th scope="col">Last activity</th><th scope="col" class="num" aria-sort="descending"><button class="rnr-th-sort" type="button">Funds held{{i:sort-descending}}</button></th></tr></thead>
+  <tbody><tr><td>Tan &amp; Co</td><td>21 Sep 2026</td><td class="num bal" data-neg>−MYR 250.50</td></tr><tr><td>Lim Holdings</td><td>18 Sep 2026</td><td class="num bal">MYR 48,200.00</td></tr></tbody></table></div>
+<h3 class="pv-h">Empty</h3>
+<div class="rnr-card rnr-table-card"><div class="rnr-empty"><span class="rnr-kind">{{i:table}}</span><h3>No transactions in this period</h3><p>Choose another period or record a transaction.</p><button class="rnr-btn rnr-btn-secondary" type="button">Record a transaction</button></div></div>

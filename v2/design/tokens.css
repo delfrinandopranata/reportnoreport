@@ -573,6 +573,13 @@
   --folder-tab-h-sm: 22px;
   --icon-size: 20px;
   --icon-size-sm: 16px;
+  --sheet-paper: #FFFFFF;
+  --sheet-soft: #F2F2F2;
+  --sheet-ink: #111111;
+  --sheet-ink-2: #333333;
+  --sheet-ink-3: #595959;
+  --sheet-rule: #8C8C8C;
+  --sheet-down: #9B1C1C;
   --opacity-disabled: .4;
   --opacity-placeholder: .4;
   --opacity-dim: .4;

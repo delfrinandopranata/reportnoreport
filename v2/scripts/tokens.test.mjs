@@ -61,6 +61,15 @@ test('every accent and theme meets WCAG contrast', () => {
       ['strike on canvas', p.strike, p.canvas, 3], ['focus on canvas', p.focus, p.canvas, 3], ['focus on surface', p.focus, p.surface, 3],
       ['series-1 on surface', p['series-1'], p.surface, 3], ['series-2 on surface', p['ink-3'], p.surface, 3],
       ['edge on field', p.edge, p.field, 3], ['edge on surface', p.edge, p.surface, 3],
+      // v1 components: banner bar text and tone on its tint, over canvas or surface
+      ...['ok', 'warn', 'info', 'down'].flatMap((k) => ['canvas', 'surface'].flatMap((b) => [
+        [`ink on ${k}-bg over ${b} (note--bar sentence)`, p.ink, on(`${k}-bg`, b), 4.5], [`${k} on ${k}-bg over ${b} (note--bar icon and border)`, p[k], on(`${k}-bg`, b), 4.5]])),
+      ['ink-2 on soft over surface (ledger day row)', p['ink-2'], on('soft', 'surface'), 4.5], ['ink on soft over surface (ledger hover)', p.ink, on('soft', 'surface'), 4.5],
+      ['down on soft over surface (negative balance on hover)', p.down, on('soft', 'surface'), 4.5], ['ink on tint over surface (selected row, checklist next)', p.ink, on('tint', 'surface'), 4.5],
+      ['ink-2 on tint over surface (checklist state word)', p['ink-2'], on('tint', 'surface'), 4.5], ['ink-2 on tint over surface (checklist label)', p['ink-2'], on('tint', 'surface'), 4.5],
+      ['series-1 on tint over surface (dropzone, checklist icon)', p['series-1'], on('tint', 'surface'), 3], ['ink-2 on tint over surface (dropzone drag-over border)', p['ink-2'], on('tint', 'surface'), 3],
+      ['edge on surface (dropzone dashed border)', p.edge, p.surface, 3], ['down on down-bg over surface (dropzone error)', p.down, on('down-bg', 'surface'), 4.5],
+      ['ink-3 on surface under the coachmark scrim edge', p['ink-3'], p.surface, 4.5], ['series-2 on surface (payment hatch)', p['ink-3'], p.surface, 3],
     ]
     for (const [label, fg, bg, min] of pairs) {
       const ratio = contrast(fg, bg)
@@ -68,6 +77,16 @@ test('every accent and theme meets WCAG contrast', () => {
     }
   }
   assert.deepEqual(problems, [])
+})
+
+test('the A4 statement sheet is ink on white and passes contrast whatever the theme', () => {
+  const s = tokens.sheet
+  for (const [label, fg, bg, min] of [['ink', s.ink, s.paper, 4.5], ['ink-2', s['ink-2'], s.paper, 4.5], ['ink-3', s['ink-3'], s.paper, 4.5], ['ink-3 on soft', s['ink-3'], s.soft, 4.5], ['ink on soft', s.ink, s.soft, 4.5], ['down', s.down, s.paper, 4.5], ['rule (borders)', s.rule, s.paper, 3]]) {
+    assert.ok(contrast(fg, bg) >= min, `sheet ${label} is ${contrast(fg, bg).toFixed(2)} (needs ${min})`)
+  }
+  const sheetCss = bundle.slice(bundle.indexOf('v1 statement'), bundle.indexOf('v1 banner'))
+  assert.ok(!/var\(--(ink|ink-2|ink-3|surface|canvas|soft|line|acc|acc-a|strike|tint)\)/.test(sheetCss.replace(/\.rnr-statement-frame[^}]*\}/, '')), 'the sheet must not read theme or accent tokens')
+  for (const [k, v] of Object.entries(s)) assert.ok(css.includes(`--sheet-${k}:${v.toLowerCase()}`), `tokens.css lacks --sheet-${k}`)
 })
 
 test('Black & White fills read against the canvas in both themes', () => {
@@ -164,7 +183,7 @@ test('the retired modes are gone from the tokens and the bundle', () => {
 })
 
 test('every component has a README and a preview', () => {
-  const dirs = ['Button', 'Field', 'Choice', 'Segmented', 'Tabs', 'FolderCard', 'KpiTile', 'Stamp', 'Badge', 'Avatar', 'DataTable', 'Menu', 'Dialog', 'Toast', 'Steps', 'Progress', 'Skeleton', 'EmptyState', 'Shell', 'TopBar', 'BellPanel', 'PageHeader', 'Charts', 'Canvas', 'FormBuilder', 'AppearancePanel', 'Wordmark', 'Landing', 'Paper', 'Icon', 'Widget']
+  const dirs = ['Button', 'Field', 'Choice', 'Segmented', 'Tabs', 'FolderCard', 'KpiTile', 'Stamp', 'Badge', 'Avatar', 'DataTable', 'Menu', 'Dialog', 'Toast', 'Steps', 'Progress', 'Skeleton', 'EmptyState', 'Shell', 'TopBar', 'BellPanel', 'PageHeader', 'Charts', 'Canvas', 'FormBuilder', 'AppearancePanel', 'Wordmark', 'Landing', 'Paper', 'Icon', 'Widget', 'LedgerTable', 'MoneyInput', 'StatementPaper', 'Banner', 'AdminTable', 'Coachmark', 'Checklist', 'DropZone']
   const missing = dirs.flatMap((d) => ['README.md', 'preview.html'].map((f) => `${d}/${f}`)).filter((f) => !existsSync(new URL(`../design/components/${f}`, import.meta.url)))
   assert.deepEqual(missing, [])
   assert.ok(!existsSync(new URL('../design/components/Cover', import.meta.url)))

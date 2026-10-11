@@ -37,6 +37,14 @@ export const COMPONENTS = [
   ['Wordmark', 'Wordmark', 'Fraunces with the strike'],
   ['Landing', 'Landing primitives', 'Wash, window, reveal, pulse'],
   ['Icon', 'Icons', 'Phosphor regular, 20 nav / 16 inline'],
+  ['LedgerTable', 'Ledger table', 'v1: running balance, in / out marks, resizable columns'],
+  ['MoneyInput', 'Money input', 'v1: ISO code inside the field, mono, right-aligned'],
+  ['StatementPaper', 'Statement paper (A4)', 'v1: ink on white in every theme, print rules'],
+  ['Banner', 'Banner', 'v1: full-width note for trial, support view, sample data'],
+  ['AdminTable', 'Admin table', 'v1: compact firms / waitlist rows with an action menu'],
+  ['Coachmark', 'Coachmark', 'v1: tour popover, positioned by custom properties'],
+  ['Checklist', 'Checklist', 'v1: onboarding steps with done / next / skipped'],
+  ['DropZone', 'Drop zone', 'v1: file add with drag-over, busy and error states'],
 ]
 
 const WM = (draw) => `<span class="rnr-wordmark"${draw ? ' data-draw' : ''} role="img" aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span>`

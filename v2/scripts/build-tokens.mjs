@@ -41,6 +41,7 @@ ${decl(prefixed('space-', t.shape.space))}
 ${decl(t.motion)}
 ${decl(prefixed('z-', t.z))}
 ${decl(t.size)}
+${decl(prefixed('sheet-', t.sheet))}
 ${decl(prefixed('opacity-', t.opacity))}
 ${decl(prefixed('bp-', t.breakpoint))}
   --r-ctl: var(--r-control);
