@@ -1,5 +1,18 @@
 begin;
-select plan(11);
+select plan(19);
+
+-- Pure mapping: every branch.
+select is(appearance_from_legacy('light', 'default'), '{"theme":"light","accent":"midnight","density":"comfortable"}'::jsonb, 'default -> midnight');
+select is(appearance_from_legacy('dark', 'ocean')->>'accent', 'ocean', 'ocean -> ocean');
+select is(appearance_from_legacy('system', 'forest')->>'accent', 'fern', 'forest -> fern');
+select is(appearance_from_legacy(null, 'sunset')->>'accent', 'saffron', 'sunset -> saffron');
+select is(appearance_from_legacy('dark', null)->>'accent', 'midnight', 'no firm -> midnight');
+select is(appearance_from_legacy('Dark', 'x')->>'theme', 'system', 'invalid theme -> system');
+select is(appearance_from_legacy(null, null)->>'theme', 'system', 'no theme -> system');
+
+-- Backfill over the seeded data (profiles exist only after seed, so the migration's own call ran on an empty table).
+select is((select count(*)::int from user_preferences where key = 'appearance'), 0, 'fixture cleared');
+
 
 -- Fixtures as superuser: three profiles in alpha, one with a theme pref, plus one in a firm per design system.
 update firms set design_system = 'forest' where id = '0000000a-0000-0000-0000-000000000001';
@@ -10,16 +23,7 @@ insert into user_preferences (profile_id, key, value) values
   ((select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a2'), 'theme', '"bogus"');
 
 -- Mapping under test is the migration body; re-run it via a function so it can run twice.
-create or replace function pg_temp.run_backfill() returns void language sql as $$
-  insert into user_preferences (profile_id, key, value)
-  select p.id, 'appearance', jsonb_build_object(
-    'theme', coalesce((select t.value #>> '{}' from user_preferences t
-                       where t.profile_id = p.id and t.key = 'theme' and t.value #>> '{}' in ('light', 'dark', 'system')), 'system'),
-    'accent', case f.design_system when 'ocean' then 'ocean' when 'forest' then 'fern' when 'sunset' then 'saffron' else 'midnight' end,
-    'density', 'comfortable')
-  from profiles p left join firms f on f.id = p.firm_id
-  on conflict (profile_id, key) do nothing $$;
-select pg_temp.run_backfill();
+select backfill_appearance();
 
 select is((select value from user_preferences where profile_id = (select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a1') and key = 'appearance'),
   '{"theme":"dark","accent":"fern","density":"comfortable"}'::jsonb, 'dark theme + forest firm -> dark/fern');
@@ -38,14 +42,14 @@ select is((select value->>'accent' from user_preferences u join profiles p on p.
   'ocean', 'ocean firm -> ocean');
 delete from user_preferences where key = 'appearance' and profile_id in (select id from profiles where email = 'owner@beta.test');
 update firms set design_system = 'sunset' where name like 'Beta%';
-select pg_temp.run_backfill();
+select backfill_appearance();
 select is((select value->>'accent' from user_preferences u join profiles p on p.id = u.profile_id where p.email = 'owner@beta.test' and u.key = 'appearance'),
   'saffron', 'sunset firm -> saffron');
 
 -- Idempotent: a user's later choice survives a re-run.
 update user_preferences set value = '{"theme":"light","accent":"iris","density":"compact"}'
   where profile_id = (select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a1') and key = 'appearance';
-select pg_temp.run_backfill();
+select backfill_appearance();
 select is((select value->>'accent' from user_preferences where profile_id = (select id from profiles where user_id = '00000000-0000-0000-0000-0000000000a1') and key = 'appearance'),
   'iris', 're-run does not overwrite');
 select is((select count(*)::int from user_preferences where key = 'appearance'), (select count(*)::int from profiles), 're-run adds no duplicates');
