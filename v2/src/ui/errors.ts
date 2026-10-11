@@ -3,6 +3,8 @@ export const FALLBACK = 'Something went wrong. Try again, and contact support if
 type Err = { message?: string; code?: string } | null | undefined
 
 const SENTENCES: [RegExp, string][] = [
+  [/on table "form_submissions"/, 'This form has submissions, so it cannot be deleted. Keep it, or rename it so people know it is no longer used.'],
+  [/row-level security/, 'You do not have permission to do that.'],
   [/at least one Owner/, 'An organisation needs at least one Owner. Make someone else an Owner first.'],
   [/cannot grant permissions you do not hold|cannot assign a role with permissions/, 'You cannot give a permission you do not hold. Untick it and save again.'],
   [/Only an Owner can assign/, 'Only an Owner can assign the Owner role.'],

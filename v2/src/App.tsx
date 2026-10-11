@@ -4,12 +4,13 @@ import { supabase } from './data/supabase'
 import { useQueryClient } from '@tanstack/react-query'
 import { OrgProvider } from './rbac/OrgProvider'
 import { useOrg } from './rbac/useOrg'
-import { guardHash } from './rbac/route'
+import { guardHash, parseRoute, type Route } from './rbac/route'
 import { AuthPage } from './auth/AuthPage'
 import { CreateOrgPage } from './orgs/CreateOrgPage'
 import { OrgSwitcher } from './orgs/OrgSwitcher'
 import { MembersPage } from './members/MembersPage'
 import { RolesPage } from './roles/RolesPage'
+import { FormsPage } from './forms/FormsPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -24,10 +25,18 @@ const useHash = () => {
   return hash
 }
 
+function Page({ route }: { route: Route }) {
+  switch (route.page) {
+    case 'roles': return <RolesPage />
+    case 'forms': return <FormsPage />
+    default: return <MembersPage />
+  }
+}
+
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
-  const hash = loading ? rawHash : guardHash(rawHash, can('roles.manage'))
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
@@ -50,7 +59,7 @@ function Shell() {
     )
   }
   if (!orgs.length || hash === '#/new-org') return <CreateOrgPage />
-  const roles = hash === '#/roles' && can('roles.manage')
+  const route = parseRoute(hash)
   const link = (href: string, label: string, current: boolean) => (
     <a href={href} aria-current={current ? 'page' : undefined}
       className={`rnr-btn ${current ? 'rnr-btn-secondary' : 'rnr-btn-ghost'}`}>{label}</a>
@@ -63,8 +72,9 @@ function Shell() {
           <Wordmark href="#/members" />
           <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
           <nav aria-label="Main" className="flex gap-1 order-last sm:order-none">
-            {link('#/members', 'Members', !roles)}
-            {can('roles.manage') && link('#/roles', 'Roles', roles)}
+            {link('#/members', 'Members', route.page === 'members')}
+            {link('#/forms', 'Forms', route.page.startsWith('form'))}
+            {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
           <button className="rnr-btn rnr-btn-ghost ml-auto" type="button" aria-busy={out.busy}
             onClick={() => out.run(() => supabase.auth.signOut())}>
@@ -73,7 +83,7 @@ function Shell() {
         </div>
       </header>
       <main id="main" className="mx-auto max-w-5xl p-6">
-        {roles ? <RolesPage key={orgId} /> : <MembersPage key={orgId} />}
+        <Page key={`${orgId}${hash}`} route={route} />
       </main>
     </>
   )

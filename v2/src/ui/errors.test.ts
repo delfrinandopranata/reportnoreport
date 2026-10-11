@@ -9,3 +9,10 @@ test('owner removal and invalid roles guards are mapped', () => {
 test('unknown messages fall back', () => {
   assert.equal(friendlyError({ message: 'boom' }), FALLBACK)
 })
+test('form messages', () => {
+  assert.equal(
+    friendlyError({ code: '23503', message: 'update or delete on table "forms" violates foreign key constraint "form_submissions_form_id_org_id_fkey" on table "form_submissions"' }),
+    'This form has submissions, so it cannot be deleted. Keep it, or rename it so people know it is no longer used.',
+  )
+  assert.equal(friendlyError({ code: '42501', message: 'new row violates row-level security policy for table "forms"' }), 'You do not have permission to do that.')
+})
