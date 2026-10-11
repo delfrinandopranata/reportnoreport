@@ -222,3 +222,7 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 @media (hover: hover) {
   [data-motion="full"] .rnr-chart[data-hovering] :is(.rnr-chart-bar, .rnr-chart-dot):not([data-active]) { opacity: var(--opacity-dim); }
 }
+
+/* Widget titles wrap instead of truncating, so a Small widget still shows its full name (bundle sets nowrap, unlayered). */
+.rnr-card-head .rnr-card-title { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+.rnr-card-head { align-items: flex-start; }
