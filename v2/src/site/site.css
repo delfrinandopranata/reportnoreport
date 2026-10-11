@@ -14,3 +14,11 @@ body { background: var(--surface-000); color: var(--ink); font-family: "Inter", 
 .prose h2 { font-size: 18px; line-height: 28px; font-weight: 600; margin: 2rem 0 .5rem; }
 .prose p, .prose li { color: var(--ink-label); }
 .prose .updated { color: var(--ink-muted); font-size: 14px; }
+
+/* Unsubscribe page: one card, no site chrome (design/phase-6-screens.md §6.0). */
+.unsub { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.unsub-card { width: 100%; max-width: 28rem; gap: var(--space-3); padding: var(--space-6); }
+.unsub-card > p { margin: 0; }
+.unsub-actions:empty { display: none; }
+.unsub-actions .rnr-btn { min-height: 44px; }
+.unsub-note { font-size: 12px; line-height: 16px; color: var(--ink-muted); }

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unsubscribe — ReportNoReport</title>
+    <meta name="description" content="Stop receiving campaign emails from an organisation that uses ReportNoReport." />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script>
+      (() => {
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
+        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      })()
+    </script>
+    <script type="module" src="/src/site/unsubscribe.ts"></script>
+  </head>
+  <body class="rnr">
+    <main class="unsub">
+      <div class="rnr-card unsub-card">
+        <h1 id="unsub-title" class="page-title" tabindex="-1">Checking your link</h1>
+        <p id="unsub-body" class="rnr-muted" role="status">One moment.</p>
+        <div id="unsub-actions" class="unsub-actions"></div>
+        <noscript><p class="rnr-muted">Turn on JavaScript to finish unsubscribing, or use the unsubscribe option in your email app.</p></noscript>
+        <p class="unsub-note">Campaign emails are sent through ReportNoReport.</p>
+      </div>
+    </main>
+  </body>
+</html>
