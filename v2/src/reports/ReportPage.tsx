@@ -114,7 +114,7 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
 
   const failed = run.error instanceof ReportError ? run.error : run.error ? new ReportError('We could not run this report. Try again.', null) : null
   const filename = csvFilename(f.name, today)
-  const announce = r ? `${totalsText(r)}. ${r.kind === 'groups' ? skippedText(r.skipped) : ''}` : ''
+  const announce = r ? [totalsText(r), r.kind === 'groups' ? skippedText(r.skipped) : ''].filter(Boolean).join('. ') : ''
   const noDraft = !check.ok && dirty
   const settings = manage ? (
     <form ref={form} className="flex flex-col gap-4" onSubmit={submit} noValidate aria-label="Report settings">

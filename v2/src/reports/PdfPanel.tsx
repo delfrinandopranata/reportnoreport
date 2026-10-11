@@ -36,8 +36,9 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
   useEffect(() => {
     if (seen.current === 'queued' && status === 'done') setAnnounce('The PDF is ready.')
     if (seen.current === 'queued' && status === 'failed') setAnnounce('The PDF could not be made.')
+    if (seen.current === 'queued' && status !== 'queued') void qc.invalidateQueries({ queryKey: ['record-events', recordId] }) // the timeline gains "PDF made" or "PDF not made"
     seen.current = status
-  }, [status, setAnnounce])
+  }, [status, setAnnounce, qc, recordId])
   useEffect(() => {
     if (status !== 'queued') return
     const job = latest!.id

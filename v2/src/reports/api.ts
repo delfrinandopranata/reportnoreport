@@ -120,7 +120,7 @@ export async function downloadCsv(orgId: string, mayManage: boolean, body: RunBo
   const { data, error } = await supabase.functions.invoke<string>('run-report', { body: { orgId, ...body, format: 'csv' } })
   if (error) return { error: (await reportError(error, mayManage)).message }
   const filename = csvFilename(name, new Date().toISOString().slice(0, 10))
-  const href = URL.createObjectURL(new Blob(['﻿', String(data).replace(/^﻿/, '')], { type: 'text/csv;charset=utf-8' }))
+  const href = URL.createObjectURL(new Blob(['\uFEFF', String(data).replace(/^\uFEFF/, '')], { type: 'text/csv;charset=utf-8' }))
   Object.assign(document.createElement('a'), { href, download: filename }).click()
   setTimeout(() => URL.revokeObjectURL(href), 0)
   return { filename }

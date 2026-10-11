@@ -28,6 +28,7 @@ import { TemplatesPage } from './comms/TemplatesPage'
 import { TemplateEditor } from './comms/TemplateEditor'
 import { MessagesPage } from './comms/MessagesPage'
 import { ReportTemplatePage } from './reports/ReportTemplatePage'
+import { DashboardPage } from './reports/DashboardPage'
 import { ReportsPage } from './reports/ReportsPage'
 import { ReportPage } from './reports/ReportPage'
 import { Wordmark } from './ui/Wordmark'
@@ -64,6 +65,7 @@ function Page({ route }: { route: Route }) {
     case 'workflow-edit': return <WorkflowEditor id={route.id} />
     case 'workflow-access': return <AccessPage id={route.id} />
     case 'workflow-report': return <ReportTemplatePage id={route.id} />
+    case 'dashboard': return <DashboardPage />
     case 'reports': return <ReportsPage />
     case 'report': return <ReportPage id={route.id} />
     case 'form-edit': return <FormBuilder id={route.id} />
@@ -119,6 +121,7 @@ function Shell() {
           <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
             {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
             {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
+            {mayReport && link('#/dashboard', 'Dashboard', route.page === 'dashboard')}
             {mayReport && link('#/reports', 'Reports', route.page === 'reports' || route.page === 'report')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
