@@ -63,3 +63,7 @@ New finding:
 | ID | Severity | Area | Evidence | Expected | Actual | Owner |
 |---|---|---|---|---|---|---|
 | QA-P5-9 | minor | copy | `advance/index.ts:41`, `submit-form/index.ts:46`, `save-workflow/index.ts:66` and `run-report/index.ts:36` still return "We could not ...". These 500 sentences reach the UI. | design/README forbids "we"; the coordinator said all were rewritten. | Four user-facing 500 strings still say "We". | backend |
+
+## Round 3
+
+QA-P5-9 fixed in 61f44ed by the lead: the four 500 sentences now read "This step did not save. Try again.", "Your answers did not save. Try again.", "This workflow did not save. Try again." and "This report did not run. Try again.". No "We could not" remains in v2/src or v2/supabase/functions. deno 193 passed (6 ignored), node 193 passed. Verdict: PASS, 0 open.
