@@ -417,3 +417,6 @@ enabled = true
 # pg_cron calls resume with its own shared secret (CRON_SECRET), not a user JWT.
 [functions.resume]
 verify_jwt = false
+
+[functions.send-messages]
+verify_jwt = false

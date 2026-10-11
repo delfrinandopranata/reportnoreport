@@ -141,6 +141,92 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"message_templates": {
+                  Row: {
+                    "body": string,"channel": string,"created_at": string,"id": string,"is_system": boolean,"kind": string,"name": string,"org_id": string,"subject": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"channel"?: string,"created_at"?: string,"id"?: string,"is_system"?: boolean,"kind"?: string,"name": string,"org_id": string,"subject": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "body"?: string,"channel"?: string,"created_at"?: string,"id"?: string,"is_system"?: boolean,"kind"?: string,"name"?: string,"org_id"?: string,"subject"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "message_templates_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"messages": {
+                  Row: {
+                    "attempts": number,"body_html": string,"body_text": string,"bounced_at": string | null,"campaign_id": string | null,"channel": string,"clicked_at": string | null,"complained_at": string | null,"created_at": string,"delivered_at": string | null,"error": string | null,"id": string,"next_attempt_at": string,"opened_at": string | null,"org_id": string,"provider_id": string | null,"recipient_email": string,"recipient_user_id": string | null,"record_id": string | null,"sent_at": string | null,"status": string,"subject": string,"template_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"body_html": string,"body_text": string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id": string,"provider_id"?: string | null,"recipient_email": string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject": string,"template_id"?: string | null
+                  }
+                  Update: {
+                    "attempts"?: number,"body_html"?: string,"body_text"?: string,"bounced_at"?: string | null,"campaign_id"?: string | null,"channel"?: string,"clicked_at"?: string | null,"complained_at"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"error"?: string | null,"id"?: string,"next_attempt_at"?: string,"opened_at"?: string | null,"org_id"?: string,"provider_id"?: string | null,"recipient_email"?: string,"recipient_user_id"?: string | null,"record_id"?: string | null,"sent_at"?: string | null,"status"?: string,"subject"?: string,"template_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "messages_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_record_id_org_id_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "messages_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "message_templates"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"notification_prefs": {
+                  Row: {
+                    "email_enabled": boolean,"type": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "email_enabled"?: boolean,"type": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "email_enabled"?: boolean,"type"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"notifications": {
+                  Row: {
+                    "body": string,"created_at": string,"id": string,"kind": string,"link": string,"org_id": string,"read_at": string | null,"title": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string,"created_at"?: string,"id"?: string,"kind": string,"link": string,"org_id": string,"read_at"?: string | null,"title": string,"user_id": string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"link"?: string,"org_id"?: string,"read_at"?: string | null,"title"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notifications_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"orgs": {
                   Row: {
                     "created_at": string,"id": string,"name": string
@@ -405,8 +491,14 @@ isOneToOne: false
 "require_permission":
 { Args: { "p_org": string,"p_perm": string }; Returns: undefined
                            },
+"retry_message":
+{ Args: { "p_message": string }; Returns: undefined
+                           },
 "save_role":
 { Args: { "p_name": string,"p_org": string,"p_permissions": (string)[],"p_role_id": string }; Returns: string
+                           },
+"seed_message_templates":
+{ Args: { "p_org": string }; Returns: undefined
                            },
 "set_member_roles":
 { Args: { "p_member_id": string,"p_role_ids": (string)[] }; Returns: undefined

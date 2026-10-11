@@ -56,7 +56,7 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 insert into forms (id, org_id, name, schema) values ('0000000a-0000-0000-0000-0000000000f3', '0000000a-0000-0000-0000-000000000001', 'Manager approval',
   '[{"key":"comment","type":"long_text","label":"Comment"}]');
 insert into workflows (id, org_id, name) values ('0000000a-0000-0000-0000-00000000c001', '0000000a-0000-0000-0000-000000000001', 'Leave approval');
-update workflows set status = 'published', updated_by = '00000000-0000-0000-0000-0000000000a1', graph = replace($json${
+update workflows set status = 'published', updated_by = '00000000-0000-0000-0000-0000000000a1', graph = replace(replace($json${
   "nodes": [
     {"id":"start","type":"start","formId":"0000000a-0000-0000-0000-0000000000f1","position":{"x":0,"y":0}},
     {"id":"approve","type":"form","label":"Manager approval","formId":"0000000a-0000-0000-0000-0000000000f3","assignee":{"role":"ROLE_ADMIN"},"mode":"approve","due":{"amount":2,"unit":"days"},"position":{"x":240,"y":0}},
@@ -67,15 +67,19 @@ update workflows set status = 'published', updated_by = '00000000-0000-0000-0000
   ],
   "edges": [
     {"id":"e1","from":"start","outcome":"submitted","to":"approve","actions":[]},
-    {"id":"e2","from":"approve","outcome":"approved","to":"long","actions":[{"type":"send_message"}]},
+    {"id":"e2","from":"approve","outcome":"approved","to":"long","actions":[{"type":"send_message","templateId":"TPL_APPROVED","recipients":[{"starter":true}]}]},
     {"id":"e3","from":"approve","outcome":"rejected","to":"rejected","actions":[{"type":"set_status","label":"Rejected by manager"}]},
     {"id":"e4","from":"long","outcome":"yes","to":"wait","actions":[]},
     {"id":"e5","from":"long","outcome":"no","to":"done","actions":[]},
     {"id":"e6","from":"wait","outcome":"next","to":"done","actions":[{"type":"generate_pdf"}]}
   ]
-}$json$, 'ROLE_ADMIN', (select id::text from roles where org_id = '0000000a-0000-0000-0000-000000000001' and name = 'Admin'))::jsonb
+}$json$, 'ROLE_ADMIN', (select id::text from roles where org_id = '0000000a-0000-0000-0000-000000000001' and name = 'Admin')),
+  'TPL_APPROVED', (select id::text from message_templates where org_id = '0000000a-0000-0000-0000-000000000001' and kind = 'record_approved'))::jsonb
 where id = '0000000a-0000-0000-0000-00000000c001';
 
 -- pg_cron → resume (local values only; hosted projects set their own, see README).
 select vault.create_secret('http://host.docker.internal:54321/functions/v1/resume', 'resume_url');
 select vault.create_secret('local-cron-secret', 'cron_secret');
+
+-- Phase 4: pg_cron → send-messages (local values only; hosted projects set their own, see README).
+select vault.create_secret('http://host.docker.internal:54321/functions/v1/send-messages', 'send_messages_url');
