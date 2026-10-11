@@ -163,3 +163,8 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .rnr-block.flex-col { align-items: stretch; }
 /* .rnr-bell's 36px minimum comes later in the cascade than the bundle's 44px coarse-pointer rule. */
 @media (pointer: coarse) { .rnr-bell { min-width: var(--touch-min); min-height: var(--touch-min); } }
+
+/* Phase 4 QA: classes instead of inline styles. */
+.rnr-table-card { padding: 0; overflow-x: auto; }
+.rnr-card.rnr-card-open { overflow: visible; }
+.rnr-pref-caption { margin-left: var(--space-6); }

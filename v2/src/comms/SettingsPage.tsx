@@ -69,7 +69,7 @@ export function SettingsPage() {
                     onChange={(e) => toggle(k, e.target.checked)} />
                   <span>{KIND_LABELS[k]}</span>
                 </label>
-                <p className="rnr-caption" id={`pref-${k}`} style={{ marginLeft: 'var(--space-6)' }}>{CAPTIONS[k]}</p>
+                <p className="rnr-caption rnr-pref-caption" id={`pref-${k}`}>{CAPTIONS[k]}</p>
               </div>
             ))}
           </fieldset>

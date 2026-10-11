@@ -42,7 +42,8 @@ export function MessagesPage() {
     const { error: e } = await retryMessage(m.id)
     setBusy((s) => { const n = new Set(s); n.delete(m.id); return n })
     await qc.invalidateQueries({ queryKey: ['messages', orgId] }) // refetch on failure too: another admin may have retried it
-    if (e) { setError(friendlyError(e)); return }
+    const gone = filter !== 'all' && !qc.getQueryData<QueueRow[]>(['messages', orgId, filter])?.some((r) => r.id === m.id)
+    if (e) { setError(friendlyError(e)); if (gone) focusLater('messages-h'); return }
     setNotice(`Retried. The message to ${m.recipient_email} will be sent within a minute.`)
     focusLater(filter === 'failed' ? 'messages-h' : `msg-${m.id}`) // under Failed the row leaves; otherwise it stays and says its new status
   }
@@ -83,7 +84,7 @@ export function MessagesPage() {
       {rows?.length === 0 && filter !== 'all' && <div className="rnr-card"><p className="rnr-muted">{FILTERED_OUT[filter]}</p></div>}
       {!!rows?.length && (
         <>
-          <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }} aria-busy={loadingFilter}>
+          <div className="rnr-card rnr-table-card" aria-busy={loadingFilter}>
             <table className="rnr-table rnr-sticky-first">
               <caption className="sr-only">Messages for {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}, newest first</caption>
               <thead><tr><th scope="col">Message</th><th scope="col">Status</th><th scope="col">Problem</th><th scope="col" className="num">When</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>

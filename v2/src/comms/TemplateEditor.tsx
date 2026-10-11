@@ -153,7 +153,7 @@ function Editor({ tpl, reloaded, onReload }: { tpl: TemplateRow; reloaded: boole
       <h1 className="page-title" id="tpl-h" tabIndex={-1}>Edit template</h1>
       {tpl.is_system && <p className="rnr-muted">System template for {KIND_LABELS[tpl.kind]}. You can change its words and channel; it cannot be deleted.</p>}
       <div className="grid gap-4 lg:grid-cols-2">
-        <form className="rnr-card gap-4" style={{ overflow: 'visible' }} noValidate onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        <form className="rnr-card rnr-card-open gap-4" noValidate onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {field('name', 'Name')}
           <div className="rnr-field">
             <span className="rnr-label" id={`${uid}-ch`}>Channel</span>

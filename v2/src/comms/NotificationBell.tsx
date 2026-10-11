@@ -9,7 +9,7 @@ import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
 import { announcement, newArrivals } from './arrivals'
-import { NOTIFICATION_LIMIT, markAllRead, markRead, useNotificationFeed, useNotifications, useUnreadCount } from './api'
+import { NOTIFICATION_LIMIT, type Notification, markAllRead, markRead, useNotificationFeed, useNotifications, useUnreadCount } from './api'
 
 const MARK_FAILED = 'We could not mark your notifications as read. Try again.'
 
@@ -59,8 +59,13 @@ export function NotificationBell() {
     qc.invalidateQueries({ queryKey: ['notifications-unread', userId, orgId] }),
   ])
   const readOne = async (id: string) => {
-    await markRead(id) // fire and forget: seeing it is what counts
-    void refresh()
+    const list = ['notifications', userId, orgId]
+    const count = ['notifications-unread', userId, orgId]
+    qc.setQueryData<Notification[]>(list, (l) => l?.map((x) => (x.id === id && !x.read_at ? { ...x, read_at: new Date().toISOString() } : x)))
+    qc.setQueryData<number>(count, (n) => Math.max(0, (n ?? 1) - 1))
+    const { error: e } = await markRead(id)
+    if (e) { const m = friendlyError(e); say(m === FALLBACK ? MARK_FAILED : m) } // quiet: the panel has already closed
+    void refresh() // on failure this rolls the optimistic read back
   }
   const readAll = () => markAll.run(async () => {
     if (!orgId) return

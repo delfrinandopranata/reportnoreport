@@ -11,7 +11,7 @@ import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
 import { createTemplate, deleteTemplate, useTemplates, type TemplateRow } from './api'
 import { clearListArrival, peekListArrival } from './arrival'
-import { CHANNEL_WORDS, DELETE_TEMPLATE_BODY } from './channels'
+import { channelLabel, DELETE_TEMPLATE_BODY } from './channels'
 
 export function TemplatesPage() {
   const { orgId, orgs } = useOrg()
@@ -69,7 +69,7 @@ export function TemplatesPage() {
         </div>
       )}
       {templates.data && (
-        <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
+        <div className="rnr-card rnr-table-card">
           <table className="rnr-table rnr-sticky-first">
             <caption className="sr-only">Message templates in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
             <thead><tr><th scope="col">Name</th><th scope="col">Channel</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
@@ -77,7 +77,7 @@ export function TemplatesPage() {
               {templates.data.map((t) => (
                 <tr key={t.id}>
                   <td><span className="label">{t.name}</span>{t.is_system && <> <span className="rnr-chip">System</span></>}</td>
-                  <td>{CHANNEL_WORDS[t.channel]}</td>
+                  <td>{channelLabel(t.kind, t.channel)}</td>
                   <td className="num whitespace-nowrap"><When iso={t.updated_at} /></td>
                   <td>
                     <div className="flex justify-end gap-1 whitespace-nowrap">
