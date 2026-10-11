@@ -26,3 +26,10 @@ test('workflow messages', () => {
     'Someone else claimed this task first, or it is already done. Check your inbox for what is left.',
   )
 })
+
+test('communication messages', () => {
+  assert.equal(friendlyError({ code: 'P0001', message: 'Only failed messages can be retried.' }),
+    'Only failed messages can be retried. The list now shows the latest status.')
+  assert.equal(friendlyError({ code: 'P0001', message: 'A template cannot change its type.' }),
+    'A template cannot change its type. Create a new template instead.')
+})

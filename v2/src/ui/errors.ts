@@ -13,6 +13,8 @@ const SENTENCES: [RegExp, string][] = [
   [/Only an Owner can remove/, 'Only an Owner can remove an Owner.'],
   [/Invalid roles/, 'Those roles are not valid for this organisation. Reload the page and try again.'],
   [/Owner role cannot be (changed|deleted)/, 'The Owner role cannot be changed or deleted.'],
+  [/Only failed messages can be retried/, 'Only failed messages can be retried. The list now shows the latest status.'],
+  [/A template cannot change its type/, 'A template cannot change its type. Create a new template instead.'],
   [/Not allowed|permission to invite/, 'You do not have permission to do that.'],
   [/Invalid login credentials/, 'That email or password is incorrect. Check them and try again.'],
   [/already registered/i, 'That email already has an account. Sign in instead.'],

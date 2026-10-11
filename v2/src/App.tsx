@@ -22,6 +22,8 @@ import { RecordPage } from './records/RecordPage'
 import { WorkflowsPage } from './workflows/WorkflowsPage'
 import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
 import { AccessPage } from './workflows/AccessPage'
+import { NotificationBell } from './comms/NotificationBell'
+import { SettingsPage } from './comms/SettingsPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -58,6 +60,7 @@ function Page({ route }: { route: Route }) {
     case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
+    case 'settings': return <SettingsPage />
     default: return <MembersPage />
   }
 }
@@ -65,7 +68,7 @@ function Page({ route }: { route: Route }) {
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
-  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage') })
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
@@ -96,7 +99,7 @@ function Shell() {
   return (
     <>
       <a href="#main" className="sr-only focus:not-sr-only rnr-btn rnr-btn-secondary">Skip to content</a>
-      <header className="bg-surface-100 border-b border-line-200">
+      <header className="relative bg-surface-100 border-b border-line-200">
         <div className="mx-auto max-w-5xl flex flex-wrap items-center gap-4 px-6 py-3">
           <Wordmark href="#/inbox" />
           <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
@@ -108,10 +111,14 @@ function Shell() {
             {link('#/members', 'Members', route.page === 'members')}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
-          <button className="rnr-btn rnr-btn-ghost ml-auto" type="button" aria-busy={out.busy}
-            onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
-            {out.busy && <span className="rnr-spin" aria-hidden="true" />}{out.busy ? 'Signing out…' : 'Sign out'}
-          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
+            {link('#/settings', 'Settings', route.page === 'settings')}
+            <button className="rnr-btn rnr-btn-ghost" type="button" aria-busy={out.busy}
+              onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
+              {out.busy && <span className="rnr-spin" aria-hidden="true" />}{out.busy ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
         </div>
       </header>
       <main id="main" className="mx-auto max-w-5xl p-6">

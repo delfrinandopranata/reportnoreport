@@ -120,3 +120,22 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .rnr-seg button[aria-pressed="false"] { color: var(--ink-label); }
 .rnr-pick .rnr-caption svg { margin-top: 0; width: 14px; height: 14px; }
 .wf-outcome { gap: var(--space-3); } /* unlayered .rnr-field gap beats the Tailwind gap utility */
+
+/* Phase 4: bell, notices, comms (design/phase-4-screens.md §1, §4, §6, §11). */
+.rnr-bell { position: relative; min-width: var(--rnr-control-h); min-height: var(--rnr-control-h); color: var(--ink-label); }
+.rnr-bell svg { width: 20px; height: 20px; }
+.rnr-bell .rnr-chip { position: absolute; top: -4px; right: -4px; min-width: 20px; justify-content: center; padding: 0 6px; }
+
+.rnr-menu.rnr-notices { position: absolute; z-index: 20; top: calc(100% + var(--space-2)); right: 0; width: 360px; max-height: min(70dvh, 28rem); overflow-y: auto; }
+@media (max-width: 639px) { .rnr-menu.rnr-notices { left: var(--space-4); right: var(--space-4); width: auto; } }
+.rnr-notices-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3); }
+.rnr-notices-sub, .rnr-notices-foot { padding: 0 var(--space-3) var(--space-2); }
+.rnr-notices-list { margin: 0; padding: 0; list-style: none; }
+.rnr-notice { display: grid; grid-template-columns: 8px 1fr; column-gap: var(--space-2); row-gap: var(--space-1); align-items: start; text-decoration: none; }
+.rnr-notice > :not(.rnr-notice-dot) { grid-column: 2; }
+.rnr-notice-dot { grid-row: 1; margin-top: 6px; width: 8px; height: 8px; border-radius: var(--radius-full); background: transparent; }
+.rnr-notice[data-unread="true"] .rnr-notice-dot { background: var(--ink); }
+.rnr-notice-title { font-weight: 400; color: var(--ink-label); }
+.rnr-notice[data-unread="true"] .rnr-notice-title { font-weight: 600; color: var(--ink); }
+.rnr-notice-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+@media (pointer: coarse) { .rnr-notice, .rnr-menu-item { min-height: var(--touch-min); } }

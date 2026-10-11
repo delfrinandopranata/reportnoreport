@@ -11,3 +11,4 @@ export const BackIcon = ({ size = 16 }: { size?: number }) => <svg {...base} wid
 export const PencilIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
 export const StopIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
 export const RightIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m9 18 6-6-6-6" /></svg>
+export const BellIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>

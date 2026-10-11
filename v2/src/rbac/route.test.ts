@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { guardHash, parseRoute } from './route.ts'
 
 const id = '0000000a-0000-0000-0000-0000000000f1'
-const all = { roles: true, forms: true, workflows: true }
-const none = { roles: false, forms: false, workflows: false }
+const all = { roles: true, forms: true, workflows: true, comms: true }
+const none = { roles: false, forms: false, workflows: false, comms: false }
 
 test('parses every page', () => {
   assert.deepEqual(parseRoute('#/members'), { page: 'members' })
@@ -42,4 +42,17 @@ test('workflow pages fall back to the inbox without workflows.manage', () => {
   assert.equal(guardHash(`#/workflows/${id}/access`, none), '#/inbox')
   assert.equal(guardHash(`#/workflows/${id}/edit`, all), `#/workflows/${id}/edit`)
   assert.equal(guardHash(`#/records/${id}`, none), `#/records/${id}`)
+})
+
+test('parses templates, messages and settings pages; comms pages need comms.manage', () => {
+  assert.deepEqual(parseRoute('#/templates'), { page: 'templates' })
+  assert.deepEqual(parseRoute(`#/templates/${id}`), { page: 'template', id })
+  assert.deepEqual(parseRoute('#/messages'), { page: 'messages' })
+  assert.deepEqual(parseRoute('#/settings'), { page: 'settings' })
+  assert.deepEqual(parseRoute('#/templates/nope'), { page: 'members' })
+  assert.equal(guardHash('#/templates', none), '#/inbox')
+  assert.equal(guardHash(`#/templates/${id}`, none), '#/inbox')
+  assert.equal(guardHash('#/messages', none), '#/inbox')
+  assert.equal(guardHash('#/messages', all), '#/messages')
+  assert.equal(guardHash('#/settings', none), '#/settings')
 })
