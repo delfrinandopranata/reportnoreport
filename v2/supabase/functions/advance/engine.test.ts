@@ -31,6 +31,13 @@ Deno.test('start is refused without access, on a draft, from another org, and wi
   for (const s of [noAccess, draft, stranger, bad]) assertEquals([s.db.records.length, s.db.submissions.length], [0, 0])
 })
 
+Deno.test('a non-holder of the role gets the claim_task refusal, with no hint the task exists', async () => {
+  const { db, start, act } = setup()
+  await start()
+  const res = await act(db.tasks[0].id, 'approved', MEMBER)
+  assertEquals([res.status, res.body.error], [403, 'Not allowed.'])
+  assertEquals(db.tasks[0].status, 'open')
+})
 Deno.test('a role task must be claimed; approving runs the condition and schedules the Time step', async () => {
   const { db, start, act, claim } = setup()
   await start()
@@ -76,7 +83,7 @@ Deno.test('only the assignee or the person who claimed the task may act', async 
   const { start, act, claim } = setup()
   await start()
   const res = await act(claim(), 'approved', MEMBER)
-  assertEquals([res.status, res.body.error], [403, 'This task is assigned to someone else.'])
+  assertEquals([res.status, res.body.error], [403, 'Not allowed.'])
 })
 
 Deno.test('two simultaneous approvals advance the record once', async () => {

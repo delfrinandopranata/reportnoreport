@@ -28,6 +28,8 @@ function pgTx(t: postgres.TransactionSql): Tx {
       return row.ok === true
     },
     isActiveMember: async (user, org) => (await t`select 1 from members where user_id = ${user} and org_id = ${org} and status = 'active'`).length > 0,
+    holdsRole: async (user, org, role) =>
+      (await t`select 1 from member_roles mr join members m on m.id = mr.member_id where m.user_id = ${user} and m.org_id = ${org} and mr.role_id = ${role} and m.status = 'active'`).length > 0,
     roleExists: async (role, org) => (await t`select 1 from roles where id = ${role} and org_id = ${org}`).length > 0,
     lastSubmitter: async (rec, node) =>
       (await one<{ submitted_by: string }>(t`select submitted_by from form_submissions where record_id = ${rec} and node_id = ${node} order by created_at desc limit 1`))?.submitted_by ?? null,

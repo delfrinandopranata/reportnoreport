@@ -36,6 +36,7 @@ export interface Tx {
   can(userId: string, orgId: string, perm: string, workflowId: string): Promise<boolean>
   isActiveMember(userId: string, orgId: string): Promise<boolean>
   roleExists(roleId: string, orgId: string): Promise<boolean>
+  holdsRole(userId: string, orgId: string, roleId: string): Promise<boolean>
   lastSubmitter(recordId: string, nodeId: string): Promise<string | null>
   insertRecord(row: NewRecord): Promise<RecordRow>
   saveRecord(rec: RecordRow): Promise<void>
@@ -117,6 +118,8 @@ export async function submitTask(tx: Tx, input: { taskId: string; outcome: strin
   if (!rec || !task || !(await tx.isActiveMember(ctx.actor, task.org_id))) return fail(404, NO_TASK)
   if (task.status !== 'open') return fail(409, 'This task is already done.')
   if (task.assignee_user_id !== ctx.actor && task.claimed_by !== ctx.actor) {
+    // Same refusal as claim_task: a non-holder is told nothing about the task.
+    if (task.assignee_role_id && !(await tx.holdsRole(ctx.actor, task.org_id, task.assignee_role_id))) return fail(403, 'Not allowed.')
     return task.assignee_role_id && !task.claimed_by
       ? fail(409, 'Claim this task before you act on it.')
       : fail(403, 'This task is assigned to someone else.')

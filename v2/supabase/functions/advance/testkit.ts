@@ -10,6 +10,7 @@ export type Db = {
   forms: { id: string; org_id: string; schema: unknown }[]
   members: { user_id: string; org_id: string }[]
   roles: { id: string; org_id: string }[]
+  holders: Set<string> // `${userId}:${roleId}` pairs
   starters: Set<string> // `${userId}:${workflowId}` pairs that pass has_permission(org, 'records.start', workflow)
   records: RecordRow[]
   tasks: (TaskRow & { due_at: Date | null })[]
@@ -53,6 +54,7 @@ export function fakeStore(db: Db): Store {
         form: async (fid, org) => db.forms.find((f) => f.id === fid && f.org_id === org) ?? null,
         can: async (user, _org, _perm, wid) => db.starters.has(`${user}:${wid}`),
         isActiveMember: async (user, org) => db.members.some((m) => m.user_id === user && m.org_id === org),
+        holdsRole: async (user, _org, role) => db.holders.has(`${user}:${role}`),
         roleExists: async (role, org) => db.roles.some((r) => r.id === role && r.org_id === org),
         lastSubmitter: async (rid, nid) => db.submissions.filter((s) => s.record_id === rid && s.node_id === nid).at(-1)?.submitted_by ?? null,
         insertRecord: async (row) => {
@@ -109,6 +111,7 @@ export function setup(graph: Graph = LEAVE) {
     forms: [{ id: F_LEAVE, org_id: ORG, schema: FORM }, { id: F_APPROVAL, org_id: ORG, schema: [{ key: 'comment', type: 'long_text', label: 'Comment' }] }],
     members: [{ user_id: MEMBER, org_id: ORG }, { user_id: ADMIN, org_id: ORG }],
     roles: [{ id: ROLE_ADMIN, org_id: ORG }],
+    holders: new Set([`${ADMIN}:${ROLE_ADMIN}`]),
     starters: new Set([`${MEMBER}:${WF}`]),
     records: [], tasks: [], submissions: [], scheduled: [], events: [],
   }

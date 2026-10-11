@@ -1,5 +1,5 @@
 begin;
-select plan(44);
+select plan(49);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -127,6 +127,25 @@ reset role;
 update records set status = 'open' where title = 'Stopped';
 select throws_ok(format($$ update workflows set graph = jsonb_set(graph, '{nodes}', (select jsonb_agg(n) from jsonb_array_elements(graph->'nodes') n where n->>'id' <> 'long')) where id = %L $$, :'wf'),
   'P0001', null, 'the same record, once open, blocks deleting its step');
+
+-- QA-P3-1: record-linked answers follow record visibility; forms.manage widens standalone submissions only.
+reset role;
+insert into roles (id, org_id, name) values ('0000000a-0000-0000-0000-00000000a0f1', :'alpha', 'FormsOnly');
+insert into role_permissions (role_id, permission) values ('0000000a-0000-0000-0000-00000000a0f1', 'forms.manage');
+insert into auth.users (id, email, aud, role) values ('00000000-0000-0000-0000-0000000000a9', 'forms@alpha.test', 'authenticated', 'authenticated');
+insert into members (org_id, user_id, email, status) values (:'alpha', '00000000-0000-0000-0000-0000000000a9', 'forms@alpha.test', 'active');
+insert into member_roles (member_id, role_id) select id, '0000000a-0000-0000-0000-00000000a0f1' from members where user_id = '00000000-0000-0000-0000-0000000000a9';
+insert into form_submissions (org_id, form_id, answers, submitted_by)
+  values (:'alpha', :'f3', '{"comment":"standalone"}', :'member');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000a9');
+select is_empty(format($$ select 1 from records where id = %L $$, :'rec'), 'the forms manager cannot see the record');
+select is_empty(format($$ select 1 from form_submissions where record_id = %L $$, :'rec'), 'a forms manager cannot read answers on a record they cannot see');
+select isnt_empty($$ select 1 from form_submissions where record_id is null $$, 'a forms manager still reads standalone submissions');
+select pg_temp.act_as(:'member');
+select isnt_empty(format($$ select 1 from form_submissions where record_id = %L $$, :'rec'), 'someone who can see the record still reads its answers');
+
+-- QA-P3-3: is_mine is false, never null
+select is((select is_mine(t) from tasks t where t.id = :'task'), false, 'is_mine is false for a task the caller does not hold');
 
 select * from finish();
 rollback;
