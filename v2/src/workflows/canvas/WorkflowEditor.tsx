@@ -1,7 +1,7 @@
 import '@xyflow/react/dist/style.css'
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Background, Controls, MarkerType, ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type Edge as FlowEdge, type NodeChange } from '@xyflow/react'
+import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type Edge as FlowEdge, type NodeChange } from '@xyflow/react'
 import { useForms } from '../../forms/api'
 import { useMemberEmails } from '../../members/useMemberEmails'
 import { useOrg } from '../../rbac/useOrg'
@@ -16,16 +16,14 @@ import { saveWorkflow, useOpenCounts, useRoles, type LoadedWorkflow } from '../a
 import { WorkflowStatusMark } from '../StatusMark'
 import { WorkflowGate } from '../WorkflowGate'
 import { DRAG_TYPE, addNode, connect, issuesByNode, moveNode, removeNode, snap, toFlow, type CardNode } from './canvasOps'
-import { NodeCard } from './NodeCard'
+import { CARD_TYPES, EDGE_DEFAULTS } from './flowDefaults'
 import { Palette } from './Palette'
 import { SidePanel } from './SidePanel'
 import { StepList } from './StepList'
 import { StepSheet } from './StepSheet'
 
-const CARD_TYPES = { card: NodeCard }
 const VIEW_KEY = 'rnr.wfView'
 type View = 'map' | 'list'
-const EDGE_DEFAULTS = { markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: 'currentColor' } }
 const ARIA = {
   'node.a11yDescription.ariaLiveMessage': ({ direction }: { direction: string }) => `Moved ${direction}.`,
   'node.a11yDescription.default': 'Press Enter or Space to select this step. With it selected, press the arrow keys to move it.',

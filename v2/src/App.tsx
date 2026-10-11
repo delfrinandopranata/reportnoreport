@@ -17,6 +17,8 @@ import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
 import { InboxPage } from './inbox/InboxPage'
 import { StartPage } from './inbox/StartPage'
 import { TaskPage } from './inbox/TaskPage'
+import { RecordsPage } from './records/RecordsPage'
+import { RecordPage } from './records/RecordPage'
 import { WorkflowsPage } from './workflows/WorkflowsPage'
 import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
 import { AccessPage } from './workflows/AccessPage'
@@ -47,6 +49,8 @@ function Page({ route }: { route: Route }) {
     case 'inbox': return <InboxPage />
     case 'start': return <StartPage id={route.id} />
     case 'task': return <TaskPage id={route.id} />
+    case 'records': return <RecordsPage />
+    case 'record': return <RecordPage id={route.id} />
     case 'forms': return <FormsPage />
     case 'workflows': return <WorkflowsPage />
     case 'workflow-edit': return <WorkflowEditor id={route.id} />
@@ -98,6 +102,7 @@ function Shell() {
           <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
           <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
             {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
+            {link('#/records', 'Records', route.page === 'records' || route.page === 'record')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
             {link('#/members', 'Members', route.page === 'members')}

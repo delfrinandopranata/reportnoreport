@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from '../data/supabase'
 import type { Answers, Field } from '../forms/logic'
@@ -112,6 +112,7 @@ const RECORD_COLS = 'id, org_id, title, status, label, error, current_node_id, s
 export const useRecords = (orgId: string | null, filter: RecordFilter) => useQuery({
   queryKey: ['records', orgId, filter],
   enabled: !!orgId,
+  placeholderData: keepPreviousData, // the old list stays up while a new filter loads
   queryFn: async () => {
     let q = supabase.from('records').select(RECORD_COLS).eq('org_id', orgId!)
     if (filter === 'open' || filter === 'error') q = q.eq('status', filter)
