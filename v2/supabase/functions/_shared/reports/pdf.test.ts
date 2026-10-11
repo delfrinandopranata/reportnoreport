@@ -165,3 +165,7 @@ test('group rows are 2pt apart', () => {
   assert.equal(rows.length, 2)
   assert.ok(Math.abs(rows[0].y - rows[1].y - (10.5 * 1.4 + 2)) < 0.001)
 })
+
+test('wrapText composes accents, because the PDF draws without mark positioning', () => {
+  assert.deepEqual(wrapText('Zoe\u0308', 1000, 10, false, measure), ['Zo\u00eb'])
+})

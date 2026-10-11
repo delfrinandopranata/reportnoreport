@@ -17,7 +17,7 @@ const CONTROL = /[\u0000-\u0008\u000B-\u001F\u007F]/g
 export function wrapText(text: string, width: number, size: number, bold: boolean, measure: Measure): string[] {
   const fits = (s: string) => measure(s, size, bold) <= width
   const lines: string[] = []
-  for (const para of text.replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(CONTROL, '').split('\n')) {
+  for (const para of text.normalize('NFC').replace(/\r\n?/g, '\n').replace(/\t/g, ' ').replace(CONTROL, '').split('\n')) {
     let line = ''
     for (const word of para.split(/ +/).filter(Boolean)) {
       const next = line ? `${line} ${word}` : word

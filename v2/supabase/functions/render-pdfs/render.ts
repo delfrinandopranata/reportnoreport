@@ -4,6 +4,32 @@ import { PdfProblem, buildPdfModel, layoutPdf, type Measure, type PdfSource } fr
 
 export type Fonts = { regular: Uint8Array; bold: Uint8Array }
 
+// shortcut: Inter covers Latin, Greek and Cyrillic only. Tamil, CJK and other scripts draw as the font's empty box (QA-P5-2);
+// add a Noto subset per script (embed a third font and pick per character) when an organisation needs those names on a PDF.
+// Text is also laid out without shaping (no kerning, ligatures or mark positioning): fontkit's shaping took ~25 ms per
+// 1,000 characters, which put two 10,000-character answers over the Edge CPU limit. Latin text reads the same; scripts
+// that need shaping (Arabic, Indic) are unsupported anyway. Widths are then plain advances, so measure() and the drawn text agree exactly.
+
+/** The Edge runtime kills a request at 2 s of CPU; a render that has used this much stops and says why instead. */
+export const RENDER_BUDGET_MS = 1200
+const TOO_BIG = 'This record has more content than one PDF can hold, so the PDF was not made. Ask a reports manager to remove long fields from the PDF template.'
+const NO_FEATURES = { ccmp: false, locl: false, rlig: false, clig: false, calt: false, liga: false, mark: false, mkmk: false, kern: false }
+
+type Fontkit = { unitsPerEm: number; glyphForCodePoint(cp: number): { advanceWidth: number }; layout(s: string, features?: unknown): unknown }
+
+/** Turns off shaping for this embedded font and returns its per-character advance (em units), cached. */
+export function plainAdvance(f: PDFFont): (ch: string) => number {
+  const fk = (f as unknown as { embedder: { font: Fontkit } }).embedder.font
+  const shape = fk.layout.bind(fk)
+  fk.layout = (s: string) => shape(s, NO_FEATURES)
+  const cache = new Map<string, number>()
+  return (ch) => {
+    let n = cache.get(ch)
+    if (n === undefined) { n = fk.glyphForCodePoint(ch.codePointAt(0)!).advanceWidth / fk.unitsPerEm; cache.set(ch, n) }
+    return n
+  }
+}
+
 // Light-theme tokens from design/tokens.css: ink #18181b, ink-muted #71717a, line-200 #e4e4e7. Paper is always light.
 const INK = rgb(24 / 255, 24 / 255, 27 / 255)
 const MUTED = rgb(113 / 255, 113 / 255, 122 / 255)
@@ -16,7 +42,12 @@ export async function loadFonts(): Promise<Fonts> {
   return { regular: await read('Inter-Regular.ttf'), bold: await read('Inter-SemiBold.ttf') }
 }
 
-export async function renderPdf(src: PdfSource, now: Date, fonts: Fonts, loadImage: (path: string) => Promise<Uint8Array | null>): Promise<Uint8Array> {
+export async function renderPdf(
+  src: PdfSource, now: Date, fonts: Fonts, loadImage: (path: string) => Promise<Uint8Array | null>, budgetMs = RENDER_BUDGET_MS,
+): Promise<Uint8Array> {
+  const started = performance.now()
+  let waited = 0 // time spent awaiting storage is not CPU
+  const check = () => { if (performance.now() - started - waited >= budgetMs) throw new PdfProblem(TOO_BIG) }
   const model = buildPdfModel(src, now)
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
@@ -27,31 +58,29 @@ export async function renderPdf(src: PdfSource, now: Date, fonts: Fonts, loadIma
   const regular = await doc.embedFont(fonts.regular, { subset: true, customName: 'RNRAAA+Inter-Regular' })
   const bold = await doc.embedFont(fonts.bold, { subset: true, customName: 'RNRAAB+Inter-SemiBold' }) // the six-capital tag marks a subset to PDF readers; pdf-lib only adds a numeric suffix
   const font = (b: boolean): PDFFont => (b ? bold : regular)
-  // Shaping a whole line per wrap step cost ~1 ms each and blew the Edge CPU limit on long answers, so words are measured
-  // once and lines are summed. Kerning across a space is ignored; the 0.5% margin keeps lines inside the margin regardless.
-  const words = new Map<string, number>()
-  const word = (w: string, size: number, b: boolean) => {
-    const k = `${b ? 1 : 0}${size}|${w}`
-    let n = words.get(k)
-    if (n === undefined) { n = font(b).widthOfTextAtSize(w, size); words.set(k, n) }
-    return n
-  }
+  const advance = { false: plainAdvance(regular), true: plainAdvance(bold) }
   const measure: Measure = (t, size, b) => {
-    const parts = t.split(' ')
-    return 1.005 * (parts.reduce((n, w) => n + (w ? word(w, size, b) : 0), 0) + (parts.length - 1) * word(' ', size, b))
+    const adv = advance[String(b) as 'true' | 'false']
+    let n = 0
+    for (const ch of t) n += adv(ch)
+    return n * size
   }
   const embedded = new Map<string, PDFImage>()
   const image = async (path: string) => {
     const hit = embedded.get(path)
     if (hit) return hit
+    const t0 = performance.now()
     const bytes = await loadImage(path)
+    waited += performance.now() - t0
     if (!bytes) throw new PdfProblem('A signature file is missing, so the PDF was not made. Ask the person to sign again.')
     if (!PNG_MAGIC.every((b, i) => bytes[i] === b)) throw new PdfProblem('A signature image could not be read, so the PDF was not made. Ask the person to sign again.')
     const img = await doc.embedPng(bytes)
     embedded.set(path, img)
     return img
   }
-  for (const ops of layoutPdf(model, measure)) {
+  const pages = layoutPdf(model, measure)
+  check()
+  for (const ops of pages) {
     const page = doc.addPage([595.28, 841.89])
     for (const o of ops) {
       if (o.op === 'text') page.drawText(o.text, { x: o.x, y: o.y, size: o.size, font: font(o.bold), color: o.muted ? MUTED : INK })
@@ -62,6 +91,7 @@ export async function renderPdf(src: PdfSource, now: Date, fonts: Fonts, loadIma
         page.drawImage(img, { x: o.x, y: o.y + (o.height - fit.height), width: fit.width, height: fit.height })
       }
     }
+    check()
   }
   return doc.save()
 }
