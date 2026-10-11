@@ -8,9 +8,12 @@ import { inputId } from '../paths'
 import { FormRenderer } from './FormRenderer'
 import type { Uploader } from './FileInput'
 
+type Outcome = { value: string; label: string; busyLabel: string }
 type Props = {
   fields: Field[]; idPrefix: string; filePrefix?: string; upload?: Uploader
-  onSubmit?(answers: Answers): Promise<SubmitResult>; onDone?(result: Extract<SubmitResult, { ok: true }>): void
+  /** With outcomes the last page shows one button per outcome (the first is primary) and Enter never submits. */
+  outcomes?: Outcome[]
+  onSubmit?(answers: Answers, outcome?: string): Promise<SubmitResult>; onDone?(result: Extract<SubmitResult, { ok: true }>): void
   submitLabel?: { idle: string; busy: string }
 }
 
@@ -21,7 +24,7 @@ const anyRequired = (fields: Field[]): boolean => fields.some((f) => f.required 
 const seedRows = (fields: Field[]): Answers =>
   Object.fromEntries(fields.filter((f) => f.type === 'group' && (f.repeat?.min ?? 0) > 0).map((f) => [f.key, Array.from({ length: f.repeat!.min }, () => ({}))]))
 
-export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onDone, submitLabel = { idle: 'Submit form', busy: 'Submitting…' } }: Props) {
+export function FormRunner({ fields, idPrefix, filePrefix, upload, outcomes, onSubmit, onDone, submitLabel = { idle: 'Submit form', busy: 'Submitting…' } }: Props) {
   const all = useMemo(() => pages(fields), [fields])
   const [answers, setAnswers] = useState<Answers>(() => seedRows(fields))
   const [at, setAt] = useState(0)
@@ -29,6 +32,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
   const [formError, setFormError] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const submit = useAction()
+  const [pressed, setPressed] = useState<string | null>(null)
   const focusLater = useFocusAfterRender()
   const topId = `${idPrefix}-top`
   const resolved = useMemo(() => resolve(fields, answers), [fields, answers])
@@ -54,13 +58,13 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
     setErrors({}); setFormError(null); setAt(current + 1); focusLater(topId)
   }
   const back = () => { setErrors({}); setFormError(null); setAt(current - 1); focusLater(topId) }
-  const finish = () => submit.run(async () => {
-    setFormError(null); setChecked(false)
+  const finish = (outcome?: string) => submit.run(async () => {
+    setFormError(null); setChecked(false); setPressed(outcome ?? null)
     const r = validateAnswers(fields, answers, { filePrefix })
     if (!r.ok) return showErrors(r.errors)
     setErrors({})
     if (!onSubmit) { setChecked(true); return }
-    const res = await onSubmit(answers)
+    const res = await onSubmit(answers, outcome)
     if (res.ok) { onDone?.(res); return }
     if (res.fieldErrors) showErrors(res.fieldErrors)
     else setFormError(res.error)
@@ -73,7 +77,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
   }
 
   return (
-    <form noValidate className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (last) finish(); else next() }}>
+    <form noValidate className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (!last) next(); else if (!outcomes) finish() }}>
       {anyRequired(fields) && <p className="rnr-caption">Fields marked * are required.</p>}
       {visible.length > 1 && (
         <div id={topId} tabIndex={-1} className="flex flex-col gap-2">
@@ -89,10 +93,22 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
       <p className="rnr-status" role="status">{checked && <><CheckIcon size={14} />These answers are valid. The preview does not save them.</>}</p>
       <div className="flex flex-col gap-2 sm:flex-row">
         {current > 0 && <button type="button" className="rnr-btn rnr-btn-secondary w-full sm:w-auto" onClick={back}>Back</button>}
-        <button type="submit" className={`rnr-btn w-full sm:w-auto ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
-          {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
-          {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? submitLabel.busy : submitLabel.idle}
-        </button>
+        {last && onSubmit && outcomes
+          ? outcomes.map((o, i) => {
+            const mine = submit.busy && pressed === o.value
+            return (
+              <button key={o.value} type="button" className={`rnr-btn w-full sm:w-auto ${i === 0 ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`}
+                aria-busy={mine} onClick={() => finish(o.value)}>
+                {mine && <span className="rnr-spin" aria-hidden="true" />}{mine ? o.busyLabel : o.label}
+              </button>
+            )
+          })
+          : (
+            <button type="submit" className={`rnr-btn w-full sm:w-auto ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
+              {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
+              {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? submitLabel.busy : submitLabel.idle}
+            </button>
+          )}
       </div>
     </form>
   )

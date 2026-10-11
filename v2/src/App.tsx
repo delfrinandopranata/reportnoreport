@@ -14,6 +14,9 @@ import { FormsPage } from './forms/FormsPage'
 import { FillPage } from './forms/fill/FillPage'
 import { FormBuilder } from './forms/builder/FormBuilder'
 import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
+import { InboxPage } from './inbox/InboxPage'
+import { StartPage } from './inbox/StartPage'
+import { TaskPage } from './inbox/TaskPage'
 import { WorkflowsPage } from './workflows/WorkflowsPage'
 import { WorkflowEditor } from './workflows/canvas/WorkflowEditor'
 import { AccessPage } from './workflows/AccessPage'
@@ -23,11 +26,11 @@ import { useAction } from './ui/useAction'
 import { blocksNavigation, guarded } from './ui/navGuard'
 
 const useHash = () => {
-  const [hash, setHash] = useState(location.hash || '#/members')
+  const [hash, setHash] = useState(location.hash || '#/inbox')
   const current = useRef(hash)
   useEffect(() => {
     const on = () => {
-      const next = location.hash || '#/members'
+      const next = location.hash || '#/inbox'
       if (blocksNavigation(next)) { history.replaceState(null, '', current.current); return } // the page asks first
       current.current = next
       setHash(next)
@@ -41,6 +44,9 @@ const useHash = () => {
 function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'roles': return <RolesPage />
+    case 'inbox': return <InboxPage />
+    case 'start': return <StartPage id={route.id} />
+    case 'task': return <TaskPage id={route.id} />
     case 'forms': return <FormsPage />
     case 'workflows': return <WorkflowsPage />
     case 'workflow-edit': return <WorkflowEditor id={route.id} />
@@ -88,12 +94,13 @@ function Shell() {
       <a href="#main" className="sr-only focus:not-sr-only rnr-btn rnr-btn-secondary">Skip to content</a>
       <header className="bg-surface-100 border-b border-line-200">
         <div className="mx-auto max-w-5xl flex flex-wrap items-center gap-4 px-6 py-3">
-          <Wordmark href="#/members" />
+          <Wordmark href="#/inbox" />
           <div className="w-full order-last sm:order-none sm:w-auto"><OrgSwitcher /></div>
-          <nav aria-label="Main" className="flex gap-1 order-last sm:order-none">
-            {link('#/members', 'Members', route.page === 'members')}
+          <nav aria-label="Main" className="flex flex-wrap gap-1 order-last sm:order-none">
+            {link('#/inbox', 'Inbox', route.page === 'inbox' || route.page === 'start' || route.page === 'task')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
+            {link('#/members', 'Members', route.page === 'members')}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
           <button className="rnr-btn rnr-btn-ghost ml-auto" type="button" aria-busy={out.busy}
