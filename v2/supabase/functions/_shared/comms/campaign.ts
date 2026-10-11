@@ -94,7 +94,7 @@ export function campaignTiles(s: Stats, channel: 'email' | 'in_app'): Tile[] {
     { label: 'Delivered', value: pctText(pct(s.delivered, s.recipients)), caption: `${num(s.delivered)} of ${num(s.recipients)}` },
     { label: 'Opened', value: pctText(pct(s.opened, s.delivered)), caption: `${num(s.opened)} of ${num(s.delivered)} delivered, approximate` },
     { label: 'Clicked', value: pctText(pct(s.clicked, s.delivered)), caption: `${num(s.clicked)} of ${num(s.delivered)} delivered` },
-    { label: 'Bounced and failed', value: `${num(s.bounced)} · ${num(s.failed)}`, caption: `${num(s.bounced)} bounced, ${num(s.failed)} failed` },
+    { label: 'Not delivered', value: num(s.bounced + s.failed), caption: `${num(s.bounced)} bounced, ${num(s.failed)} failed${s.complained ? `, ${num(s.complained)} marked as spam` : ''}` },
   ]
 }
 
@@ -127,7 +127,7 @@ export const campaignContext = (orgName: string, recipientName: string): RenderC
 export function withFooter(r: { html: string; text: string }, orgName: string, unsubscribeUrl: string) {
   const o = escapeHtml(orgName)
   return {
-    html: `${r.html}\n<hr>\n<p>You receive this because ${o} sent it to you through ReportNoReport. <a href="${escapeHtml(unsubscribeUrl)}">Unsubscribe from ${o} campaign emails</a>.</p>`,
+    html: `${r.html}\n<hr>\n<p style="font-size:12px;line-height:16px;color:#71717a">You receive this because ${o} sent it to you through ReportNoReport. <a href="${escapeHtml(unsubscribeUrl)}" style="color:#71717a">Unsubscribe from ${o} campaign emails</a>.</p>`,
     text: `${r.text}\n\n--\nYou receive this because ${orgName} sent it to you through ReportNoReport.\nUnsubscribe from ${orgName} campaign emails: ${unsubscribeUrl}`,
   }
 }
@@ -171,7 +171,7 @@ export type RecipientRow = {
   id: string; recipient_email: string; status: string; error: string | null
   delivered_at: string | null; opened_at: string | null; clicked_at: string | null; bounced_at: string | null
 }
-export const RECIPIENT_STATUS: Record<string, string> = { queued: 'Waiting to send', sent: 'Sent', failed: 'Failed' }
+export const RECIPIENT_STATUS: Record<string, string> = { queued: 'Queued', sent: 'Sent', failed: 'Failed' }
 /** Times stay ISO 8601 (UTC) in the file; Phase 5's toCsv guards every text cell against formulas. */
 export function recipientCsv(rows: RecipientRow[], channel: 'email' | 'in_app'): string {
   if (channel === 'in_app') return toCsv(['Email', 'Read'], rows.map((r): Cell[] => [r.recipient_email, r.opened_at]))

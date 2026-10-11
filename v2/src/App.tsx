@@ -31,6 +31,8 @@ import { ReportTemplatePage } from './reports/ReportTemplatePage'
 import { DashboardPage } from './reports/DashboardPage'
 import { ReportsPage } from './reports/ReportsPage'
 import { ReportPage } from './reports/ReportPage'
+import { CampaignsPage } from './campaigns/CampaignsPage'
+import { CampaignPage } from './campaigns/CampaignPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -75,6 +77,8 @@ function Page({ route }: { route: Route }) {
     case 'templates': return <TemplatesPage />
     case 'template': return <TemplateEditor id={route.id} />
     case 'messages': return <MessagesPage />
+    case 'campaigns': return <CampaignsPage />
+    case 'campaign': return <CampaignPage id={route.id} />
     default: return <MembersPage />
   }
 }
@@ -83,7 +87,7 @@ function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
   const mayReport = can('reports.view') || can('reports.manage')
-  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: mayReport, reportsManage: can('reports.manage') })
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage'), comms: can('comms.manage'), reports: mayReport, reportsManage: can('reports.manage'), broadcast: can('comms.broadcast') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
@@ -127,6 +131,7 @@ function Shell() {
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
             {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
             {can('comms.manage') && link('#/messages', 'Messages', route.page === 'messages')}
+            {can('comms.broadcast') && link('#/campaigns', 'Campaigns', route.page === 'campaigns' || route.page === 'campaign')}
             {link('#/members', 'Members', route.page === 'members')}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>

@@ -226,3 +226,38 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 /* Widget titles wrap instead of truncating, so a Small widget still shows its full name (bundle sets nowrap, unlayered). */
 .rnr-card-head .rnr-card-title { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 .rnr-card-head { align-items: flex-start; }
+
+/* Phase 6: campaigns (design/phase-6-screens.md §12). */
+.rnr-campaign-tiles { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr); margin: 0; padding: 0; list-style: none; }
+.rnr-campaign-tiles > li { min-width: 0; }
+.rnr-campaign-tiles .rnr-card-head { margin-bottom: var(--space-2); } /* tighter than a dashboard widget */
+@media (min-width: 640px) {
+  .rnr-campaign-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rnr-campaign-tiles[data-count="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) { .rnr-campaign-tiles[data-count="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.rnr-campaign-tiles[data-count="2"] { max-width: 28rem; }
+.rnr-kpi[data-empty] { font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--ink-muted); } /* "No data yet": same 32px line, so tiles stay level */
+
+/* Review list (send dialog, scheduled summary). */
+.rnr-review { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); margin: 0; }
+.rnr-review dt { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted); padding-top: 2px; }
+.rnr-review dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 639px) { .rnr-review { grid-template-columns: minmax(0, 1fr); gap: 0; } .rnr-review dd { margin-bottom: var(--space-2); } }
+
+/* Template warning: a caution, so heavier than a muted hint but not an error. */
+.rnr-field > .rnr-hint.rnr-hint-warn { color: var(--ink-label); font-weight: 500; }
+
+/* Chart: second series and legend (single --in series is the Phase 5 default). */
+.rnr-chart-line[data-series="out"] { stroke: var(--out); stroke-dasharray: 6 4; }
+.rnr-chart-dot[data-series="out"] { fill: var(--out); }
+.rnr-chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 16px; color: var(--ink-label); }
+.rnr-chart-legend li { display: flex; align-items: center; gap: var(--space-2); }
+.rnr-chart-legend .rnr-chart-dot { stroke-width: 1; }
+.rnr-chart-line { transition: opacity var(--rnr-t); }
+@media (hover: hover) {
+  [data-motion="full"] .rnr-chart[data-active="in"] [data-series="out"],
+  [data-motion="full"] .rnr-chart[data-active="out"] [data-series="in"] { opacity: var(--opacity-dim); }
+}
+/* The bundle's .rnr-seg is one grid row; four filters run past a phone-width card, so below sm it becomes two columns (unlayered, so utilities cannot do this). */
+@media (max-width: 639px) { .rnr-seg[role="group"] { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; } }

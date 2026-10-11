@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import { guardHash, parseRoute } from './route.ts'
 
 const id = '0000000a-0000-0000-0000-0000000000f1'
-const all = { roles: true, forms: true, workflows: true, comms: true, reports: true, reportsManage: true }
-const none = { roles: false, forms: false, workflows: false, comms: false, reports: false, reportsManage: false }
+const all = { roles: true, forms: true, workflows: true, comms: true, reports: true, reportsManage: true, broadcast: true }
+const none = { roles: false, forms: false, workflows: false, comms: false, reports: false, reportsManage: false, broadcast: false }
 
 test('parses every page', () => {
   assert.deepEqual(parseRoute('#/members'), { page: 'members' })
@@ -69,4 +69,13 @@ test('report pages need reports.view; the PDF template editor needs reports.mana
   assert.equal(guardHash(`#/reports/${id}`, viewer), `#/reports/${id}`)
   assert.equal(guardHash(`#/workflows/${id}/report`, viewer), '#/inbox')
   assert.equal(guardHash(`#/workflows/${id}/report`, { ...none, reports: true, reportsManage: true }), `#/workflows/${id}/report`)
+})
+
+test('campaign pages need comms.broadcast', () => {
+  assert.deepEqual(parseRoute('#/campaigns'), { page: 'campaigns' })
+  assert.deepEqual(parseRoute(`#/campaigns/${id}`), { page: 'campaign', id })
+  assert.deepEqual(parseRoute('#/campaigns/nope'), { page: 'members' })
+  assert.equal(guardHash('#/campaigns', none), '#/inbox')
+  assert.equal(guardHash(`#/campaigns/${id}`, none), '#/inbox')
+  assert.equal(guardHash(`#/campaigns/${id}`, all), `#/campaigns/${id}`)
 })

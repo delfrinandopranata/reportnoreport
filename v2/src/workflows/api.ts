@@ -24,6 +24,7 @@ export const useWorkflows = (orgId: string | null) => useQuery({
 
 export const useWorkflow = (id: string) => useQuery({
   queryKey: ['workflow', id],
+  enabled: !!id,
   queryFn: async () => {
     const { data, error } = await supabase.from('workflows').select('id, org_id, name, status, graph, updated_at').eq('id', id).maybeSingle()
     if (error) throw error

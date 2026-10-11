@@ -59,7 +59,7 @@ test('percentages are null when the denominator is zero', () => {
   assert.equal(pctText(33.3), '33.3%')
   const tiles = campaignTiles({ ...NO_STATS, recipients: 3, sent: 3 }, 'email')
   assert.deepEqual(tiles.map((t) => [t.label, t.value]), [
-    ['Recipients', '3'], ['Delivered', '0%'], ['Opened', 'No data yet'], ['Clicked', 'No data yet'], ['Bounced and failed', '0 · 0']])
+    ['Recipients', '3'], ['Delivered', '0%'], ['Opened', 'No data yet'], ['Clicked', 'No data yet'], ['Not delivered', '0']])
   assert.deepEqual(campaignTiles(NO_STATS, 'in_app').map((t) => t.value), ['0', 'No data yet'])
 })
 
@@ -67,9 +67,14 @@ test('tiles: opened and clicked are shares of delivered, and sending shows progr
   const s = { ...NO_STATS, recipients: 10_000, queued: 5_800, sent: 4_150, failed: 50, delivered: 4_000, opened: 1_000, clicked: 250, bounced: 12 }
   assert.deepEqual(campaignTiles(s, 'email').map((t) => [t.value, t.caption]), [
     ['10,000', '4,200 of 10,000 sent so far'], ['40%', '4,000 of 10,000'], ['25%', '1,000 of 4,000 delivered, approximate'],
-    ['6.3%', '250 of 4,000 delivered'], ['12 · 50', '12 bounced, 50 failed']])
+    ['6.3%', '250 of 4,000 delivered'], ['62', '12 bounced, 50 failed']])
   assert.deepEqual(campaignTiles({ ...NO_STATS, recipients: 4, sent: 4, opened: 1 }, 'in_app').map((t) => [t.label, t.value, t.caption]),
     [['Recipients', '4', 'People sent an in-app notice'], ['Read', '25%', '1 of 4 read it']])
+})
+
+test('spam complaints are named in the not delivered caption', () => {
+  const t = campaignTiles({ ...NO_STATS, recipients: 5, sent: 5, bounced: 1, failed: 0, complained: 2 }, 'email')[4]
+  assert.equal(t.caption, '1 bounced, 0 failed, 2 marked as spam')
 })
 
 test('excludedText says who was left out, or nothing', () => {
@@ -89,9 +94,10 @@ test('campaignTemplateIssue names the variables that are empty in a campaign', (
 test('the footer escapes the organisation name and links the unsubscribe page', () => {
   const out = withFooter({ html: '<p>Hi</p>', text: 'Hi' }, 'A & <B>', 'https://x.test/u?m=1&t=2')
   assert.match(out.html, /A &amp; &lt;B&gt;/)
-  assert.match(out.html, /<a href="https:\/\/x\.test\/u\?m=1&amp;t=2">Unsubscribe from A &amp; &lt;B&gt; campaign emails<\/a>/)
+  assert.match(out.html, /<a href="https:\/\/x\.test\/u\?m=1&amp;t=2" style="color:#71717a">Unsubscribe from A &amp; &lt;B&gt; campaign emails<\/a>/)
   assert.match(out.text, /Unsubscribe from A & <B> campaign emails: https:\/\/x\.test\/u\?m=1&t=2$/)
   assert.doesNotMatch(`${out.html}${out.text}`, /\bwe\b/i)
+  assert.match(out.html, /<p style="font-size:12px;line-height:16px;color:#71717a">/) // mail clients ignore stylesheets
 })
 
 test('unsubscribe tokens name their message and verify for it only', async () => {
@@ -123,6 +129,7 @@ test('recipient csv guards formulas and keeps every row', () => {
   const csv = recipientCsv(rows, 'email')
   const lines = csv.replace(/^﻿/, '').trimEnd().split('\r\n')
   assert.equal(lines[0], 'Email,Status,Delivered,Opened,Clicked,Bounced,Error')
+  assert.equal(recipientCsv([row(9, { status: 'queued' })], 'email').split('\r\n')[1].split(',')[1], 'Queued')
   assert.equal(lines.length, 1_501)
   assert.equal(lines[1], `"'=HYPERLINK(""x"")@evil.test",Sent,2026-10-11T10:00:00.000Z,,,,`)
   assert.equal(lines[2], "p2@alpha.test,Failed,2026-10-11T10:00:00.000Z,,,,'-1 refused")

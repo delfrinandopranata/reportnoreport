@@ -38,3 +38,16 @@ test('report and PDF messages', () => {
   assert.equal(friendlyError({ message: 'This workflow has no report template yet.' }), 'This workflow has no PDF template yet. Ask a reports manager to set one up.')
   assert.equal(friendlyError({ message: 'The dashboard changed. Reload to see the latest layout.' }), 'The dashboard changed. Reload to see the latest layout.')
 })
+
+test('campaign messages read as sentences', () => {
+  const cases: [string, string][] = [
+    ['Only a draft campaign can be scheduled.', 'This campaign is no longer a draft. The page now shows its latest state.'],
+    ['Choose a message template before sending.', 'Choose a message template before sending.'],
+    ['Choose who receives this campaign before sending.', 'Choose who receives this campaign before sending.'],
+    ['Choose a time in the future.', 'Choose a time in the future.'],
+    ['Choose a time within the next year.', 'Choose a time within the next year.'],
+    ['This campaign has started sending and cannot be changed.', 'This campaign has started sending and cannot be changed. The page now shows its latest state.'],
+    ['You can only link a workflow whose records you can all see.', 'You can only link a workflow whose records you can all see. Choose another, or ask an admin for access.'],
+  ]
+  for (const [message, sentence] of cases) assert.equal(friendlyError({ message }), sentence)
+})

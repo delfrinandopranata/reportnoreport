@@ -3,10 +3,10 @@ import { XIcon } from './icons'
 
 type Props = {
   open: boolean; title: string; body: string; confirmLabel: string; busyLabel: string
-  busy: boolean; error: string | null; onConfirm(): void; onClose(): void
+  busy: boolean; error: string | null; dismissLabel?: string; onConfirm(): void; onClose(): void
 }
 
-export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy, error, onConfirm, onClose }: Props) {
+export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy, error, dismissLabel = 'Cancel', onConfirm, onClose }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const uid = useId() // two dialogs can be mounted on one page
   useEffect(() => {
@@ -26,7 +26,7 @@ export function ConfirmDialog({ open, title, body, confirmLabel, busyLabel, busy
         <p id={`${uid}-b`} className="rnr-muted">{body}</p>
         {error && <p className="rnr-error" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>Cancel</button>
+          <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>{dismissLabel}</button>
           <button className="rnr-btn rnr-btn-danger" type="button" aria-busy={busy} onClick={onConfirm}>
             {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? busyLabel : confirmLabel}
           </button>

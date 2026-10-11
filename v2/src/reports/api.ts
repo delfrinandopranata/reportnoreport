@@ -64,6 +64,7 @@ export const useReports = (orgId: string | null) => useQuery({
 })
 export const useReport = (id: string) => useQuery({
   queryKey: ['report', id],
+  enabled: !!id,
   queryFn: async () => {
     const { data, error } = await supabase.from('saved_reports').select('id, workflow_id, name, columns, filters, group_by, aggregate, updated_at')
       .eq('id', id).maybeSingle()
@@ -91,7 +92,7 @@ export class ReportError extends Error {
 }
 const RUN_FAILED = 'This report did not run. Try again.'
 /** The server's "Not allowed." says nothing to do, so each refusal gets a sentence a person can act on. */
-async function reportError(error: unknown, mayManage: boolean): Promise<ReportError> {
+export async function reportError(error: unknown, mayManage: boolean): Promise<ReportError> {
   if (error instanceof FunctionsHttpError) {
     const status = error.context.status
     const b = await error.context.json().catch(() => null)
