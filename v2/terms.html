@@ -24,25 +24,27 @@
     <link rel="stylesheet" href="/src/site/site.css" />
     <script>
       (() => {
+        // Public pages are always light; the accent follows a signed-in person's choice. appearance.test.ts runs this.
         let s = {}
-        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
-        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const h = document.documentElement
+        if (h.classList) h.classList.add('js') // the fake document in appearance.test.ts has no classList
+        h.dataset.theme = 'light'
+        const q = typeof location === 'undefined' ? null : /[?&]accent=([a-z]+)/.exec(location.search)
+        const ok = ['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron']
+        h.dataset.accent = ok.includes(q && q[1]) ? q[1] : ok.includes(s.accent) ? s.accent : 'midnight'
       })()
     </script>
     <script src="/consent.js" defer></script>
   </head>
   <body class="rnr">
-    <header class="site-header">
-      <a href="/" class="flex items-center gap-3" aria-label="ReportNoReport home">
-        <span class="mark" aria-hidden="true">R</span>
-        <span class="wordmark" aria-hidden="true">Report<span style="color: var(--ink-faint)">No</span>Report</span>
-      </a>
+    <header class="lp-bar">
+      <a class="rnr-wordmark" href="/" data-draw aria-label="ReportNoReport home">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</a>
       <a class="rnr-btn rnr-btn-secondary" href="/app/">Sign in</a>
     </header>
-    <main class="site-main"><article class="prose">
-      <h1>Terms and conditions</h1>
-      <p class="updated">Last updated: 11 October 2026</p>
+    <main class="lp-main"><article class="rnr-paper rnr-prose lp-prose">
+      <h1 class="lp-h1">Terms and conditions</h1>
+      <p class="rnr-micro lp-updated">Last updated: 11 October 2026</p>
       <p>These terms apply when you or your organisation use ReportNoReport ("we", "us"). By creating an account you agree to them on behalf of yourself and, if you invite others, your organisation.</p>
 
       <h2>Accounts and organisations</h2>
@@ -72,7 +74,7 @@
       <h2>Contact</h2>
       <p>Email <a href="mailto:hello@reportnoreport.com">hello@reportnoreport.com</a>.</p>
     </article></main>
-    <footer class="site-footer">
+    <footer class="lp-foot">
       <span>© 2026 ReportNoReport</span>
       <a href="/privacy">Privacy policy</a>
       <a href="/terms">Terms and conditions</a>

@@ -6,7 +6,7 @@
     <title>Unsubscribe — ReportNoReport</title>
     <meta name="description" content="Stop receiving campaign emails from an organisation that uses ReportNoReport." />
     <meta name="robots" content="noindex" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="light" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
@@ -15,22 +15,30 @@
     <link rel="stylesheet" href="/src/site/site.css" />
     <script>
       (() => {
+        // Public pages are always light; the accent follows a signed-in person's choice. appearance.test.ts runs this.
         let s = {}
-        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
-        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const h = document.documentElement
+        if (h.classList) h.classList.add('js') // the fake document in appearance.test.ts has no classList
+        h.dataset.theme = 'light'
+        const q = typeof location === 'undefined' ? null : /[?&]accent=([a-z]+)/.exec(location.search)
+        const ok = ['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron']
+        h.dataset.accent = ok.includes(q && q[1]) ? q[1] : ok.includes(s.accent) ? s.accent : 'midnight'
       })()
     </script>
     <script type="module" src="/src/site/unsubscribe.ts"></script>
   </head>
   <body class="rnr">
     <main class="unsub">
-      <div class="rnr-card unsub-card">
-        <h1 id="unsub-title" class="page-title" tabindex="-1">Checking your link</h1>
+      <div class="rnr-folder unsub-card">
+        <span class="rnr-folder-tab">Unsubscribe</span>
+        <div class="rnr-folder-body unsub-inner">
+        <h1 id="unsub-title" class="lp-h1" tabindex="-1">Checking your link</h1>
         <p id="unsub-body" class="rnr-muted">One moment.</p>
         <div id="unsub-actions" class="unsub-actions"></div>
         <noscript><p class="rnr-muted">Turn on JavaScript to finish unsubscribing, or use the unsubscribe option in your email app.</p></noscript>
         <p class="unsub-note">Campaign emails are sent through ReportNoReport.</p>
+        </div>
       </div>
     </main>
   </body>

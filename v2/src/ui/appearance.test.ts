@@ -52,3 +52,11 @@ test('the app pre-paint script sets the same attributes as htmlAttrs', () => {
       { ...htmlAttrs(readAppearance(parsed), dark, reduce) }, String(stored))
   }
 })
+
+test('site pages take the stored accent, always light', () => {
+  for (const file of ['../../index.html', '../../privacy.html', '../../terms.html', '../../404.html', '../../unsubscribe.html']) {
+    assert.deepEqual(runPrePaint(file, /rnr\.appearance/, JSON.stringify({ theme: 'dark', accent: 'fern' }), true, false), { theme: 'light', accent: 'fern' }, file)
+    assert.deepEqual(runPrePaint(file, /rnr\.appearance/, '{not json', true, false), { theme: 'light', accent: 'midnight' }, file)
+    assert.deepEqual(runPrePaint(file, /rnr\.appearance/, JSON.stringify({ accent: 'forest' }), false, false), { theme: 'light', accent: 'midnight' }, file)
+  }
+})
