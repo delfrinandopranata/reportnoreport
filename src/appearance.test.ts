@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { ACCENTS, APPEARANCE_KEY, htmlAttrs, readAppearance, STORAGE_KEY } from './appearance.ts'
+import { ACCENTS, APPEARANCE_KEY, DEFAULT_APPEARANCE, htmlAttrs, persistAppearance, readAppearance, SAVE_FAILED, STORAGE_KEY } from './appearance.ts'
 
 const runPrePaint = (stored: string | null, dark: boolean, reduce: boolean) => {
   const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8')
@@ -27,4 +27,10 @@ test('v1 shares v2 storage and accent list', () => {
   assert.equal(STORAGE_KEY, 'rnr.appearance')
   assert.equal(APPEARANCE_KEY, 'appearance')
   assert.equal(ACCENTS.length, 8)
+})
+
+test('a failed save keeps the choice on this device and says so', async () => {
+  assert.equal(await persistAppearance(async () => ({ error: null }), DEFAULT_APPEARANCE), null)
+  assert.equal(await persistAppearance(async () => ({ error: { message: 'offline' } }), DEFAULT_APPEARANCE), SAVE_FAILED)
+  assert.equal(await persistAppearance(async () => { throw new Error('network') }, DEFAULT_APPEARANCE), SAVE_FAILED)
 })

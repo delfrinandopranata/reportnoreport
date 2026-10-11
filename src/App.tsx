@@ -14,7 +14,8 @@ import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
 import { Tour } from './tour'
 import { useTour } from './tour/useTour'
-import { useSampleDataExists, useLoadSampleData, useRemoveSampleData, useTheme } from './data/queries'
+import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
+import { useAppearance } from './useAppearance'
 import { sampleControls } from './data/sampleData'
 
 type View = 'dashboard' | 'clients' | 'contracts' | 'users' | 'settings' | 'billing'
@@ -56,7 +57,7 @@ export default function App() {
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
-  const [theme, setTheme] = useTheme()
+  const [appearance, saveAppearance] = useAppearance(profile.id)
   const desktop = useDesktop()
   const drawer = useRef<HTMLDialogElement>(null)
   const items = navItems(profile.role)
@@ -83,7 +84,7 @@ export default function App() {
         <p className="rnr-account-email">{profile.name}</p>
         <p className="rnr-caption truncate">{ROLE_LABEL[profile.role]}</p>
       </div>
-      <ThemeToggle theme={theme} setTheme={setTheme} className="shrink-0" />
+      <ThemeToggle theme={appearance.theme} setTheme={(theme) => void saveAppearance({ ...appearance, theme })} className="shrink-0" />
       <button type="button" className="rnr-icon-btn" onClick={signOut} aria-label="Sign out" title="Sign out">
         <Icon name="logout" className="size-5" />
       </button>
