@@ -253,5 +253,5 @@ html.js:not([data-motion="flat"]) .sl-card[data-state="now"] { transform: scale(
   .lp-bar .rnr-btn, .lp-foot .rnr-btn, .lp-wrap .rnr-btn, .lp-main .rnr-btn { min-height: 44px; }
   .lp-links a { min-height: 44px; }
   .lp-bar > .rnr-wordmark { padding: 12px 0; margin: -12px 0; }
-  .lp-foot a:not(.rnr-btn) { padding: 12px 0; margin: -12px 0; }
+  .lp-foot a:not(.rnr-btn) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
 }
