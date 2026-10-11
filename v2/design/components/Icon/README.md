@@ -1,11 +1,8 @@
 # Icon
 
-The app's 24×24 stroke icon set (2px stroke, round caps and joins, `currentColor`), 34 glyphs.
+A duotone set drawn for ReportNoReport: a rounded 2px stroke over a soft fill of the same colour at 14%. 24×24 grid, `currentColor`.
 
-Copied verbatim from the `PATHS` map in `src/ui.tsx`; rendered by `<Icon name="…" className="size-4" />`.
-
-## Rules
-- Sizes: 16px in buttons and menus, 14px in icon buttons and segments, 20px in nav.
-- Colour is always `currentColor`; the icon takes the text token of its container.
-- Decorative icons get `aria-hidden`; icon-only buttons get an `aria-label`.
-- No emoji in UI.
+- Markup: `<svg class="rnr-ico" viewBox="0 0 24 24">` with `.fill` shapes then `.line` strokes.
+- Sizes: 16px in buttons and menus, 18px in nav, 22px in empty states.
+- In Black & White the fill drops out and only the stroke remains.
+- Decorative icons are `aria-hidden`; icon-only buttons need an `aria-label`. No emoji, no second icon set.

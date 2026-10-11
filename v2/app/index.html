@@ -9,7 +9,7 @@
     <script src="/consent.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
       (() => {
         let s = {}
@@ -18,7 +18,7 @@
         const h = document.documentElement
         h.dataset.theme = s.bw ? (dark ? 'bw-dark' : 'bw-light') : (dark ? 'dark' : 'light')
         h.dataset.preset = s.preset || 'default'
-        h.dataset.style = s.style || 'solid'
+        h.dataset.style = s.style || 'glass'
         h.dataset.density = s.density || 'comfortable'
         h.dataset.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : (s.motion || 'full')
       })()

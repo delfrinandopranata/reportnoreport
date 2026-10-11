@@ -1,11 +1,8 @@
 # Segmented
 
-A pill track of 2–4 mutually exclusive options: In/Out, Comfortable/Compact, report period, appearance modes.
-
-Hand-written from the In/Out picker in `src/ui.tsx` (`TxnForm`) and the density toggle in `src/table.tsx`.
+A pill track holding 2–5 options. The same component is used for page tabs (`.rnr-tabs` + `.rnr-tab` links) and for choices (`role="radiogroup"`) and view toggles (`aria-pressed`).
 
 ## Rules
-- Track: `surface-200`, `space-1` padding, `radius-lg`. Selected segment: `surface-100` + `shadow-sm` (B&W: inverted, `ink` fill).
-- As a choice in a form use `role="radiogroup"` + `role="radio"`/`aria-checked`, roving tabindex, arrow keys move. As a view toggle use buttons with `aria-pressed`.
-- In/Out segments colour the selected label `in` / `out` and always show the arrow icon.
-- More than 4 options → use a select.
+- Selected item: a raised pill (`surface-100` with the inner highlight) in light; a lumen-outlined graphite pill in dark.
+- Never an underline tab and never a coloured fill for the selected item.
+- Radio groups use roving tabindex and arrow keys; tabs are links with `aria-current="page"`.
