@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { fileExists } from '../_shared/storage.ts'
 import { submitForm } from './handler.ts'
 
 const CORS = {
@@ -36,12 +37,7 @@ Deno.serve(async (req) => {
         if (error) throw error
         return data.id
       },
-      fileExists: async (path) => {
-        const i = path.lastIndexOf('/')
-        const { data, error } = await admin.storage.from('form-files').list(path.slice(0, i), { search: path.slice(i + 1), limit: 10 })
-        if (error) throw error
-        return data.some((o) => o.name === path.slice(i + 1))
-      },
+      fileExists: (path) => fileExists(admin, path),
       now: () => new Date(),
     })
     return json(res.status, res.body)

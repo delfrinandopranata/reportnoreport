@@ -29,7 +29,8 @@ const tick = () => new Promise((r) => setTimeout(r, 0))
 export function fakeStore(db: Db): Store {
   const locks = new Map<string, Promise<void>>()
   let seq = 0
-  const id = (p: string) => `${p}-${++seq}`
+  // UUID-shaped, so ids pass the handler's body check.
+  const id = (_p: string) => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`
   return {
     async tx(fn) {
       const held: (() => void)[] = []
