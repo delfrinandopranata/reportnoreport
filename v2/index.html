@@ -1,1 +1,66 @@
-<!doctype html><title>stub</title>
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportNoReport — report without complicated reporting</title>
+    <meta name="description" content="Build forms, dashboards and reports for your school or HR team without complicated reporting. Drag, drop and share." />
+    <link rel="canonical" href="https://reportnoreport.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ReportNoReport" />
+    <meta property="og:title" content="ReportNoReport — report without complicated reporting" />
+    <meta property="og:description" content="Build forms, dashboards and reports for your school or HR team without complicated reporting." />
+    <meta property="og:url" content="https://reportnoreport.com/" />
+    <meta property="og:image" content="https://reportnoreport.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ReportNoReport — report without complicated reporting." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script>
+      (() => {
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
+        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      })()
+    </script>
+    <script src="/consent.js" defer></script>
+  </head>
+  <body class="rnr">
+    <script>
+      // Old app bookmarks were /#/members; the app now lives at /app.
+      if (location.hash.startsWith('#/')) location.replace('/app/' + location.hash)
+    </script>
+    <header class="site-header">
+      <a href="/" class="flex items-center gap-3" aria-label="ReportNoReport home">
+        <span class="mark" aria-hidden="true">R</span>
+        <span class="wordmark" aria-hidden="true">Report<span style="color: var(--ink-faint)">No</span>Report</span>
+      </a>
+      <a class="rnr-btn rnr-btn-secondary" href="/app/">Sign in</a>
+    </header>
+    <main class="site-main flex flex-col gap-6" style="padding-top: 4rem; padding-bottom: 4rem">
+      <h1 class="page-title" style="font-size: 40px; line-height: 48px; max-width: 36rem">Report without complicated <span class="rnr-strike">r</span>eporting.</h1>
+      <p class="body" style="max-width: 32rem; color: var(--ink-label)">Build forms, dashboards and reports for your school or HR team. Drag, drop and share — no spreadsheets to untangle.</p>
+      <div class="flex gap-3">
+        <a class="rnr-btn rnr-btn-primary" href="/app/#/members">Start free trial</a>
+        <a class="rnr-btn rnr-btn-ghost" href="/app/">Sign in</a>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>© 2026 ReportNoReport</span>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/terms">Terms and conditions</a>
+      <button type="button" class="rnr-btn rnr-btn-ghost" data-consent-settings>Cookie settings</button>
+    </footer>
+  </body>
+</html>
