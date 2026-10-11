@@ -15,7 +15,7 @@ Make ReportNoReport v2 launch-ready on the public web: legal pages, crawlable an
 | 3 | Analytics: **Vercel Web Analytics**, loaded only after consent |
 | 4 | Approach: **Vite multi-page build** — public pages are static HTML, no React/Supabase |
 | 5 | Domain: `https://reportnoreport.com` |
-| 6 | Brand **ReportNoReport**; legal entity **Report No Report Sdn. Bhd.** (Malaysia); governing law **Malaysia**. Terms and Privacy name the legal entity in the opening paragraph and footer (`© 2026 Report No Report Sdn. Bhd.`); everywhere else uses the brand |
+| 6 | Brand **ReportNoReport**; legal entity **Report No Report Sdn. Bhd.** (Malaysia); governing law **Malaysia**. Terms and Privacy name the legal entity in their opening paragraph only; footer on every public page reads `© 2026 ReportNoReport`; everywhere else uses the brand |
 | 7 | Markets: Malaysia, Singapore, Indonesia, worldwide — privacy covers MY PDPA 2010, SG PDPA 2012, ID UU PDP 27/2022, GDPR |
 
 ## 1. Pages and routing
