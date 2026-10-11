@@ -26,6 +26,14 @@ const DEFAULTS: Record<NodeType, (id: string, position: At) => WfNode> = {
 
 /** Where a step goes when there is no pointer (List view): right of the rightmost step. */
 export const nextSpot = (g: Graph): At => (g.nodes.length ? snap({ x: Math.max(...g.nodes.map((n) => n.position.x)) + STEP_GAP, y: 0 }) : { x: 0, y: 0 })
+/** Vertical room for a card with two outcome rows. */
+export const ROW_GAP = 160
+/** Where a step goes when there is no pointer in Map view: the spot asked for, moved right a step at a time until no card is near. */
+export function clearSpot(g: Graph, at: At): At {
+  const p = snap(at)
+  while (g.nodes.some((n) => Math.abs(n.position.x - p.x) < STEP_GAP && Math.abs(n.position.y - p.y) < ROW_GAP)) p.x += STEP_GAP
+  return p
+}
 
 /** The step's own name, or "Form 2" / "Condition 1" counted by type in node order. */
 export function stepLabel(g: Graph, n: WfNode): string {

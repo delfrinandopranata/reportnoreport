@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { READABLE_ZOOM, STEP_GAP, readableViewport, addNode, connect, issuesByNode, nextSpot, removeNode, setActions, snap, stepLabel, stepOrder, toFlow } from './canvasOps.ts'
+import { READABLE_ZOOM, ROW_GAP, STEP_GAP, clearSpot, readableViewport, addNode, connect, issuesByNode, nextSpot, removeNode, setActions, snap, stepLabel, stepOrder, toFlow } from './canvasOps.ts'
 import { LEAVE, leave } from '../../../supabase/functions/_shared/workflow/fixture.ts'
 
 test('new steps get unique ids and snap to the 16px grid', () => {
@@ -78,4 +78,14 @@ test('the map opens at a readable zoom: centred when it fits, panned to Start wh
   const wide = readableViewport({ nodes: LEAVE.nodes.map((n) => ({ x: n.position.x, y: n.position.y, outs: 2 })) }, { w: 598, h: 480 })
   assert.equal(wide.zoom, READABLE_ZOOM) // 1170px of graph never shrinks below 0.55
   assert.equal(wide.x, 24) // panned so the left edge, where Start is, sits at the pane margin
+})
+
+test('a step added without a pointer in Map view lands clear of every card', () => {
+  const one = addNode({ nodes: [], edges: [] }, 'form', { x: 0, y: 0 }).graph
+  assert.deepEqual(clearSpot(one, { x: 16, y: 16 }), { x: 16 + STEP_GAP, y: 16 })
+  const two = addNode(one, 'form', clearSpot(one, { x: 16, y: 16 })).graph
+  assert.deepEqual(two.nodes[1].position, { x: 16 + STEP_GAP, y: 16 })
+  assert.deepEqual(clearSpot(two, { x: 16, y: 16 }), { x: 16 + 2 * STEP_GAP, y: 16 })
+  assert.deepEqual(clearSpot(one, { x: 0, y: ROW_GAP }), { x: 0, y: ROW_GAP }) // a row below is already clear
+  assert.deepEqual(clearSpot({ nodes: [], edges: [] }, { x: 7, y: 9 }), { x: 0, y: 16 })
 })

@@ -15,7 +15,7 @@ import { NODE_TYPES, OUTCOME_LABELS, outcomesOf, TYPE_LABELS, checkGraph, nodeNa
 import { saveWorkflow, useOpenCounts, useRoles, type LoadedWorkflow } from '../api'
 import { WorkflowStatusMark } from '../StatusMark'
 import { WorkflowGate } from '../WorkflowGate'
-import { DRAG_TYPE, addNode, connect, nextSpot, issuesByNode, moveNode, readableViewport, removeNode, toFlow, type CardNode } from './canvasOps'
+import { DRAG_TYPE, addNode, clearSpot, connect, nextSpot, issuesByNode, moveNode, readableViewport, removeNode, toFlow, type CardNode } from './canvasOps'
 import { CARD_TYPES, EDGE_DEFAULTS } from './flowDefaults'
 import { Palette } from './Palette'
 import { SidePanel } from './SidePanel'
@@ -138,7 +138,8 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
     let at = { x: 0, y: 0 }
     if (view === 'map') {
       const r = board.current!.getBoundingClientRect()
-      at = flow.screenToFlowPosition(screen ?? { x: r.left + r.width / 2 - 104, y: r.top + r.height / 2 - 40 })
+      const p = flow.screenToFlowPosition(screen ?? { x: r.left + r.width / 2 - 104, y: r.top + r.height / 2 - 40 })
+      at = screen ? p : clearSpot(graph, p) // a drop lands where the pointer is; a click or Enter must not land on a card
     } else at = nextSpot(graph)
     const { graph: g, id } = addNode(graph, type, at)
     setGraph(g)
