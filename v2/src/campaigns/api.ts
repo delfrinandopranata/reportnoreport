@@ -3,6 +3,7 @@ import { supabase } from '../data/supabase'
 import { ReportError, reportError } from '../reports/api'
 import { csvFilename } from '../reports/logic'
 import { NO_STATS, recipientCsv, type Audience, type Excluded, type RecipientRow, type Stats } from './logic'
+import { applyOps, recipientOps } from './filters'
 import { readAllPages } from './pages'
 
 export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
@@ -94,9 +95,7 @@ export const useRecipients = (id: string, filter: RecipientFilter, page: number,
   placeholderData: keepPreviousData,
   queryFn: async () => {
     let q = supabase.from('messages').select(RCOLS, { count: 'exact' }).eq('campaign_id', id)
-    if (filter === 'not_opened') q = q.eq('status', 'sent').is('opened_at', null).is('bounced_at', null)
-    if (filter === 'bounced') q = q.not('bounced_at', 'is', null)
-    if (filter === 'failed') q = q.eq('status', 'failed')
+    q = applyOps(q, recipientOps(filter))
     const from = (page - 1) * RECIPIENT_PAGE
     const { data, error, count } = await q.order('recipient_email').order('id').range(from, from + RECIPIENT_PAGE - 1)
     if (error) throw error

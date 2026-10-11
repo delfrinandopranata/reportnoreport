@@ -3,6 +3,8 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { supabase } from '../data/supabase'
 import type { MutableKind, TemplateKind } from './logic'
 import type { PreviewRecord } from './preview'
+import { applyOps } from '../campaigns/filters'
+import { messageOps, pageRange, type MessageFilter, type MessageSource } from './messageQuery'
 
 export type TemplateRow = {
   id: string; org_id: string; kind: TemplateKind; name: string; channel: 'email' | 'in_app'
@@ -110,24 +112,24 @@ export const usePreviewRecords = (orgId: string | null) => useQuery({
   },
 })
 
-export type MessageFilter = 'all' | 'failed' | 'queued' | 'sent'
+export type { MessageFilter } from './messageQuery'
 export type QueueRow = {
   id: string; recipient_email: string; subject: string; status: 'queued' | 'sent' | 'failed'
   attempts: number; error: string | null; created_at: string; sent_at: string | null
+  campaign_id: string | null; campaign: { name: string } | null
 }
-export const MESSAGE_LIMIT = 200 // shortcut: newest 200 per filter; add paging when an org's queue outgrows a screen of failures
 
-export const useMessages = (orgId: string | null, filter: MessageFilter) => useQuery({
-  queryKey: ['messages', orgId, filter],
+export const useMessages = (orgId: string | null, source: MessageSource, filter: MessageFilter, page: number) => useQuery({
+  queryKey: ['messages', orgId, source, filter, page],
   enabled: !!orgId,
   placeholderData: keepPreviousData,
   queryFn: async () => {
-    let q = supabase.from('messages').select('id, recipient_email, subject, status, attempts, error, created_at, sent_at')
-      .eq('org_id', orgId!).order('created_at', { ascending: false }).limit(MESSAGE_LIMIT)
-    if (filter !== 'all') q = q.eq('status', filter)
-    const { data, error } = await q
+    const [from, to] = pageRange(page)
+    const q = applyOps(supabase.from('messages').select('id, recipient_email, subject, status, attempts, error, created_at, sent_at, campaign_id, campaign:campaigns(name)', { count: 'exact' })
+      .eq('org_id', orgId!), messageOps(source, filter))
+    const { data, error, count } = await q.order('created_at', { ascending: false }).order('id').range(from, to)
     if (error) throw error
-    return data as QueueRow[]
+    return { rows: data as unknown as QueueRow[], total: count ?? 0 }
   },
 })
 export const retryMessage = (id: string) => supabase.rpc('retry_message', { p_message: id })

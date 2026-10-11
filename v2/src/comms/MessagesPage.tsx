@@ -7,10 +7,12 @@ import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
-import { MESSAGE_LIMIT, retryMessage, useMessages, type MessageFilter, type QueueRow } from './api'
+import { retryMessage, useMessages, type MessageFilter, type QueueRow } from './api'
+import { lastPage, pageText, type MessageSource } from './messageQuery'
 import { attemptsText, problemHint, resultText } from './messageText'
 
 const FILTERS: [MessageFilter, string][] = [['all', 'All'], ['failed', 'Failed'], ['queued', 'Queued'], ['sent', 'Sent']]
+const SOURCES: [MessageSource, string][] = [['system', 'System'], ['campaign', 'Campaign'], ['all', 'All']]
 const STATUS = {
   queued: { Icon: ClockIcon, word: 'Queued' },
   sent: { Icon: CheckIcon, word: 'Sent' },
@@ -27,12 +29,17 @@ export function MessagesPage() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState<MessageFilter>('all')
   const [announced, setAnnounced] = useState<MessageFilter | null>(null) // set by a click, so the first load stays silent
-  const messages = useMessages(orgId, filter)
+  const [source, setSource] = useState<MessageSource>('system') // operational failures stay in view; campaign mail is one press away
+  const [page, setPage] = useState(1)
+  const messages = useMessages(orgId, source, filter, page)
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useNotice()
   const focusLater = useFocusAfterRender()
-  const rows = messages.data
+  const rows = messages.data?.rows
+  const total = messages.data?.total ?? 0
+  const last = lastPage(total)
+  if (messages.data && page > last) setPage(last)
   const loadingFilter = messages.isPlaceholderData
 
   const retry = async (m: QueueRow) => {
@@ -42,7 +49,7 @@ export function MessagesPage() {
     const { error: e } = await retryMessage(m.id)
     setBusy((s) => { const n = new Set(s); n.delete(m.id); return n })
     await qc.invalidateQueries({ queryKey: ['messages', orgId] }) // refetch on failure too: another admin may have retried it
-    const gone = filter !== 'all' && !qc.getQueryData<QueueRow[]>(['messages', orgId, filter])?.some((r) => r.id === m.id)
+    const gone = filter !== 'all' && !qc.getQueryData<{ rows: QueueRow[] }>(['messages', orgId, source, filter, page])?.rows.some((r) => r.id === m.id)
     if (e) { setError(friendlyError(e)); if (gone) focusLater('messages-h'); return }
     setNotice(`Retried. The message to ${m.recipient_email} will be sent within a minute.`)
     focusLater(filter === 'failed' ? 'messages-h' : `msg-${m.id}`) // under Failed the row leaves; otherwise it stays and says its new status
@@ -57,12 +64,19 @@ export function MessagesPage() {
         </button>
       </div>
       <p className="rnr-muted">Every email waits here until it is sent. Each message is tried up to four times, and failures stay until you retry them.</p>
-      <div className="rnr-seg self-start" role="group" aria-label="Show messages">
-        {FILTERS.map(([value, label]) => (
-          <button key={value} type="button" aria-pressed={filter === value} onClick={() => { setFilter(value); setAnnounced(value) }}>{label}</button>
-        ))}
+      <div className="flex flex-wrap gap-3">
+        <div className="rnr-seg self-start" role="group" aria-label="Source">
+          {SOURCES.map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={source === value} onClick={() => { setSource(value); setPage(1); setAnnounced(filter) }}>{label}</button>
+          ))}
+        </div>
+        <div className="rnr-seg self-start" role="group" aria-label="Status">
+          {FILTERS.map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={filter === value} onClick={() => { setFilter(value); setPage(1); setAnnounced(value) }}>{label}</button>
+          ))}
+        </div>
       </div>
-      <p className="sr-only" role="status">{rows && announced === filter && !loadingFilter ? resultText(filter, rows.length) : ''}</p>
+      <p className="sr-only" role="status">{rows && announced === filter && !loadingFilter ? resultText(filter, total) : ''}</p>
       <p className="rnr-caption" role="status">{notice}</p>
       {error && <p className="rnr-error" role="alert">{error}</p>}
       {messages.isPending && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
@@ -72,7 +86,7 @@ export function MessagesPage() {
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void messages.refetch()}>Try again</button></div>
         </div>
       )}
-      {rows?.length === 0 && filter === 'all' && (
+      {rows?.length === 0 && filter === 'all' && source !== 'campaign' && (
         <div className="rnr-card gap-3">
           <div className="rnr-card" data-state="placeholder" aria-hidden="true">
             <span className="label">admin@alpha.test</span><span className="rnr-muted">Task assigned · Sent</span>
@@ -81,7 +95,7 @@ export function MessagesPage() {
           <p className="rnr-muted">Task notices, invitations and workflow messages appear here once they are queued.</p>
         </div>
       )}
-      {rows?.length === 0 && filter !== 'all' && <div className="rnr-card"><p className="rnr-muted">{FILTERED_OUT[filter]}</p></div>}
+      {rows?.length === 0 && (filter !== 'all' || source === 'campaign') && <div className="rnr-card"><p className="rnr-muted">{filter === 'all' ? 'No campaign messages yet.' : FILTERED_OUT[filter]}</p></div>}
       {!!rows?.length && (
         <>
           <div className="rnr-card rnr-table-card" aria-busy={loadingFilter}>
@@ -95,7 +109,7 @@ export function MessagesPage() {
                   const hint = problemHint(m)
                   return (
                     <tr key={m.id} id={`msg-${m.id}`} tabIndex={-1}>
-                      <td><span className="label">{m.recipient_email}</span><br /><span className="rnr-caption">{m.subject}</span></td>
+                      <td><span className="label">{m.recipient_email}</span><br /><span className="rnr-caption">{m.subject}</span>{m.campaign_id && <><br /><a className="rnr-caption underline" href={`#/campaigns/${m.campaign_id}`}>Campaign: {m.campaign?.name ?? 'Open the campaign'}</a></>}</td>
                       <td className="whitespace-nowrap">
                         <span className="rnr-status"><Icon size={14} />{word}</span>
                         {tried && <><br /><span className="rnr-caption">{tried}</span></>}
@@ -120,7 +134,12 @@ export function MessagesPage() {
               </tbody>
             </table>
           </div>
-          {rows.length === MESSAGE_LIMIT && <p className="rnr-caption">Showing the newest {MESSAGE_LIMIT}. Filter to Failed to find problems quickly.</p>}
+          <nav className="rnr-pager" aria-label="Message pages">
+            <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page <= 1 || undefined} onClick={() => page > 1 && setPage(page - 1)}>Previous</button>
+            <span className="rnr-num" aria-live="polite">{pageText(page, total)}</span>
+            <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page >= last || undefined} onClick={() => page < last && setPage(page + 1)}>Next</button>
+            {messages.isFetching && <span className="rnr-spin" aria-hidden="true" />}
+          </nav>
         </>
       )}
     </section>
