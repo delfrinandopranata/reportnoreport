@@ -26,6 +26,11 @@ export function callerSource(c: SupabaseClient): ReportSource {
     names: async (orgId) => new Map(must<{ user_id: string | null; email: string; full_name: string | null }[]>(
       await c.from('members').select('user_id, email, full_name').eq('org_id', orgId))
       .filter((m) => m.user_id).map((m) => [m.user_id as string, m.full_name?.trim() || m.email])),
+    count: async (orgId, workflowId) => {
+      const { count, error } = await c.from('records').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('workflow_id', workflowId)
+      if (error) throw error
+      return count ?? 0
+    },
     // Keyset by id: a record inserted while we read can neither repeat a row nor push one out of the pages.
     async *records(orgId, workflowId) {
       let last = NIL

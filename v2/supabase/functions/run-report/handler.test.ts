@@ -15,6 +15,7 @@ function source(records: ReportRecord[], over: Partial<ReportSource> = {}, pageS
     savedReport: (id: string) => Promise.resolve(id === REPORT ? structuredClone(SAVED) : null),
     workflow: () => Promise.resolve({ name: 'Leave approval', graph: LEAVE }),
     forms: () => Promise.resolve(new Map([[F_LEAVE, FORM], [F_APPROVAL, [{ key: 'comment', type: 'long_text' as const, label: 'Comment' }]]])),
+    count: () => Promise.resolve(records.length),
     names: () => Promise.resolve(new Map([['00000000-0000-0000-0000-0000000000a3', 'Ada Lovelace']])),
     async *records() {
       for (let i = 0; i < records.length; i += pageSize) { s.pagesRead += 1; yield records.slice(i, i + pageSize) }
@@ -62,7 +63,7 @@ Deno.test('more than 10,000 records is refused, never cut', async () => {
   const src = source(many(10_001))
   const res = await runReportRequest({ orgId: ORG, reportId: REPORT }, deps(src))
   assertEquals(res, { status: 413, body: { error: 'This workflow has more than 10,000 records you can see, which is more than one report can read. Ask an admin to split the work into separate workflows.' } })
-  assertEquals(src.pagesRead, 11)
+  assertEquals(src.pagesRead, 0) // counted first: nothing is read before the refusal
   assertEquals((await runReportRequest({ orgId: ORG, reportId: REPORT }, deps(source(many(10_000))))).status, 200)
 })
 
@@ -72,4 +73,10 @@ Deno.test('csv export returns every row, not a page', async () => {
   assertEquals([out.status, out.filename], [200, 'leave-days-by-type-2026-10-11.csv'])
   const lines = out.csv.split('\r\n')
   assertEquals([lines[0], lines.length], ['﻿Title,Leave type,Days', 122]) // header + 120 rows + the final empty string
+})
+
+Deno.test('a record count that grows between the count and the read is still refused, never cut', async () => {
+  const src = source(many(10_001), { count: () => Promise.resolve(9_999) })
+  assertEquals((await runReportRequest({ orgId: ORG, reportId: REPORT }, deps(src))).status, 413)
+  assertEquals(src.pagesRead, 11)
 })

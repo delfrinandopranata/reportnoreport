@@ -14,6 +14,8 @@ export interface ReportSource {
   workflow(id: string, orgId: string): Promise<{ name: string; graph: unknown } | null>
   forms(orgId: string, ids: string[]): Promise<Map<string, Field[]>>
   names(orgId: string): Promise<Map<string, string>>
+  /** How many records the caller can see in the workflow; one cheap query, no rows. */
+  count(orgId: string, workflowId: string): Promise<number>
   records(orgId: string, workflowId: string): AsyncIterable<ReportRecord[]>
 }
 export type Deps = { userId(): Promise<string | null>; source: ReportSource; now(): Date }
@@ -68,6 +70,7 @@ export async function runReportRequest(body: unknown, deps: Deps): Promise<Resul
 
   const graph = readGraph(wf.graph) ?? { nodes: [], edges: [] }
   const formIds = [...new Set(graph.nodes.flatMap((n) => (n.type === 'start' || n.type === 'form' ? [n.formId] : [])))]
+  if ((await deps.source.count(req.orgId, workflowId)) > MAX_SCAN) return { status: 413, body: { error: TOO_MANY } } // before reading any row
   const [forms, names] = await Promise.all([deps.source.forms(req.orgId, formIds), deps.source.names(req.orgId)])
   const records: ReportRecord[] = []
   for await (const page of deps.source.records(req.orgId, workflowId)) {

@@ -63,3 +63,40 @@ Deno.test({
     }
   },
 })
+
+Deno.test({
+  name: 'real Supabase: a 10,000-record report answers in seconds and 10,001 is refused without reading them',
+  ignore: !(url && anon && db),
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const sql = postgres(db!, { max: 1 })
+    const tag = crypto.randomUUID()
+    const [{ n }] = await sql`select count(*)::int as n from records where workflow_id = ${WF}`
+    try {
+      const insert = (count: number) => sql`
+        insert into records (org_id, workflow_id, title, status, data, started_by)
+        select ${ALPHA}, ${WF}, 'Load ' || g, 'done', jsonb_build_object('tag', ${tag}::text, 'days', g % 7, 'reason', repeat('x', 200)), ${ADMIN}
+        from generate_series(1, ${count}) g`
+      await insert(10_000 - n)
+      await sql`analyze records`
+      const c = createClient(url!, anon!, { auth: { persistSession: false } })
+      await c.auth.signInWithPassword({ email: 'owner@alpha.test', password: 'password123' })
+      const run = async () => {
+        const t = performance.now()
+        const res = await runReportRequest(
+          { orgId: ALPHA, workflowId: WF, definition: { columns: [{ meta: 'title' }] } },
+          { userId: async () => (await c.auth.getUser()).data.user?.id ?? null, source: callerSource(c), now: () => new Date() })
+        return { status: res.status, ms: performance.now() - t }
+      }
+      const ok = await run()
+      assertEquals([ok.status, ok.ms < 5000], [200, true], `10,000 records took ${ok.ms.toFixed(0)} ms`)
+      await insert(1)
+      const refused = await run()
+      assertEquals([refused.status, refused.ms < 2000], [413, true], `the refusal took ${refused.ms.toFixed(0)} ms`)
+    } finally {
+      await sql`delete from records where data->>'tag' = ${tag}`
+      await sql.end()
+    }
+  },
+})

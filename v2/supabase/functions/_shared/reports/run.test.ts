@@ -121,3 +121,9 @@ test('dataColumns: first step wins a key, groups give row paths and a count', ()
     ['name', 'Full name'], ['claims.count', 'Claims: number of rows'], ['claims[].amount', 'Claims: Amount'], ['comment', 'Comment'],
   ])
 })
+
+test('a number and the same number typed as text are one group', () => {
+  const rows = [rec('a', { n: '3' }), rec('b', { n: 3 }), rec('c', { n: '3.0' }), rec('d', { n: '10' }), rec('e', { n: 2 })]
+  const r = runReport(rows, def({ groupBy: { field: 'n' }, aggregate: { fn: 'count' } }), CTX, page1) as GroupsResult
+  assert.deepEqual(r.groups.map((g) => [g.key, g.count]), [[2, 1], [3, 2], ['3.0', 1], [10, 1]])
+})

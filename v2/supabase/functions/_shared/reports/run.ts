@@ -53,6 +53,9 @@ export function cellOf(r: ReportRecord, c: Column, ctx: RunCtx): Cell {
   return parts.length ? parts.join(', ') : null
 }
 
+/** "3" and 3 display the same, so they are one group; "3.0" displays differently and stays its own. Sums still never coerce. */
+const canonical = (k: Cell): Cell => (typeof k === 'string' && k !== '' && Number.isFinite(Number(k)) && String(Number(k)) === k ? Number(k) : k)
+
 function byKey(a: Group, b: Group): number {
   if (a.key === null || b.key === null) return a.key === b.key ? 0 : a.key === null ? 1 : -1
   if (typeof a.key === 'number' && typeof b.key === 'number') return a.key - b.key
@@ -62,7 +65,7 @@ function byKey(a: Group, b: Group): number {
 function groupRecords(records: ReportRecord[], by: Column, agg: Aggregate, ctx: RunCtx): Group[] {
   const groups = new Map<string, Group>()
   for (const r of records) {
-    const key = cellOf(r, by, ctx)
+    const key = canonical(cellOf(r, by, ctx))
     const id = key === null ? '' : `${typeof key}:${key}`
     const g = groups.get(id) ?? { key, count: 0, sum: null, skipped: 0 }
     groups.set(id, g)
