@@ -31,7 +31,7 @@ export function shouldCreateFirm(profile: unknown, metadata: unknown): boolean {
 /** Return user-facing message when early access is full. */
 export function earlyAccessMessage(joined: boolean): string {
   if (joined) {
-    return "Early access is full right now. We've added you to the waitlist and will email you when a place opens."
+    return "Early access is full right now. You have been added to the waitlist and will get an email when a place opens."
   }
-  return 'Early access is full right now. Join the waitlist from our homepage and we\'ll email you when a place opens.'
+  return 'Early access is full right now. Join the waitlist from the homepage and you will get an email when a place opens.'
 }

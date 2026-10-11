@@ -1,0 +1,18 @@
+<div class="pv-grid">
+  <div><p class="pv-h">Menu</p><div class="rnr-menu" role="menu" aria-label="Widget actions">
+    <p class="rnr-menu-label">Widget</p>
+    <button class="rnr-menu-item" role="menuitem" type="button">{{i:pencil-simple}}Rename</button>
+    <button class="rnr-menu-item" role="menuitem" type="button" data-active="true">{{i:copy}}Duplicate</button>
+    <button class="rnr-menu-item" role="menuitem" type="button" aria-disabled="true">{{i:lock}}Move (locked)</button>
+    <hr class="rnr-menu-sep">
+    <button class="rnr-menu-item is-danger" role="menuitem" type="button">{{i:trash}}Remove widget</button></div></div>
+  <div><p class="pv-h">Radio items</p><div class="rnr-menu" role="menu" aria-label="Width">
+    <button class="rnr-menu-item" role="menuitemradio" aria-checked="false" type="button">Small</button>
+    <button class="rnr-menu-item" role="menuitemradio" aria-checked="true" type="button">Medium</button>
+    <button class="rnr-menu-item" role="menuitemradio" aria-checked="false" type="button">Large</button></div></div>
+  <div><p class="pv-h">Popover</p><div class="rnr-popover"><p class="rnr-micro">Insert variable</p><p>Popovers hold small forms or explanations. Radius 14, same shadow as menus.</p></div>
+  <p class="pv-h">Tooltip</p><div class="pv-box" style="position:relative;height:72px"><button class="rnr-icon-btn" type="button" aria-describedby="tp1" aria-label="Copy link">{{i:link}}</button><span class="rnr-tip" id="tp1" role="tooltip" style="left:56px;top:26px">Copy link</span></div></div>
+</div>
+<h3 class="pv-h">Anchored menu (click)</h3>
+<div class="rnr-menu-anchor" style="display:inline-block"><button class="rnr-btn rnr-btn-secondary" type="button" data-toggle="m1" aria-expanded="false" aria-haspopup="menu">Actions{{i:caret-down}}</button>
+<div class="rnr-menu" id="m1" role="menu" hidden><button class="rnr-menu-item" role="menuitem" type="button">{{i:download-simple}}Download PDF</button><button class="rnr-menu-item" role="menuitem" type="button">{{i:link}}Copy link</button></div></div>

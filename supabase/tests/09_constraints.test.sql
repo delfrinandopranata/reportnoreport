@@ -13,10 +13,10 @@ select lives_ok(
      values ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-0000000000c1', '0000000a-0000-0000-0000-0000000000ba', 'receipt', -500, current_date) $$,
   'a negative amount is allowed');
 
-select lives_ok(
+select throws_ok(
   $$ insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date)
      values ('0000000a-0000-0000-0000-000000000001', '0000000a-0000-0000-0000-0000000000c1', '0000000a-0000-0000-0000-0000000000ba', 'receipt', 0, current_date) $$,
-  'a zero amount is allowed');
+  '23514', null, 'a zero amount is rejected');
 
 select throws_ok(
   $$ insert into transactions (firm_id, client_id, bank_account_id, kind, amount_minor, date)
@@ -38,7 +38,7 @@ select is(
 select is(
   (select count(*)::int from change_log where table_name = 'transactions' and action = 'delete'
      and (before->>'client_id') = '0000000a-0000-0000-0000-0000000000c1'),
-  6, 'change_log keeps the deleted transaction rows (4 fixture + the 2 negative/zero ones above)');
+  5, 'change_log keeps the deleted transaction rows (4 fixture + the negative one above)');
 
 update clients set created_at = '2000-01-01', created_by = '00000000-0000-0000-0000-0000000000a1'
  where id = '0000000a-0000-0000-0000-0000000000c2';

@@ -58,14 +58,12 @@ export function sumBalances(rows: BalanceRow[]): Statement {
   )
 }
 
-export type DesignSystem = 'default' | 'ocean' | 'forest' | 'sunset'
 
 export type Firm = {
   id: string; name: string; tradingName: string; registrationNo: string; sstNo: string; phone: string; email: string; website: string
   address1: string; address2: string; postcode: string; city: string; state: string; country: string; logoPath: string | null
   currency: string; statementNote: string; discrepancyDays: number; showRegistrationOnStatement: boolean; fyStartMonth: number
   dateFormat: 'text' | 'numeric'; billingStatus: 'trial' | 'paid' | 'complimentary' | 'read_only'; trialEndsAt: string | null; paidAt: string | null
-  designSystem: DesignSystem
 }
 
 export function rowToFirm(r: FirmRow): Firm {
@@ -74,7 +72,7 @@ export function rowToFirm(r: FirmRow): Firm {
     website: r.website, address1: r.address1, address2: r.address2, postcode: r.postcode, city: r.city, state: r.state, country: r.country,
     logoPath: r.logo_path, currency: r.currency, statementNote: r.statement_note, discrepancyDays: r.discrepancy_days,
     showRegistrationOnStatement: r.show_registration_on_statement, fyStartMonth: r.fy_start_month, dateFormat: r.date_format as Firm['dateFormat'],
-    billingStatus: r.billing_status, trialEndsAt: r.trial_ends_at, paidAt: r.paid_at, designSystem: r.design_system as DesignSystem,
+    billingStatus: r.billing_status, trialEndsAt: r.trial_ends_at, paidAt: r.paid_at,
   }
 }
 
@@ -83,7 +81,7 @@ const FIRM_COLUMNS: [keyof Firm, keyof FirmRow][] = [
   ['email', 'email'], ['website', 'website'], ['address1', 'address1'], ['address2', 'address2'], ['postcode', 'postcode'], ['city', 'city'],
   ['state', 'state'], ['country', 'country'], ['logoPath', 'logo_path'], ['statementNote', 'statement_note'],
   ['discrepancyDays', 'discrepancy_days'], ['showRegistrationOnStatement', 'show_registration_on_statement'],
-  ['fyStartMonth', 'fy_start_month'], ['dateFormat', 'date_format'], ['designSystem', 'design_system'],
+  ['fyStartMonth', 'fy_start_month'], ['dateFormat', 'date_format'],
 ]
 
 export function firmToRow(f: Partial<Firm>): Partial<FirmRow> {
@@ -121,6 +119,7 @@ export const rowToAttachment = (r: AttachmentRow): Attachment => ({
 export function parseAmount(input: string): { ok: true; cents: number } | { ok: false; error: string } {
   const cents = parseCents(input)
   if (cents === null) return { ok: false, error: 'Enter an amount, up to 2 decimal places.' }
+  if (cents === 0) return { ok: false, error: 'Enter an amount greater than 0.' }
   if (Math.abs(cents) > AMOUNT_CAP) return { ok: false, error: 'That amount is too large. The maximum is ±100,000,000,000.00.' }
   return { ok: true, cents }
 }

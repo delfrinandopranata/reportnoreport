@@ -1,8 +1,9 @@
-import { useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 import { readImport, toCsv, today, type ImportRow } from './ledger'
 import { useMoney } from './data/money'
 import { useSession } from './data/session'
 import { useImport, type Attachment, type ImportPayloadRow } from './data/queries'
+import { DropZone } from './attachments/Attachments'
 import { btn, Dialog, Icon } from './ui'
 import { createZip } from './zip'
 
@@ -54,10 +55,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     onClose()
   }
 
-  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+  const onFile = async (file: File) => {
     setDone('')
     const { rows, errors } = readImport(await file.text(), firm.currency)
     const base = { rows, errors, fileName: file.name }
@@ -86,51 +84,51 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
 
   return (
     <Dialog open={open} onClose={close} title="Import transactions">
-      <div className="grid gap-4 text-sm">
-        <p className="text-zinc-600 dark:text-zinc-400">
+      <div className="grid gap-4">
+        <p className="rnr-muted">
           Upload a CSV with columns <b>Date</b>, <b>Client</b>, <b>Description</b>, optional <b>Bank account</b> and <b>Receipts</b> / <b>Payments</b> (or <b>Type</b> + <b>Amount</b>). Dates as YYYY-MM-DD or DD/MM/YYYY. A file exported from this page imports as-is.
         </p>
+        <DropZone accept=".csv,text/csv" hint="CSV, in the columns above" busy={importRows.isPending && !plan} busyLabel="Checking file…" chooseLabel="Choose CSV file" inputLabel="Choose a CSV file to import" onFile={onFile} autoFocus />
         <div className="flex flex-wrap items-center gap-2">
-          <label className={`${btn.primary} cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-zinc-900 dark:has-focus-visible:outline-white`}>
-            <Icon name="upload" /> Choose CSV file
-            <input type="file" accept=".csv,text/csv" onChange={onFile} className="sr-only" data-autofocus />
-          </label>
           <button type="button" className={btn.ghost} onClick={() => downloadCsv('transactions-template.csv', TEMPLATE)}>
             <Icon name="download" /> Download template
           </button>
         </div>
 
-        {importRows.isPending && !plan && <p className="text-zinc-500" role="status">Checking file…</p>}
-        {done && <p className="rounded-lg bg-emerald-50 p-3 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" role="status">{done}</p>}
+        {importRows.isPending && !plan && <p className="rnr-muted" role="status">Checking file…</p>}
+        {done && <p className="rnr-note" data-tone="ok" role="status"><Icon name="check" /><span>{done}</span></p>}
 
         {plan && (
-          <div className="grid gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="rnr-card grid gap-3">
             <p className="font-medium">{plan.fileName}</p>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 tabular-nums">
-              <dt className="text-zinc-500">Transactions to import</dt>
-              <dd className="text-right font-medium">{plan.preview?.transactions ?? 0}</dd>
-              <dt className="text-zinc-500">Total receipts</dt>
-              <dd className="text-right">{money.format(receipts)}</dd>
-              <dt className="text-zinc-500">Total payments</dt>
-              <dd className="text-right">{money.format(payments)}</dd>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <dt className="rnr-muted">Transactions to import</dt>
+              <dd className="rnr-mono text-right font-medium">{plan.preview?.transactions ?? 0}</dd>
+              <dt className="rnr-muted">Total receipts</dt>
+              <dd className="rnr-mono text-right">{money.format(receipts)}</dd>
+              <dt className="rnr-muted">Total payments</dt>
+              <dd className="rnr-mono text-right">{money.format(payments)}</dd>
               {(plan.preview?.duplicates ?? 0) > 0 && (
                 <>
-                  <dt className="text-zinc-500">Already on the ledger (skipped)</dt>
-                  <dd className="text-right">{plan.preview?.duplicates}</dd>
+                  <dt className="rnr-muted">Already on the ledger (skipped)</dt>
+                  <dd className="rnr-mono text-right">{plan.preview?.duplicates}</dd>
                 </>
               )}
             </dl>
             {(plan.preview?.clients ?? 0) > 0 && (
               <p className="font-medium">{plan.preview?.clients} new client{plan.preview?.clients === 1 ? '' : 's'} will be added.</p>
             )}
-            {plan.serverError && <p className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">{plan.serverError}</p>}
+            {plan.serverError && <p className="rnr-note" data-tone="down" role="alert"><Icon name="alert" /><span>{plan.serverError}</span></p>}
             {plan.errors.length > 0 && (
-              <div className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200" role="alert">
+              <div className="rnr-note" data-tone="down" role="alert">
+                <Icon name="alert" />
+                <div>
                 <p className="font-medium">{plan.errors.length} row{plan.errors.length > 1 ? 's' : ''} can’t be imported and will be skipped:</p>
                 <ul className="mt-1 list-disc pl-5">
                   {plan.errors.slice(0, 5).map((e) => <li key={e}>{e}</li>)}
                   {plan.errors.length > 5 && <li>…and {plan.errors.length - 5} more.</li>}
                 </ul>
+                </div>
               </div>
             )}
             <div className="flex justify-end gap-2">

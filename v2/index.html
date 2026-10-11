@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportNoReport — report without complicated reporting</title>
+    <meta name="description" content="Build forms, dashboards and reports for your school or HR team without complicated reporting. Drag, drop and share." />
+    <link rel="canonical" href="https://reportnoreport.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ReportNoReport" />
+    <meta property="og:title" content="ReportNoReport — report without complicated reporting" />
+    <meta property="og:description" content="Build forms, dashboards and reports for your school or HR team without complicated reporting." />
+    <meta property="og:url" content="https://reportnoreport.com/" />
+    <meta property="og:image" content="https://reportnoreport.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ReportNoReport — report without complicated reporting." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script>
+      (() => {
+        // Public pages are always light; the accent follows a signed-in person's choice. appearance.test.ts runs this.
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const h = document.documentElement
+        if (h.classList) h.classList.add('js') // the fake document in appearance.test.ts has no classList
+        h.dataset.theme = 'light'
+        const q = typeof location === 'undefined' ? null : /[?&]accent=([a-z]+)/.exec(location.search)
+        const ok = ['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron']
+        h.dataset.accent = ok.includes(q && q[1]) ? q[1] : ok.includes(s.accent) ? s.accent : 'midnight'
+      })()
+    </script>
+    <script src="/consent.js" defer></script>
+  </head>
+  <body class="rnr rnr-ground">
+    <script>
+      // Old app bookmarks (/#/members) and auth email links (#access_token, #error, ?code) belong to the app at /app.
+      if (/^#(\/|access_token=|error=)/.test(location.hash) || /[?&]code=/.test(location.search)) location.replace('/app/' + location.search + location.hash)
+    </script>
+    <svg width="0" height="0" class="lp-defs" aria-hidden="true" focusable="false"><symbol id="i-note-pencil" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,58.34l-32-32a8,8,0,0,0-11.32,0l-96,96A8,8,0,0,0,88,128v32a8,8,0,0,0,8,8h32a8,8,0,0,0,5.66-2.34l96-96A8,8,0,0,0,229.66,58.34ZM124.69,152H104V131.31l64-64L188.69,88ZM200,76.69,179.31,56,192,43.31,212.69,64ZM224,128v80a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32h80a8,8,0,0,1,0,16H48V208H208V128a8,8,0,0,1,16,0Z"/></symbol><symbol id="i-stamp" viewBox="0 0 256 256" fill="currentColor"><path d="M224,224a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,224Zm0-80v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V144a16,16,0,0,1,16-16h56.43L88.72,54.71A32,32,0,0,1,120,16h16a32,32,0,0,1,31.29,38.71L151.57,128H208A16,16,0,0,1,224,144ZM120.79,128h14.42l16.43-76.65A16,16,0,0,0,136,32H120a16,16,0,0,0-15.65,19.35ZM208,184V144H48v40H208Z"/></symbol><symbol id="i-git-branch" viewBox="0 0 256 256" fill="currentColor"><path d="M232,64a32,32,0,1,0-40,31v17a8,8,0,0,1-8,8H96a23.84,23.84,0,0,0-8,1.38V95a32,32,0,1,0-16,0v66a32,32,0,1,0,16,0V144a8,8,0,0,1,8-8h88a24,24,0,0,0,24-24V95A32.06,32.06,0,0,0,232,64ZM64,64A16,16,0,1,1,80,80,16,16,0,0,1,64,64ZM96,192a16,16,0,1,1-16-16A16,16,0,0,1,96,192ZM200,80a16,16,0,1,1,16-16A16,16,0,0,1,200,80Z"/></symbol><symbol id="i-clock" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"/></symbol><symbol id="i-envelope-simple" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol><symbol id="i-megaphone" viewBox="0 0 256 256" fill="currentColor"><path d="M248,120a48.05,48.05,0,0,0-48-48H160.2c-2.91-.17-53.62-3.74-101.91-44.24A16,16,0,0,0,32,40V200a16,16,0,0,0,26.29,12.25c37.77-31.68,77-40.76,93.71-43.3v31.72A16,16,0,0,0,159.12,214l11,7.33A16,16,0,0,0,194.5,212l11.77-44.36A48.07,48.07,0,0,0,248,120ZM48,199.93V40h0c42.81,35.91,86.63,45,104,47.24v65.48C134.65,155,90.84,164.07,48,199.93Zm131,8,0,.11-11-7.33V168h21.6ZM200,152H168V88h32a32,32,0,1,1,0,64Z"/></symbol><symbol id="i-file-pdf" viewBox="0 0 256 256" fill="currentColor"><path d="M224,152a8,8,0,0,1-8,8H192v16h16a8,8,0,0,1,0,16H192v16a8,8,0,0,1-16,0V152a8,8,0,0,1,8-8h32A8,8,0,0,1,224,152ZM92,172a28,28,0,0,1-28,28H56v8a8,8,0,0,1-16,0V152a8,8,0,0,1,8-8H64A28,28,0,0,1,92,172Zm-16,0a12,12,0,0,0-12-12H56v24h8A12,12,0,0,0,76,172Zm88,8a36,36,0,0,1-36,36H112a8,8,0,0,1-8-8V152a8,8,0,0,1,8-8h16A36,36,0,0,1,164,180Zm-16,0a20,20,0,0,0-20-20h-8v40h8A20,20,0,0,0,148,180ZM40,112V40A16,16,0,0,1,56,24h96a8,8,0,0,1,5.66,2.34l56,56A8,8,0,0,1,216,88v24a8,8,0,0,1-16,0V96H152a8,8,0,0,1-8-8V40H56v72a8,8,0,0,1-16,0ZM160,80h28.69L160,51.31Z"/></symbol><symbol id="i-chart-line-up" viewBox="0 0 256 256" fill="currentColor"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z"/></symbol><symbol id="i-database" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24C74.17,24,32,48.6,32,80v96c0,31.4,42.17,56,96,56s96-24.6,96-56V80C224,48.6,181.83,24,128,24Zm80,104c0,9.62-7.88,19.43-21.61,26.92C170.93,163.35,150.19,168,128,168s-42.93-4.65-58.39-13.08C55.88,147.43,48,137.62,48,128V111.36c17.06,15,46.23,24.64,80,24.64s62.94-9.68,80-24.64ZM69.61,53.08C85.07,44.65,105.81,40,128,40s42.93,4.65,58.39,13.08C200.12,60.57,208,70.38,208,80s-7.88,19.43-21.61,26.92C170.93,115.35,150.19,120,128,120s-42.93-4.65-58.39-13.08C55.88,99.43,48,89.62,48,80S55.88,60.57,69.61,53.08ZM186.39,202.92C170.93,211.35,150.19,216,128,216s-42.93-4.65-58.39-13.08C55.88,195.43,48,185.62,48,176V159.36c17.06,15,46.23,24.64,80,24.64s62.94-9.68,80-24.64V176C208,185.62,200.12,195.43,186.39,202.92Z"/></symbol><symbol id="i-check" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol></svg>
+    <svg width="0" height="0" class="lp-defs" aria-hidden="true"><filter id="rnr-rough"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter></svg>
+    <header class="lp-bar">
+      <a class="rnr-wordmark" href="/" data-draw aria-label="ReportNoReport home">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</a>
+      <nav class="lp-links" aria-label="Main"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="/app/">Sign in</a></nav>
+      <a class="rnr-btn rnr-btn-primary" href="/app/#/members">Start free <span class="rnr-btn-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+    </header>
+    <main class="lp-wrap">
+      <div class="lp-top">
+        <div class="rnr-wash" aria-hidden="true"><i class="rnr-wash-blob"></i><i class="rnr-wash-blob"></i><i class="rnr-wash-blob"></i></div>
+      <section class="lp-hero" aria-labelledby="hero-h">
+        <div class="lp-hero-copy">
+          <p class="rnr-micro">Workflow platform · Forms to records</p>
+          <h1 id="hero-h" class="rnr-display lp-hero-h">Turn paperwork into <em>processes that run.</em></h1>
+          <p class="lp-lede">Build the form, draw the flow, and let every request find the right person. Nothing falls through, and every step is on the record.</p>
+          <div class="lp-actions"><a class="rnr-btn rnr-btn-primary lp-big" href="/app/#/members">Start free <span class="rnr-btn-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></div>
+          <p class="rnr-micro lp-note">No card needed · Free for 3 workflows</p>
+        </div>
+        <div class="rnr-window lp-win" id="hero" role="img" aria-label="A leave request workflow: if days exceed 5, ask HR, otherwise log to records.">
+          <div class="lp-win-head" aria-hidden="true"><i></i><i></i><i></i><span class="rnr-micro">Leave approval · Live</span></div>
+          <div class="lp-stage" aria-hidden="true">
+            <svg viewBox="0 0 560 340" fill="none">
+              <path id="p1" class="lp-edge" d="M170 170H215"/>
+              <path id="p2" class="lp-edge lp-edge-on" d="M345 170C375 170 370 76 400 76"/>
+              <path id="p3" class="lp-edge" d="M345 170C375 170 370 266 400 266"/>
+              <circle class="rnr-trail lp-dot" id="t2" r="4" cx="400" cy="76"/><circle class="rnr-trail lp-dot" id="t1" r="5" cx="400" cy="76"/>
+              <circle class="rnr-halo lp-dot" id="halo" r="13" cx="400" cy="76"/><circle class="rnr-pulse lp-dot" id="pulse" r="6" cx="400" cy="76"/>
+            </svg>
+            <div class="rnr-folder rnr-folder--node lp-n1"><span class="rnr-folder-tab">Trigger</span><div class="rnr-folder-body">Leave request submitted</div></div>
+            <div class="rnr-folder rnr-folder--node lp-n2"><span class="rnr-folder-tab">Condition</span><div class="rnr-folder-body">Days over 5</div></div>
+            <div class="rnr-folder rnr-folder--node lp-n3"><span class="rnr-folder-tab">Ask HR</span><div class="rnr-folder-body">If days over 5<span class="rnr-chip" data-tone="accent">waiting · 26 min</span></div></div>
+            <div class="rnr-folder rnr-folder--node lp-n4"><span class="rnr-folder-tab">Log</span><div class="rnr-folder-body">Otherwise, log to records</div></div>
+            <div class="rnr-stamp lp-hs" id="stamp">APPROVED</div>
+          </div>
+          <div class="lp-runs" aria-hidden="true"><p class="rnr-micro">Last runs</p><ul class="rnr-ticker" id="runs"></ul></div>
+        </div>
+      </section>
+
+      <section class="lp-sec lp-split" id="how" aria-labelledby="how-h">
+        <div class="rnr-rise">
+          <p class="rnr-micro">The problem</p>
+          <h2 id="how-h" class="rnr-display lp-h2">Most of a process is <em>paperwork.</em></h2>
+          <p class="lp-lede">Chasing approvals, copying fields, checking limits. Workflows do the chasing; people only do the deciding.</p>
+        </div>
+        <div class="rnr-paper lp-trace rnr-rise lp-d1" id="trace">
+          <p class="rnr-micro">Run trace · #4821 · 1.4 s</p>
+          <div class="lp-row"><span>submit form</span><div class="lp-track"><span class="lp-fill lp-acc lp-w8"></span></div><span>91 ms</span></div>
+          <div class="lp-row"><span>check days</span><div class="lp-track"><span class="lp-fill lp-w14"></span></div><span>12 ms</span></div>
+          <div class="lp-row"><span>branch, over 5</span><div class="lp-track"><span class="lp-fill lp-w6"></span></div><span>4 ms</span></div>
+          <div class="lp-row"><span>ask HR</span><div class="lp-track"><span class="lp-fill lp-acc lp-w88"></span></div><span>26 min</span></div>
+        </div>
+      </section>
+
+      <section class="lp-sec lp-split" aria-labelledby="appr-h">
+        <div class="rnr-rise">
+          <p class="rnr-micro">Approvals</p>
+          <h2 id="appr-h" class="rnr-display lp-h2">Approvals where <em>people are.</em></h2>
+          <p class="lp-lede">A request arrives as a message. One tap approves it, the stamp lands, and the record updates itself.</p>
+        </div>
+        <div class="lp-appr rnr-rise lp-d1" id="appr">
+          <div class="rnr-paper lp-chat" aria-hidden="true">
+            <p class="rnr-micro">Chat</p>
+            <p class="lp-bubble"><span class="lp-ghost">Hi, can I take 7 days off from 3 March?</span><span class="lp-typed" id="typed">Hi, can I take 7 days off from 3 March?</span></p>
+          </div>
+          <div class="rnr-folder lp-notice" role="group" aria-label="Example approval request">
+            <span class="rnr-folder-tab">Approval needed</span>
+            <div class="rnr-folder-body">
+              <p><strong>Leave request</strong> · Aisha K. · 7 days</p>
+              <p class="rnr-muted">Over the 5-day limit, so HR is asked.</p>
+              <div class="lp-actions"><span class="rnr-btn rnr-btn-primary" id="approve">Approve</span><span class="rnr-btn rnr-btn-secondary">Decline</span></div>
+              <div class="rnr-stamp lp-hs lp-hs2" id="stamp2" aria-hidden="true">APPROVED</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      </div>
+
+      <section class="lp-sec" id="programmes" aria-labelledby="prog-h">
+        <div class="lp-center rnr-rise">
+          <p class="rnr-micro">What you could run</p>
+          <h2 id="prog-h" class="rnr-display lp-h2">Whole programmes, <em>not just forms.</em></h2>
+          <p class="lp-lede">Pick a programme to watch who does what, and when the system steps in.</p>
+        </div>
+        <div class="sl rnr-rise lp-d1" id="showcase">
+          <div class="sl-tabs" role="tablist" aria-label="Example programmes">
+            <button type="button" role="tab" id="sl-tab-mentorship" data-key="mentorship" aria-controls="sl-panel-mentorship" aria-selected="true">Mentorship programme</button>
+            <button type="button" role="tab" id="sl-tab-internship" data-key="internship" aria-controls="sl-panel-internship" aria-selected="false" tabindex="-1">International internship</button>
+            <button type="button" role="tab" id="sl-tab-training" data-key="training" aria-controls="sl-panel-training" aria-selected="false" tabindex="-1">Staff training</button>
+          </div>
+          <div class="sl-main">
+            <div class="rnr-paper sl-body"><noscript><p class="sl-nojs">Mentorship, international internships and staff certification, each built from forms, approvals, emails, timers, PDFs and dashboards.</p></noscript></div>
+            <aside class="sl-side" aria-live="polite"></aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="lp-sec" aria-labelledby="hub-h">
+        <div class="lp-center rnr-rise">
+          <p class="rnr-micro">Integrations</p>
+          <h2 id="hub-h" class="rnr-display lp-h2">Connected to the <em>tools you use.</em></h2>
+          <p class="lp-lede">Messages go out by email and chat, deadlines land in calendars, and finished records are stored where they belong.</p>
+        </div>
+        <div class="lp-hub rnr-rise lp-d1" id="hub" role="img" aria-label="ReportNoReport in the centre, connected to email, chat, calendar and storage.">
+          <svg viewBox="0 0 100 46" fill="none" aria-hidden="true">
+            <path id="h1" class="lp-edge" d="M22 12C36 12 36 23 50 23"/><path id="h2" class="lp-edge" d="M78 12C64 12 64 23 50 23"/>
+            <path id="h3" class="lp-edge" d="M22 34C36 34 36 23 50 23"/><path id="h4" class="lp-edge" d="M78 34C64 34 64 23 50 23"/>
+            <circle class="rnr-pulse lp-dot lp-hd" r="1.1" cx="22" cy="12"/><circle class="rnr-pulse lp-dot lp-hd" r="1.1" cx="78" cy="12"/>
+            <circle class="rnr-pulse lp-dot lp-hd" r="1.1" cx="22" cy="34"/><circle class="rnr-pulse lp-dot lp-hd" r="1.1" cx="78" cy="34"/>
+          </svg>
+          <div class="lp-hub-core rnr-paper rnr-paper--plain" aria-hidden="true"><span class="rnr-wordmark">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span></div>
+          <div class="lp-hn lp-hn1" aria-hidden="true"><div class="rnr-folder rnr-folder--node"><span class="rnr-folder-tab">Email</span><div class="rnr-folder-body"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span>Messages</span></div></div></div>
+          <div class="lp-hn lp-hn2" aria-hidden="true"><div class="rnr-folder rnr-folder--node"><span class="rnr-folder-tab">Chat</span><div class="rnr-folder-body"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Approvals</span></div></div></div>
+          <div class="lp-hn lp-hn3" aria-hidden="true"><div class="rnr-folder rnr-folder--node"><span class="rnr-folder-tab">Calendar</span><div class="rnr-folder-body"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Deadlines</span></div></div></div>
+          <div class="lp-hn lp-hn4" aria-hidden="true"><div class="rnr-folder rnr-folder--node"><span class="rnr-folder-tab">Storage</span><div class="rnr-folder-body"><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg><span>Records</span></div></div></div>
+        </div>
+      </section>
+
+      <section class="lp-sec" aria-labelledby="boring-h">
+        <div class="lp-center rnr-rise">
+          <p class="rnr-micro">Built to last</p>
+          <h2 id="boring-h" class="rnr-display lp-h2">Boring in the ways <em>that matter.</em></h2>
+        </div>
+        <div class="lp-3">
+          <div class="rnr-folder rnr-rise "><span class="rnr-folder-tab">Audit trail</span><div class="rnr-folder-body"><p>Every change to a form, record or workflow is logged with who made it and when.</p></div></div>
+          <div class="rnr-folder rnr-rise lp-d1"><span class="rnr-folder-tab">Roles and permissions</span><div class="rnr-folder-body"><p>Each person sees only the pages and actions their role allows, in every organisation they belong to.</p></div></div>
+          <div class="rnr-folder rnr-rise lp-d2"><span class="rnr-folder-tab">PDF records</span><div class="rnr-folder-body"><p>Turn a record or a report into a PDF to keep, print or send.</p></div></div>
+        </div>
+      </section>
+
+      <section class="lp-sec" aria-labelledby="dash-h">
+        <div class="lp-center rnr-rise">
+          <p class="rnr-micro">Dashboard</p>
+          <h2 id="dash-h" class="rnr-display lp-h2">The numbers, <em>in focus.</em></h2>
+        </div>
+        <div class="lp-3" id="tiles">
+          <div class="rnr-folder rnr-kpi-tile lp-sharp "><span class="rnr-folder-tab">Open requests</span><div class="rnr-folder-body"><p class="rnr-kpi-figure rnr-num">128</p><p class="rnr-trend" data-dir="up">+12% this week</p></div></div>
+          <div class="rnr-folder rnr-kpi-tile lp-sharp lp-d1"><span class="rnr-folder-tab">Median approval</span><div class="rnr-folder-body"><p class="rnr-kpi-figure rnr-num">26 min</p><p class="rnr-trend" data-dir="up">−8 min on last week</p></div></div>
+          <div class="rnr-folder rnr-kpi-tile lp-sharp lp-d2"><span class="rnr-folder-tab">Completed</span><div class="rnr-folder-body"><p class="rnr-kpi-figure rnr-num">1,204</p><p class="rnr-trend" data-dir="up">+31% this month</p></div></div>
+        </div>
+      </section>
+
+      <section class="lp-sec" id="pricing" aria-labelledby="price-h">
+        <div class="lp-center rnr-rise">
+          <p class="rnr-micro">Pricing</p>
+          <h2 id="price-h" class="rnr-display lp-h2">Start free. <em>Grow when you need to.</em></h2>
+        </div>
+        <div class="lp-3 lp-plans">
+          <div class="rnr-folder lp-plan rnr-rise ">
+            <span class="rnr-folder-tab">Starter</span>
+            <div class="rnr-folder-body">
+              
+              <p class="lp-price rnr-mono">Free forever</p>
+              <p class="rnr-caption lp-cap">For your team</p>
+              
+              <ul class="lp-feat">
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>3 workflows</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>10 forms</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>5 members (people who can act in a workflow)</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Forms, workflows, inbox and records</li>
+              <li class="lp-off"><span>Campaigns</span><span class="rnr-micro lp-pro">Pro only</span></li>
+              <li class="lp-off"><span>Report builder</span><span class="rnr-micro lp-pro">Pro only</span></li>
+              <li class="lp-off"><span>Dashboard</span><span class="rnr-micro lp-pro">Pro only</span></li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>200 records a month</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>500 emails a month</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>PDF reports with a ReportNoReport footer</li>
+              </ul>
+              <a class="rnr-btn rnr-btn-secondary" href="/app/#/members">Start free</a>
+            </div>
+          </div>
+          <div class="rnr-folder lp-plan rnr-rise lp-d1 lp-featured">
+            <span class="rnr-folder-tab">Pro</span>
+            <div class="rnr-folder-body">
+              <p class="rnr-micro lp-badge">Most popular</p>
+              <p class="lp-price rnr-mono"><span class="lp-from">from</span> USD 199<span class="lp-per"> / month</span></p>
+              <p class="rnr-caption lp-cap">per organisation, or USD 166 / month billed yearly</p>
+              <p class="lp-lead">Everything in Starter, plus:</p>
+              <ul class="lp-feat">
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Unlimited workflows and forms</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>50 members included</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Campaigns up to 10,000 people</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Report builder, PDF reports and dashboards</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>All 8 themes</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Email support</li>
+              </ul>
+              <a class="rnr-btn rnr-btn-primary" href="/app/#/members">Start free trial</a>
+            </div>
+          </div>
+          <div class="rnr-folder lp-plan rnr-rise lp-d2">
+            <span class="rnr-folder-tab">Enterprise</span>
+            <div class="rnr-folder-body">
+              
+              <p class="lp-price rnr-mono">Custom pricing</p>
+              <p class="rnr-caption lp-cap">For large organisations</p>
+              <p class="lp-lead">Everything in Pro, plus:</p>
+              <ul class="lp-feat">
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Single sign-on</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Audit log export</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Data residency</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>SLA and a named contact</li>
+              <li><svg class="lp-tick" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-check"/></svg>Unlimited members</li>
+              </ul>
+              <a class="rnr-btn rnr-btn-secondary" href="mailto:hello@reportnoreport.com">Contact sales</a>
+            </div>
+          </div>
+        </div>
+        <p class="lp-center-note rnr-muted">Priced per organisation, not per person.</p>
+      </section>
+
+      <section class="lp-cta rnr-rise" aria-labelledby="cta-h">
+        <h2 id="cta-h" class="rnr-display lp-h2">Turn the next request into <em>a process.</em></h2>
+        <a class="rnr-btn lp-cta-btn lp-big" href="/app/#/members">Start free <span class="rnr-btn-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      </section>
+    </main>
+    <footer class="lp-foot">
+      <span>© 2026 ReportNoReport</span>
+      <a class="lp-foot-nav" href="#how">How it works</a>
+      <a class="lp-foot-nav" href="#pricing">Pricing</a>
+      <a class="lp-foot-nav" href="/app/">Sign in</a>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/terms">Terms and conditions</a>
+      <button type="button" class="rnr-btn rnr-btn-ghost" data-consent-settings>Cookie settings</button>
+    </footer>
+    <script type="module" src="/src/site/landing.ts"></script>
+  </body>
+</html>

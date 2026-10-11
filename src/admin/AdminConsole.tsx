@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { btn, Icon } from '../ui'
+import { Avatar, btn, Dialog, Icon, Menu, menuItemClass, Wordmark } from '../ui'
+import { AppearancePanel } from '../settings/AppearanceSettings'
+import { useAppearance } from '../useAppearance'
 import { FirmsTable } from './FirmsTable'
 import { CreateFirmDialog } from './CreateFirmDialog'
 import { SupportView } from './SupportView'
@@ -35,9 +37,32 @@ const setRoute = (route: Route) => {
   }
 }
 
-export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () => void }) {
+const NAV: { view: View; label: string; icon: 'building' | 'mail' | 'sliders' }[] = [
+  { view: 'firms', label: 'Firms', icon: 'building' },
+  { view: 'waitlist', label: 'Waitlist', icon: 'mail' },
+  { view: 'settings', label: 'Platform settings', icon: 'sliders' },
+]
+
+const TITLE: Record<Exclude<View, 'support'>, { title: string; lede: string }> = {
+  firms: { title: 'Firms', lede: 'Manage all firms on the platform.' },
+  waitlist: { title: 'Waitlist', lede: 'People waiting for a place in early access.' },
+  settings: { title: 'Platform settings', lede: 'Limits that apply to every new firm.' },
+}
+
+const useDesktop = () =>
+  useSyncExternalStore(
+    (notify) => { const m = matchMedia('(min-width: 768px)'); m.addEventListener('change', notify); return () => m.removeEventListener('change', notify) },
+    () => matchMedia('(min-width: 768px)').matches,
+  )
+
+export function AdminConsole({ profileId, name, onSignOut }: { profileId: string; name: string; onSignOut: () => void }) {
   const [route, setRouteState] = useState(readRoute)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showAppearance, setShowAppearance] = useState(false)
+  // Loads and applies the saved choice at once, so a fresh device shows it before the Appearance dialog is ever opened.
+  useAppearance(profileId)
+  const desktop = useDesktop()
+  const drawer = useRef<HTMLDialogElement>(null)
 
   const firms = useQuery({
     queryKey: ['admin', 'firms'],
@@ -64,111 +89,126 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
     navigate('support', firmId)
   }
 
-  return (
-    <div className="min-h-dvh bg-zinc-50 dark:bg-zinc-950">
-      {/* Header */}
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto max-w-6xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-                <Icon name="wallet" className="size-6" />
-              </span>
-              <div>
-                <h1 className="text-lg font-semibold">ReportNoReport admin</h1>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Signed in as {name}</p>
-              </div>
-            </div>
-            <button onClick={onSignOut} className={btn.ghost}>
-              <Icon name="logout" />
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex gap-8">
-            {[
-              { label: 'Firms', view: 'firms' as const },
-              { label: 'Settings', view: 'settings' as const },
-              { label: 'Waitlist', view: 'waitlist' as const },
-            ].map((item) => (
-              <button
-                key={item.view}
-                onClick={() => navigate(item.view)}
-                className={`px-0 py-3 text-sm font-medium transition border-b-2 ${
-                  route.view === item.view
-                    ? 'border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
-                    : 'border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+  const current = route.view === 'support' ? 'firms' : route.view
+  const sideLink = (item: (typeof NAV)[number], inDrawer: boolean) => (
+    <li key={item.view}>
+      <a
+        className="rnr-side-link"
+        href={item.view === 'firms' ? '#admin' : `#admin/${item.view}`}
+        aria-current={current === item.view ? 'page' : undefined}
+        onClick={inDrawer ? () => drawer.current?.close() : undefined}
+      >
+        <Icon name={item.icon} className="size-5" />
+        {item.label}
+      </a>
+    </li>
+  )
+  const sideBody = (inDrawer: boolean) => (
+    <>
+      <nav aria-label={inDrawer ? 'Main menu' : 'Main'}>
+        <ul className="grid gap-0.5 p-0 list-none">{NAV.map((item) => sideLink(item, inDrawer))}</ul>
       </nav>
+      <div className="rnr-side-foot">
+        <div className="rnr-account">
+          <Avatar name={name} size="size-8" />
+          <div className="min-w-0 flex-1">
+            <p className="rnr-account-email">{name}</p>
+            <p className="rnr-caption truncate">Admin</p>
+          </div>
+          <Menu trigger={<Icon name="more" className="size-5" />} triggerLabel={`Account menu for ${name}`} menuLabel="Account" align="up" triggerClassName="rnr-icon-btn">
+            {(close) => (
+              <>
+                <button type="button" role="menuitem" className={menuItemClass} onClick={() => { close(); drawer.current?.close(); setShowAppearance(true) }}>
+                  <Icon name="sliders" /> Appearance
+                </button>
+                <div className="rnr-menu-sep" />
+                <button type="button" role="menuitem" className={menuItemClass} onClick={onSignOut}>
+                  <Icon name="logout" /> Sign out
+                </button>
+              </>
+            )}
+          </Menu>
+        </div>
+      </div>
+    </>
+  )
 
-      {/* Content */}
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        {route.view === 'firms' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Firms</h2>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Manage all firms on the platform</p>
-              </div>
-              <button onClick={() => setShowCreateDialog(true)} className={`${btn.primary} gap-2`}>
-                <Icon name="plus" className="size-4" />
-                Create firm
-              </button>
+  const heading = route.view !== 'support' ? TITLE[route.view] : null
+  const backToFirms = (
+    <a href="#admin" className="rnr-crumb"><Icon name="back" />Back to firms</a>
+  )
+
+  return (
+    <div className="rnr-shell">
+      <a
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault()
+          document.getElementById('main')?.focus()
+        }}
+        className="rnr-skip rnr-btn rnr-btn-secondary"
+      >
+        Skip to content
+      </a>
+      <aside className="rnr-side rnr-folder">
+        <span className="rnr-folder-tab rnr-side-tab"><Wordmark href="#admin" /></span>
+        <div className="rnr-folder-body rnr-side-body">{desktop && sideBody(false)}</div>
+      </aside>
+      <header className="rnr-topbar">
+        <span className="rnr-topbar-mark"><Wordmark href="#admin" /></span>
+      </header>
+      <nav className="rnr-phonebar" aria-label="Quick">
+        {NAV.map((item) => (
+          <a key={item.view} href={item.view === 'firms' ? '#admin' : `#admin/${item.view}`} aria-label={item.label} aria-current={current === item.view ? 'page' : undefined}>
+            <Icon name={item.icon} className="size-5" />
+          </a>
+        ))}
+        <button type="button" aria-label="Menu" aria-haspopup="dialog" onClick={() => drawer.current?.showModal()}>
+          <Icon name="layout" className="size-5" />
+        </button>
+      </nav>
+      <dialog ref={drawer} className="rnr-dialog rnr-drawer" aria-label="Menu">
+        <button type="button" className="rnr-icon-btn self-end" aria-label="Close menu" onClick={() => drawer.current?.close()}>
+          <Icon name="x" className="size-5" />
+        </button>
+        {!desktop && sideBody(true)}
+      </dialog>
+
+      <main id="main" tabIndex={-1} className="rnr-page outline-none">
+        {heading && (
+          <header className="rnr-page-head">
+            <div>
+              <h1 className="rnr-page-title">{heading.title}</h1>
+              <p className="rnr-lede">{heading.lede}</p>
             </div>
-            <FirmsTable onSupportView={showSupport} />
-          </div>
+            {route.view === 'firms' && (
+              <div className="rnr-page-actions">
+                <button onClick={() => setShowCreateDialog(true)} className={btn.primary}>
+                  <Icon name="plus" className="size-4" />
+                  Create firm
+                </button>
+              </div>
+            )}
+          </header>
         )}
 
-        {route.view === 'settings' && (
-          <div>
-            <h2 className="mb-6 text-2xl font-bold">Platform settings</h2>
-            <PlatformSettings />
-          </div>
-        )}
-
-        {route.view === 'waitlist' && (
-          <div>
-            <h2 className="mb-6 text-2xl font-bold">Waitlist</h2>
-            <Waitlist />
-          </div>
-        )}
+        {route.view === 'firms' && <FirmsTable onSupportView={showSupport} />}
+        {route.view === 'settings' && <PlatformSettings />}
+        {route.view === 'waitlist' && <Waitlist />}
 
         {route.view === 'support' && (
           <>
-            {firms.isPending && <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</div>}
+            {firms.isPending && <p className="text-ink-2" role="status">Loading…</p>}
             {!firms.isPending && !supportFirm && (
-              <div className="space-y-4">
-                <button
-                  onClick={() => navigate('firms')}
-                  className={`${btn.ghost} gap-1 mb-2`}
-                >
-                  <Icon name="back" className="size-4" />
-                  Back to firms
-                </button>
-                <div className="text-sm text-red-600 dark:text-red-400">Firm not found</div>
+              <div className="grid gap-4">
+                {backToFirms}
+                <p className="rnr-error" role="alert"><Icon name="alert" />Firm not found</p>
               </div>
             )}
             {supportFirm && (
-              <div className="space-y-4">
-                <button
-                  onClick={() => navigate('firms')}
-                  className={`${btn.ghost} gap-1 mb-2`}
-                >
-                  <Icon name="back" className="size-4" />
-                  Back to firms
-                </button>
-                <h2 className="text-2xl font-bold">{supportFirm.name}</h2>
+              <div className="grid gap-4">
+                {backToFirms}
+                <h1 className="rnr-page-title">{supportFirm.name}</h1>
                 <SupportView
                   firmId={supportFirm.id}
                   firmName={supportFirm.name}
@@ -181,6 +221,9 @@ export function AdminConsole({ name, onSignOut }: { name: string; onSignOut: () 
       </main>
 
       <CreateFirmDialog open={showCreateDialog} onClose={() => setShowCreateDialog(false)} />
+      <Dialog open={showAppearance} onClose={() => setShowAppearance(false)} title="Appearance">
+        <AppearancePanel profileId={profileId} />
+      </Dialog>
     </div>
   )
 }

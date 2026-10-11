@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Dialog, Field, btn, input } from '../ui'
+import { Dialog, Field, Icon, btn, input } from '../ui'
 import { callAdmin, type AdminCreateFirmResponse } from './api'
 
 const CURRENCIES = ['MYR', 'SGD', 'USD']
@@ -57,7 +57,7 @@ export function CreateFirmDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title="Create firm">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="grid gap-4">
         <Field label="Firm name *">
           <input
             type="text"
@@ -71,7 +71,7 @@ export function CreateFirmDialog({
         </Field>
 
         <Field label="Currency *">
-          <select
+          <div className="rnr-select"><select
             value={formData.currency}
             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
             className={input}
@@ -82,7 +82,7 @@ export function CreateFirmDialog({
                 {c}
               </option>
             ))}
-          </select>
+          </select></div>
         </Field>
 
         <Field label="Owner name *">
@@ -108,23 +108,21 @@ export function CreateFirmDialog({
         </Field>
 
         <Field label="Start as">
-          <select
+          <div className="rnr-select"><select
             value={formData.start}
             onChange={(e) => setFormData({ ...formData, start: e.target.value as 'trial' | 'complimentary' })}
             className={input}
           >
             <option value="trial">Trial (14 days)</option>
             <option value="complimentary">Complimentary</option>
-          </select>
+          </select></div>
         </Field>
 
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
-          The owner gets an email to set their password. The link is valid for 24 hours.
-        </div>
+        <div className="rnr-note" data-tone="info"><Icon name="info" className="size-5" /><div>The owner gets an email to set their password. The link is valid for 24 hours.</div></div>
 
-        {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{error}</div>}
+        {error && <div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>{error}</div></div>}
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex justify-end gap-3">
           <button type="button" onClick={onClose} className={btn.ghost}>
             Cancel
           </button>

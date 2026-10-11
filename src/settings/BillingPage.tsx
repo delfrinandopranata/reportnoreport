@@ -4,6 +4,8 @@ import { useSession } from '../data/session'
 import { useCheckoutSession, useFirmBilling } from '../data/queries'
 import { btn, Icon } from '../ui'
 import { billingView } from './billing'
+import { formatMoney } from '../ledger'
+const PRICE = formatMoney(1000)
 
 export function BillingPage() {
   const session = useSession()
@@ -59,171 +61,66 @@ export function BillingPage() {
   const showSuccess = isPaying && pollingStartTime !== null && view.kind !== 'paid'
   const showPollingTimeout = isPaying && pollingStartTime !== null && elapsed > 30000
 
-  return (
-    <section id="billing" ref={(el) => { if (el && location.hash.startsWith('#settings/billing')) el.scrollIntoView({ block: 'start' }) }} className="scroll-mt-4 rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="billing-heading">
-      <header className="flex flex-wrap items-start gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <div className="min-w-0 flex-1 basis-64">
-          <h2 id="billing-heading" className="font-semibold">
-            Billing
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Your licence and payment status.</p>
-        </div>
-      </header>
+  const pay = isOwner && (view.kind === 'trial' || view.kind === 'ended' || view.kind === 'read_only') && (
+    <>
+      <button type="button" disabled={checkout.isPending} className={`${btn.primary} w-full sm:w-auto`} onClick={() => checkout.mutate()}>
+        {checkout.isPending ? 'Opening secure payment…' : `Pay ${PRICE}`}
+      </button>
+      {checkout.isError && <p className="rnr-error" role="alert">{(checkout.error as Error).message}</p>}
+    </>
+  )
+  const state = (tone: 'ok' | 'warn' | 'down' | 'info', icon: 'check' | 'x' | 'alert', title: string, detail?: string) => (
+    <div className="grid gap-1">
+      <p className="rnr-status" data-tone={tone} data-wrap><Icon name={icon} className="size-5" />{title}</p>
+      {detail && <p className="rnr-hint">{detail}</p>}
+    </div>
+  )
 
-      <div className="p-5 space-y-4">
+  return (
+    <section id="billing" ref={(el) => { if (el && location.hash.startsWith('#settings/billing')) el.scrollIntoView({ block: 'start' }) }} className="rnr-folder rnr-kpi-tile scroll-mt-4" aria-labelledby="billing-heading">
+      <span className="rnr-folder-tab" id="billing-heading">Billing</span>
+      <div className="rnr-folder-body">
+        <div className="rnr-perf" aria-hidden="true" />
+        {view.kind === 'paid' && <span className="rnr-stamp rnr-stamp--corner" aria-hidden="true">Paid</span>}
+        <p className="rnr-muted">Your licence and payment status.</p>
+
+        {view.kind !== 'paid' && view.kind !== 'complimentary' && (
+          <>
+            <p className="rnr-kpi-figure">{PRICE}</p>
+            <p className="rnr-caption">Free for 14 days. Then {PRICE}, once.</p>
+          </>
+        )}
+
         {showSuccess && !showPollingTimeout && (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100">
-            Payment received — confirming…
-          </div>
+          <p className="rnr-note" data-tone="ok" role="status"><Icon name="check" className="size-5" /><span>Payment received — confirming…</span></p>
         )}
 
         {showPollingTimeout && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
-            <p className="mb-2">We're still confirming your payment. This page will update when it does.</p>
-            <button
-              type="button"
-              className={btn.ghost}
-              onClick={() => window.location.reload()}
-            >
-              Refresh
-            </button>
-          </div>
-        )}
-
-        {view.kind === 'trial' && (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <Icon name="check" className="mt-0.5 size-5 shrink-0 text-blue-600 dark:text-blue-300" aria-hidden />
-              <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                  {view.daysLeft === 1
-                    ? 'You have 1 day left in your trial.'
-                    : `You have ${view.daysLeft} days left in your trial.`}
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Ends {view.endsOn}</p>
-              </div>
+          <div className="rnr-note" data-tone="warn" role="status">
+            <Icon name="alert" className="size-5" />
+            <div className="grid gap-2">
+              <p>Your payment is still being confirmed. This page will update when it is.</p>
+              <button type="button" className={`${btn.secondary} rnr-btn-sm justify-self-start`} onClick={() => window.location.reload()}>Refresh</button>
             </div>
-            {isOwner && (
-              <button
-                type="button"
-                disabled={checkout.isPending}
-                className={`${btn.primary} w-full sm:w-auto`}
-                onClick={() => checkout.mutate()}
-              >
-                {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
-              </button>
-            )}
-            {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {(checkout.error as Error).message}
-              </p>
-            )}
           </div>
         )}
 
-        {view.kind === 'ended' && (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <Icon name="x" className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
-              <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                  Your trial ended on {view.endedOn}.
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Pay RM 10 to keep adding and editing — your data stays viewable and exportable.
-                </p>
-              </div>
-            </div>
-            {isOwner && (
-              <button
-                type="button"
-                disabled={checkout.isPending}
-                className={`${btn.primary} w-full sm:w-auto`}
-                onClick={() => checkout.mutate()}
-              >
-                {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
-              </button>
-            )}
-            {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {(checkout.error as Error).message}
-              </p>
-            )}
-          </div>
-        )}
-
-        {view.kind === 'read_only' && (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <Icon name="x" className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
-              <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                  Your account is read-only.
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Payment was refunded or the trial expired. Pay RM 10 to restore write access.
-                </p>
-              </div>
-            </div>
-            {isOwner && (
-              <button
-                type="button"
-                disabled={checkout.isPending}
-                className={`${btn.primary} w-full sm:w-auto`}
-                onClick={() => checkout.mutate()}
-              >
-                {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
-              </button>
-            )}
-            {checkout.isError && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {(checkout.error as Error).message}
-              </p>
-            )}
-          </div>
-        )}
-
+        {view.kind === 'trial' && state('info', 'check', view.daysLeft === 1 ? 'You have 1 day left in your trial.' : `You have ${view.daysLeft} days left in your trial.`, `Ends ${view.endsOn}`)}
+        {view.kind === 'ended' && state('warn', 'alert', `Your trial ended on ${view.endedOn}.`, `Pay ${PRICE} to keep adding and editing — your data stays viewable and exportable.`)}
+        {view.kind === 'read_only' && state('down', 'x', 'Your account is read-only.', `Payment was refunded or the trial expired. Pay ${PRICE} to restore write access.`)}
         {view.kind === 'paid' && (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <Icon name="check" className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-              <div>
-                <p className="font-medium text-emerald-900 dark:text-emerald-100">Thank you — ReportNoReport is yours to keep.</p>
-                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">Paid on {view.paidOn}</p>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Licence: one-time, no renewal
-            </p>
-          </div>
+          <>
+            {state('ok', 'check', 'Thank you — ReportNoReport is yours to keep.', `Paid on ${view.paidOn}`)}
+            <p className="rnr-hint">Licence: one-time, no renewal</p>
+          </>
         )}
+        {view.kind === 'complimentary' && state('ok', 'check', 'Complimentary — no payment needed.', 'Your firm has complimentary access to ReportNoReport.')}
 
-        {view.kind === 'complimentary' && (
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <Icon name="check" className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-              <div>
-                <p className="font-medium text-zinc-900 dark:text-white">Complimentary — no payment needed.</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Your firm has complimentary access to ReportNoReport.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {pay}
 
         {!isOwner && (view.kind === 'trial' || view.kind === 'ended' || view.kind === 'read_only') && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100">
-            Only the firm owner can pay.
-          </div>
+          <p className="rnr-note" data-tone="info"><Icon name="info" className="size-5" /><span>Only the firm owner can pay.</span></p>
         )}
-
-        {view.kind !== 'paid' && view.kind !== 'complimentary' && (<div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-          <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wide mb-2">Pricing</p>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Free for 14 days. Then RM 10, once.
-          </p>
-        </div>)}
       </div>
     </section>
   )

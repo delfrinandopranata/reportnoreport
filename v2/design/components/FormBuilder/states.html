@@ -1,0 +1,11 @@
+<div class="pv-grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+<div class="pv-col"><p class="pv-h">Palette</p><div class="rnr-palette"><button class="rnr-palette-item" type="button">{{i:text-aa}}Short text</button><button class="rnr-palette-item" type="button">{{i:note}}Long text</button><button class="rnr-palette-item" type="button">{{i:hash}}Number</button><button class="rnr-palette-item" type="button">{{i:calendar-blank}}Date</button><button class="rnr-palette-item" type="button">{{i:paperclip}}File</button><button class="rnr-palette-item" type="button">{{i:signature}}Signature</button></div></div>
+<div class="pv-col"><p class="pv-h">Canvas blocks: rest, selected, dragging</p>
+  <div class="rnr-block"><button class="rnr-handle" type="button" aria-label="Move Full name">{{i:dots-six-vertical}}</button>{{i:text-aa}}<span class="rnr-pick"><span>Full name</span><span class="rnr-caption">Short text · required</span></span><button class="rnr-icon-btn" type="button" aria-label="Remove Full name">{{i:trash}}</button></div>
+  <div class="rnr-block" data-selected="true"><button class="rnr-handle" type="button" aria-label="Move Dates">{{i:dots-six-vertical}}</button>{{i:calendar-blank}}<span class="rnr-pick"><span>First day</span><span class="rnr-caption">Date · shown when Type is Leave</span></span></div>
+  <div class="rnr-block" data-dragging="true"><button class="rnr-handle" type="button" aria-label="Move Reason">{{i:dots-six-vertical}}</button>{{i:note}}<span class="rnr-pick"><span>Reason</span><span class="rnr-caption">Long text</span></span></div>
+  <div class="rnr-drop" data-over="true">Drop a field here</div></div>
+<div class="pv-col"><p class="pv-h">Sign pad, rule editor, reorder</p><canvas class="rnr-sign" aria-label="Signature pad"></canvas>
+  <div class="rnr-filter"><div class="rnr-field"><label class="rnr-label" for="fb1">Show this field when</label><span class="rnr-select"><select class="rnr-input" id="fb1"><option>Type is Leave</option></select></span></div></div>
+  <ul class="rnr-order"><li><span class="rnr-order-label">Name</span><button class="rnr-icon-btn" type="button" aria-label="Move Name up">{{i:arrow-left}}</button></li><li><span class="rnr-order-label">Email</span></li></ul></div>
+</div>

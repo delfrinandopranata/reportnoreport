@@ -74,75 +74,67 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
     },
   })
 
+  const loadFailed = (what: string) => (
+    <div className="p-4"><div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>Failed to load {what}</div></div></div>
+  )
+  const loading = (what: string) => <p className="p-4 text-center text-ink-2" role="status">Loading {what}…</p>
+  const none = (what: string) => <p className="p-4 text-center text-ink-2">{what}</p>
+
   return (
-    <div className="space-y-6">
-      {/* Read-only banner */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-        <p className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-100">
-          <Icon name="building" className="size-4 shrink-0" />
-          <span>Support view — read-only. Access is logged.</span>
-        </p>
+    <div className="grid gap-6">
+      <div className="rnr-note rnr-note--bar" data-tone="info" role="status">
+        <Icon name="info" className="size-5" />
+        <div>You are viewing {firmName} in read-only support view. Access is logged.</div>
       </div>
 
-      {/* Firm header */}
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rnr-card">
         <div className="flex items-center gap-3">
           <Avatar name={firmName} size="size-8" />
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold truncate">{firmName}</h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Firm ID: {firmId.slice(0, 8)}…</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="rnr-heading truncate text-xl">{firmName}</h2>
+            <p className="rnr-caption">Firm ID: {firmId.slice(0, 8)}…</p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mt-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-800" role="tablist">
-          {(['clients', 'balances', 'ledger'] as const).map((t) => {
-            const tabLabel = t.charAt(0).toUpperCase() + t.slice(1)
-            return (
-              <button
-                key={t}
-                id={`${tabId}-${t}`}
-                role="tab"
-                aria-selected={tab === t}
-                aria-controls={`${tabId}-panel-${t}`}
-                onClick={() => setTab(t)}
-                className={`px-4 py-3 text-sm font-medium transition border-b-2 ${
-                  tab === t
-                    ? 'border-b-zinc-900 text-zinc-900 dark:border-b-white dark:text-white'
-                    : 'border-b-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
-              >
-                {tabLabel}
-              </button>
-            )
-          })}
+        <div className="rnr-tabs mt-4" role="tablist">
+          {(['clients', 'balances', 'ledger'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              id={`${tabId}-${t}`}
+              role="tab"
+              className="rnr-tab"
+              aria-selected={tab === t}
+              aria-controls={`${tabId}-panel-${t}`}
+              onClick={() => setTab(t)}
+            >
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
       {tab === 'clients' && (
-        <div id={`${tabId}-panel-clients`} role="tabpanel" aria-labelledby={`${tabId}-clients`} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          {clients.isPending && <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">Loading clients…</div>}
-          {clients.isError && <div className="text-center text-sm text-red-600 dark:text-red-400">Failed to load clients</div>}
-          {!clients.isPending && !clients.isError && (!clients.data?.clients || clients.data.clients.length === 0) && (
-            <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">No clients</div>
-          )}
+        <div id={`${tabId}-panel-clients`} role="tabpanel" aria-labelledby={`${tabId}-clients`} className="rnr-card">
+          {clients.isPending && loading('clients')}
+          {clients.isError && loadFailed('clients')}
+          {!clients.isPending && !clients.isError && (!clients.data?.clients || clients.data.clients.length === 0) && none('No clients')}
           {clients.data?.clients && clients.data.clients.length > 0 && (
-            <div className="space-y-2">
+            <ul className="m-0 grid list-none gap-2 p-0">
               {clients.data.clients.map((c) => (
-                <div key={c.id} className="flex items-center gap-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                <li key={c.id} className="flex items-center gap-3 rounded-(--r-ctl) bg-soft p-3">
                   <Avatar name={c.name} size="size-6" />
-                  <span className="text-sm font-medium">{c.name}</span>
-                </div>
+                  <span className="font-medium">{c.name}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}
 
       {tab === 'balances' && (
-        <div id={`${tabId}-panel-balances`} role="tabpanel" aria-labelledby={`${tabId}-balances`} className="space-y-4">
-          {/* Date filters */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div id={`${tabId}-panel-balances`} role="tabpanel" aria-labelledby={`${tabId}-balances`} className="grid gap-4">
+          <div className="rnr-card">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="From">
                 <input
@@ -166,47 +158,42 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
             </div>
           </div>
 
-          {/* Balances table */}
-          <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
-            {balances.isPending && <div className="p-4 text-center text-sm text-zinc-600 dark:text-zinc-400">Loading balances…</div>}
-            {balances.isError && <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">Failed to load balances</div>}
-            {!balances.isPending && !balances.isError && (!balances.data?.balances || balances.data.balances.length === 0) && (
-              <div className="p-4 text-center text-sm text-zinc-600 dark:text-zinc-400">No balances in this period</div>
-            )}
+          <div className="rnr-card rnr-table-card">
+            {balances.isPending && loading('balances')}
+            {balances.isError && loadFailed('balances')}
+            {!balances.isPending && !balances.isError && (!balances.data?.balances || balances.data.balances.length === 0) && none('No balances in this period')}
             {balances.data?.balances && balances.data.balances.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
-                      <th className="px-4 py-3 text-left font-medium">Client</th>
-                      <th className="px-4 py-3 text-right font-medium">Opening</th>
-                      <th className="px-4 py-3 text-right font-medium">Receipts</th>
-                      <th className="px-4 py-3 text-right font-medium">Payments</th>
-                      <th className="px-4 py-3 text-right font-medium">Closing</th>
+              <table className="rnr-ledger">
+                <caption className="rnr-sr-only">Client balances</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Client</th>
+                    <th scope="col" className="num">Opening</th>
+                    <th scope="col" className="num" data-series="in"><Icon name="in" />Receipts</th>
+                    <th scope="col" className="num" data-series="out"><Icon name="out" />Payments</th>
+                    <th scope="col" className="num">Closing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balances.data.balances.map((b) => (
+                    <tr key={b.client_id}>
+                      <th scope="row">{b.client_name}</th>
+                      <td className="num">{money.format(b.opening)}</td>
+                      <td className="num" data-series="in">{money.format(b.receipts)}</td>
+                      <td className="num" data-series="out">{money.format(b.payments)}</td>
+                      <td className="num bal">{money.format(b.closing)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {balances.data.balances.map((b) => (
-                      <tr key={b.client_id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
-                        <td className="px-4 py-3 text-sm font-medium">{b.client_name}</td>
-                        <td className="px-4 py-3 text-right font-tabular-nums text-sm">{money.format(b.opening)}</td>
-                        <td className="px-4 py-3 text-right font-tabular-nums text-sm text-green-600 dark:text-green-400">{money.format(b.receipts)}</td>
-                        <td className="px-4 py-3 text-right font-tabular-nums text-sm text-red-600 dark:text-red-400">{money.format(b.payments)}</td>
-                        <td className="px-4 py-3 text-right font-tabular-nums text-sm font-medium">{money.format(b.closing)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
       )}
 
       {tab === 'ledger' && (
-        <div id={`${tabId}-panel-ledger`} role="tabpanel" aria-labelledby={`${tabId}-ledger`} className="space-y-4">
-          {/* Date filters */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div id={`${tabId}-panel-ledger`} role="tabpanel" aria-labelledby={`${tabId}-ledger`} className="grid gap-4">
+          <div className="rnr-card">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="From">
                 <input
@@ -230,47 +217,39 @@ export function SupportView({ firmId, firmName, currency }: { firmId: string; fi
             </div>
           </div>
 
-          {/* Ledger table */}
-          <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
-            {ledger.isPending && <div className="p-4 text-center text-sm text-zinc-600 dark:text-zinc-400">Loading ledger…</div>}
-            {ledger.isError && <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">Failed to load ledger</div>}
-            {!ledger.isPending && !ledger.isError && (!ledger.data?.ledger || ledger.data.ledger.length === 0) && (
-              <div className="p-4 text-center text-sm text-zinc-600 dark:text-zinc-400">No transactions in this period</div>
-            )}
+          <div className="rnr-card rnr-table-card">
+            {ledger.isPending && loading('ledger')}
+            {ledger.isError && loadFailed('ledger')}
+            {!ledger.isPending && !ledger.isError && (!ledger.data?.ledger || ledger.data.ledger.length === 0) && none('No transactions in this period')}
             {ledger.data?.ledger && ledger.data.ledger.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
-                      <th className="px-4 py-3 text-left font-medium">Date</th>
-                      <th className="px-4 py-3 text-left font-medium">Client</th>
-                      <th className="px-4 py-3 text-left font-medium">Kind</th>
-                      <th className="px-4 py-3 text-right font-medium">Amount</th>
-                      <th className="px-4 py-3 text-left font-medium">Description</th>
+              <table className="rnr-ledger">
+                <caption className="rnr-sr-only">Ledger</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Client</th>
+                    <th scope="col">Kind</th>
+                    <th scope="col" className="num">Amount</th>
+                    <th scope="col">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledger.data.ledger.map((line) => (
+                    <tr key={line.id}>
+                      <td>{formatDate(line.date, 'text')}</td>
+                      <th scope="row">{line.client_name}</th>
+                      <td>
+                        <span className="rnr-amt-dir" data-dir={line.kind === 'receipt' ? 'in' : 'out'}>
+                          <Icon name={line.kind === 'receipt' ? 'in' : 'out'} />
+                          {line.kind === 'receipt' ? 'Receipt' : 'Payment'}
+                        </span>
+                      </td>
+                      <td className="num" data-series={line.kind === 'receipt' ? 'in' : 'out'}>{money.format(line.amount_minor)}</td>
+                      <td>{line.description}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {ledger.data.ledger.map((line) => (
-                      <tr key={line.id} className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800">
-                        <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">{formatDate(line.date, 'text')}</td>
-                        <td className="px-4 py-3 text-sm font-medium">{line.client_name}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                              line.kind === 'receipt' ? 'text-in' : 'text-out'
-                            }`}
-                          >
-                            <Icon name={line.kind === 'receipt' ? 'in' : 'out'} className="size-3" />
-                            {line.kind === 'receipt' ? 'Receipt' : 'Payment'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right font-tabular-nums text-sm">{money.format(line.amount_minor)}</td>
-                        <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">{line.description}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>

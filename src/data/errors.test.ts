@@ -36,6 +36,7 @@ test('check violations are specific', () => {
     toUserMessage({ code: '23514', message: 'violates check constraint "ledger_amount_minor_check"' }),
     'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.',
   )
+  assert.equal(toUserMessage({ code: '23514', message: 'violates check constraint "transactions_amount_minor_nonzero"' }), 'Enter an amount greater than 0.')
   assert.equal(toUserMessage({ code: '23514', message: 'violates check constraint "x"' }), "One of the values isn't allowed. Check the form and try again.")
 })
 

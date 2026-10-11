@@ -10,6 +10,7 @@ export function toUserMessage(error: unknown, ctx: { writeBlockReason?: string |
   if ((name && NETWORK_NAMES.includes(name)) || message?.includes('Failed to fetch')) return NETWORK
   if (code === 'PGRST301') return 'Your session has expired. Sign in again.'
   if (code === '23514') {
+    if (message?.includes('transactions_amount_minor_nonzero')) return 'Enter an amount greater than 0.'
     return message?.includes('amount_minor')
       ? 'That amount is too large or not allowed. Amounts must be greater than 0 and at most 100,000,000,000.00.'
       : "One of the values isn't allowed. Check the form and try again."

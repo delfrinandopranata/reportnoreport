@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportNoReport</title>
+    <meta name="robots" content="noindex">
+    <script src="/consent.js" defer></script>
+    <script>
+      (() => {
+        // Mirrors src/ui/appearance.ts htmlAttrs(readAppearance(stored)); appearance.test.ts runs this against it.
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const pick = (list, v, d) => (list.includes(v) ? v : d)
+        const theme = pick(['light', 'dark', 'system'], s.theme, 'system')
+        const h = document.documentElement.dataset
+        h.theme = theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme
+        h.accent = pick(['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron'], s.accent, 'midnight')
+        h.density = pick(['comfortable', 'compact'], s.density, 'comfortable')
+        h.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : 'full'
+      })()
+    </script>
+  </head>
+  <body class="rnr rnr-ground">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

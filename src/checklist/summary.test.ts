@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { summarise, type ChecklistItem } from './summary.ts'
@@ -110,4 +111,17 @@ test('summarise: all items skipped', () => {
   assert.equal(summary.todoItems.length, 0)
   assert.equal(summary.doneItems.length, 0)
   assert.equal(summary.skippedItems.length, 4)
+})
+
+test('nextFocusIndex keeps focus in the list after a skip', async () => {
+  const { nextFocusIndex } = await import('./summary.ts')
+  assert.equal(nextFocusIndex(0, 3), 0)
+  assert.equal(nextFocusIndex(2, 2), 1)
+  assert.equal(nextFocusIndex(0, 0), -1)
+})
+
+test('nextFocusIndex: skipping the only remaining item leaves no row, so focus falls back to the page', async () => {
+  const { nextFocusIndex } = await import('./summary.ts')
+  assert.equal(nextFocusIndex(0, 0), -1)
+  assert.match(readFileSync(new URL('./Checklist.tsx', import.meta.url), 'utf8'), /getElementById\('main'\)\?\.focus\(\)/)
 })

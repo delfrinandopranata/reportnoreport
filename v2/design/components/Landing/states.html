@@ -1,0 +1,14 @@
+<div class="pv-frame pv-landing" style="isolation:isolate">
+  <div class="rnr-wash" aria-hidden="true" style="position:absolute;z-index:0"><span class="rnr-wash-blob"></span><span class="rnr-wash-blob"></span><span class="rnr-wash-blob"></span></div>
+  <div style="position:relative;z-index:1;display:grid;gap:32px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:center">
+    <div><p class="rnr-micro">Workflow platform · Forms to records</p><h1 class="rnr-page-title" style="margin:12px 0 16px">Turn paperwork into <em>processes that run.</em></h1><p class="rnr-lede">Build a form, add the steps, and let approvals move on their own.</p>
+      <div class="pv-row" style="margin-top:20px"><a class="rnr-btn rnr-btn-primary" href="#Landing">Start free <span class="rnr-btn-chip">{{i:arrow-right}}</span></a><span class="rnr-caption">No card needed · Free for 3 workflows</span></div></div>
+    <div class="rnr-window" aria-hidden="true"><p class="rnr-micro" style="margin-top:8px">Last runs</p>
+      <ul class="rnr-ticker" style="list-style:none;margin:8px 0 0;padding:0;font:var(--type-figure)"><li>#4821 Aisha K. · 7 days · asked HR</li><li>#4822 Ben T. · 1 day · logged</li></ul>
+      <svg viewBox="0 0 280 60" width="100%" height="60"><circle class="rnr-trail" cx="40" cy="30" r="3"/><circle class="rnr-trail" cx="52" cy="30" r="4"/><circle class="rnr-halo" cx="66" cy="30" r="10"/><circle class="rnr-pulse" cx="66" cy="30" r="5"/></svg>
+      <span class="rnr-stamp rnr-stamp--corner" style="top:36px">Approved</span></div>
+  </div>
+</div>
+<h3 class="pv-h">Reveal (class <code>.rnr-rise</code> gains <code>.in</code> when scrolled into view; only hidden once <code>html.js</code> is set)</h3>
+<div class="rnr-card rnr-rise in"><p>Content is fully visible without JavaScript and under reduced motion.</p></div>
+<p class="pv-state">Wash: three blurred blobs masked off the left 36%; only <code>transform</code> drifts (24 / 30 / 27 s). Window: perspective tilt, flat below 900px. Pulse: accent head, halo and two trail dots moved with SVG attributes. Everything that moves stops under <code>prefers-reduced-motion</code> and <code>data-motion="flat"</code>; the landing is light only.</p>

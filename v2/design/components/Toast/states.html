@@ -1,0 +1,14 @@
+<h3 class="pv-h">Notice (inline, stays until the problem is fixed)</h3>
+<div class="pv-col">
+<div class="rnr-note" data-tone="ok" role="status">{{i:check-circle}}<div>Role saved.</div></div>
+<div class="rnr-note" data-tone="info" role="status">{{i:info}}<div>Anything over five days also goes to HR.</div></div>
+<div class="rnr-note" data-tone="warn" role="status">{{i:warning}}<div>Two variables in this template are not known. Remove them or the email will show them as written.</div></div>
+<div class="rnr-note" data-tone="down" role="alert">{{i:warning-circle}}<div>The email service could not be reached. Try again in a few minutes.</div></div>
+</div>
+<h3 class="pv-h">Toast (transient, bottom right; polite live region)</h3>
+<div class="pv-box" style="position:relative;min-height:190px">
+<div class="rnr-toasts" style="position:absolute;right:12px;bottom:12px" role="status" aria-live="polite">
+  <div class="rnr-toast" data-tone="ok">{{i:check-circle}}<div>Appearance saved.</div></div>
+  <div class="rnr-toast" data-tone="down">{{i:warning-circle}}<div>Your appearance is saved on this device only. Try again to keep it on your other devices.</div><button class="rnr-btn rnr-btn-ghost rnr-btn-sm" type="button">Try again</button></div>
+</div></div>
+<p class="pv-state">Tone is carried by the icon, the tinted background and a sentence; never by colour alone. Errors use <code>role="alert"</code>, everything else <code>role="status"</code>.</p>

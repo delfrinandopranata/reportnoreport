@@ -2,6 +2,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
+import { seriesOf } from './columnSeries'
 import { btn, Dialog, Icon, useLocalState, type Sort } from './ui'
 
 export type Column<R, K extends string = string> = {
@@ -69,6 +70,13 @@ export function ColumnHeader<R, K extends string>({
 }) {
   const active = !!sort && sort.key === column.sortKey
   const right = column.align === 'right'
+  const flow = seriesOf(column.id)
+  const label = flow ? (
+    <>
+      <Icon name={flow.series} className="size-3.5" />
+      {flow.word}
+    </>
+  ) : column.label
   const startResize = (e: ReactPointerEvent) => {
     e.preventDefault()
     const startX = e.clientX
@@ -84,27 +92,22 @@ export function ColumnHeader<R, K extends string>({
   }
   return (
     <th
+      data-resizable
+      data-series={flow?.series}
       aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
-      className={`group/th relative px-4 py-3 font-medium ${right ? 'text-right' : ''}`}
+      className={right ? 'num' : undefined}
     >
       {column.sortKey && onSort ? (
-        <button
-          type="button"
-          onClick={() => onSort(column.sortKey!)}
-          className={`group inline-flex max-w-full items-center gap-1 transition hover:text-zinc-900 dark:hover:text-white ${right ? 'flex-row-reverse' : ''} ${active ? 'text-zinc-900 dark:text-white' : ''}`}
-        >
-          <span className="truncate">{column.label}</span>
-          <Icon name={active && sort.dir === 'asc' ? 'up' : 'down'} className={`size-3 shrink-0 transition ${active ? '' : 'opacity-0 group-hover:opacity-50'}`} />
+        <button type="button" onClick={() => onSort(column.sortKey!)} className={`rnr-th-sort max-w-full ${right ? 'flex-row-reverse' : ''}`}>
+          <span className={`${flow ? 'inline-flex items-center ' : ''}truncate`}>{label}</span>
+          <Icon name={active && sort.dir === 'asc' ? 'up' : 'down'} className="size-3.5" />
         </button>
       ) : (
-        <span className="block truncate">{column.label}</span>
+        <span className={`${flow ? 'flex items-center ' : 'block '}truncate`}>{label}</span>
       )}
-      <span
-        role="separator"
-        aria-orientation="vertical"
+      <button
+        type="button"
         aria-label={`Resize ${column.label} column`}
-        aria-valuenow={width}
-        tabIndex={0}
         title="Drag to resize · double-click to reset"
         onPointerDown={startResize}
         onDoubleClick={() => onResize(null)}
@@ -112,7 +115,7 @@ export function ColumnHeader<R, K extends string>({
           if (e.key === 'ArrowLeft') onResize(width - 16)
           if (e.key === 'ArrowRight') onResize(width + 16)
         }}
-        className="absolute top-2 right-0 bottom-2 w-1.5 cursor-col-resize touch-none rounded-full outline-none group-hover/th:bg-zinc-200 hover:!bg-zinc-400 focus-visible:bg-zinc-500 print:hidden dark:group-hover/th:bg-zinc-700"
+        className="rnr-ledger-resize print:hidden"
       />
     </th>
   )
@@ -124,13 +127,13 @@ function ColumnItem({ id, label, checked, disabled, onToggle }: { id: string; la
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`flex items-center gap-3 rounded-lg border bg-white px-2 py-2 dark:bg-zinc-900 ${isDragging ? 'relative z-10 border-zinc-300 shadow-lg' : 'border-transparent'}`}
+      className={`flex items-center gap-3 rounded-(--r-ctl) bg-surface px-2 py-1 ${isDragging ? 'relative z-10 shadow-(--sh-menu)' : ''}`}
     >
-      <button ref={setActivatorNodeRef} {...attributes} {...listeners} className="cursor-grab touch-none rounded p-1 text-zinc-400 hover:text-zinc-700" aria-label={`Reorder ${label}`}>
-        <Icon name="grip" className="size-4 [stroke-width:3]" />
+      <button ref={setActivatorNodeRef} {...attributes} {...listeners} className="rnr-icon-btn cursor-grab touch-none" aria-label={`Reorder ${label}`}>
+        <Icon name="grip" className="size-5" />
       </button>
-      <label className="flex flex-1 items-center gap-2 text-sm">
-        <input type="checkbox" checked={checked} disabled={disabled} onChange={onToggle} className="size-4 accent-zinc-900" />
+      <label className="rnr-check flex-1">
+        <input type="checkbox" checked={checked} disabled={disabled} onChange={onToggle} />
         {label}
       </label>
     </li>
@@ -144,7 +147,7 @@ export function ColumnsDialog<R, K extends string>({ open, onClose, table }: { o
   }
   return (
     <Dialog open={open} onClose={onClose} title="Customise table">
-      <p className="mb-3 text-sm text-zinc-500">Show, hide and drag columns to reorder. Drag a column’s edge in the table to resize it.</p>
+      <p className="rnr-muted mb-3">Show, hide and drag columns to reorder. Drag a column’s edge in the table to resize it.</p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={table.all.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           <ul className="grid gap-0.5">
@@ -155,15 +158,14 @@ export function ColumnsDialog<R, K extends string>({ open, onClose, table }: { o
           </ul>
         </SortableContext>
       </DndContext>
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-        <div className="flex rounded-lg bg-zinc-100 p-0.5 text-sm dark:bg-zinc-800" role="group" aria-label="Row density">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-soft pt-4">
+        <div className="rnr-seg" role="group" aria-label="Row density">
           {([false, true] as const).map((dense) => (
             <button
               key={String(dense)}
               type="button"
               aria-pressed={table.layout.dense === dense}
               onClick={() => table.setDense(dense)}
-              className={`rounded-md px-3 py-1 font-medium transition ${table.layout.dense === dense ? 'bg-white shadow-sm dark:bg-zinc-950' : 'text-zinc-500'}`}
             >
               {dense ? 'Compact' : 'Comfortable'}
             </button>

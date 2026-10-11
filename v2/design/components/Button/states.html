@@ -1,0 +1,29 @@
+<h3 class="pv-h">Variants (one primary per view)</h3>
+<div class="pv-row">
+  <button class="rnr-btn rnr-btn-primary" type="button">Start free <span class="rnr-btn-chip">{{i:arrow-right}}</span></button>
+  <button class="rnr-btn rnr-btn-primary" type="button">Save changes</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button">Save draft</button>
+  <button class="rnr-btn rnr-btn-ghost" type="button">{{i:arrow-left}}Back</button>
+  <button class="rnr-btn rnr-btn-danger" type="button">{{i:trash}}Remove member</button>
+  <button class="rnr-icon-btn" type="button" aria-label="More actions">{{i:dots-three}}</button>
+  <button class="rnr-icon-btn rnr-icon-btn--soft" type="button" aria-label="Close">{{i:x}}</button>
+</div>
+<h3 class="pv-h">Sizes: default and small</h3>
+<div class="pv-row">
+  <button class="rnr-btn rnr-btn-primary" type="button">Publish form</button>
+  <button class="rnr-btn rnr-btn-primary rnr-btn-sm" type="button">Publish form</button>
+  <button class="rnr-btn rnr-btn-secondary rnr-btn-sm" type="button">{{i:plus}}Add step</button>
+</div>
+<h3 class="pv-h">States: rest, hover (hover it), focus-visible (Tab to it), active (press), busy, disabled</h3>
+<div class="pv-row">
+  <button class="rnr-btn rnr-btn-primary" type="button">Rest</button>
+  <button class="rnr-btn rnr-btn-primary" type="button" data-busy aria-busy="false"><span class="rnr-spin" aria-hidden="true"></span>Click for busy</button>
+  <button class="rnr-btn rnr-btn-primary" type="button" aria-busy="true"><span class="rnr-spin" aria-hidden="true"></span>Saving…</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button" aria-busy="true"><span class="rnr-spin" aria-hidden="true"></span>Sending…</button>
+  <button class="rnr-btn rnr-btn-primary" type="button" aria-disabled="true">Unavailable</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button" aria-disabled="true">Unavailable</button>
+  <button class="rnr-btn rnr-btn-ghost" type="button" aria-pressed="true">Show as table</button>
+</div>
+<p class="pv-state">Submit buttons are never <code>disabled</code>; they stay live, validate on click and set <code>aria-busy="true"</code> while saving. <code>aria-disabled</code> is for actions that are unavailable (a pager at its end).</p>
+<h3 class="pv-h">With a keyboard hint</h3>
+<div class="pv-row"><button class="rnr-btn rnr-btn-primary" type="button">New form <span class="rnr-kbd" aria-hidden="true">N</span></button></div>

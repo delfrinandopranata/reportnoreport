@@ -1,0 +1,13 @@
+<div class="rnr-canvas" style="padding:24px;min-height:360px">
+  <svg class="rnr-sr-only" aria-hidden="true"></svg>
+  <div style="display:flex;gap:56px;align-items:flex-start;flex-wrap:wrap;position:relative">
+    <section class="rnr-folder rnr-folder--node rnr-node" aria-label="Trigger: Leave request" style="position:relative"><span class="rnr-folder-tab">Trigger</span><div class="rnr-folder-body"><p class="rnr-label">Leave request</p><p class="rnr-caption">Starts when a form is submitted</p>
+      <ul class="rnr-node-outs"><li class="rnr-node-out"><span class="rnr-caption">Next</span><span class="react-flow__handle react-flow__handle-right" style="position:absolute;right:-6px;width:12px;height:12px;border:2px solid var(--ink-2);border-radius:4px;background:var(--surface)"></span></li></ul></div></section>
+    <section class="rnr-folder rnr-folder--node rnr-node" data-current="true" aria-label="Condition: Days over 5" style="position:relative"><span class="rnr-folder-tab">Condition</span><div class="rnr-folder-body"><p class="rnr-label">Days over 5</p><p class="rnr-caption">Current step (2px ink)</p>
+      <ul class="rnr-node-outs"><li class="rnr-node-out"><span class="rnr-caption">Yes</span></li><li class="rnr-node-out"><span class="rnr-caption">No</span></li></ul></div></section>
+    <section class="rnr-folder rnr-folder--node rnr-node" data-issue="true" aria-label="Ask HR needs fixing" style="position:relative"><span class="rnr-folder-tab">Ask HR</span><div class="rnr-folder-body"><p class="rnr-label">Ask HR</p><p class="rnr-status" data-tone="down">{{i:warning-circle}}Pick who approves</p></div></section>
+  </div>
+</div>
+<h3 class="pv-h">Edge and handle (xyflow variables)</h3>
+<div class="pv-box"><svg viewBox="0 0 320 60" width="320" height="60" role="img" aria-label="An edge with a label"><path d="M10 30 C110 30 150 30 310 30" fill="none" stroke="var(--ink-3)" stroke-width="1.5"/><rect x="128" y="18" width="64" height="24" rx="6" fill="var(--surface)" stroke="var(--line)"/><text x="160" y="34" text-anchor="middle" class="rnr-chart-axis">Yes</text></svg></div>
+<p class="pv-state">Node = folder card with a 22px tab (step type), radius 8 on the tab and 14 on the body. A current node gets a 2px ink inset; a node with a problem gets a 1.5px error inset, a tinted tab and a sentence with an icon. Handles are 12px rounded squares (radius 4) with a 24px hit area. Colour is never the only cue: Ask HR above also says what to fix.</p>

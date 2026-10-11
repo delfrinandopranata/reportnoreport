@@ -1,21 +1,21 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { accountNo, COUNTRIES, formatPhone, MY_STATES, validateClient, type Client, type ClientErrors } from '../ledger'
 import { Attachments } from '../attachments/Attachments'
-import { useUpdateClient, usePreference } from '../data/queries'
-import { btn, Field, Icon, input, useUnloadGuard } from '../ui'
+import { useUpdateClient } from '../data/queries'
+import { btn, Field, input, useUnloadGuard } from '../ui'
 import { AssigneeSelect, PhoneField, StatusSelect, TagList } from './fields'
-import { card, MutationError, shortDate } from './shared'
+import { MutationError, shortDate } from './shared'
 
 function Row({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
     <div className={`min-w-0 ${wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
-      <dt className="text-xs text-zinc-500">{label}</dt>
-      <dd className="mt-0.5 text-sm break-words">{children}</dd>
+      <dt className="rnr-muted text-xs">{label}</dt>
+      <dd className="mt-0.5 break-words">{children}</dd>
     </div>
   )
 }
 
-const link = 'text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white dark:decoration-zinc-600'
+const link = 'rnr-link'
 const idLabel = (c: Pick<Client, 'type'>) => (c.type === 'company' ? 'SSM registration no.' : 'NRIC / passport no.')
 
 /** Read-only details for the header card; empty fields are omitted. */
@@ -28,10 +28,10 @@ export function ClientDetails({ client: c }: { client: Client }) {
     { label: 'Client ID', value: c.clientCode },
     { label: 'Industry', value: c.industry },
     { label: 'Website', value: website && <a href={website} target="_blank" rel="noreferrer" className={link}>{c.website}</a> },
-    { label: 'Account no.', value: <span className="tabular-nums">{accountNo(c.id)}</span> },
+    { label: 'Account no.', value: <span className="rnr-mono">{accountNo(c.id)}</span> },
     { label: 'Client since', value: shortDate(c.createdAt) },
     { label: 'Contact name', value: c.contact },
-    { label: 'Phone', value: c.phone && <a href={`tel:${c.phone}`} className={`${link} tabular-nums`}>{formatPhone(c.phone)}</a> },
+    { label: 'Phone', value: c.phone && <a href={`tel:${c.phone}`} className={link}>{formatPhone(c.phone)}</a> },
     { label: 'Email', value: c.email && <a href={`mailto:${c.email}`} className={link}>{c.email}</a> },
     { label: 'Address', value: address.length > 0 && address.map((line) => <span key={line} className="block">{line}</span>), wide: true },
     { label: 'Notes', value: c.notes && <span className="whitespace-pre-wrap">{c.notes}</span>, wide: true },
@@ -40,29 +40,6 @@ export function ClientDetails({ client: c }: { client: Client }) {
     <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
       {rows.filter((r) => r.value).map((r) => <Row key={r.label} label={r.label} wide={r.wide}>{r.value}</Row>)}
     </dl>
-  )
-}
-
-/**
- * A collapsible header section; native <details> keeps keyboard and screen-reader behaviour for
- * free. `prefKey`, when given, remembers open/closed per person across visits (via usePreference) —
- * omit it for a section that should just start closed every time.
- */
-export function Expandable({ title, children, prefKey }: { title: string; children: ReactNode; prefKey?: string }) {
-  const [open, setOpen, loaded] = usePreference(prefKey ?? '__unused', false)
-  if (prefKey && !loaded) return null
-  return (
-    <details
-      className="group border-t border-zinc-100 pt-4 dark:border-zinc-800"
-      open={prefKey ? open : undefined}
-      onToggle={prefKey ? (e) => setOpen(e.currentTarget.open) : undefined}
-    >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md text-sm font-medium text-zinc-700 [&::-webkit-details-marker]:hidden dark:text-zinc-300">
-        {title}
-        <Icon name="down" className="size-4 text-zinc-400 transition group-open:rotate-180" />
-      </summary>
-      <div className="mt-4">{children}</div>
-    </details>
   )
 }
 
@@ -96,7 +73,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
       // shown below via update.error
     }
   }
-  const error = (key: keyof ClientErrors) => errors[key] && <span className="text-sm text-red-600 dark:text-red-400" role="alert">{errors[key]}</span>
+  const error = (key: keyof ClientErrors) => errors[key] && <span className="rnr-error" role="alert">{errors[key]}</span>
   const text = (key: 'registrationNo' | 'clientCode' | 'industry' | 'website' | 'contact' | 'address1' | 'address2' | 'city', placeholder = '') => (
     <input value={draft[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} className={input} />
   )
@@ -104,14 +81,15 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-6" aria-label="Edit client">
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <section className={`${card} grid gap-4 p-5 sm:grid-cols-2`}>
-          <h2 className="text-sm font-medium text-zinc-500 sm:col-span-2">{draft.type === 'company' ? 'Company details' : 'Individual details'}</h2>
+        <section className="rnr-folder" aria-label={draft.type === 'company' ? 'Company details' : 'Individual details'}>
+          <span className="rnr-folder-tab" aria-hidden="true">{draft.type === 'company' ? 'Company details' : 'Individual details'}</span>
+          <div className="rnr-folder-body grid gap-4 sm:grid-cols-2">
           <fieldset className="sm:col-span-2">
-            <legend className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">Type</legend>
-            <div className="flex gap-4 text-sm">
+            <legend className="rnr-label mb-1.5">Type</legend>
+            <div className="flex gap-4">
               {(['company', 'individual'] as const).map((t) => (
-                <label key={t} className="flex items-center gap-2">
-                  <input type="radio" name="type" checked={draft.type === t} onChange={() => set('type', t)} className="accent-zinc-900" />
+                <label key={t} className="rnr-check">
+                  <input type="radio" name="type" checked={draft.type === t} onChange={() => set('type', t)} />
                   {t === 'company' ? 'Company' : 'Individual'}
                 </label>
               ))}
@@ -127,13 +105,15 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
           <Field label="Client ID">{text('clientCode')}</Field>
           <Field label="Industry">{text('industry')}</Field>
           <div className="sm:col-span-2"><Field label="Website">{text('website', 'example.com.my')}</Field></div>
+          </div>
         </section>
 
-        <section className={`${card} grid gap-4 p-5 sm:grid-cols-2`}>
-          <h2 className="text-sm font-medium text-zinc-500 sm:col-span-2">Primary contact</h2>
+        <section className="rnr-folder" aria-label="Primary contact">
+          <span className="rnr-folder-tab" aria-hidden="true">Primary contact</span>
+          <div className="rnr-folder-body grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2"><Field label="Contact name">{text('contact')}</Field></div>
-          <div className="grid gap-1.5 text-sm sm:col-span-2">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Phone</span>
+          <div className="rnr-field sm:col-span-2">
+            <span className="rnr-label">Phone</span>
             <PhoneField value={draft.phone} onChange={(v) => set('phone', v)} invalid={!!errors.phone} />
             {error('phone')}
           </div>
@@ -143,10 +123,12 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
               {error('email')}
             </Field>
           </div>
+          </div>
         </section>
 
-        <section className={`${card} grid gap-4 p-5 sm:grid-cols-2`}>
-          <h2 className="text-sm font-medium text-zinc-500 sm:col-span-2">Address</h2>
+        <section className="rnr-folder" aria-label="Address">
+          <span className="rnr-folder-tab" aria-hidden="true">Address</span>
+          <div className="rnr-folder-body grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2"><Field label="Address line 1">{text('address1')}</Field></div>
           <div className="sm:col-span-2"><Field label="Address line 2">{text('address2')}</Field></div>
           <Field label="City">{text('city')}</Field>
@@ -161,7 +143,7 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
             )}
           </Field>
           <Field label="Postcode">
-            <input value={draft.postcode} onChange={(e) => set('postcode', e.target.value)} inputMode="numeric" aria-invalid={!!errors.postcode} className={`${input} tabular-nums`} />
+            <input value={draft.postcode} onChange={(e) => set('postcode', e.target.value)} inputMode="numeric" aria-invalid={!!errors.postcode} className={`${input} rnr-mono`} />
             {error('postcode')}
           </Field>
           <Field label="Country">
@@ -173,26 +155,29 @@ export function ClientForm({ client, onDone }: { client: Client; onDone: () => v
               {countries.map((c) => <option key={c}>{c}</option>)}
             </select>
           </Field>
+          </div>
         </section>
 
-        <section className={`${card} grid gap-4 p-5 sm:grid-cols-2`}>
-          <h2 className="text-sm font-medium text-zinc-500 sm:col-span-2">Account</h2>
-          <div className="grid gap-1.5 text-sm">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Status</span>
+        <section className="rnr-folder" aria-label="Account">
+          <span className="rnr-folder-tab" aria-hidden="true">Account</span>
+          <div className="rnr-folder-body grid gap-4 sm:grid-cols-2">
+          <div className="rnr-field">
+            <span className="rnr-label">Status</span>
             <div><StatusSelect status={draft.status} onChange={(v) => set('status', v)} /></div>
           </div>
-          <div className="grid gap-1.5 text-sm">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Assigned member</span>
+          <div className="rnr-field">
+            <span className="rnr-label">Assigned member</span>
             <AssigneeSelect value={draft.assignedUserId} onChange={(v) => set('assignedUserId', v)} />
           </div>
-          <div className="grid gap-1.5 text-sm sm:col-span-2">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Tags</span>
+          <div className="rnr-field sm:col-span-2">
+            <span className="rnr-label">Tags</span>
             <TagList tags={draft.tags} onChange={(v) => set('tags', v)} />
           </div>
           <div className="sm:col-span-2">
             <Field label="Notes">
               <textarea value={draft.notes} onChange={(e) => set('notes', e.target.value)} rows={4} className={input} />
             </Field>
+          </div>
           </div>
         </section>
       </div>

@@ -81,3 +81,13 @@ test('trialState: exactly at trial end time returns ended', () => {
     endedOn: '3 Oct 2026'
   })
 })
+
+test('the write-block reason names the same trial end date Billing shows', async () => {
+  const { localiseBlockReason } = await import('./trial.ts')
+  const trialEndsAt = '2026-10-10T23:30:00Z'
+  const ended = trialState({ billingStatus: 'trial', trialEndsAt }, new Date('2026-10-12T00:00:00Z'))
+  assert.equal(ended.kind, 'ended')
+  assert.equal(localiseBlockReason('The free trial ended on 10 Oct 2026.', trialEndsAt), `The free trial ended on ${(ended as { endedOn: string }).endedOn}.`)
+  assert.equal(localiseBlockReason("This firm's access is suspended.", trialEndsAt), "This firm's access is suspended.")
+  assert.equal(localiseBlockReason(null, trialEndsAt), null)
+})

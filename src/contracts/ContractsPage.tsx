@@ -1,6 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { today } from '../ledger'
-import { card } from '../clients/shared'
 import { btn, Dialog, Field, Icon, input } from '../ui'
 import { useClients, useContracts, useCreateContract, useDeleteContract, useUpdateContract } from '../data/queries'
 import type { Contract } from '../data/mappers'
@@ -44,7 +43,7 @@ function ContractDialog({ contract, open, onClose }: { contract: Contract | null
   return (
     <Dialog open={open} onClose={close} title={contract ? 'Edit contract' : 'New contract'}>
       {clients.length === 0 ? (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Add a client before recording a contract.</p>
+        <p className="rnr-muted">Add a client before recording a contract.</p>
       ) : (
         <form onSubmit={onSubmit} className="grid gap-3" noValidate>
           <Field label="Client">
@@ -58,7 +57,7 @@ function ContractDialog({ contract, open, onClose }: { contract: Contract | null
           <Field label="Title">
             <input name="title" defaultValue={contract?.title} placeholder="e.g. Supply agreement" className={input} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="rnr-two">
             <Field label="Start date">
               <input name="startDate" type="date" defaultValue={contract?.startDate ?? today()} className={input} />
             </Field>
@@ -66,7 +65,7 @@ function ContractDialog({ contract, open, onClose }: { contract: Contract | null
               <input name="endDate" type="date" defaultValue={contract?.endDate} className={input} />
             </Field>
           </div>
-          {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+          {error && <p className="rnr-error" role="alert">{error}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" className={btn.ghost} onClick={close}>Cancel</button>
             <button className={btn.primary} disabled={save.isPending}>{save.isPending ? 'Saving…' : contract ? 'Save changes' : 'Add contract'}</button>
@@ -103,59 +102,62 @@ export function ContractsPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="rnr-wide grid grid-cols-1 gap-4">
       <div className="flex items-center justify-end">
         <button type="button" className={btn.primary} disabled={!canEdit} title={canEdit ? undefined : "Your role can't add contracts."} onClick={() => openDialog(null)}>
           <Icon name="plus" /> New contract
         </button>
       </div>
 
-      <div className={`${card} overflow-hidden`}>
-        <div className="border-b border-zinc-100 px-5 py-3 text-sm font-medium dark:border-zinc-800">
-          {isPending ? 'Contracts' : `${contracts.length} ${contracts.length === 1 ? 'contract' : 'contracts'}`}
-        </div>
+      <div className="rnr-table-card rnr-card">
         {isPending ? (
-          <p className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+          <p className="rnr-muted p-6 text-center">Loading…</p>
         ) : loadError ? (
-          <p role="alert" className="p-6 text-center text-sm text-red-600">{loadError.message}</p>
+          <p role="alert" className="rnr-error justify-center p-6">{loadError.message}</p>
         ) : contracts.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100 text-left text-xs text-zinc-500 dark:border-zinc-800">
-                  <th scope="col" className="px-4 py-2.5 font-medium">Client</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">Counterparty</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">Title</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">Start date</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">End date</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">Ends</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium"><span className="sr-only">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {contracts.map((c) => (
-                  <tr key={c.id} className="transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                    <td className="px-4 py-2.5 font-medium">{nameOf.get(c.clientId) ?? 'Unknown client'}</td>
-                    <td className="px-4 py-2.5">{c.counterparty || '—'}</td>
-                    <td className="px-4 py-2.5">{c.title}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-zinc-500">{c.startDate}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-zinc-500">{c.endDate}</td>
-                    <td className={`px-4 py-2.5 whitespace-nowrap text-xs font-medium ${isEndingSoon(c.endDate, todayStr) ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500'}`}>{endsInLabel(c.endDate, todayStr)}</td>
-                    <td className="px-4 py-2.5 text-right">
+          <table className="rnr-table min-w-[44rem]">
+            <caption className="rnr-sr-only">{`${contracts.length} ${contracts.length === 1 ? 'contract' : 'contracts'}`}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Client</th>
+                <th scope="col">Counterparty</th>
+                <th scope="col">Title</th>
+                <th scope="col">Start date</th>
+                <th scope="col">End date</th>
+                <th scope="col">Ends</th>
+                <th scope="col"><span className="rnr-sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.map((c) => {
+                const soon = isEndingSoon(c.endDate, todayStr)
+                return (
+                  <tr key={c.id}>
+                    <th scope="row" className="min-w-40">{nameOf.get(c.clientId) ?? 'Unknown client'}</th>
+                    <td className="rnr-cell min-w-40">{c.counterparty || '—'}</td>
+                    <td className="rnr-cell min-w-40">{c.title}</td>
+                    <td className="rnr-mono rnr-muted whitespace-nowrap">{c.startDate}</td>
+                    <td className="rnr-mono rnr-muted whitespace-nowrap">{c.endDate}</td>
+                    <td className="whitespace-nowrap">
+                      <span className="rnr-status" data-tone={soon ? 'warn' : undefined}><Icon name={soon ? 'alert' : 'clock'} />{endsInLabel(c.endDate, todayStr)}</span>
+                    </td>
+                    <td>
                       {canEdit && (
                         <div className="flex justify-end gap-1">
-                          <button type="button" className={`${btn.ghost} py-1`} onClick={() => openDialog(c)}>Edit</button>
-                          <button type="button" className={`${btn.danger} py-1`} onClick={() => { remove.reset(); setDeleting(c) }}>Delete</button>
+                          <button type="button" className={btn.ghost} onClick={() => openDialog(c)}>Edit</button>
+                          <button type="button" className={btn.danger} onClick={() => { remove.reset(); setDeleting(c) }}>Delete</button>
                         </div>
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                )
+              })}
+            </tbody>
+          </table>
         ) : (
-          <p className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">No contracts yet.</p>
+          <div className="rnr-empty m-4">
+            <h3>No contracts yet</h3>
+          </div>
         )}
       </div>
 
@@ -164,7 +166,7 @@ export function ContractsPage() {
       <Dialog open={!!deleting} onClose={() => setDeleting(null)} title="Delete contract">
         <div className="grid gap-4 text-sm">
           <p>Delete {deleting?.title}? This can't be undone.</p>
-          {!!remove.error && <p role="alert" className="text-red-600 dark:text-red-400">{remove.error.message}</p>}
+          {!!remove.error && <p role="alert" className="rnr-error">{remove.error.message}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" className={btn.ghost} onClick={() => setDeleting(null)}>Cancel</button>
             <button type="button" className={btn.danger} disabled={remove.isPending} onClick={onDelete}>{remove.isPending ? 'Deleting…' : 'Delete contract'}</button>

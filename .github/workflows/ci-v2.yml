@@ -1,0 +1,52 @@
+name: CI v2
+on:
+  pull_request:
+    paths: ['v2/**', '.github/workflows/ci-v2.yml']
+  workflow_call:
+permissions: { contents: read }
+defaults:
+  run: { working-directory: v2 }
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: v2/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+        env: { VITE_SUPABASE_URL: http://127.0.0.1:54321, VITE_SUPABASE_ANON_KEY: ci.e30.ci }
+  edge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      # Without this, v2/package.json makes Deno expect node_modules; the functions don't use it.
+      - run: deno test --allow-read supabase/functions
+        env: { DENO_NO_PACKAGE_JSON: "1" }
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: 2.120.0 }
+      # The API, Auth and Realtime are needed by the env-gated Edge tests below; the rest is not.
+      - run: supabase start -x studio,imgproxy,mailpit,edge-runtime,vector,logflare,supavisor,postgres-meta
+      - run: supabase test db
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      # Real-database tests the plain `deno test` job skips: advance and send-messages races, campaign exactly-once and
+      # audience visibility, run-report visibility, Realtime isolation.
+      - name: Env-gated Edge tests
+        env: { DENO_NO_PACKAGE_JSON: "1" }
+        run: |
+          eval "$(supabase status -o env)"
+          export RNR_TEST_SUPABASE_URL="$API_URL" RNR_TEST_ANON_KEY="$ANON_KEY" RNR_TEST_DB_URL="$DB_URL"
+          deno test --allow-env --allow-net --allow-read \
+            supabase/functions/advance/race.test.ts supabase/functions/send-messages/race.test.ts \
+            supabase/functions/send-campaigns/db.test.ts supabase/functions/resend-webhook/db.test.ts \
+            supabase/functions/run-report/visibility.test.ts supabase/functions/_integration/realtime.test.ts

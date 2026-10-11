@@ -129,7 +129,7 @@ export type Totals = { in: number; out: number; net: number; count: number }
 
 const moneyCache = new Map<string, { format(cents: number): string; compact(cents: number): string }>()
 
-/** Formatter for one currency, always `<CODE> <number>` (minus first); cached because Intl.NumberFormat is expensive to build. */
+/** Formatter for one currency, always `<CODE> <number>` (true minus U+2212 first, never a hyphen); cached because Intl.NumberFormat is expensive to build. */
 export function makeMoney(currency: string) {
   const cached = moneyCache.get(currency)
   if (cached) return cached
@@ -137,7 +137,7 @@ export function makeMoney(currency: string) {
     const nf = new Intl.NumberFormat('en-MY', { style: 'currency', currency, currencyDisplay: 'code', ...opts })
     return (cents: number) => {
       const parts = nf.formatToParts(cents / 100)
-      const minus = parts.some((p) => p.type === 'minusSign') ? '-' : ''
+      const minus = parts.some((p) => p.type === 'minusSign') ? '−' : ''
       const number = parts.filter((p) => p.type !== 'currency' && p.type !== 'minusSign' && p.type !== 'literal').map((p) => p.value).join('')
       return `${minus}${currency} ${number}`
     }
@@ -145,6 +145,15 @@ export function makeMoney(currency: string) {
   const m = { format: make({}), compact: make({ notation: 'compact', maximumFractionDigits: 1 }) }
   moneyCache.set(currency, m)
   return m
+}
+
+/**
+ * A ledger amount with its direction: receipts add, payments subtract. The sign is a plus for a net gain and the
+ * true minus (already part of `format`) for a net loss, so a negative receipt reads "−MYR 5.00", never "+−".
+ */
+export function signedMoney(kind: Kind, cents: number, format: (cents: number) => string): string {
+  const signed = kind === 'in' ? cents : 0 - cents
+  return `${signed > 0 ? '+' : ''}${format(signed)}`
 }
 
 /** Short, stable account reference shown on statements. */
@@ -165,7 +174,7 @@ export const today = () => new Date().toLocaleDateString('en-CA')
  * that isn't a plain amount with ≤2 decimals.
  */
 export function parseCents(input: string): number | null {
-  const clean = input.replace(/[,\s]/g, '')
+  const clean = input.replace(/[,\s]/g, '').replace(/\u2212/g, '-') // accept the true minus makeMoney displays
   const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(clean)
   if (!match) return null
   const [, sign, whole, frac] = match

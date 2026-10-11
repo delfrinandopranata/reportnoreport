@@ -1,0 +1,18 @@
+type Env = Record<string, string | undefined>
+const REFUSAL = 'Refusing to start: a service-role/secret key was put in VITE_SUPABASE_ANON_KEY'
+
+/** Fails loudly at startup instead of with silent 401s. */
+export function readEnv(env: Env): { url: string; anonKey: string } {
+  const missing = (['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'] as const).filter((k) => !env[k])
+  if (missing.length) throw new Error(`Missing environment variables: ${missing.join(', ')}`)
+  const anonKey = env.VITE_SUPABASE_ANON_KEY!
+  if (anonKey.startsWith('sb_secret_')) throw new Error(REFUSAL)
+  const payload = anonKey.split('.')[1]
+  if (payload) {
+    let claims: { role?: string }
+    try { claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) }
+    catch { throw new Error('VITE_SUPABASE_ANON_KEY is not a valid Supabase key') }
+    if (claims.role === 'service_role') throw new Error(REFUSAL)
+  }
+  return { url: env.VITE_SUPABASE_URL!, anonKey }
+}

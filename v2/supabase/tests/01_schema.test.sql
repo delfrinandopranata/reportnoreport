@@ -1,0 +1,16 @@
+begin;
+select plan(12);
+select has_table('orgs');
+select has_table('members');
+select has_table('permissions');
+select has_table('roles');
+select has_table('role_permissions');
+select has_table('member_roles');
+select has_table('audit_log');
+select results_eq('select count(*)::int from permissions', array[11], 'eleven permissions seeded');
+select col_is_fk('members', 'org_id');
+select col_is_fk('role_permissions', 'permission');
+select throws_ok($$ insert into members (org_id, email) values (gen_random_uuid(), 'X@a.test') $$, '23503', null, 'member needs an org');
+select ok((select relrowsecurity from pg_class where relname = 'roles'), 'RLS on roles');
+select * from finish();
+rollback;

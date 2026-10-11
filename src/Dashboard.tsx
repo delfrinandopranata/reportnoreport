@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { usePreference, useSampleDataExists, useLoadSampleData } from './data/queries'
 import { btn, Icon } from './ui'
 import { WIDGETS } from './widgets'
@@ -66,57 +66,65 @@ type Drag = Pick<ReturnType<typeof useSortable>, 'attributes' | 'listeners' | 's
 
 function Card({ widget, editing, state = 'idle', drag, layout, sampleDataExists }: { widget: Widget; editing: boolean; state?: 'idle' | 'placeholder' | 'overlay'; drag?: Drag; layout: Layout; sampleDataExists: boolean }) {
   const { removeWidget, resizeWidget } = layout
-  const { title, Component } = WIDGETS[widget.type]
+  const { title, kpi, Component } = WIDGETS[widget.type]
+  const headingId = useId()
   const showSampleLabel = sampleDataExists && ['net', 'in', 'out', 'clients'].includes(widget.type)
-  const look = {
-    overlay: 'h-full rotate-1 border-zinc-300 shadow-2xl dark:border-zinc-700',
-    placeholder: 'border-dashed border-zinc-300 opacity-40 dark:border-zinc-700',
-    idle: editing ? 'border-zinc-300 shadow-sm ring-4 ring-zinc-900/[0.03] dark:border-zinc-700' : 'border-zinc-200/80 shadow-xs dark:border-zinc-800',
-  }[state]
+  const dataState = state === 'idle' ? (editing ? 'editing' : undefined) : state
+  const handle = editing && (
+    <button ref={drag?.setActivatorNodeRef} {...drag?.attributes} {...drag?.listeners} className="rnr-handle" aria-label={`Drag ${title}`}>
+      <Icon name="grip" className="size-4" />
+    </button>
+  )
+  const controls = editing && (
+    <div className="ml-auto flex items-center">
+      <button
+        type="button"
+        className={`${btn.ghost} rnr-btn-sm`}
+        onClick={() => resizeWidget(widget.id)}
+        title={`Width: ${SPAN_LABEL[widget.span]} — select to change`}
+        aria-label={`Change width of ${title}, currently ${SPAN_LABEL[widget.span]}`}
+      >
+        <Icon name="resize" className="size-3.5" />
+        <span className={widget.span === 1 ? 'hidden' : 'hidden sm:inline'} aria-hidden>{SPAN_LABEL[widget.span]}</span>
+      </button>
+      <button type="button" className={`${btn.ghost} rnr-btn-sm`} onClick={() => removeWidget(widget.id)} aria-label={`Remove ${title}`}>
+        <Icon name="x" className="size-3.5" />
+      </button>
+    </div>
+  )
+  const sample = showSampleLabel && <span className="rnr-chip shrink-0" data-tone="info">Includes sample data</span>
+  const body = (
+    <div className={editing ? 'pointer-events-none select-none' : ''}>
+      <Component />
+    </div>
+  )
 
-  return (
-    <div className={`flex h-full min-w-0 flex-col rounded-2xl border bg-white p-5 transition-shadow dark:bg-zinc-900 ${look}`}>
-      <header className="mb-4 flex min-h-7 items-center gap-1">
-        {editing && (
-          <button
-            ref={drag?.setActivatorNodeRef}
-            {...drag?.attributes}
-            {...drag?.listeners}
-            className="-ml-2 cursor-grab touch-none rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 active:cursor-grabbing dark:hover:bg-zinc-800"
-            aria-label={`Drag ${title}`}
-          >
-            <Icon name="grip" className="size-4 [stroke-width:3]" />
-          </button>
-        )}
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="truncate text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</h2>
-          {showSampleLabel && (
-            <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-              Includes sample data
-            </span>
-          )}
-        </div>
-        {editing && (
-          <div className="ml-auto flex items-center">
-            <button
-              type="button"
-              className={`${btn.ghost} gap-1.5 p-1.5 text-xs`}
-              onClick={() => resizeWidget(widget.id)}
-              title={`Width: ${SPAN_LABEL[widget.span]} — select to change`}
-              aria-label={`Change width of ${title}, currently ${SPAN_LABEL[widget.span]}`}
-            >
-              <Icon name="resize" className="size-3.5" />
-              <span className={widget.span === 1 ? 'hidden' : 'hidden sm:inline'} aria-hidden>{SPAN_LABEL[widget.span]}</span>
-            </button>
-            <button type="button" className={`${btn.ghost} p-1.5 hover:text-red-600`} onClick={() => removeWidget(widget.id)} aria-label={`Remove ${title}`}>
-              <Icon name="x" className="size-3.5" />
-            </button>
+  if (kpi) {
+    return (
+      <div className="rnr-kpi-widget" data-state={dataState}>
+        <section className="rnr-folder rnr-kpi-tile" aria-labelledby={headingId}>
+          <span className="rnr-folder-tab" id={headingId}>{title}</span>
+          <div className="rnr-folder-body">
+            <div className="rnr-perf" aria-hidden="true" />
+            {editing && <div className="rnr-widget-bar">{handle}{controls}</div>}
+            {sample}
+            {body}
           </div>
-        )}
-      </header>
-      <div className={editing ? 'pointer-events-none select-none' : ''}>
-        <Component />
+        </section>
       </div>
+    )
+  }
+  return (
+    <div className="rnr-card h-full" data-state={dataState}>
+      <header className="rnr-card-head">
+        {handle}
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h2 className="rnr-card-title">{title}</h2>
+          {sample}
+        </div>
+        {controls}
+      </header>
+      {body}
     </div>
   )
 }
@@ -127,6 +135,7 @@ function SortableCard({ widget, editing, layout, sampleDataExists }: { widget: W
     disabled: !editing,
   })
   return (
+    // dnd-kit positions the sorted card with an inline transform; nothing else here is styled inline.
     <section ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={SPAN[widget.span]}>
       <Card widget={widget} editing={editing} layout={layout} sampleDataExists={sampleDataExists} state={isDragging ? 'placeholder' : 'idle'} drag={{ attributes, listeners, setActivatorNodeRef }} />
     </section>
@@ -135,9 +144,9 @@ function SortableCard({ widget, editing, layout, sampleDataExists }: { widget: W
 
 function Library({ addWidget }: { addWidget: Layout['addWidget'] }) {
   return (
-    <div className="mb-6 rounded-2xl border border-dashed border-zinc-300 bg-white/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
-      <h2 className="text-sm font-medium">Add widgets</h2>
-      <p className="mt-0.5 mb-3 text-sm text-zinc-500">
+    <div className="rnr-card mb-6">
+      <div className="rnr-card-head"><h2 className="rnr-card-title">Add widgets</h2></div>
+      <p className="rnr-muted -mt-2 mb-3">
         Select a widget to add it. Drag the handle on a card to reorder it, or focus the handle and use Space and the arrow keys. Changes save automatically; select Done when finished.
       </p>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -146,14 +155,12 @@ function Library({ addWidget }: { addWidget: Layout['addWidget'] }) {
             key={type}
             type="button"
             onClick={() => addWidget(type, WIDGETS[type].span)}
-            className="group flex items-start gap-2 rounded-xl border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+            className="rnr-btn rnr-btn-secondary h-auto justify-start py-2 text-left"
           >
-            <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-md bg-zinc-100 text-zinc-500 group-hover:bg-zinc-900 group-hover:text-white dark:bg-zinc-800 dark:group-hover:bg-white dark:group-hover:text-zinc-900">
-              <Icon name="plus" className="size-3" />
-            </span>
+            <Icon name="plus" className="size-3.5" />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">{WIDGETS[type].title}</span>
-              <span className="block truncate text-xs text-zinc-500">{WIDGETS[type].blurb}</span>
+              <span className="block truncate">{WIDGETS[type].title}</span>
+              <span className="rnr-caption block truncate">{WIDGETS[type].blurb}</span>
             </span>
           </button>
         ))}
@@ -207,19 +214,19 @@ export function Dashboard({ editing }: { editing: boolean }) {
         </div>
       )}
       {widgets.length === 0 && (
-        <div className="grid place-items-center rounded-2xl border border-dashed border-zinc-300 py-16 text-center dark:border-zinc-700">
+        <div className="rnr-empty mb-6">
           <p className="font-medium">No widgets on this dashboard</p>
-          <p className="mt-1 max-w-sm px-4 text-sm text-zinc-500">{editing ? 'Select a widget above to add it.' : 'Select "Edit layout" at the top of the page to add widgets.'}</p>
+          <p className="rnr-muted max-w-sm">{editing ? 'Select a widget above to add it.' : 'Select "Edit layout" at the top of the page to add widgets.'}</p>
           {canImport && (
             <button
-              className={`${btn.primary} mt-4`}
+              className={btn.primary}
               onClick={() => loadSample.mutate()}
               disabled={loadSample.isPending}
             >
               {loadSample.isPending ? 'Loading...' : 'Import sample data'}
             </button>
           )}
-          {!!loadSample.error && <div className="text-red-600 dark:text-red-400 mt-2 text-sm">{loadSampleErrorMsg}</div>}
+          {!!loadSample.error && <div role="alert" className="text-down">{loadSampleErrorMsg}</div>}
         </div>
       )}
       <DndContext
@@ -231,14 +238,18 @@ export function Dashboard({ editing }: { editing: boolean }) {
         onDragCancel={() => setActiveId(null)}
       >
         <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rnr-grid">
             {widgets.map((w) => (
               <SortableCard key={w.id} widget={w} editing={editing} layout={layout} sampleDataExists={sampleDataExists} />
             ))}
           </div>
         </SortableContext>
         <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
-          {active && <Card widget={active} editing state="overlay" layout={layout} sampleDataExists={sampleDataExists} />}
+          {active && (
+            <div className="rnr-drag-overlay flex">
+              <Card widget={active} editing state="overlay" layout={layout} sampleDataExists={sampleDataExists} />
+            </div>
+          )}
         </DragOverlay>
       </DndContext>
     </>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy policy — ReportNoReport</title>
+    <meta name="description" content="How ReportNoReport collects, uses and protects your data across Malaysia, Singapore, Indonesia and beyond." />
+    <link rel="canonical" href="https://reportnoreport.com/privacy" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ReportNoReport" />
+    <meta property="og:title" content="Privacy policy — ReportNoReport" />
+    <meta property="og:description" content="How ReportNoReport collects, uses and protects your data across Malaysia, Singapore, Indonesia and beyond." />
+    <meta property="og:url" content="https://reportnoreport.com/privacy" />
+    <meta property="og:image" content="https://reportnoreport.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ReportNoReport — report without complicated reporting." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script>
+      (() => {
+        // Public pages are always light; the accent follows a signed-in person's choice. appearance.test.ts runs this.
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const h = document.documentElement
+        if (h.classList) h.classList.add('js') // the fake document in appearance.test.ts has no classList
+        h.dataset.theme = 'light'
+        const q = typeof location === 'undefined' ? null : /[?&]accent=([a-z]+)/.exec(location.search)
+        const ok = ['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron']
+        h.dataset.accent = ok.includes(q && q[1]) ? q[1] : ok.includes(s.accent) ? s.accent : 'midnight'
+      })()
+    </script>
+    <script src="/consent.js" defer></script>
+  </head>
+  <body class="rnr">
+    <header class="lp-bar">
+      <a class="rnr-wordmark" href="/" data-draw aria-label="ReportNoReport home">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</a>
+      <a class="rnr-btn rnr-btn-secondary" href="/app/">Sign in</a>
+    </header>
+    <main class="lp-main"><article class="rnr-paper rnr-prose lp-prose">
+      <h1 class="lp-h1">Privacy policy</h1>
+      <p class="rnr-micro lp-updated">Last updated: 11 October 2026</p>
+      <p>This policy explains how ReportNoReport ("we", "us") handles personal data when you use reportnoreport.com and the ReportNoReport app. It applies to users in Malaysia, Singapore, Indonesia and every other country we serve.</p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Account data:</strong> your email address and password (stored hashed).</li>
+        <li><strong>Organisation data:</strong> organisation names, member roles, and the forms, records and reports you or your team create.</li>
+        <li><strong>Usage data:</strong> anonymous page views (page address, referrer, country and device type), only if you accept analytics.</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <p>To provide and secure the service, sign you in, send invitations and service emails, and understand which pages are used so we can improve them. We do not sell personal data or use it for advertising.</p>
+
+      <h2>Who processes it</h2>
+      <p>We use Supabase to store data and run authentication, and Vercel to host the website and measure anonymous page views. Both act on our instructions under data processing terms.</p>
+
+      <h2>Where it is stored and cross-border transfers</h2>
+      <p>Data may be stored and processed outside your country. When we transfer data abroad we rely on contractual safeguards that give it a standard of protection comparable to the law of your country.</p>
+
+      <h2>How long we keep it</h2>
+      <p>We keep account and organisation data while your account is active. When you delete your account or your organisation closes it, we delete the data within 30 days, except where the law requires us to keep it longer.</p>
+
+      <h2>Cookies and local storage</h2>
+      <p>We do not set advertising or tracking cookies. Your browser's local storage holds your sign-in session, your appearance settings and your cookie choice; these are needed for the service to work. Anonymous analytics run only after you select "Accept" in the cookie banner. You can change your choice at any time with "Cookie settings" at the bottom of each page.</p>
+
+      <h2>Your rights</h2>
+      <ul>
+        <li><strong>Malaysia (Personal Data Protection Act 2010):</strong> access and correct your data, withdraw consent, and limit processing.</li>
+        <li><strong>Singapore (Personal Data Protection Act 2012):</strong> access and correct your data, and withdraw consent.</li>
+        <li><strong>Indonesia (Law No. 27 of 2022 on Personal Data Protection):</strong> access, correct, delete and obtain a copy of your data, withdraw consent, and object to automated decisions.</li>
+        <li><strong>European Economic Area and United Kingdom (GDPR):</strong> access, correct, delete, restrict, port and object, and complain to your data protection authority.</li>
+      </ul>
+      <p>If your organisation added you, it controls its own records; we will pass your request to it and help it respond.</p>
+
+      <h2>Contact and data requests</h2>
+      <p>Email <a href="mailto:privacy@reportnoreport.com">privacy@reportnoreport.com</a>. We reply within 21 days.</p>
+
+      <h2>Changes</h2>
+      <p>If we change this policy we will update the date above and, for significant changes, tell you by email or in the app.</p>
+    </article></main>
+    <footer class="lp-foot">
+      <span>© 2026 ReportNoReport</span>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/terms">Terms and conditions</a>
+      <button type="button" class="rnr-btn rnr-btn-ghost" data-consent-settings>Cookie settings</button>
+    </footer>
+  </body>
+</html>

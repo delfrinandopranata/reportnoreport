@@ -1,0 +1,18 @@
+<div class="pv-row">
+  <button class="rnr-btn rnr-btn-secondary" type="button" data-open="d1">Open dialog</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button" data-open="d2">Open confirmation</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button" data-open="d3">Open sheet</button>
+  <button class="rnr-btn rnr-btn-secondary" type="button" data-open="d4">Open drawer</button>
+</div>
+<dialog class="rnr-dialog" id="d1" aria-labelledby="d1t"><div class="rnr-dialog-head"><h2 class="rnr-dialog-title" id="d1t">Invite a member</h2><button class="rnr-icon-btn" type="button" data-close aria-label="Close">{{i:x}}</button></div>
+  <div class="rnr-dialog-body"><div class="rnr-field"><label class="rnr-label" for="d1e">Email</label><input class="rnr-input" id="d1e" type="email"></div></div>
+  <div class="rnr-dialog-foot"><button class="rnr-btn rnr-btn-ghost" type="button" data-close>Cancel</button><button class="rnr-btn rnr-btn-primary" type="button" data-close>Send invite</button></div></dialog>
+<dialog class="rnr-dialog" id="d2" aria-labelledby="d2t"><div class="rnr-dialog-head"><h2 class="rnr-dialog-title" id="d2t">Remove Ben Tan?</h2></div>
+  <div class="rnr-dialog-body"><p>Ben loses access to Northcote Council straight away. Their records stay.</p></div>
+  <div class="rnr-dialog-foot"><button class="rnr-btn rnr-btn-ghost" type="button" data-close>Keep member</button><button class="rnr-btn rnr-btn-danger" type="button" data-close>Remove member</button></div></dialog>
+<dialog class="rnr-dialog rnr-sheet" id="d3" aria-labelledby="d3t"><div class="rnr-dialog-head"><h2 class="rnr-dialog-title" id="d3t">Add a field</h2><button class="rnr-icon-btn" type="button" data-close aria-label="Close">{{i:x}}</button></div>
+  <div class="rnr-dialog-body"><div class="rnr-palette"><button class="rnr-palette-item" type="button">{{i:text-aa}}Short text</button><button class="rnr-palette-item" type="button">{{i:hash}}Number</button><button class="rnr-palette-item" type="button">{{i:calendar-blank}}Date</button></div></div></dialog>
+<dialog class="rnr-dialog rnr-drawer" id="d4" aria-label="Menu"><button class="rnr-icon-btn" type="button" data-close aria-label="Close menu">{{i:x}}</button>
+  <button class="rnr-org" type="button"><span class="rnr-avatar rnr-avatar--sm">NC</span><span class="rnr-org-name">Northcote Council</span>{{i:caret-up-down}}</button>
+  <a class="rnr-side-link" href="#Dialog" aria-current="page">{{i:tray}}Inbox</a><a class="rnr-side-link" href="#Dialog">{{i:database}}Records</a></dialog>
+<p class="pv-state">Native <code>&lt;dialog&gt;</code>: focus is trapped and Esc closes. Destructive confirmation uses <code>rnr-btn-danger</code> on the confirm button and a "Keep …" label on the safe action. Sheet: bottom on phones; drawer: left, phone menu.</p>

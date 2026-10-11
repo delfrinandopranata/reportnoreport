@@ -2,17 +2,16 @@ import { useState, type ChangeEvent, type ReactNode } from 'react'
 import { BillingPage } from './BillingPage'
 import { useLogoUrl, useUpdateFirm, useUploadLogo } from '../data/queries'
 import { useSession } from '../data/session'
-import type { DesignSystem, Firm } from '../data/mappers'
-import { btn, Dialog, Field, Icon, input, ring } from '../ui'
+import type { Firm } from '../data/mappers'
+import { AppearanceSettings } from './AppearanceSettings'
+import { btn, Dialog, Field, Icon, input } from '../ui'
 import { BankAccountsCard } from './BankAccounts'
 import { DEMO } from '../demo/store'
 import { DEFAULT_NOTE, LOGO_MAX_BYTES, MONTHS, STATES } from './constants'
 
-const card = 'rounded-2xl border border-zinc-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900'
-
 const Err = ({ text }: { text: string }) =>
   text ? (
-    <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+    <p className="rnr-error" role="alert">
       {text}
     </p>
   ) : null
@@ -20,8 +19,8 @@ const Err = ({ text }: { text: string }) =>
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="grid gap-0.5 sm:grid-cols-[11rem_1fr] sm:gap-4">
-      <dt className="text-zinc-500 dark:text-zinc-400">{label}</dt>
-      <dd className="min-w-0 break-words">{value || <span className="text-zinc-500 dark:text-zinc-400">Not set</span>}</dd>
+      <dt className="rnr-muted">{label}</dt>
+      <dd className="min-w-0 break-words">{value || <span className="rnr-muted">Not set</span>}</dd>
     </div>
   )
 }
@@ -65,29 +64,27 @@ function EditableCard<T>({
   }
 
   return (
-    <section className={card} aria-labelledby={id}>
-      <header className="flex flex-wrap items-start gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <div className="min-w-0 flex-1 basis-64">
-          <h2 id={id} className="font-semibold">
-            {title}
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{blurb}</p>
+    <section className="rnr-folder" aria-labelledby={id}>
+      <span className="rnr-folder-tab" id={id}>{title}</span>
+      <div className="rnr-folder-body">
+        <div className="rnr-perf" aria-hidden="true" />
+        <div className="mb-4 flex flex-wrap items-start gap-3">
+          <p className="rnr-muted min-w-0 flex-1 basis-64">{blurb}</p>
+          <span className="rnr-hint self-center" role="status">
+            {saved ? `${title} saved` : ''}
+          </span>
+          {!draft && (
+            <button type="button" disabled={!!disabledReason} aria-describedby={disabledReason ? `${id}-why` : undefined} aria-label={`Edit ${title.toLowerCase()}`} className={`${btn.secondary} rnr-btn-sm`} onClick={() => (setDraft(value), setError(''))}>
+              <Icon name="pencil" /> Edit
+            </button>
+          )}
         </div>
-        <span className="self-center text-sm text-emerald-700 dark:text-emerald-400" role="status">
-          {saved ? `${title} saved` : ''}
-        </span>
-        {!draft && (
-          <button type="button" disabled={!!disabledReason} aria-describedby={disabledReason ? `${id}-why` : undefined} aria-label={`Edit ${title.toLowerCase()}`} className={`${btn.ghost} border border-zinc-200 dark:border-zinc-800`} onClick={() => (setDraft(value), setError(''))}>
-            <Icon name="pencil" /> Edit
-          </button>
+        {disabledReason && !draft && (
+          <p id={`${id}-why`} className="rnr-note mb-4" data-tone="info">
+            <Icon name="info" className="size-5" />
+            <span>Read-only. {disabledReason}</span>
+          </p>
         )}
-      </header>
-      {disabledReason && !draft && (
-        <p id={`${id}-why`} className="border-b border-zinc-100 bg-zinc-50 px-5 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400">
-          Read-only. {disabledReason}
-        </p>
-      )}
-      <div className="p-5">
         {draft ? (
           <form
             className="grid gap-4"
@@ -147,10 +144,10 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
   }
   return (
     <div className="grid gap-2 text-sm">
-      <span className="font-medium text-zinc-700 dark:text-zinc-300">Logo (optional)</span>
+      <span className="rnr-label">Logo (optional)</span>
       <div className="flex flex-wrap items-center gap-3">
-        {url && <img src={url} alt="Logo preview" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-40 rounded border border-zinc-200 bg-white object-contain p-1 dark:border-zinc-700" />}
-        <label className={`${btn.ghost} cursor-pointer border border-zinc-200 dark:border-zinc-800`}>
+        {url && <img src={url} alt="Logo preview" onError={(e) => (e.currentTarget.hidden = true)} className="max-h-14 max-w-40 rounded-(--r-ctl) border border-line bg-surface object-contain p-1" />}
+        <label className={`${btn.secondary} cursor-pointer`}>
           <Icon name="upload" /> {upload.isPending ? 'Uploading…' : logoPath ? 'Replace' : 'Upload image'}
           <input type="file" accept="image/*" onChange={onFile} disabled={upload.isPending} className="sr-only" />
         </label>
@@ -159,7 +156,7 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
             {update.isPending ? 'Removing…' : 'Remove logo'}
           </button>
         )}
-        <span className="text-zinc-500 dark:text-zinc-400">PNG, JPG, SVG or WebP, up to {LOGO_MAX_BYTES / 1024} KB. Saved as soon as you choose it.</span>
+        <span className="rnr-hint">PNG, JPG, SVG or WebP, up to {LOGO_MAX_BYTES / 1024} KB. Saved as soon as you choose it.</span>
       </div>
       <Err text={error} />
       <Dialog open={confirmRemove} onClose={() => setConfirmRemove(false)} title="Remove logo">
@@ -167,12 +164,7 @@ function LogoField({ logoPath }: { logoPath: string | null }) {
           <p>Remove your logo? It will no longer appear on statements until you upload a new one.</p>
           <div className="flex justify-end gap-2">
             <button type="button" className={btn.ghost} onClick={() => setConfirmRemove(false)}>Cancel</button>
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500"
-              disabled={update.isPending}
-              onClick={removeLogo}
-            >
+            <button type="button" className={btn.danger} disabled={update.isPending} onClick={removeLogo}>
               {update.isPending ? 'Removing…' : 'Remove logo'}
             </button>
           </div>
@@ -280,48 +272,6 @@ function OrganisationCard({ disabledReason }: { disabledReason: string | null })
   )
 }
 
-const DESIGN_SYSTEMS: { key: DesignSystem; label: string; swatch: string }[] = [
-  { key: 'default', label: 'Default', swatch: 'bg-zinc-900' },
-  { key: 'ocean', label: 'Ocean', swatch: 'bg-blue-600' },
-  { key: 'forest', label: 'Forest', swatch: 'bg-emerald-700' },
-  { key: 'sunset', label: 'Sunset', swatch: 'bg-amber-700' },
-]
-
-/** Firm-wide brand colour (sidebar mark, primary buttons, active nav, focus ring) — same for everyone in the firm,
- * unlike each person's own light/dark theme choice. Saves immediately, like the logo. */
-function DesignSystemCard({ disabledReason }: { disabledReason: string | null }) {
-  const { firm } = useSession()
-  const update = useUpdateFirm()
-  return (
-    <section className={card} aria-labelledby="design-system-heading">
-      <header className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <h2 id="design-system-heading" className="font-semibold">
-          Design system
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">The brand colour everyone in your firm sees, separate from each person's own light/dark theme.</p>
-      </header>
-      <div className="flex flex-wrap gap-3 p-5" role="radiogroup" aria-label="Design system">
-        {DESIGN_SYSTEMS.map((d) => (
-          <button
-            key={d.key}
-            type="button"
-            role="radio"
-            aria-checked={firm.designSystem === d.key}
-            disabled={!!disabledReason || update.isPending}
-            onClick={() => update.mutate({ designSystem: d.key })}
-            className={`${ring} flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              firm.designSystem === d.key ? 'border-zinc-900 dark:border-white' : 'border-zinc-200 hover:border-zinc-400 dark:border-zinc-700'
-            }`}
-          >
-            <span className={`size-4 shrink-0 rounded-full ${d.swatch}`} aria-hidden />
-            {d.label}
-          </button>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 type Stmt = Pick<Firm, 'statementNote' | 'discrepancyDays' | 'showRegistrationOnStatement'>
 const STMT_KEYS: (keyof Stmt)[] = ['statementNote', 'discrepancyDays', 'showRegistrationOnStatement']
 
@@ -346,9 +296,9 @@ function StatementsCard({ disabledReason }: { disabledReason: string | null }) {
         <>
           <Field label="Footer note">
             <textarea value={d.statementNote} rows={3} onChange={(e) => set({ statementNote: e.target.value })} className={input} />
-            <span className="text-zinc-500 dark:text-zinc-400">
+            <span className="rnr-hint">
               Use <code>{'{days}'}</code> where the discrepancy period should appear.{' '}
-              <button type="button" className="underline" onClick={() => set({ statementNote: DEFAULT_NOTE })}>
+              <button type="button" className="rnr-link" onClick={() => set({ statementNote: DEFAULT_NOTE })}>
                 Use the default
               </button>
             </span>
@@ -357,8 +307,8 @@ function StatementsCard({ disabledReason }: { disabledReason: string | null }) {
             <Field label="Discrepancy period (days)">
               <input type="number" min={1} max={365} value={d.discrepancyDays} onChange={(e) => set({ discrepancyDays: Number(e.target.value) })} className={input} />
             </Field>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input type="checkbox" checked={d.showRegistrationOnStatement} onChange={(e) => set({ showRegistrationOnStatement: e.target.checked })} className="size-4 accent-zinc-900" />
+            <label className="rnr-check self-end">
+              <input type="checkbox" checked={d.showRegistrationOnStatement} onChange={(e) => set({ showRegistrationOnStatement: e.target.checked })} />
               Show registration no. on statements
             </label>
           </Grid>
@@ -397,8 +347,8 @@ function RegionalCard({ disabledReason }: { disabledReason: string | null }) {
       form={(d, set) => (
         <>
           <Field label="Currency">
-            <input value={firm.currency} readOnly aria-readonly className={`${input} bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50`} />
-            <span className="text-zinc-500 dark:text-zinc-400">Set when your firm was created. It can't change once transactions exist.</span>
+            <input value={firm.currency} readOnly aria-readonly className={input} />
+            <span className="rnr-hint">Set when your firm was created. It can't change once transactions exist.</span>
           </Field>
           <Grid>
             <Field label="Date format">
@@ -429,13 +379,12 @@ function RegionalCard({ disabledReason }: { disabledReason: string | null }) {
 
 function DataCard() {
   return (
-    <section className={card} aria-labelledby="data-heading">
-      <header className="px-5 py-4">
-        <h2 id="data-heading" className="font-semibold">
-          Data
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to our servers.' : 'Your data is stored securely on our servers and backed up daily. Nothing to set up here.'}</p>
-      </header>
+    <section className="rnr-folder" aria-labelledby="data-heading">
+      <span className="rnr-folder-tab" id="data-heading">Data</span>
+      <div className="rnr-folder-body">
+        <div className="rnr-perf" aria-hidden="true" />
+        <p className="rnr-muted">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to a server.' : 'Your data is stored securely and backed up daily. Nothing to set up here.'}</p>
+      </div>
     </section>
   )
 }
@@ -444,10 +393,10 @@ export function SettingsPage() {
   const s = useSession()
   const disabledReason = s.can('settings.manage') && s.canWrite ? null : (s.writeBlockReason ?? "Your role can't change settings")
   return (
-    <div className="grid max-w-3xl grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-6">
+      <AppearanceSettings />
       <BillingPage />
       <OrganisationCard disabledReason={disabledReason} />
-      <DesignSystemCard disabledReason={disabledReason} />
       <BankAccountsCard />
       <StatementsCard disabledReason={disabledReason} />
       <RegionalCard disabledReason={disabledReason} />

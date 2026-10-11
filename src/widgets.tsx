@@ -1,5 +1,6 @@
+import { axisGutter } from './chartGeometry'
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
-import { monthlyFlow, today, type Txn } from './ledger'
+import { monthlyFlow, signedMoney, today, type Txn } from './ledger'
 import { sumBalances } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
@@ -14,16 +15,13 @@ type QueryState = { isPending: boolean; error: Error | null }
 /** Loading placeholders sized like each widget's real content, so the grid doesn't jump when data lands. */
 const LOADING = {
   kpi: (
-    <div className="flex items-end justify-between gap-3">
-      <div className="grid gap-2"><Skeleton className="h-8 w-36" /><Skeleton className="h-4 w-44" /></div>
-      <Skeleton className="size-10 rounded-xl" />
-    </div>
+    <div className="grid gap-2"><Skeleton className="h-11 w-36" /><Skeleton className="h-4 w-44" /></div>
   ),
-  chart: <Skeleton className="h-[248px] w-full rounded-xl" />,
+  chart: <Skeleton className="h-[248px] w-full" />,
   list: (
     <div className="grid gap-3.5">
       {[0, 1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="flex items-center gap-3"><Skeleton className="size-8 rounded-full" /><Skeleton className="h-4 flex-1" /><Skeleton className="h-4 w-20" /></div>
+        <div key={i} className="flex items-center gap-3"><Skeleton className="size-8" /><Skeleton className="h-4 flex-1" /><Skeleton className="h-4 w-20" /></div>
       ))}
     </div>
   ),
@@ -55,19 +53,13 @@ function MoneyKpi({ metric }: { metric: 'net' | 'in' | 'out' }) {
   const m = sumBalances(monthQ.data ?? [])
   const value = { net: all.closing, in: all.receipts, out: all.payments }[metric]
   const month = { net: m.receipts - m.payments, in: m.receipts, out: m.payments }[metric]
-  const tone = metric === 'in' ? 'bg-in/10 text-in' : metric === 'out' ? 'bg-out/10 text-out' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
   return (
-    <div className="flex items-end justify-between gap-3">
-      <div className="min-w-0">
-        <p className={`truncate text-xl font-semibold tracking-tight tabular-nums 2xl:text-2xl ${value < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(value)}</p>
-        <p className="mt-1 text-sm text-zinc-500 tabular-nums">
-          {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {money.format(month)}
-        </p>
-      </div>
-      <span aria-hidden className={`hidden size-10 shrink-0 place-items-center rounded-xl 2xl:grid ${tone}`}>
-        <Icon name={metric === 'net' ? 'wallet' : metric} className="size-5" />
-      </span>
-    </div>
+    <>
+      <p className="rnr-kpi-figure">{money.format(value)}</p>
+      <p className="rnr-caption rnr-num">
+        {metric === 'net' ? 'Net movement' : metric === 'in' ? 'Receipts' : 'Payments'} MTD {money.format(month)}
+      </p>
+    </>
   )
 }
 
@@ -79,19 +71,14 @@ function ClientsKpi() {
   const clients = clientsQ.data ?? []
   const overdrawn = (balancesQ.data ?? []).filter((r) => r.closing < 0).length
   return (
-    <div className="flex items-end justify-between gap-3">
-      <div>
-        <p className="text-2xl font-semibold tracking-tight tabular-nums">{clients.filter((c) => c.status === 'active').length}</p>
-        <p className="mt-1 text-sm text-zinc-500">{overdrawn ? `${overdrawn} in debit balance` : 'No debit balances'}</p>
-      </div>
-      <span aria-hidden className="hidden size-10 place-items-center rounded-xl bg-zinc-100 2xl:grid text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-        <Icon name="users" className="size-5" />
-      </span>
-    </div>
+    <>
+      <p className="rnr-kpi-figure">{clients.filter((c) => c.status === 'active').length}</p>
+      <p className="rnr-caption">{overdrawn ? `${overdrawn} in debit balance` : 'No debit balances'}</p>
+    </>
   )
 }
 
-const CHART = { w: 640, h: 220, top: 12, bottom: 28, left: 52 }
+const CHART = { w: 640, h: 220, top: 12, bottom: 28 }
 
 const barPath = (x: number, y: number, w: number, h: number) => {
   const r = Math.min(4, w / 2, h)
@@ -105,62 +92,73 @@ function Cashflow() {
   return queryStatus('chart', ledger) ?? <CashflowChart txns={ledger.data ?? []} />
 }
 
+const TIP = { w: 232, h: 84 }
+
 export function CashflowChart({ txns }: { txns: Txn[] }) {
   const money = useMoney()
   const flow = useMemo(() => monthlyFlow(txns, 6, today()), [txns])
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(1, ...flow.flatMap((f) => [f.in, f.out]))
   const plotH = CHART.h - CHART.top - CHART.bottom
-  const slot = (CHART.w - CHART.left) / flow.length
-  const barW = Math.min(28, slot * 0.28)
   const y = (v: number) => CHART.top + plotH - (v / max) * plotH
   const ticks = [0, 0.5, 1].map((p) => p * max)
+  const left = axisGutter(ticks.map(money.compact))
+  const slot = (CHART.w - left) / flow.length
+  const barW = Math.min(28, slot * 0.28)
   const active = hover === null ? null : flow[hover]
+  const tipX = hover === null ? 0 : Math.min(Math.max(left + slot * hover + slot / 2 - TIP.w / 2, left), CHART.w - TIP.w)
 
   return (
-    <div>
-      <div className="mb-2 flex items-center gap-4 text-xs text-zinc-500" aria-hidden>
-        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-in" /> Receipts</span>
-        <span className="flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-out" /> Payments</span>
-        <span className="ml-auto">Last 6 months</span>
-      </div>
-      <div className="relative">
-        <svg viewBox={`0 0 ${CHART.w} ${CHART.h}`} className="w-full" role="img" aria-label="Receipts and payments by month" onMouseLeave={() => setHover(null)}>
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={CHART.left} x2={CHART.w} y1={y(t)} y2={y(t)} className="stroke-zinc-200 dark:stroke-zinc-800" strokeDasharray={t ? '3 4' : undefined} />
-              <text x={CHART.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-zinc-400 text-[11px] tabular-nums">
-                {money.compact(t)}
+    <div className="rnr-chart-wrap">
+      <ul className="rnr-chart-legend mb-2" aria-hidden>
+        <li><svg width="10" height="10"><rect width="10" height="10" className="rnr-chart-bar" /></svg><Icon name="in" className="size-3.5" />Receipts</li>
+        <li><svg width="10" height="10"><rect width="10" height="10" className="rnr-chart-bar" data-series="out" /></svg><Icon name="out" className="size-3.5" />Payments</li>
+        <li className="ml-auto">Last 6 months</li>
+      </ul>
+      <svg viewBox={`0 0 ${CHART.w} ${CHART.h}`} className="rnr-chart" role="img" aria-label="Receipts and payments by month" data-hovering={hover === null ? undefined : ''} onMouseLeave={() => setHover(null)}>
+        <defs>
+          <pattern id="rnr-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)" className="text-series-2">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" strokeWidth="2" />
+          </pattern>
+        </defs>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={left} x2={CHART.w} y1={y(t)} y2={y(t)} className={t ? 'rnr-chart-grid' : 'rnr-chart-zero'} strokeDasharray={t ? '3 4' : undefined} />
+            <text x={left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="rnr-chart-axis">
+              {money.compact(t)}
+            </text>
+          </g>
+        ))}
+        {flow.map((f, i) => {
+          const cx = left + slot * i + slot / 2
+          const on = hover === i ? '' : undefined
+          return (
+            <g key={f.key} onMouseEnter={() => setHover(i)}>
+              <rect x={cx - slot / 2} y={CHART.top} width={slot} height={plotH + CHART.bottom} className="rnr-chart-hit" />
+              {f.in > 0 && <path d={barPath(cx - barW - 1, y(f.in), barW, y(0) - y(f.in))} className="rnr-chart-bar" data-active={on} />}
+              {f.out > 0 && (
+                <>
+                  <path d={barPath(cx + 1, y(f.out), barW, y(0) - y(f.out))} className="rnr-chart-bar" data-series="out" data-active={on} />
+                  <rect x={cx + 1 + barW / 2 - 4} y={y(f.out) - 11} width="8" height="8" className="rnr-chart-mark" data-series="out" data-active={on} />
+                </>
+              )}
+              <text x={cx} y={CHART.h - 8} textAnchor="middle" className="rnr-chart-axis">
+                {f.label}
               </text>
             </g>
-          ))}
-          {flow.map((f, i) => {
-            const cx = CHART.left + slot * i + slot / 2
-            return (
-              <g key={f.key} onMouseEnter={() => setHover(i)} className={hover !== null && hover !== i ? 'opacity-40 transition-opacity' : 'transition-opacity'}>
-                <rect x={cx - slot / 2} y={CHART.top} width={slot} height={plotH + CHART.bottom} fill="transparent" />
-                {f.in > 0 && <path d={barPath(cx - barW - 1, y(f.in), barW, y(0) - y(f.in))} className="fill-in" />}
-                {f.out > 0 && <path d={barPath(cx + 1, y(f.out), barW, y(0) - y(f.out))} className="fill-out" />}
-                <text x={cx} y={CHART.h - 8} textAnchor="middle" className="fill-zinc-500 text-[11px]">
-                  {f.label}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
-        {active && hover !== null && (
-          <div
-            className="pointer-events-none absolute top-0 z-10 w-44 -translate-x-1/2 rounded-lg border border-zinc-200 bg-white p-3 text-xs shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
-            style={{ left: `${((CHART.left + slot * hover + slot / 2) / CHART.w) * 100}%` }}
-          >
-            <p className="mb-1.5 font-medium">{active.label} {active.key.slice(0, 4)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-in" />Receipts</span>{money.format(active.in)}</p>
-            <p className="flex justify-between gap-2 tabular-nums"><span className="flex items-center gap-1.5 text-zinc-500"><i className="size-2 rounded-sm bg-out" />Payments</span>{money.format(active.out)}</p>
-            <p className="mt-1.5 flex justify-between gap-2 border-t border-zinc-100 pt-1.5 font-medium tabular-nums dark:border-zinc-800"><span>Net cash flow</span>{money.format(active.in - active.out)}</p>
-          </div>
+          )
+        })}
+        {active && (
+          <g className="rnr-chart-tip" transform={`translate(${tipX} ${CHART.top})`}>
+            <rect width={TIP.w} height={TIP.h} rx="8" />
+            <text x="12" y="20" fontWeight="500">{active.label} {active.key.slice(0, 4)}</text>
+            <text x="12" y="40">Receipts</text><text x={TIP.w - 12} y="40" textAnchor="end" className="rnr-chart-value">{money.format(active.in)}</text>
+            <text x="12" y="58">Payments</text><text x={TIP.w - 12} y="58" textAnchor="end" className="rnr-chart-value">{money.format(active.out)}</text>
+            <text x="12" y="76" fontWeight="500">Net cash flow</text><text x={TIP.w - 12} y="76" textAnchor="end" className="rnr-chart-value">{money.format(active.in - active.out)}</text>
+          </g>
         )}
-      </div>
-      <table className="sr-only">
+      </svg>
+      <table className="rnr-sr-only">
         <caption>Receipts and payments by month</caption>
         <thead><tr><th>Month</th><th>Receipts</th><th>Payments</th></tr></thead>
         <tbody>{flow.map((f) => <tr key={f.key}><td>{f.label}</td><td>{money.format(f.in)}</td><td>{money.format(f.out)}</td></tr>)}</tbody>
@@ -184,18 +182,16 @@ function Balances() {
   if (status) return status
   if (!rows.length) return <Empty text="No clients yet." action={<a href="#clients" className={btn.ghost}>Go to clients</a>} />
   return (
-    <ul className="grid gap-3">
+    <ul className="grid grid-cols-1 gap-3">
       {rows.slice(0, 6).map((r) => (
         <li key={r.id} className="flex items-center gap-3">
           <Avatar name={r.name} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <a href={`#clients/${r.id}`} className="truncate text-sm font-medium hover:underline">{r.name}</a>
-              <span className={`text-sm font-medium tabular-nums ${r.net < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{money.format(r.net)}</span>
+              <a href={`#clients/${r.id}`} className="rnr-link min-w-0 truncate pointer-coarse:py-2.5">{r.name}</a>
+              <span className="rnr-amt" data-neg={r.net < 0 || undefined}>{money.format(r.net)}</span>
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-              <div className={`h-full rounded-full ${r.net < 0 ? 'bg-red-500' : 'bg-zinc-800 dark:bg-zinc-300'}`} style={{ width: `${(Math.abs(r.net) / max) * 100}%` }} />
-            </div>
+            <progress className="rnr-progress mt-1.5 h-1.5" value={Math.abs(r.net)} max={max} aria-hidden />
           </div>
         </li>
       ))}
@@ -218,20 +214,19 @@ function Recent() {
 function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) {
   const money = useMoney()
   return (
-    <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+    <ul className="grid grid-cols-1">
       {txns.map((t) => (
-        <li key={t.id} className="group flex items-center gap-3 py-2.5">
+        <li key={t.id} className="flex items-center gap-3 border-b border-line py-2.5 last:border-b-0">
           <KindBadge kind={t.kind} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{names?.get(t.clientId) ?? (t.note || (t.kind === 'in' ? 'Receipt' : 'Payment'))}</p>
-            <p className="truncate text-xs text-zinc-500">
+            <p className="truncate">{names?.get(t.clientId) ?? (t.note || (t.kind === 'in' ? 'Receipt' : 'Payment'))}</p>
+            <p className="rnr-caption truncate">
               {names && t.note ? `${t.note} · ` : ''}
               {new Date(`${t.date}T00:00`).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
-          <span className={`text-sm font-medium tabular-nums ${t.kind === 'in' ? 'text-in' : ''}`}>
-            {t.kind === 'in' ? '+' : '−'}
-            {money.format(t.amount)}
+          <span className="rnr-amt">
+            {signedMoney(t.kind, t.amount, money.format)}
           </span>
         </li>
       ))}
@@ -242,7 +237,7 @@ function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) 
 /** Empty state: says what happened and, via `action`, what to do next. */
 export function Empty({ text, action }: { text: string; action?: ReactNode }) {
   return (
-    <div className="grid min-h-24 content-center justify-items-center gap-3 rounded-xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
+    <div className="rnr-empty">
       <p>{text}</p>
       {action}
     </div>
@@ -251,14 +246,14 @@ export function Empty({ text, action }: { text: string; action?: ReactNode }) {
 
 function QuickAdd() {
   const gate = useGate('transactions.post', 'record transactions')
-  return gate.ok ? <TxnForm /> : <p className="text-sm text-zinc-500">{gate.title}</p>
+  return gate.ok ? <TxnForm /> : <p className="rnr-muted">{gate.title}</p>
 }
 
-export const WIDGETS: Record<WidgetType, { title: string; blurb: string; span: Span; Component: ComponentType }> = {
-  net: { title: 'Client funds held', blurb: 'Receipts less payments', span: 1, Component: () => <MoneyKpi metric="net" /> },
-  in: { title: 'Total receipts', blurb: 'All funds received', span: 1, Component: () => <MoneyKpi metric="in" /> },
-  out: { title: 'Total payments', blurb: 'All funds disbursed', span: 1, Component: () => <MoneyKpi metric="out" /> },
-  clients: { title: 'Active clients', blurb: 'Count and debit balances', span: 1, Component: ClientsKpi },
+export const WIDGETS: Record<WidgetType, { title: string; blurb: string; span: Span; kpi?: true; Component: ComponentType }> = {
+  net: { kpi: true, title: 'Client funds held', blurb: 'Receipts less payments', span: 1, Component: () => <MoneyKpi metric="net" /> },
+  in: { kpi: true, title: 'Total receipts', blurb: 'All funds received', span: 1, Component: () => <MoneyKpi metric="in" /> },
+  out: { kpi: true, title: 'Total payments', blurb: 'All funds disbursed', span: 1, Component: () => <MoneyKpi metric="out" /> },
+  clients: { kpi: true, title: 'Active clients', blurb: 'Count and debit balances', span: 1, Component: ClientsKpi },
   cashflow: { title: 'Cash flow', blurb: 'Receipts vs payments, 6 months', span: 2, Component: Cashflow },
   balances: { title: 'Client balances', blurb: 'Funds held per client', span: 2, Component: Balances },
   recent: { title: 'Recent transactions', blurb: 'Latest ledger entries', span: 2, Component: Recent },

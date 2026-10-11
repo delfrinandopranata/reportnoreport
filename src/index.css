@@ -1,71 +1,83 @@
+@import "../v2/design/fonts/fonts.css";
+@import "../v2/design/tokens.css";
+@import "../v2/design/components/bundle.css";
 @import "tailwindcss";
 
-/* dark: responds to <html class="dark"> (set by useTheme); OS default is bootstrapped in app/index.html before paint. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* v2/design owns every rnr-* class (in @layer components). Never write unlayered CSS that targets rnr-* here. v1 imports it by relative path; never copy it. Spec: v2/design/README.md */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Chart/series identity: receipts = blue, payments = orange (validated categorical slots 1–2). */
-  --color-in: #2873ce; /* design-system/tokens.json `in` (light): darkened from #2a78d6 for 4.5:1 as text */
-  --color-out: #eb6834;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-in: #3987e5;
-    --color-out: #d95926;
-  }
+@theme inline {
+  --color-canvas: var(--canvas); --color-surface: var(--surface); --color-field: var(--field); --color-soft: var(--soft);
+  --color-line: var(--line); --color-line-strong: var(--line-strong); --color-edge: var(--edge);
+  --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-ink-3: var(--ink-3);
+  --color-acc-a: var(--acc-a); --color-on-acc: var(--on-acc); --color-down: var(--down); --color-down-bg: var(--down-bg);
+  --color-ok-ink: var(--ok-ink); --color-tint: var(--tint); --color-stamp: var(--stamp); --color-strike: var(--strike);
+  --color-link: var(--link); --color-series-1: var(--series-1); --color-series-2: var(--series-2);
+  --font-sans: var(--font-ui);
 }
 
-/* Firm-level design system (brand colour): sidebar mark, primary buttons, active nav, focus ring.
-   Set via [data-design] on <html>, independent of the .dark class. "default" = the plain fallback
-   below, so an unknown/loading firm still renders the original look. Each system carries its own
-   light and dark shade so text/icons on top keep enough contrast against both. */
-:root {
-  --brand-solid: #18181b; /* zinc-900 */
-  --brand-solid-ink: #ffffff;
-}
-:root.dark {
-  --brand-solid: #ffffff;
-  --brand-solid-ink: #18181b; /* zinc-900 */
-}
-:root[data-design="ocean"] {
-  --brand-solid: #2563eb; /* blue-600 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="ocean"].dark {
-  --brand-solid: #3b82f6; /* blue-500 */
-  --brand-solid-ink: #18181b;
-}
-:root[data-design="forest"] {
-  --brand-solid: #047857; /* emerald-700 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="forest"].dark {
-  --brand-solid: #10b981; /* emerald-500 */
-  --brand-solid-ink: #18181b;
-}
-:root[data-design="sunset"] {
-  --brand-solid: #b45309; /* amber-700 */
-  --brand-solid-ink: #ffffff;
-}
-:root[data-design="sunset"].dark {
-  --brand-solid: #f59e0b; /* amber-500 */
-  --brand-solid-ink: #18181b;
-}
+body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
-body {
-  @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+/* v1 paper: batch 7 — clients, ledger, statements (Task 7 only) */
+@layer components {
+  .rnr-ledger tfoot td:empty::after { content: none; }
+  /* A link inside a banner (demo "Sign in", "Pay") is a 44px target on touch screens. */
+  @media (pointer: coarse) { .rnr-note--bar .rnr-link { display: inline-flex; align-items: center; min-height: var(--touch); } }
+  .rnr-statement-summary dd[data-neg] { color: var(--sheet-down); }
+  /* Cells borrowed from the on-screen ledger must not bring theme or accent colour onto the sheet. */
+  .rnr-statement .rnr-muted, .rnr-statement .rnr-link, .rnr-statement .rnr-status, .rnr-statement .rnr-chip { color: inherit; background: none; border: 0; padding: 0; text-decoration: none; }
+  .rnr-statement .rnr-avatar, .rnr-statement .rnr-kind { display: none; }
 }
+/* v1 paper: batch 8 — dashboard, checklist, tour (Task 8 only) */
+@layer components {
+  /* A KPI widget is a folder whose tab is the title; the tab wraps instead of clipping. */
+  .rnr-kpi-widget { display: flex; height: 100%; min-width: 0; }
+  .rnr-kpi-widget > .rnr-kpi-tile { display: flex; flex: 1; flex-direction: column; min-width: 0; padding-top: 0; }
+  .rnr-kpi-widget .rnr-folder-tab { position: relative; height: auto; min-height: var(--folder-tab-h); max-width: calc(100% - var(--folder-shoulder)); align-self: flex-start; padding-block: var(--space-2); white-space: normal; overflow-wrap: anywhere; }
+  .rnr-kpi-widget .rnr-folder-body { flex: 1; align-content: start; }
+  .rnr-kpi-widget .rnr-folder-body { container-type: inline-size; }
+  .rnr-kpi-widget .rnr-kpi-figure { max-width: 100%; font-size: clamp(18px, 11cqi, 40px); line-height: 1.2; overflow-wrap: anywhere; } /* a money figure shrinks with its tile instead of wrapping */
+  .rnr-widget-bar { display: flex; align-items: center; gap: var(--space-1); justify-self: stretch; width: 100%; }
+  .rnr-kpi-widget[data-state="editing"] .rnr-folder-body { box-shadow: 0 0 0 4px var(--soft); }
+  .rnr-kpi-widget[data-state="placeholder"] { opacity: var(--opacity-placeholder); }
+  .rnr-kpi-widget[data-state="placeholder"] .rnr-folder-body { outline: 1.5px dashed var(--line-strong); outline-offset: -1px; }
+  .rnr-kpi-widget[data-state="overlay"] { transform: rotate(1deg); cursor: grabbing; }
+  .rnr-kpi-widget[data-state="overlay"] .rnr-folder-body { box-shadow: var(--sh-menu); }
+  [data-motion="flat"] .rnr-kpi-widget[data-state="overlay"] { transform: none; }
+  .rnr-drag-overlay, .rnr-drag-overlay > .rnr-card, .rnr-drag-overlay > .rnr-kpi-widget { height: 100%; }
+  .rnr-checklist-label { flex: 1 1 auto; min-width: 0; }
+  .rnr-checklist-summary .rnr-btn { flex: none; }
+}
+/* v1 paper: batch 9 — settings, users, contracts (Task 9 only) */
+/* v1 paper: batch 10 — auth, admin, homepage (Task 10 only) */
+/* The homepage headline joke: "report" struck through to read "repot". The bar draws itself in on load. */
+@keyframes strike-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.strike-mark { position: relative; display: inline-block; color: var(--ink-3); }
+.strike-mark::after {
+  content: ""; pointer-events: none; position: absolute; left: 50%; top: 55%; width: .95em; height: .085em;
+  border-radius: var(--r-bar); background: var(--strike); transform: translate(-50%, -50%) rotate(-62deg);
+  animation: strike-draw 500ms ease-out 450ms both;
+}
+[data-motion="flat"] .strike-mark::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { .strike-mark::after { animation: none; } }
+.reveal-group > :nth-child(2) { transition-delay: 80ms; }
+.reveal-group > :nth-child(3) { transition-delay: 160ms; }
+.reveal-group > :nth-child(4) { transition-delay: 240ms; }
+.reveal-group > :nth-child(5) { transition-delay: 320ms; }
+.reveal-group > :nth-child(6) { transition-delay: 400ms; }
+.reveal-group > :nth-child(7) { transition-delay: 480ms; }
+
 
 @media print {
   @page {
     size: A4;
     margin: 14mm;
   }
-  body {
-    background: white;
+  /* A printed page is paper: no theme canvas behind it, in any theme or accent. */
+  .rnr-shell, .rnr-page {
+    background: var(--sheet-paper);
   }
+  .rnr-shell { min-height: 0; }
 }
 
 /* Wide ledgers print landscape; statements keep the portrait A4 default. */

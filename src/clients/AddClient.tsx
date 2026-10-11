@@ -33,7 +33,7 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
       // shown below via create.error
     }
   }
-  const error = (key: keyof ClientErrors) => errors[key] && <span className="text-sm text-red-600 dark:text-red-400" role="alert">{errors[key]}</span>
+  const error = (key: keyof ClientErrors) => errors[key] && <span className="rnr-error" role="alert">{errors[key]}</span>
 
   return (
     <Dialog open={open} onClose={close} title="Add client">
@@ -52,8 +52,8 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
         <Field label="Primary contact">
           <input value={form.contact} onChange={(e) => set('contact', e.target.value)} placeholder="Optional" className={input} />
         </Field>
-        <div className="grid gap-1.5 text-sm">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">Phone</span>
+        <div className="rnr-field">
+          <span className="rnr-label">Phone</span>
           <PhoneField value={form.phone} onChange={(v) => set('phone', v)} invalid={!!errors.phone} />
           {error('phone')}
         </div>
@@ -61,12 +61,12 @@ export function AddClient({ open, onClose }: { open: boolean; onClose: () => voi
           <input value={form.email} onChange={(e) => set('email', e.target.value)} type="email" placeholder="Optional" aria-invalid={!!errors.email} className={input} />
           {error('email')}
         </Field>
-        <div className="grid gap-1.5 text-sm">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">Status</span>
+        <div className="rnr-field">
+          <span className="rnr-label">Status</span>
           <div><StatusSelect status={form.status} onChange={(v) => set('status', v)} /></div>
         </div>
-        <div className="grid gap-1.5 text-sm">
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">Tags</span>
+        <div className="rnr-field">
+          <span className="rnr-label">Tags</span>
           <TagList tags={form.tags} onChange={(v) => set('tags', v)} />
         </div>
         <MutationError error={create.error} />

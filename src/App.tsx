@@ -1,22 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ClientProfile, type ClientTab } from './ClientProfile'
 import { ClientsPage } from './ClientsPage'
 import { ContractsPage } from './contracts/ContractsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { AccountMenu, Avatar, btn, Icon, ring, Dialog, ThemeToggle } from './ui'
+import { Avatar, btn, Icon, Dialog, ThemeToggle, Wordmark } from './ui'
 import { useSession } from './data/session'
-import { can, ROLE_LABEL } from './users/rules'
+import { ROLE_LABEL } from './users/rules'
+import { currentItem, navItems, phoneItems, type NavItem } from './nav'
 import { SettingsPage } from './settings/SettingsPage'
 import { UsersPage } from './users/UsersPage'
 import { trialState } from './trial'
 import { Tour } from './tour'
 import { useTour } from './tour/useTour'
-import { useSampleDataExists, useLoadSampleData, useRemoveSampleData, useTheme } from './data/queries'
+import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
+import { useAppearance } from './useAppearance'
 import { sampleControls } from './data/sampleData'
+import { formatMoney } from './ledger'
 
 type View = 'dashboard' | 'clients' | 'contracts' | 'users' | 'settings' | 'billing'
+
+/** Live matchMedia: the shell mounts the tour's data-tour hooks only on the layout that is actually visible. */
+const useDesktop = () =>
+  useSyncExternalStore(
+    (notify) => { const m = matchMedia('(min-width: 768px)'); m.addEventListener('change', notify); return () => m.removeEventListener('change', notify) },
+    () => matchMedia('(min-width: 768px)').matches,
+  )
 type Route = { view: View; clientId: string | null; statement: boolean; tab?: ClientTab }
 
 const readRoute = (): Route => {
@@ -31,11 +41,11 @@ const readRoute = (): Route => {
   return view === 'statement' ? { view: 'clients', clientId: null, statement: false } : { view: 'dashboard', clientId: null, statement: false }
 }
 
-const NAV = [
-  { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { view: 'clients', label: 'Clients', icon: 'users' },
-  { view: 'contracts', label: 'Contract Manager', icon: 'file' },
-] as const
+/** The one-off licence price, in ISO form like every other amount. */
+const PRICE = formatMoney(1000)
+
+/** Pages whose body is `rnr-wide`: their header follows, so the left edges line up. */
+const WIDE = new Set<View>(['clients', 'contracts', 'users'])
 
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all clients.' },
@@ -54,10 +64,51 @@ export default function App() {
 
   const queryClient = useQueryClient()
   const { profile, firm, signOut } = useSession()
-  const [theme, setTheme] = useTheme()
-  useEffect(() => {
-    document.documentElement.setAttribute('data-design', firm.designSystem)
-  }, [firm.designSystem])
+  const [appearance, saveAppearance] = useAppearance(profile.id)
+  const desktop = useDesktop()
+  const drawer = useRef<HTMLDialogElement>(null)
+  const items = navItems(profile.role)
+  const current = currentItem(route.view)
+  const tourId = (n: NavItem) => (n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : n.view === 'users' ? 'users-and-invites' : n.view === 'settings' ? 'settings-and-billing' : undefined)
+  const sideLink = (n: NavItem, inDrawer: boolean) => (
+    <li key={n.view}>
+      <a
+        className="rnr-side-link"
+        href={`#${n.view}`}
+        data-tour={desktop !== inDrawer ? tourId(n) : undefined}
+        aria-current={current === n.view ? 'page' : undefined}
+        onClick={inDrawer ? () => drawer.current?.close() : undefined}
+      >
+        <Icon name={n.icon} className="size-5" />
+        {n.label}
+      </a>
+    </li>
+  )
+  const account = (
+    <div className="rnr-account">
+      <Avatar name={profile.name} size="size-8" />
+      <div className="min-w-0 flex-1">
+        <p className="rnr-account-email line-clamp-2 whitespace-normal break-words" title={profile.name}>{profile.name}</p>
+        <p className="rnr-caption truncate">{ROLE_LABEL[profile.role]}</p>
+      </div>
+      <ThemeToggle theme={appearance.theme} setTheme={(theme) => void saveAppearance({ ...appearance, theme })} className="shrink-0" />
+      <button type="button" className="rnr-icon-btn" onClick={signOut} aria-label="Sign out" title="Sign out">
+        <Icon name="logout" className="size-5" />
+      </button>
+    </div>
+  )
+  const sideBody = (inDrawer: boolean) => (
+    <>
+      <p className="line-clamp-2 break-words px-3 text-sm font-medium text-ink" title={firm.name}>{firm.name}</p>
+      <nav aria-label={inDrawer ? 'Main menu' : 'Main'}>
+        <ul className="grid gap-0.5 p-0 list-none">{items.filter((n) => n.place === 'main').map((n) => sideLink(n, inDrawer))}</ul>
+      </nav>
+      <div className="rnr-side-foot">
+        <ul className="grid gap-0.5 p-0 list-none">{items.filter((n) => n.place === 'foot').map((n) => sideLink(n, inDrawer))}</ul>
+        {account}
+      </div>
+    </>
+  )
   const tour = useTour()
   const sampleDataExists = useSampleDataExists()
   const loadSample = useLoadSampleData()
@@ -98,8 +149,10 @@ export default function App() {
   const isDashboard = route.view === 'dashboard'
   const trial: ReturnType<typeof trialState> = useMemo(() => trialCheckTime ? trialState(firm, trialCheckTime) : { kind: 'none' as const }, [firm, trialCheckTime])
 
+  const title = HEADINGS[route.view].title
+  const at = title.lastIndexOf(' ')
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
+    <div className="rnr-shell">
       <a
         href="#main"
         onClick={(e) => {
@@ -107,77 +160,45 @@ export default function App() {
           e.preventDefault()
           document.getElementById('main')?.focus()
         }}
-        className={`sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-zinc-900 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white print:hidden dark:focus:bg-white dark:focus:text-zinc-900 ${ring}`}
+        className="rnr-skip rnr-btn rnr-btn-secondary print:hidden"
       >
         Skip to content
       </a>
-      <aside className="flex items-center print:hidden gap-1 border-b border-zinc-200 bg-white px-4 py-3 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:border-r lg:border-b-0 lg:px-3 lg:py-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mr-3 flex items-center gap-2.5 lg:mr-0 lg:mb-6 lg:px-2">
-          <span className="grid size-8 place-items-center rounded-lg bg-[var(--brand-solid)] text-[var(--brand-solid-ink)]">
-            <Icon name="wallet" />
-          </span>
-          <span className="hidden text-sm leading-tight font-semibold sm:block">
-            ReportNoReport
-          </span>
-        </div>
-        <nav aria-label="Main" className="flex gap-1 lg:flex-col">
-          {NAV.map((n) => (
-            <a
-              key={n.view}
-              href={`#${n.view}`}
-              data-tour={n.view === 'dashboard' ? 'dashboard' : n.view === 'clients' ? 'clients' : undefined}
-              aria-current={route.view === n.view ? 'page' : undefined}
-              className={`${ring} flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition lg:min-h-0 max-sm:min-w-11 max-sm:justify-center max-sm:px-2 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:text-[var(--brand-solid)] dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white dark:aria-[current=page]:bg-zinc-800 aria-[current=page]:font-semibold aria-[current=page]:shadow-[inset_3px_0_0_currentColor] max-lg:aria-[current=page]:shadow-[inset_0_-3px_0_currentColor]`}
-            >
-              <Icon name={n.icon} />
-              <span className="max-sm:sr-only">{n.label}</span>
-            </a>
-          ))}
-        </nav>
-        <AccountMenu
-          trigger={<Avatar name={profile.name} />}
-          name={profile.name}
-          roleLabel={`${firm.name} · ${ROLE_LABEL[profile.role]}`}
-          showUsers={can(profile.role, 'users.manage')}
-          onSignOut={signOut}
-          align="down"
-          className="ml-auto lg:hidden"
-        />
-        <ThemeToggle theme={theme} setTheme={setTheme} className="min-h-11 min-w-11 lg:hidden" />
-        <div className="mt-auto hidden items-center gap-2 px-2 lg:flex">
-          <AccountMenu
-            trigger={
-              <div className="flex min-w-0 items-center gap-2 py-1">
-                <Avatar name={profile.name} />
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-sm font-medium">{profile.name}</p>
-                  <p className="truncate text-xs text-zinc-500">{firm.name} · {ROLE_LABEL[profile.role]}</p>
-                </div>
-              </div>
-            }
-            name={profile.name}
-            roleLabel={`${firm.name} · ${ROLE_LABEL[profile.role]}`}
-            showUsers={can(profile.role, 'users.manage')}
-            onSignOut={signOut}
-            align="up"
-            side="left"
-            className="min-w-0 flex-1"
-          />
-          <ThemeToggle theme={theme} setTheme={setTheme} className="shrink-0" />
-        </div>
+      <aside className="rnr-side rnr-folder print:hidden">
+        <span className="rnr-folder-tab rnr-side-tab"><Wordmark href="#dashboard" /></span>
+        <div className="rnr-folder-body rnr-side-body">{desktop && sideBody(false)}</div>
       </aside>
+      <header className="rnr-topbar print:hidden">
+        <span className="rnr-topbar-mark"><Wordmark href="#dashboard" /></span>
+      </header>
+      <nav className="rnr-phonebar print:hidden" aria-label="Quick">
+        {phoneItems(items).map((n) => (
+          <a key={n.view} href={`#${n.view}`} aria-label={n.short} aria-current={current === n.view ? 'page' : undefined} data-tour={!desktop ? tourId(n) : undefined}>
+            <Icon name={n.icon} className="size-5" />
+          </a>
+        ))}
+        <button type="button" aria-label="Menu" aria-haspopup="dialog" onClick={() => drawer.current?.showModal()}>
+          <Icon name="layout" className="size-5" />
+        </button>
+      </nav>
+      <dialog ref={drawer} className="rnr-dialog rnr-drawer print:hidden" aria-label="Menu">
+        <button type="button" className="rnr-icon-btn self-end" aria-label="Close menu" onClick={() => drawer.current?.close()}>
+          <Icon name="x" className="size-5" />
+        </button>
+        {!desktop && sideBody(true)}
+      </dialog>
 
-      <main id="main" tabIndex={-1} className="w-full flex-1 px-4 py-6 sm:px-8 sm:py-8 outline-none print:p-0">
+      <main id="main" tabIndex={-1} className="rnr-page outline-none print:p-0">
         {canViewBanner && (
-          <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm print:hidden dark:border-blue-800 dark:bg-blue-950/30">
-            <span className="text-blue-900 dark:text-blue-100">You're exploring with sample data</span>
+          <div role="status" className="rnr-note rnr-note--bar mb-6 rounded-(--r-card) border print:hidden" data-tone="info">
+            <Icon name="info" className="size-5" />
+            <div>You're exploring with sample data</div>
             {canRemove && (
-              <button
-                onClick={() => setShowRemoveConfirm(true)}
-                className={`${ring} text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300`}
-              >
-                Remove
-              </button>
+              <div className="rnr-note-actions">
+                <button type="button" onClick={() => setShowRemoveConfirm(true)} className={btn.ghost}>
+                  Remove
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -187,11 +208,11 @@ export default function App() {
           onClose={() => setShowRemoveConfirm(false)}
           title="Remove sample data?"
         >
-          <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
+          <p className="rnr-muted mb-6">This deletes the sample clients, bank account and transactions. Your own records are kept.</p>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button className={btn.ghost} onClick={() => setShowRemoveConfirm(false)}>Cancel</button>
             <button
-              className={btn.primary}
+              className={btn.danger}
               onClick={async () => {
                 await removeSample.mutateAsync()
                 setShowRemoveConfirm(false)
@@ -201,7 +222,7 @@ export default function App() {
               {removeSample.isPending ? 'Removing…' : 'Remove sample data'}
             </button>
           </div>
-          {!!removeSample.error && <div className="text-red-600 dark:text-red-400 mt-3 text-sm">{removeSampleErrorMsg}</div>}
+          {!!removeSample.error && <p className="rnr-error mt-3" role="alert"><Icon name="alert" />{removeSampleErrorMsg}</p>}
         </Dialog>
 
         {trial.kind !== 'none' && (
@@ -209,31 +230,20 @@ export default function App() {
             role={trial.kind === 'active' ? 'status' : 'region'}
             aria-live={trial.kind === 'active' ? 'polite' : 'assertive'}
             aria-label={trial.kind === 'active' ? 'Trial status' : 'Trial ended'}
-            className={`mb-6 flex items-start gap-3 rounded-lg px-4 py-3 text-sm print:hidden ${
-              trial.kind === 'active'
-                ? trial.daysLeft <= 3
-                  ? 'border border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-100'
-                  : 'border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100'
-                : 'border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100'
-            }`}
+            data-tone={trial.kind === 'active' ? (trial.daysLeft <= 3 ? 'warn' : 'info') : 'down'}
+            className="rnr-note rnr-note--bar mb-6 rounded-(--r-card) border print:hidden"
           >
             {trial.kind === 'active' && (
               <>
-                <Icon
-                  name="check"
-                  className={`mt-0.5 size-5 shrink-0 ${
-                    trial.daysLeft <= 3 ? 'text-orange-600 dark:text-orange-300' : 'text-blue-600 dark:text-blue-300'
-                  }`}
-                  aria-hidden
-                />
-                <div className="flex-1 min-w-0">
+                <Icon name={trial.daysLeft <= 3 ? 'alert' : 'info'} className="size-5" />
+                <div>
                   <p className="font-medium">
                     {trial.daysLeft} {trial.daysLeft === 1 ? 'day' : 'days'} left in your free trial
-                    <span className="block text-xs opacity-90">(ends {trial.endsOn})</span>
+                    <span className="block text-xs">(ends {trial.endsOn})</span>
                   </p>
                   {profile.role === 'owner' && (
-                    <p className="mt-2 text-xs opacity-90">
-                      <a href="#settings/billing" className="font-medium underline opacity-100 hover:opacity-75">Pay RM 10</a> to keep using ReportNoReport.
+                    <p className="mt-2 text-xs">
+                      <a href="#settings/billing" className="rnr-link font-medium">Pay {PRICE}</a> to keep using ReportNoReport.
                     </p>
                   )}
                 </div>
@@ -241,11 +251,11 @@ export default function App() {
             )}
             {(trial.kind === 'ended' || trial.kind === 'read_only') && (
               <>
-                <Icon name="x" className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-300" aria-hidden />
-                <div className="flex-1 min-w-0">
+                <Icon name="alert" className="size-5" />
+                <div>
                   <p className="font-medium">
                     {trial.kind === 'ended' ? `Your free trial ended on ${trial.endedOn}` : 'This firm is read-only'}
-                    <span className="block text-xs opacity-90 mt-1">Your data is read-only. You can still view, export and print.</span>
+                    <span className="mt-1 block text-xs">Your data is read-only. You can still view, export and print.</span>
                   </p>
                 </div>
               </>
@@ -258,18 +268,19 @@ export default function App() {
           <ClientProfile key={route.clientId} id={route.clientId} tab={route.tab ?? 'client'} />
         ) : (
           <>
-        <header className="mb-6 flex flex-wrap items-center gap-3 print:hidden">
-          <div className="mr-auto">
-            <h1 className="text-2xl font-semibold tracking-tight">{HEADINGS[route.view].title}</h1>
-            <p className="text-sm text-zinc-500">{HEADINGS[route.view].subtitle}</p>
+        <header className={`rnr-page-head print:hidden${WIDE.has(route.view) ? ' rnr-wide' : ''}`}>
+          <div>
+            <h1 className="rnr-page-title">{at > 0 ? <>{title.slice(0, at)} <em>{title.slice(at + 1)}</em></> : title}</h1>
+            <p className="rnr-lede">{HEADINGS[route.view].subtitle}</p>
           </div>
-          <button type="button" className={`${btn.ghost}`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
+          <div className="rnr-page-actions">
+          <button type="button" className={`${btn.ghost} pointer-coarse:min-w-11`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
             <Icon name="search" />
           </button>
           {isDashboard && canImport && (
             <button
               type="button"
-              className={`${btn.ghost}`}
+              className={`${btn.ghost} pointer-coarse:min-w-11`}
               onClick={() => loadSample.mutate()}
               disabled={loadSample.isPending}
               title="Import sample data"
@@ -279,11 +290,12 @@ export default function App() {
             </button>
           )}
           {isDashboard && (
-            <button type="button" className={editing ? btn.primary : `${btn.ghost} border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900`} onClick={() => setEditing(!editing)}>
+            <button type="button" className={editing ? btn.primary : btn.secondary} onClick={() => setEditing(!editing)}>
               <Icon name={editing ? 'check' : 'layout'} />
               {editing ? 'Done' : 'Edit layout'}
             </button>
           )}
+          </div>
         </header>
         {route.view === 'users' ? <UsersPage /> : route.view === 'contracts' ? <ContractsPage /> : route.view === 'settings' || route.view === 'billing' ? <SettingsPage /> : isDashboard ? <Dashboard editing={editing} /> : <ClientsPage />}
           </>

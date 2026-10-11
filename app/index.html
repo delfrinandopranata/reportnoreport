@@ -1,23 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>ReportNoReport</title>
     <script>
-      // Runs before paint to avoid a flash of the wrong theme. The custom `dark` variant
-      // (src/index.css) is class-based only, so the OS default has to be applied here;
-      // useTheme (src/data/queries.ts) overwrites this once the stored preference loads.
-      (function () {
-        try {
-          var cached = localStorage.getItem('theme-bootstrap')
-          var dark = cached === 'dark' || (cached !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.classList.toggle('dark', dark)
-        } catch (e) {}
+      (() => {
+        // Mirrors htmlAttrs(readAppearance(stored)) from v2/design/appearance.ts; src/appearance.test.ts runs this against it.
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const pick = (list, v, d) => (list.includes(v) ? v : d)
+        const theme = pick(['light', 'dark', 'system'], s.theme, 'system')
+        const h = document.documentElement.dataset
+        h.theme = theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme
+        h.accent = pick(['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron'], s.accent, 'midnight')
+        h.density = pick(['comfortable', 'compact'], s.density, 'comfortable')
+        h.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : 'full'
       })()
     </script>
     <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments) }</script>

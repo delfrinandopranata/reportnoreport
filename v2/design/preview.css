@@ -1,0 +1,40 @@
+[hidden] { display: none !important; }
+/* Page chrome for the design previews only. Not part of the product; nothing here is a component. */
+html { background: var(--canvas); }
+body { margin: 0; font: var(--type-body); color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+.pv-bar { position: sticky; top: 0; z-index: 100; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 10px 24px; background: var(--side); border-bottom: 1px solid var(--line); }
+.pv-bar b { font: var(--type-wordmark); }
+.pv-bar label { display: inline-flex; align-items: center; gap: 8px; font: var(--type-caption); color: var(--ink-2); }
+.pv-bar select { min-height: 36px; padding: 0 10px; border: 1px solid var(--edge); border-radius: var(--r-control-sm); background: var(--field); color: var(--ink); font: var(--type-body-sm); }
+.pv-bar .rnr-seg > button { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.pv-nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-left: auto; font: var(--type-caption); }
+.pv-nav a { color: var(--link); }
+main.pv { max-width: 1120px; margin: 0 auto; padding: 32px 24px 96px; }
+.pv-sec { margin: 0 0 56px; scroll-margin-top: 90px; }
+.pv-sec > h2 { margin: 0 0 4px; font: var(--type-heading); font-variation-settings: "SOFT" 100, "opsz" 72; }
+.pv-sec > .pv-sub { margin: 0 0 20px; font: var(--type-caption); color: var(--ink-3); }
+.pv-sec > .pv-sub a { color: var(--link); }
+.pv-h { margin: 28px 0 10px; font: var(--type-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); }
+.pv-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.pv-col { display: grid; gap: 14px; }
+.pv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.pv-box { padding: 20px; border: 1px dashed var(--line-strong); border-radius: var(--r-card); }
+.pv-frame { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--canvas); }
+.pv-frame--tall { height: 720px; }
+.pv-frame .rnr-shell { min-height: 0; height: 100%; }
+.pv-frame .rnr-side { position: relative; height: 100%; }
+.pv-frame .rnr-phonebar { position: static; display: flex; }
+.pv-phone { width: 375px; max-width: 100%; border: 1px solid var(--line); border-radius: var(--r-panel); overflow: hidden; background: var(--canvas); }
+.pv-state { font: var(--type-caption); color: var(--ink-3); }
+.pv-radius { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.pv-radius > div { display: grid; place-items: center; height: 72px; background: var(--tint); color: var(--ink); font: var(--type-micro); letter-spacing: .06em; }
+.ic { width: 20px; height: 20px; flex: none; fill: currentColor; }
+.rnr-btn .ic, .rnr-menu-item .ic, .rnr-status .ic, .rnr-chip .ic, .rnr-trend .ic, .rnr-crumb .ic, .rnr-error .ic, .rnr-error-text .ic, .rnr-step-n .ic, .rnr-kind .ic, .rnr-seg .ic { width: 16px; height: 16px; }
+.rnr-side-link .ic, .rnr-icon-btn .ic, .rnr-phonebar .ic { width: 20px; height: 20px; }
+.pv-swatch { display: inline-block; width: 18px; height: 18px; border-radius: 5px; vertical-align: -4px; margin-right: 6px; }
+.pv-landing { padding: 28px; }
+.pv-landing .rnr-page-title { font-size: clamp(40px, 6vw, 72px); }
+@media (max-width: 640px) { .pv-bar { padding: 8px 12px; } main.pv { padding: 20px 12px 80px; } }
+.pv-col > .rnr-seg { justify-self: start; }
+.pv-phone .rnr-phonebar { position: static; display: flex; }
+.pv-col { align-content: start; }
