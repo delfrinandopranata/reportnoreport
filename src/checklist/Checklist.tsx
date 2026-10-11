@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
-import { Icon, ring } from '../ui'
+import { Icon, btn, ring } from '../ui'
 import { summarise, type ChecklistItem } from './summary'
+import sprite from '../../v2/design/icons/sprite.svg?url'
 
 export interface ChecklistProps {
   items: ChecklistItem[]
@@ -9,101 +10,67 @@ export interface ChecklistProps {
   onDismiss: () => void
 }
 
+/** The state glyphs the shared Icon map doesn't carry. */
+const STATE_GLYPH = { todo: 'circle', current: 'arrow-right', done: 'check-circle', skipped: 'minus-circle' } as const
+const STATE_WORD = { todo: 'To do', current: 'Next', done: 'Done', skipped: 'Skipped' } as const
+
+function Row({ item, state, action }: { item: ChecklistItem; state: keyof typeof STATE_GLYPH; action?: { label: string; aria: string; run: () => void } }) {
+  return (
+    <li className="rnr-checklist-item" data-state={state}>
+      <svg aria-hidden="true" focusable="false" fill="currentColor" className="rnr-icon">
+        <use href={`${sprite}#i-${STATE_GLYPH[state]}`} />
+      </svg>
+      <div className="rnr-checklist-label">
+        <a href={item.href} className={`${ring} rnr-link`}>{item.title}</a>
+        {state !== 'done' && <span className="rnr-caption block">{item.description}</span>}
+      </div>
+      <span className={state === 'todo' ? 'rnr-sr-only' : 'rnr-checklist-state'}>{STATE_WORD[state]}</span>
+      {action && (
+        <button type="button" onClick={action.run} className={`${btn.ghost} rnr-btn-sm`} aria-label={action.aria}>
+          {action.label}
+        </button>
+      )}
+    </li>
+  )
+}
+
 export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProps) {
   const [showSkipped, setShowSkipped] = useState(false)
   const summary = summarise(items)
-  const progressId = useId()
   const skippedId = useId()
 
   if (items.length === 0) return null
 
   return (
-    <div
-      className="rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
-      role="region"
-      aria-labelledby="checklist-title"
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800 sm:gap-4 sm:px-6">
-        <h2 id="checklist-title" className="text-base font-semibold text-zinc-900 dark:text-white">
-          Get started
-        </h2>
-        <button
-          onClick={onDismiss}
-          className={`${ring} shrink-0 rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300`}
-          aria-label="Dismiss checklist"
-        >
-          <Icon name="x" className="size-4" />
-        </button>
-      </div>
-
-      <div className="px-5 py-4 sm:px-6">
-        <div
-          id={progressId}
-          className="mb-4 text-sm text-zinc-600 dark:text-zinc-400"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {summary.doneCount} of {summary.totalCount} done
+    <section className="rnr-folder" role="region" aria-labelledby="checklist-title">
+      <span className="rnr-folder-tab" id="checklist-title">Get started</span>
+      <div className="rnr-folder-body">
+        <div className="rnr-perf" aria-hidden="true" />
+        <div className="rnr-checklist-summary">
+          <span className="rnr-caption" aria-live="polite" aria-atomic="true">
+            {summary.doneCount} of {summary.totalCount} done
+          </span>
+          <progress className="rnr-progress" max={summary.totalCount} value={summary.doneCount} aria-label={`Setup progress, ${summary.doneCount} of ${summary.totalCount}`} />
+          <button type="button" onClick={onDismiss} className={`${btn.ghost} rnr-btn-sm`} aria-label="Dismiss checklist">
+            <Icon name="x" className="size-4" />
+          </button>
         </div>
 
-        <ol className="space-y-2 mb-4">
-          {summary.todoItems.map((item) => (
-            <li
-              key={item.id}
-              className="group flex items-start gap-3 rounded-lg p-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            >
-              <div className="mt-1 size-5 shrink-0 rounded border border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900" />
-              <div className="flex-1 min-w-0">
-                <a
-                  href={item.href}
-                  className={`${ring} block truncate text-sm font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300`}
-                >
-                  {item.title}
-                </a>
-                <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
-                  {item.description}
-                </p>
-              </div>
-              <button
-                onClick={() => onSkip(item.id)}
-                className={`${ring} ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
-                aria-label={`Skip "${item.title}"`}
-              >
-                Skip
-              </button>
-            </li>
+        <ol className="rnr-checklist">
+          {summary.todoItems.map((item, i) => (
+            <Row key={item.id} item={item} state={i === 0 ? 'current' : 'todo'} action={{ label: 'Skip', aria: `Skip "${item.title}"`, run: () => onSkip(item.id) }} />
+          ))}
+          {summary.doneItems.map((item) => (
+            <Row key={item.id} item={item} state="done" />
           ))}
         </ol>
 
-        {summary.doneItems.length > 0 && (
-          <div className="mb-4 space-y-2">
-            {summary.doneItems.map((item) => (
-              <div
-                key={item.id}
-                className="group flex items-start gap-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900/40"
-              >
-                <div className="mt-1 flex size-5 shrink-0 items-center justify-center rounded border border-green-300 bg-green-50 text-green-600 dark:border-green-700 dark:bg-green-950 dark:text-green-400">
-                  <Icon name="check" className="size-3" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <a
-                    href={item.href}
-                    className={`${ring} block text-sm font-medium text-zinc-500 line-through dark:text-zinc-400`}
-                  >
-                    {item.title}
-                  </a>
-                  <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">Done</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {summary.skippedItems.length > 0 && (
-          <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <div className="mt-3 border-t border-line pt-3">
             <button
+              type="button"
               onClick={() => setShowSkipped(!showSkipped)}
-              className={`${ring} flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800`}
+              className={`${btn.ghost} rnr-btn-sm`}
               aria-expanded={showSkipped}
               aria-controls={skippedId}
             >
@@ -115,38 +82,15 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
             </button>
 
             {showSkipped && (
-              <ul id={skippedId} className="mt-2 space-y-2">
+              <ul id={skippedId} className="rnr-checklist mt-2">
                 {summary.skippedItems.map((item) => (
-                  <li
-                    key={item.id}
-                    className="group flex items-start gap-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900/40"
-                  >
-                    <div className="mt-1 size-5 shrink-0 rounded border border-zinc-300 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800" />
-                    <div className="flex-1 min-w-0">
-                      <a
-                        href={item.href}
-                        className={`${ring} block text-sm font-medium text-zinc-500 dark:text-zinc-400`}
-                      >
-                        {item.title}
-                      </a>
-                      <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-                        {item.description}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onRestore(item.id)}
-                      className={`${ring} ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium text-zinc-400 hover:bg-white hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300`}
-                      aria-label={`Restore "${item.title}"`}
-                    >
-                      Restore
-                    </button>
-                  </li>
+                  <Row key={item.id} item={item} state="skipped" action={{ label: 'Restore', aria: `Restore "${item.title}"`, run: () => onRestore(item.id) }} />
                 ))}
               </ul>
             )}
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }

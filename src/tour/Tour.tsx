@@ -9,6 +9,9 @@ export interface TourStep {
   position?: 'top' | 'bottom' | 'left' | 'right'
 }
 
+/** The popover's arrow sits on the side facing the target, opposite the side of the target the popover is on. */
+const ARROW_SIDE: Record<Position, Position> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }
+
 export interface TourProps {
   open: boolean
   step: TourStep
@@ -32,6 +35,8 @@ export interface TourProps {
 export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onSkip }: TourProps) {
   const dialogId = useId()
   const titleId = useId()
+  const bodyId = useId()
+  const spotRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const focusTrapRef = useRef<HTMLDivElement>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
@@ -160,96 +165,55 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
     }
   }, [open, onSkip])
 
-  if (!open) return null
+  // shortcut: top/left are viewport coordinates measured at run time, so they cannot be static classes;
+  // they go in as CSS custom properties (the only inline values here), the rest is .rnr-coach / .rnr-coach-spot.
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!open || !dialog) return
+    dialog.style.setProperty('--coach-top', `${popoverPos.top}px`)
+    dialog.style.setProperty('--coach-left', `${popoverPos.left}px`)
+    const spot = spotRef.current
+    if (!spot || !spotlightRect) return
+    spot.style.setProperty('--spot-top', `${spotlightRect.top}px`)
+    spot.style.setProperty('--spot-left', `${spotlightRect.left}px`)
+    spot.style.setProperty('--spot-width', `${spotlightRect.width}px`)
+    spot.style.setProperty('--spot-height', `${spotlightRect.height}px`)
+  }, [open, popoverPos, spotlightRect])
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!open) return null
 
   return (
     <>
-      {/* Backdrop with spotlight cutout */}
-      <div
-        className="fixed inset-0 z-40 bg-zinc-950/50 dark:bg-zinc-950/70"
-        onClick={onSkip}
-        aria-hidden="true"
-        style={{
-          WebkitMaskImage: spotlightRect
-            ? `radial-gradient(circle at ${spotlightRect.left + spotlightRect.width / 2}px ${spotlightRect.top + spotlightRect.height / 2}px,
-               transparent ${Math.max(spotlightRect.width, spotlightRect.height) / 2}px,
-               black ${Math.max(spotlightRect.width, spotlightRect.height) / 2 + 20}px)`
-            : 'none',
-          maskImage: spotlightRect
-            ? `radial-gradient(circle at ${spotlightRect.left + spotlightRect.width / 2}px ${spotlightRect.top + spotlightRect.height / 2}px,
-               transparent ${Math.max(spotlightRect.width, spotlightRect.height) / 2}px,
-               black ${Math.max(spotlightRect.width, spotlightRect.height) / 2 + 20}px)`
-            : 'none',
-          transition: prefersReducedMotion ? 'none' : 'mask-image 200ms ease-out, webkit-mask-image 200ms ease-out',
-        }}
-      />
+      {/* Click-away layer; the spotlight draws the scrim round the target, or this does when there is none. */}
+      <div className={`fixed inset-0 z-(--z-tip) ${spotlightRect ? '' : 'bg-(--scrim)'}`} onClick={onSkip} aria-hidden="true" />
+      {spotlightRect && <div ref={spotRef} className="rnr-coach-spot" aria-hidden="true" />}
 
-      {/* Popover */}
       <div
         ref={dialogRef}
         id={dialogId}
         role="dialog"
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl outline-none dark:border-zinc-800 dark:bg-zinc-900 ${
-          prefersReducedMotion ? '' : 'animate-in fade-in zoom-in-95'
-        }`}
-        style={{
-          top: `${popoverPos.top}px`,
-          left: `${popoverPos.left}px`,
-          transition: prefersReducedMotion ? 'none' : 'top 200ms ease-out, left 200ms ease-out',
-        }}
+        aria-describedby={bodyId}
+        className="rnr-coach"
+        data-arrow={spotlightRect ? ARROW_SIDE[popoverPos.arrowSide] : undefined}
       >
-        {/* Content */}
-        <div
-          ref={focusTrapRef}
-          className="flex flex-col gap-4"
-        >
-          <div>
-            <h2
-              id={titleId}
-              className="text-base font-semibold text-zinc-900 dark:text-white"
-            >
-              {step.title}
-            </h2>
-            <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-              {step.description}
-            </p>
-          </div>
+        <div ref={focusTrapRef}>
+          <p className="rnr-micro rnr-coach-count">{currentIndex + 1} of {totalSteps}</p>
+          <h2 id={titleId}>{step.title}</h2>
+          <p id={bodyId}>{step.description}</p>
 
-          {/* Step counter */}
-          <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Step {currentIndex + 1} of {totalSteps}
-          </div>
-
-          {/* Button group */}
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={currentIndex === 0}
-              aria-label={`Go to previous step${currentIndex === 0 ? ' (disabled)' : ''}`}
-              className={`${btn.ghost} flex-1 px-2.5 py-2 text-xs sm:text-sm`}
-            >
+          <div className="rnr-coach-actions">
+            <button type="button" onClick={onPrev} disabled={currentIndex === 0} className={btn.ghost}>
               <Icon name="back" className="size-3.5" />
-              <span className="hidden sm:inline">Back</span>
+              Back
             </button>
-
+            <button type="button" onClick={onSkip} className={btn.ghost} title="Skip tour (Esc)">
+              Skip tour
+            </button>
             {/* The last step finishes the tour (recorded as done), so it is never disabled. */}
-            <button type="button" onClick={onNext} className={`${btn.primary} flex-1 px-2.5 py-2 text-xs sm:text-sm`}>
+            <button type="button" onClick={onNext} className={btn.primary}>
               {currentIndex === totalSteps - 1 ? 'Done' : <>Next <Icon name="right" className="size-3.5" /></>}
-            </button>
-
-            <button
-              type="button"
-              onClick={onSkip}
-              aria-label="Skip tour"
-              className={`${btn.ghost} px-2.5 py-2 text-xs sm:text-sm`}
-              title="Skip tour (Esc)"
-            >
-              <Icon name="x" className="size-3.5" />
             </button>
           </div>
         </div>
