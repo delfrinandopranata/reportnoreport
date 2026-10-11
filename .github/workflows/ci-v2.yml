@@ -28,7 +28,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with: { deno-version: v2.x }
       # Without this, v2/package.json makes Deno expect node_modules; the functions don't use it.
-      - run: deno test supabase/functions
+      - run: deno test --allow-read supabase/functions
         env: { DENO_NO_PACKAGE_JSON: "1" }
   db:
     runs-on: ubuntu-latest

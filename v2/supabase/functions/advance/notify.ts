@@ -8,7 +8,7 @@ export type NewMessage = {
   org_id: string; template_id: string; record_id: string | null; recipient_user_id: string | null
   recipient_email: string; subject: string; body_html: string; body_text: string
 }
-export type NewNotification = { org_id: string; user_id: string; kind: TemplateKind; title: string; body: string; link: string }
+export type NewNotification = { org_id: string; user_id: string; kind: TemplateKind | 'report_ready'; title: string; body: string; link: string }
 export type MessageRow = { id: string; org_id: string; recipient_email: string; subject: string; body_html: string; body_text: string; attempts: number }
 export type MessagePatch = { status: 'queued' | 'sent' | 'failed'; attempts: number; error: string | null; nextAttemptAt?: Date; sentAt?: Date; providerId?: string | null }
 export type TaskRef = { id: string; node_id: string; assignee_role_id: string | null; assignee_user_id: string | null; claimed_by: string | null }

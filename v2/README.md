@@ -25,12 +25,14 @@ Email: every email is a queued `messages` row. `send-messages` (pg_cron, every m
 
 - `pnpm test` — unit (incl. the shared form logic in `supabase/functions/_shared/forms`)
 - `supabase test db` — RLS, roles, guards, forms and form-file storage
-- `deno test supabase/functions` — Edge Functions, the workflow engine and the shared tests under Deno
+- `DENO_NO_PACKAGE_JSON=1 deno test --allow-read supabase/functions` — Edge Functions (`--allow-read` loads the Inter fonts for `render-pdfs`), the workflow engine and the shared tests under Deno
 - `RNR_TEST_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres DENO_NO_PACKAGE_JSON=1 deno test --allow-env --allow-net supabase/functions/advance/race.test.ts` — two simultaneous approvals against the local database
 - `RNR_TEST_DB_URL=… deno test --allow-env --allow-net supabase/functions/send-messages/race.test.ts` — two overlapping cron runs remind an overdue task once
 - `RNR_TEST_SUPABASE_URL=http://127.0.0.1:54321 RNR_TEST_ANON_KEY=<anon key> RNR_TEST_DB_URL=… deno test --allow-env --allow-net supabase/functions/_integration/realtime.test.ts` — Realtime sends a user only their own notifications
 
-Hosted projects: set the function secrets `CRON_SECRET` (16+ characters), `APP_URL` (`https://reportnoreport.com/app/`), `EMAIL_TRANSPORT=resend`, `EMAIL_FROM` (a sender on a domain verified in Resend) and `RESEND_API_KEY`, and create the Vault secrets `resume_url` (`https://<ref>.supabase.co/functions/v1/resume`), `send_messages_url` (`https://<ref>.supabase.co/functions/v1/send-messages`) and `cron_secret` (same value as `CRON_SECRET`). A missing or malformed email setting stops `send-messages` at boot.
+`render-pdfs` makes record PDFs: `request_record_pdf`, the `generate_pdf` action and pg_cron (every minute) wake it with `CRON_SECRET`; it renders with `pdf-lib` and the Inter 4.1 fonts (SIL OFL) in `supabase/functions/render-pdfs/fonts/`, shipped through `static_files` in `config.toml`, and uploads to the private `record-pdfs` bucket. Locally the Vault secret `render_pdfs_url` comes from `seed.sql`.
+
+Hosted projects: set the function secrets `CRON_SECRET` (16+ characters), `APP_URL` (`https://reportnoreport.com/app/`), `EMAIL_TRANSPORT=resend`, `EMAIL_FROM` (a sender on a domain verified in Resend) and `RESEND_API_KEY`, and create the Vault secrets `resume_url` (`https://<ref>.supabase.co/functions/v1/resume`), `send_messages_url` (`https://<ref>.supabase.co/functions/v1/send-messages`), `render_pdfs_url` (`https://<ref>.supabase.co/functions/v1/render-pdfs`) and `cron_secret` (same value as `CRON_SECRET`). A missing or malformed email setting stops `send-messages` at boot.
 
 ## Deploy
 
