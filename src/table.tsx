@@ -2,6 +2,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
+import { seriesOf } from './columnSeries'
 import { btn, Dialog, Icon, useLocalState, type Sort } from './ui'
 
 export type Column<R, K extends string = string> = {
@@ -69,6 +70,13 @@ export function ColumnHeader<R, K extends string>({
 }) {
   const active = !!sort && sort.key === column.sortKey
   const right = column.align === 'right'
+  const flow = seriesOf(column.id)
+  const label = flow ? (
+    <>
+      <Icon name={flow.series} className="size-3.5" />
+      {flow.word}
+    </>
+  ) : column.label
   const startResize = (e: ReactPointerEvent) => {
     e.preventDefault()
     const startX = e.clientX
@@ -85,16 +93,17 @@ export function ColumnHeader<R, K extends string>({
   return (
     <th
       data-resizable
+      data-series={flow?.series}
       aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
       className={right ? 'num' : undefined}
     >
       {column.sortKey && onSort ? (
         <button type="button" onClick={() => onSort(column.sortKey!)} className={`rnr-th-sort max-w-full ${right ? 'flex-row-reverse' : ''}`}>
-          <span className="truncate">{column.label}</span>
+          <span className="truncate">{label}</span>
           <Icon name={active && sort.dir === 'asc' ? 'up' : 'down'} className="size-3.5" />
         </button>
       ) : (
-        <span className="block truncate">{column.label}</span>
+        <span className="block truncate">{label}</span>
       )}
       <button
         type="button"

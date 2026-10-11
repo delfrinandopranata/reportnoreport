@@ -4,6 +4,8 @@ import { useSession } from '../data/session'
 import { useCheckoutSession, useFirmBilling } from '../data/queries'
 import { btn, Icon } from '../ui'
 import { billingView } from './billing'
+import { formatMoney } from '../ledger'
+const PRICE = formatMoney(1000)
 
 export function BillingPage() {
   const session = useSession()
@@ -62,7 +64,7 @@ export function BillingPage() {
   const pay = isOwner && (view.kind === 'trial' || view.kind === 'ended' || view.kind === 'read_only') && (
     <>
       <button type="button" disabled={checkout.isPending} className={`${btn.primary} w-full sm:w-auto`} onClick={() => checkout.mutate()}>
-        {checkout.isPending ? 'Opening secure payment…' : 'Pay RM 10'}
+        {checkout.isPending ? 'Opening secure payment…' : `Pay ${PRICE}`}
       </button>
       {checkout.isError && <p className="rnr-error" role="alert">{(checkout.error as Error).message}</p>}
     </>
@@ -84,8 +86,8 @@ export function BillingPage() {
 
         {view.kind !== 'paid' && view.kind !== 'complimentary' && (
           <>
-            <p className="rnr-kpi-figure">RM 10</p>
-            <p className="rnr-caption">Free for 14 days. Then RM 10, once.</p>
+            <p className="rnr-kpi-figure">{PRICE}</p>
+            <p className="rnr-caption">Free for 14 days. Then {PRICE}, once.</p>
           </>
         )}
 
@@ -97,15 +99,15 @@ export function BillingPage() {
           <div className="rnr-note" data-tone="warn" role="status">
             <Icon name="alert" className="size-5" />
             <div className="grid gap-2">
-              <p>We're still confirming your payment. This page will update when it does.</p>
+              <p>Your payment is still being confirmed. This page will update when it is.</p>
               <button type="button" className={`${btn.secondary} rnr-btn-sm justify-self-start`} onClick={() => window.location.reload()}>Refresh</button>
             </div>
           </div>
         )}
 
         {view.kind === 'trial' && state('info', 'check', view.daysLeft === 1 ? 'You have 1 day left in your trial.' : `You have ${view.daysLeft} days left in your trial.`, `Ends ${view.endsOn}`)}
-        {view.kind === 'ended' && state('warn', 'alert', `Your trial ended on ${view.endedOn}.`, 'Pay RM 10 to keep adding and editing — your data stays viewable and exportable.')}
-        {view.kind === 'read_only' && state('down', 'x', 'Your account is read-only.', 'Payment was refunded or the trial expired. Pay RM 10 to restore write access.')}
+        {view.kind === 'ended' && state('warn', 'alert', `Your trial ended on ${view.endedOn}.`, `Pay ${PRICE} to keep adding and editing — your data stays viewable and exportable.`)}
+        {view.kind === 'read_only' && state('down', 'x', 'Your account is read-only.', `Payment was refunded or the trial expired. Pay ${PRICE} to restore write access.`)}
         {view.kind === 'paid' && (
           <>
             {state('ok', 'check', 'Thank you — ReportNoReport is yours to keep.', `Paid on ${view.paidOn}`)}

@@ -131,7 +131,7 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
       return <FullPageMessage title="Early access is full" text={msg} action={() => supabase.auth.signOut()} />
     }
     const msg = toUserMessage(err)
-    return <FullPageMessage title="We could not load your account" text={msg} action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
+    return <FullPageMessage title="Your account did not load" text={msg} action={() => supabase.auth.signOut()} retry={() => context.refetch()} />
   }
   const result = context.data!
   if (result.isSuperAdmin) {

@@ -282,7 +282,7 @@ function StatementBody({ client, period, balancesQ, linesQ, ready }: { client: C
       <div role="alert" className="rnr-note" data-tone="down">
         <Icon name="alert" />
         <div className="grid justify-items-start gap-2">
-          <p className="font-medium">We couldn’t load this statement.</p>
+          <p className="font-medium">This statement did not load.</p>
           <p>{error.message}</p>
           <button type="button" className={btn.secondary} onClick={() => qc.invalidateQueries()}>Try again</button>
         </div>

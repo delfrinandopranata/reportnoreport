@@ -383,7 +383,7 @@ function DataCard() {
       <span className="rnr-folder-tab" id="data-heading">Data</span>
       <div className="rnr-folder-body">
         <div className="rnr-perf" aria-hidden="true" />
-        <p className="rnr-muted">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to our servers.' : 'Your data is stored securely on our servers and backed up daily. Nothing to set up here.'}</p>
+        <p className="rnr-muted">{DEMO ? 'In this demo, your data stays in this browser only. Nothing is sent to a server.' : 'Your data is stored securely on our servers and backed up daily. Nothing to set up here.'}</p>
       </div>
     </section>
   )

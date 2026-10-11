@@ -17,6 +17,7 @@ import { useTour } from './tour/useTour'
 import { useSampleDataExists, useLoadSampleData, useRemoveSampleData } from './data/queries'
 import { useAppearance } from './useAppearance'
 import { sampleControls } from './data/sampleData'
+import { formatMoney } from './ledger'
 
 type View = 'dashboard' | 'clients' | 'contracts' | 'users' | 'settings' | 'billing'
 
@@ -39,6 +40,12 @@ const readRoute = (): Route => {
   // '#statement' was the old consolidated page; it now lives on Clients.
   return view === 'statement' ? { view: 'clients', clientId: null, statement: false } : { view: 'dashboard', clientId: null, statement: false }
 }
+
+/** The one-off licence price, in ISO form like every other amount. */
+const PRICE = formatMoney(1000)
+
+/** Pages whose body is `rnr-wide`: their header follows, so the left edges line up. */
+const WIDE = new Set<View>(['clients', 'contracts', 'users'])
 
 const HEADINGS: Record<View, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Receipts, payments and funds held across all clients.' },
@@ -236,7 +243,7 @@ export default function App() {
                   </p>
                   {profile.role === 'owner' && (
                     <p className="mt-2 text-xs">
-                      <a href="#settings/billing" className="rnr-link font-medium">Pay RM 10</a> to keep using ReportNoReport.
+                      <a href="#settings/billing" className="rnr-link font-medium">Pay {PRICE}</a> to keep using ReportNoReport.
                     </p>
                   )}
                 </div>
@@ -261,7 +268,7 @@ export default function App() {
           <ClientProfile key={route.clientId} id={route.clientId} tab={route.tab ?? 'client'} />
         ) : (
           <>
-        <header className="rnr-page-head print:hidden">
+        <header className={`rnr-page-head print:hidden${WIDE.has(route.view) ? ' rnr-wide' : ''}`}>
           <div>
             <h1 className="rnr-page-title">{at > 0 ? <>{title.slice(0, at)} <em>{title.slice(at + 1)}</em></> : title}</h1>
             <p className="rnr-lede">{HEADINGS[route.view].subtitle}</p>

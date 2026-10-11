@@ -65,12 +65,12 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
       if (error.message === 'User already registered') throw new Error('An account with that email already exists. Sign in instead.')
       throw error
     }
-    setNotice(`Check your email — we've sent a link to ${String(data.get('email'))} to verify your address.`)
+    setNotice(`Check your email — a link to verify your address was sent to ${String(data.get('email'))}.`)
   }
   const joinWaitlist = async (data: FormData) => {
     const { error } = await supabase.rpc('join_waitlist', { p_email: String(data.get('email')), p_firm_name: String(data.get('firm_name')) })
     if (error) throw error
-    setNotice("You're on the waitlist. We'll email you when a place opens.")
+    setNotice("You're on the waitlist. You will get an email when a place opens.")
   }
   const forgot = (data: FormData) => supabase.auth.resetPasswordForEmail(String(data.get('email')), { redirectTo: `${location.origin}/app/?flow=set-password` })
     .then(({ error }) => { if (error) throw error; setNotice('If that email has an account, a reset link is on its way.') })
@@ -90,7 +90,7 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
   const copy = {
     signin: { title: 'Sign in', help: 'Use the email and password for your firm account.', submit: 'Sign in' },
     signup: { title: 'Start your free trial', help: 'Create your firm and account to get started.', submit: 'Create account' },
-    forgot: { title: 'Reset your password', help: 'Enter your email and we will send you a link to choose a new password.', submit: 'Send reset link' },
+    forgot: { title: 'Reset your password', help: 'Enter your email and a link to choose a new password is sent to it.', submit: 'Send reset link' },
     'set-password': { title: 'Set your password', help: 'Choose a password to finish setting up your account.', submit: 'Save password' },
   }[mode]
   const errorId = error ? 'auth-error' : undefined

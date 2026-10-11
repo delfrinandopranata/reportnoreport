@@ -157,12 +157,12 @@ test('shouldCreateFirm: returns false when profile exists without firm_id but me
 
 test('earlyAccessMessage: returns waitlist joined message when joined=true', () => {
   const result = earlyAccessMessage(true)
-  assert.equal(result, "Early access is full right now. We've added you to the waitlist and will email you when a place opens.")
+  assert.equal(result, "Early access is full right now. You have been added to the waitlist and will get an email when a place opens.")
   assert(!result.includes('EARLY_ACCESS'))
 })
 
 test('earlyAccessMessage: returns homepage waitlist message when joined=false', () => {
   const result = earlyAccessMessage(false)
-  assert.equal(result, 'Early access is full right now. Join the waitlist from our homepage and we\'ll email you when a place opens.')
+  assert.equal(result, 'Early access is full right now. Join the waitlist from the homepage and you will get an email when a place opens.')
   assert(!result.includes('EARLY_ACCESS'))
 })

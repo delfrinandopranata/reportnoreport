@@ -686,12 +686,13 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-statement td { padding: 1.6mm 2mm; border-bottom: 0.5pt solid var(--sheet-rule); vertical-align: top; }
 .rnr-statement th.num, .rnr-statement td.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rnr-statement td[data-neg] { color: var(--sheet-down); }
+.rnr-statement .text-down { color: var(--sheet-down) !important; } /* !important in a lower layer beats the text-down utility that money cells carry, so the sheet never takes the theme's --down */
 .rnr-statement tfoot td, .rnr-statement tfoot th { border-top: 1pt solid var(--sheet-ink); border-bottom: 0; font-weight: 600; }
 .rnr-statement-foot { margin-top: 8mm; padding-top: 3mm; border-top: 0.5pt solid var(--sheet-rule); color: var(--sheet-ink-3); font-size: 8pt; }
 @media print {
   .rnr-no-print { display: none !important; }
   .rnr-statement-frame { padding: 0; background: none; overflow: visible; }
-  .rnr-statement { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rnr-statement, .rnr-statement[data-orientation="landscape"] { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; } /* the landscape selector is more specific than the screen size, so it needs its own reset */
   .rnr-statement thead { display: table-header-group; }
   .rnr-statement tfoot { display: table-footer-group; }
   .rnr-statement tr, .rnr-statement-summary { break-inside: avoid; }

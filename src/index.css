@@ -13,11 +13,8 @@
   --color-acc-a: var(--acc-a); --color-on-acc: var(--on-acc); --color-down: var(--down); --color-down-bg: var(--down-bg);
   --color-ok-ink: var(--ok-ink); --color-tint: var(--tint); --color-stamp: var(--stamp); --color-strike: var(--strike);
   --color-link: var(--link); --color-series-1: var(--series-1); --color-series-2: var(--series-2);
-  /* Compat until the screen tasks (7-10) move off bg-in / text-out and var(--brand-solid); then delete these three lines. */
-  --color-in: var(--series-1); --color-out: var(--series-2);
   --font-sans: var(--font-ui);
 }
-:root { --brand-solid: var(--acc-a); --brand-solid-ink: var(--on-acc); }
 
 body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
@@ -29,8 +26,6 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
   .rnr-statement .rnr-muted, .rnr-statement .rnr-link, .rnr-statement .rnr-status, .rnr-statement .rnr-chip { color: inherit; background: none; border: 0; padding: 0; text-decoration: none; }
   .rnr-statement .rnr-avatar, .rnr-statement .rnr-kind { display: none; }
 }
-/* Unlayered on purpose: it must beat the text-down utility that money cells carry. */
-.rnr-statement .text-down { color: var(--sheet-down); }
 /* v1 paper: batch 8 — dashboard, checklist, tour (Task 8 only) */
 @layer components {
   /* A KPI widget is a folder whose tab is the title; the tab wraps instead of clipping. */
@@ -81,8 +76,6 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
     background: var(--sheet-paper);
   }
   .rnr-shell { min-height: 0; }
-  /* The bundle's landscape sheet is 297 x 210mm on paper too, which overflows the 14mm page margins and adds a blank page. */
-  .rnr-statement[data-orientation="landscape"] { width: auto; min-height: 0; }
 }
 
 /* Wide ledgers print landscape; statements keep the portrait A4 default. */
