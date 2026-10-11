@@ -42,6 +42,9 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
   const dismiss = useRef<HTMLButtonElement>(null)
   const refocus = useRef<number | null>(null)
 
+  // Skipping the last to-do can unmount the whole checklist; focus then goes to the page, not the document start.
+  useEffect(() => () => { if (refocus.current !== null) document.getElementById('main')?.focus() }, [])
+
   // The skipped row unmounts, so focus would fall to the page start: move it to the row now in its place.
   useEffect(() => {
     if (refocus.current === null) return

@@ -1,6 +1,6 @@
 import { axisGutter } from './chartGeometry'
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
-import { monthlyFlow, today, type Txn } from './ledger'
+import { monthlyFlow, signedMoney, today, type Txn } from './ledger'
 import { sumBalances } from './data/mappers'
 import { useMoney } from './data/money'
 import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
@@ -188,7 +188,7 @@ function Balances() {
           <Avatar name={r.name} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <a href={`#clients/${r.id}`} className="rnr-link min-w-0 truncate">{r.name}</a>
+              <a href={`#clients/${r.id}`} className="rnr-link min-w-0 truncate pointer-coarse:py-2.5">{r.name}</a>
               <span className="rnr-amt" data-neg={r.net < 0 || undefined}>{money.format(r.net)}</span>
             </div>
             <progress className="rnr-progress mt-1.5 h-1.5" value={Math.abs(r.net)} max={max} aria-hidden />
@@ -226,8 +226,7 @@ function TxnList({ txns, names }: { txns: Txn[]; names?: Map<string, string> }) 
             </p>
           </div>
           <span className="rnr-amt">
-            {t.kind === 'in' ? '+' : '−'}
-            {money.format(t.amount)}
+            {signedMoney(t.kind, t.amount, money.format)}
           </span>
         </li>
       ))}

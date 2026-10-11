@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { addTag, fillClient, formatPhone, joinPhone, splitPhone, validateClient, groupBy, periodPresets, parseCsv, readImport, monthlyFlow, parseCents, plainAmount, statement, toCsv, totals, totalsByClient, type Txn } from './ledger.ts'
+import { addTag, fillClient, formatPhone, joinPhone, splitPhone, validateClient, groupBy, periodPresets, parseCsv, readImport, makeMoney, monthlyFlow, signedMoney, parseCents, plainAmount, statement, toCsv, totals, totalsByClient, type Txn } from './ledger.ts'
 
 const txn = (clientId: string, kind: Txn['kind'], amount: number, date: string): Txn => ({
   id: `${clientId}-${date}-${amount}`,
@@ -157,4 +157,27 @@ test('periodPresets starts year to date at the financial year start', () => {
   assert.deepEqual([ytd(7, '2026-10-03').label, ytd(7, '2026-10-03').period.from], ['Financial year to date', '2026-07-01'])
   assert.equal(ytd(7, '2026-03-15').period.from, '2025-07-01')
   assert.equal(ytd(4, '2026-04-01').period.from, '2026-04-01')
+})
+
+test('money uses the true minus and never a hyphen', () => {
+  const { format } = makeMoney('MYR')
+  assert.equal(format(123450), 'MYR 1,234.50')
+  assert.equal(format(-500), '−MYR 5.00')
+  assert.equal(format(0), 'MYR 0.00')
+  assert.equal(format(-500).includes('-'), false)
+})
+
+test('signed receipts and payments read +MYR / −MYR, with no doubled sign', () => {
+  const { format } = makeMoney('MYR')
+  assert.equal(signedMoney('in', 500, format), '+MYR 5.00')
+  assert.equal(signedMoney('out', 500, format), '−MYR 5.00')
+  assert.equal(signedMoney('in', -500, format), '−MYR 5.00')
+  assert.equal(signedMoney('out', -500, format), '+MYR 5.00')
+  assert.equal(signedMoney('in', 0, format), 'MYR 0.00')
+  assert.equal(signedMoney('out', 0, format), 'MYR 0.00')
+})
+
+test('CSV amounts stay plain numbers with a hyphen minus', () => {
+  assert.equal(plainAmount(-500), '-5.00')
+  assert.equal(plainAmount(123450), '1234.50')
 })
