@@ -11,6 +11,7 @@ import { OrgSwitcher } from './orgs/OrgSwitcher'
 import { MembersPage } from './members/MembersPage'
 import { RolesPage } from './roles/RolesPage'
 import { FormsPage } from './forms/FormsPage'
+import { FillPage } from './forms/fill/FillPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -29,6 +30,7 @@ function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'roles': return <RolesPage />
     case 'forms': return <FormsPage />
+    case 'form-fill': return <FillPage id={route.id} />
     default: return <MembersPage />
   }
 }

@@ -1,0 +1,95 @@
+import { useMemo, useRef, useState } from 'react'
+import { pages, resolve, validateAnswers, visiblePages, type Answers, type Field } from '../logic'
+import type { SubmitResult } from '../api'
+import { CheckIcon } from '../../ui/icons'
+import { useAction } from '../../ui/useAction'
+import { inputId } from '../paths'
+import { FormRenderer } from './FormRenderer'
+import type { Uploader } from './FileInput'
+
+type Props = {
+  fields: Field[]; idPrefix: string; filePrefix?: string; upload?: Uploader
+  onSubmit?(answers: Answers): Promise<SubmitResult>; onDone?(submissionId: string): void
+}
+
+const FIX = 'Some answers need fixing. The fields to fix are marked below.'
+const anyRequired = (fields: Field[]): boolean => fields.some((f) => f.required || (f.fields ? anyRequired(f.fields) : false))
+
+/** Groups with a minimum start with that many empty rows. */
+const seedRows = (fields: Field[]): Answers =>
+  Object.fromEntries(fields.filter((f) => f.type === 'group' && (f.repeat?.min ?? 0) > 0).map((f) => [f.key, Array.from({ length: f.repeat!.min }, () => ({}))]))
+
+export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onDone }: Props) {
+  const all = useMemo(() => pages(fields), [fields])
+  const [answers, setAnswers] = useState<Answers>(() => seedRows(fields))
+  const [at, setAt] = useState(0)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [checked, setChecked] = useState(false)
+  const submit = useAction()
+  const top = useRef<HTMLDivElement>(null)
+  const resolved = useMemo(() => resolve(fields, answers), [fields, answers])
+  const visible = useMemo(() => visiblePages(fields, answers), [fields, answers])
+
+  if (!visible.length) return <p className="rnr-muted">{fields.length ? 'This form has no questions to answer right now.' : 'This form has no fields yet.'}</p>
+  const current = Math.min(at, visible.length - 1)
+  const page = all[visible[current]]
+  const title = page[0]?.type === 'page_break' ? page[0].label : ''
+  const last = current === visible.length - 1
+
+  const showErrors = (errs: Record<string, string>) => {
+    setErrors(errs); setFormError(FIX)
+    const first = Object.keys(errs)[0] ?? ''
+    const root = first.split('.')[0]
+    const ix = visible.findIndex((p) => all[p].some((f) => f.key === root))
+    if (ix >= 0) setAt(ix)
+    requestAnimationFrame(() => document.getElementById(inputId(idPrefix, first))?.focus())
+  }
+  const next = () => {
+    const r = validateAnswers(fields, answers, { onlyKeys: new Set(page.map((f) => f.key)), filePrefix })
+    if (!r.ok) return showErrors(r.errors)
+    setErrors({}); setFormError(null); setAt(current + 1)
+    requestAnimationFrame(() => top.current?.focus())
+  }
+  const back = () => { setErrors({}); setFormError(null); setAt(current - 1); requestAnimationFrame(() => top.current?.focus()) }
+  const finish = () => submit.run(async () => {
+    setFormError(null); setChecked(false)
+    const r = validateAnswers(fields, answers, { filePrefix })
+    if (!r.ok) return showErrors(r.errors)
+    setErrors({})
+    if (!onSubmit) { setChecked(true); return }
+    const res = await onSubmit(answers)
+    if (res.ok) { onDone?.(res.submissionId); return }
+    if (res.fieldErrors) showErrors(res.fieldErrors)
+    else setFormError(res.error)
+  })
+  const change = (a: Answers, key: string) => {
+    setAnswers(a); setChecked(false)
+    setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => k !== key && !k.startsWith(`${key}.`))))
+  }
+
+  return (
+    <form noValidate className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (last) finish(); else next() }}>
+      {anyRequired(fields) && <p className="rnr-caption">Fields marked * are required.</p>}
+      {visible.length > 1 && (
+        <div ref={top} tabIndex={-1} className="flex flex-col gap-2">
+          <p className="rnr-caption">Page {current + 1} of {visible.length}</p>
+          <div aria-hidden="true" style={{ height: 4, borderRadius: 'var(--radius-full)', background: 'var(--rnr-track-bg)' }}>
+            <div style={{ height: '100%', width: `${((current + 1) / visible.length) * 100}%`, borderRadius: 'inherit', background: 'var(--ink-label)' }} />
+          </div>
+          {title && <h2 className="dialog-title">{title}</h2>}
+        </div>
+      )}
+      <FormRenderer fields={page} answers={answers} resolved={resolved} errors={errors} onChange={change} upload={upload} idPrefix={idPrefix} />
+      {formError && <p className="rnr-error" role="alert">{formError}</p>}
+      <p className="rnr-status" role="status">{checked && <><CheckIcon size={14} />These answers are valid. The preview does not save them.</>}</p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {current > 0 && <button type="button" className="rnr-btn rnr-btn-secondary w-full sm:w-auto" onClick={back}>Back</button>}
+        <button type="submit" className={`rnr-btn w-full sm:w-auto ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
+          {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
+          {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? 'Submitting…' : 'Submit form'}
+        </button>
+      </div>
+    </form>
+  )
+}
