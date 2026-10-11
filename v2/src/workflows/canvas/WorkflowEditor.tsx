@@ -2,6 +2,7 @@ import '@xyflow/react/dist/style.css'
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type Edge as FlowEdge, type NodeChange } from '@xyflow/react'
+import { useTemplates } from '../../comms/api'
 import { useForms } from '../../forms/api'
 import { useMemberEmails } from '../../members/useMemberEmails'
 import { useOrg } from '../../rbac/useOrg'
@@ -65,9 +66,13 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
   const roles = useRoles(orgId)
   const members = useMemberEmails(orgId)
   const counts = useOpenCounts(wf.id)
-  const refs = useMemo(() => (forms.data && roles.data && members.data
-    ? { forms: new Set(forms.data.map((f) => f.id)), roles: new Set(roles.data.map((r) => r.id)), users: new Set(members.data.keys()) }
-    : null), [forms.data, roles.data, members.data])
+  const templates = useTemplates(orgId)
+  const refs = useMemo(() => (forms.data && roles.data && members.data && templates.data
+    ? {
+        forms: new Set(forms.data.map((f) => f.id)), roles: new Set(roles.data.map((r) => r.id)),
+        users: new Set(members.data.keys()), templates: new Set(templates.data.map((t) => t.id)),
+      }
+    : null), [forms.data, roles.data, members.data, templates.data])
   const issues = useMemo(() => (refs ? checkGraph(graph, refs) : []), [graph, refs])
   const pinned = useMemo(() => issuesByNode(graph, issues), [graph, issues])
   const readOnly = !isMd

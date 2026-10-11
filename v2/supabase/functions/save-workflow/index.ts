@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
       },
       refs: async (orgId) => ({
         forms: await ids(admin.from('forms').select('id').eq('org_id', orgId), 'id'),
+        templates: await ids(admin.from('message_templates').select('id').eq('org_id', orgId), 'id'),
         roles: await ids(admin.from('roles').select('id').eq('org_id', orgId), 'id'),
         users: await ids(admin.from('members').select('user_id').eq('org_id', orgId).eq('status', 'active'), 'user_id'),
       }),

@@ -1,5 +1,6 @@
 import { OPERATORS, type Answers, type Rule } from '../forms/types.ts'
 import { parsePath, toDay } from '../forms/rules.ts'
+import { sendMessageIssue, type SendMessage } from '../comms/recipients.ts'
 
 export const NODE_TYPES = ['start', 'form', 'condition', 'time', 'end'] as const
 export type NodeType = (typeof NODE_TYPES)[number]
@@ -21,12 +22,12 @@ export type WfNode = StartNode | FormNode | ConditionNode | TimeNode | EndNode
 
 export type Action =
   | { type: 'set_status'; label: string }
-  | { type: 'send_message'; templateId?: string; recipients?: unknown }
+  | SendMessage
   | { type: 'generate_pdf' }
 export type Edge = { id: string; from: string; outcome: Outcome; to: string; actions: Action[] }
 export type Graph = { nodes: WfNode[]; edges: Edge[] }
 export type Issue = { message: string; nodeId?: string; edgeId?: string }
-export type Refs = { forms: ReadonlySet<string>; roles: ReadonlySet<string>; users: ReadonlySet<string> }
+export type Refs = { forms: ReadonlySet<string>; roles: ReadonlySet<string>; users: ReadonlySet<string>; templates: ReadonlySet<string> }
 
 export const ID_RE = /^[a-z0-9_-]{1,40}$/
 export const MAX_NODES = 200
@@ -126,7 +127,7 @@ export function checkGraph(raw: unknown, refs: Refs): Issue[] {
     const pair = `${e.from}\u0000${e.outcome}`
     if (pairs.has(pair)) add(`"${nodeName(from)}" has two paths for "${outcomeLabel(e.outcome)}". Keep one.`, at)
     pairs.add(pair)
-    for (const a of e.actions) { const m = actionIssue(a); if (m) add(m, at) }
+    for (const a of e.actions) { const m = actionIssue(a, g, refs); if (m) add(m, at) }
   }
   for (const n of byId.values()) {
     for (const o of outcomesOf(n)) {
@@ -192,14 +193,17 @@ function checkAssignee(n: FormNode, g: Graph, refs: Refs, add: (m: string) => vo
   add(`Choose who completes "${name}".`)
 }
 
-function actionIssue(a: unknown): string | null {
+function actionIssue(a: unknown, g: Graph, refs: Refs): string | null {
   if (!isObj(a)) return 'Remove the broken action from this connection.'
   if (a.type === 'set_status') {
     const label = typeof a.label === 'string' ? a.label.trim() : ''
     return label.length >= 1 && label.length <= 60 ? null : 'Enter the status text (up to 60 characters).'
   }
-  // shortcut: template and recipient references are checked once message templates exist (Phase 4).
-  if (a.type === 'send_message' || a.type === 'generate_pdf') return null
+  if (a.type === 'send_message') {
+    const steps = new Set(g.nodes.filter((n) => n.type === 'start' || n.type === 'form').map((n) => n.id))
+    return sendMessageIssue(a, { templates: refs.templates, roles: refs.roles, users: refs.users, steps })
+  }
+  if (a.type === 'generate_pdf') return null
   return 'Remove the unknown action from this connection.'
 }
 

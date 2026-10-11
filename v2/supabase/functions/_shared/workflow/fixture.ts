@@ -5,6 +5,7 @@ export const F_LEAVE = '0000000a-0000-0000-0000-0000000000f1'
 export const F_APPROVAL = '0000000a-0000-0000-0000-0000000000f3'
 export const ROLE_ADMIN = '0000000a-0000-0000-0000-00000000a001'
 export const ADMIN = '00000000-0000-0000-0000-0000000000a2'
+export const T_APPROVED = '0000000a-0000-0000-0000-00000000a0e1'
 export const MEMBER = '00000000-0000-0000-0000-0000000000a3'
 
 const at = (x: number, y: number) => ({ x, y })
@@ -20,7 +21,7 @@ export const LEAVE: Graph = {
   ],
   edges: [
     { id: 'e1', from: 'start', outcome: 'submitted', to: 'approve', actions: [] },
-    { id: 'e2', from: 'approve', outcome: 'approved', to: 'long', actions: [{ type: 'send_message' }] },
+    { id: 'e2', from: 'approve', outcome: 'approved', to: 'long', actions: [{ type: 'send_message', templateId: T_APPROVED, recipients: [{ starter: true }] }] },
     { id: 'e3', from: 'approve', outcome: 'rejected', to: 'rejected', actions: [{ type: 'set_status', label: 'Rejected by manager' }] },
     { id: 'e4', from: 'long', outcome: 'yes', to: 'wait', actions: [] },
     { id: 'e5', from: 'long', outcome: 'no', to: 'done', actions: [] },
@@ -28,7 +29,7 @@ export const LEAVE: Graph = {
   ],
 }
 
-export const REFS: Refs = { forms: new Set([F_LEAVE, F_APPROVAL]), roles: new Set([ROLE_ADMIN]), users: new Set([ADMIN, MEMBER]) }
+export const REFS: Refs = { forms: new Set([F_LEAVE, F_APPROVAL]), roles: new Set([ROLE_ADMIN]), users: new Set([ADMIN, MEMBER]), templates: new Set([T_APPROVED]) }
 
 /** A deep copy to change in one test without touching the others. */
 export const leave = (): Graph => structuredClone(LEAVE)

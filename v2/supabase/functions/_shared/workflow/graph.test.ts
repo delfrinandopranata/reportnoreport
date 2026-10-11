@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { checkGraph, durationMs, nextEdge, outcomesOf, readGraph, timeRunAt, type ConditionNode, type EndNode, type FormNode, type Graph, type TimeNode, type WfNode } from './graph.ts'
-import { LEAVE, REFS, leave } from './fixture.ts'
+import { LEAVE, REFS, T_APPROVED, leave } from './fixture.ts'
 
 const msgs = (g: unknown, refs = REFS) => checkGraph(g, refs).map((i) => i.message)
 const find = <T extends WfNode = WfNode>(g: Graph, id: string) => g.nodes.find((n) => n.id === id) as T
@@ -57,12 +57,13 @@ test('a condition that loops to itself is refused', () => {
   g.edges = g.edges.map((e) => (e.id === 'e4' ? { ...e, to: 'long' } : e))
   assert.ok(checkGraph(g, REFS).some((i) => i.nodeId === 'long' && /would never stop/.test(i.message)))
 })
-test('referenced forms, roles, people and steps must exist', () => {
-  const empty = { forms: new Set<string>(), roles: new Set<string>(), users: new Set<string>() }
+test('referenced forms, roles, people, templates and steps must exist', () => {
+  const empty = { forms: new Set<string>(), roles: new Set<string>(), users: new Set<string>(), templates: new Set<string>() }
   assert.deepEqual(msgs(LEAVE, empty), [
     'The form for "Start" no longer exists. Choose another.',
     'The form for "Manager approval" no longer exists. Choose another.',
     'The role assigned to "Manager approval" no longer exists.',
+    'The message template for "Send message" no longer exists. Choose another.',
   ])
   const g = leave()
   find<FormNode>(g, 'approve').assignee = { step: 'long' }
@@ -71,6 +72,13 @@ test('referenced forms, roles, people and steps must exist', () => {
   assert.deepEqual(msgs(g), ['The person assigned to "Manager approval" is no longer a member.'])
   find<FormNode>(g, 'approve').assignee = { role: '' }
   assert.deepEqual(msgs(g), ['Choose who completes "Manager approval".'])
+})
+test('a Send message action needs a template and recipients that exist; issues pin to the connection', () => {
+  const g = leave()
+  g.edges[1].actions = [{ type: 'send_message', templateId: T_APPROVED, recipients: [{ step: 'long' }] }]
+  assert.deepEqual(checkGraph(g, REFS), [{ message: '"Send message" can only send to the person who completed a Start or Form step.', edgeId: 'e2' }])
+  g.edges[1].actions = [{ type: 'send_message' } as never]
+  assert.deepEqual(msgs(g), ['Choose a message template for "Send message".'])
 })
 test('connections must fit their steps', () => {
   const g = leave()
