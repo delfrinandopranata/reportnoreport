@@ -9,7 +9,7 @@ export type NewMessage = {
   recipient_email: string; subject: string; body_html: string; body_text: string
 }
 export type NewNotification = { org_id: string; user_id: string; kind: TemplateKind | 'report_ready'; title: string; body: string; link: string }
-export type MessageRow = { id: string; org_id: string; recipient_email: string; subject: string; body_html: string; body_text: string; attempts: number }
+export type MessageRow = { id: string; org_id: string; recipient_email: string; subject: string; body_html: string; body_text: string; attempts: number; unsubscribe_url: string | null }
 export type MessagePatch = { status: 'queued' | 'sent' | 'failed'; attempts: number; error: string | null; nextAttemptAt?: Date; sentAt?: Date; providerId?: string | null }
 export type TaskRef = { id: string; node_id: string; assignee_role_id: string | null; assignee_user_id: string | null; claimed_by: string | null }
 export type NotifyCtx = { now: Date; appUrl: string }
@@ -17,8 +17,8 @@ export type Sent = { emails: number; notices: number; skipped: number }
 type Base = Omit<RenderContext, 'recipient'>
 
 /**
- * shortcut: a message reaches at most 500 people (a role task notifies its first 500 holders by email order; a larger
- * Send message stops the record). Batch through the queue when an org has roles that big; campaigns (Phase 6) do.
+ * shortcut: a workflow message reaches at most 500 people (a role task notifies its first 500 holders by email order; a
+ * larger Send message stops the record). Larger audiences are campaigns (send-campaigns), which batch through the queue.
  */
 export const MAX_PEOPLE = 500
 const FORMER = 'Former member'

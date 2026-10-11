@@ -1,5 +1,5 @@
-export type Mail = { id: string; to: string; subject: string; html: string; text: string }
-export type SendResult = { ok: true; providerId: string | null } | { ok: false; retry: boolean; error: string }
+export type Mail = { id: string; to: string; subject: string; html: string; text: string; headers?: Record<string, string> }
+export type SendResult = { ok: true; providerId: string | null } | { ok: false; retry: boolean; error: string; rateLimited?: true }
 export type Transport = { send(m: Mail): Promise<SendResult> }
 
 const RESEND_KEY = /^re_[A-Za-z0-9_]{16,}$/
@@ -20,11 +20,13 @@ export function resendTransport(key: string, from: string, f: typeof fetch = fet
         method: 'POST',
         // The message id makes a resend after a crash a no-op on Resend's side.
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': m.id },
-        body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text }),
+        body: JSON.stringify({ from, to: [m.to], subject: m.subject, html: m.html, text: m.text, headers: m.headers }),
       })
       const body = await res.json().catch(() => null)
       if (res.ok) return { ok: true, providerId: typeof body?.id === 'string' ? body.id : null }
-      return { ok: false, retry: res.status === 429 || res.status >= 500, error: `The email service refused this message: ${reason(body, res.status)}` }
+      const error = `The email service refused this message: ${reason(body, res.status)}`
+      if (res.status === 429) return { ok: false, retry: true, rateLimited: true, error }
+      return { ok: false, retry: res.status >= 500, error }
     },
   }
 }
@@ -36,7 +38,7 @@ export function mailpitTransport(base: string, from: string, f: typeof fetch = f
       const res = await f(`${base.replace(/\/+$/, '')}/api/v1/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ From: { Email: sender.email, Name: sender.name }, To: [{ Email: m.to }], Subject: m.subject, HTML: m.html, Text: m.text }),
+        body: JSON.stringify({ From: { Email: sender.email, Name: sender.name }, To: [{ Email: m.to }], Subject: m.subject, HTML: m.html, Text: m.text, Headers: m.headers }),
       })
       const body = await res.json().catch(() => null)
       if (res.ok) return { ok: true, providerId: typeof body?.ID === 'string' ? body.ID : null }

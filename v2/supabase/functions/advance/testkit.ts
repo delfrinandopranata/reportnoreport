@@ -25,7 +25,7 @@ export type Db = {
   reportTemplates: Set<string> // workflow ids with a report template
   pdfs: (PdfJob & { status: 'queued' | 'done' | 'failed'; next_attempt_at: Date; path: string | null; error: string | null })[]
   pdfSources: Map<string, PdfSourceRow> // record id → what pdfSource returns
-  messages: (NewMessage & { id: string; status: MessagePatch['status']; attempts: number; error: string | null; next_attempt_at: Date; sent_at: Date | null; provider_id: string | null })[]
+  messages: (NewMessage & { id: string; status: MessagePatch['status']; attempts: number; error: string | null; next_attempt_at: Date; sent_at: Date | null; provider_id: string | null; unsubscribe_url: string | null })[]
 }
 
 const person = (m: Db['members'][number]) => ({ userId: m.user_id, email: m.email, name: m.name })
@@ -116,7 +116,7 @@ export function fakeStore(db: Db): Store {
         notify: async (rows) => { db.notifications.push(...rows) },
         queueMessages: async (rows) => {
           // next_attempt_at: due at once, like the column default now()
-          for (const r of rows) db.messages.push({ ...r, id: id('msg'), status: 'queued', attempts: 0, error: null, next_attempt_at: new Date(0), sent_at: null, provider_id: null })
+          for (const r of rows) db.messages.push({ ...r, id: id('msg'), status: 'queued', attempts: 0, error: null, next_attempt_at: new Date(0), sent_at: null, provider_id: null, unsubscribe_url: null })
         },
         overdueTasks: async (now, limit) => db.tasks
           .filter((t) => t.status === 'open' && !t.overdue_notified_at && t.due_at && t.due_at <= now)
@@ -133,7 +133,7 @@ export function fakeStore(db: Db): Store {
         lockMessage: async (mid, now) => {
           await lock(`m:${mid}`)
           const m = db.messages.find((x) => x.id === mid && x.status === 'queued' && x.next_attempt_at <= now)
-          return m ? { id: m.id, org_id: m.org_id, recipient_email: m.recipient_email, subject: m.subject, body_html: m.body_html, body_text: m.body_text, attempts: m.attempts } : null
+          return m ? { id: m.id, org_id: m.org_id, recipient_email: m.recipient_email, subject: m.subject, body_html: m.body_html, body_text: m.body_text, attempts: m.attempts, unsubscribe_url: m.unsubscribe_url ?? null } : null
         },
         finishMessage: async (mid, p) => {
           const m = db.messages.find((x) => x.id === mid)
@@ -145,6 +145,7 @@ export function fakeStore(db: Db): Store {
           if (p.sentAt) m.sent_at = p.sentAt
           if (p.providerId !== undefined) m.provider_id = p.providerId
         },
+        finishCampaigns: async () => 0,
         hasReportTemplate: async (wf) => db.reportTemplates.has(wf),
         queuePdf: async (x) => {
           const queued = db.pdfs.find((p) => p.record_id === x.record_id && p.status === 'queued')

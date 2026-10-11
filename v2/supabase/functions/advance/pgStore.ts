@@ -94,7 +94,7 @@ function pgTx(t: postgres.TransactionSql): Tx {
     dueMessages: async (now, limit) =>
       (await t`select id from messages where status = 'queued' and next_attempt_at <= ${now} order by next_attempt_at limit ${limit}`).map((r) => r.id as string),
     lockMessage: (id, now) => one<MessageRow>(t`
-      select id, org_id, recipient_email::text as recipient_email, subject, body_html, body_text, attempts from messages
+      select id, org_id, recipient_email::text as recipient_email, subject, body_html, body_text, attempts, unsubscribe_url from messages
       where id = ${id} and status = 'queued' and next_attempt_at <= ${now} for update skip locked`),
     finishMessage: async (id, p) => {
       await t`update messages set status = ${p.status}, attempts = ${p.attempts}, error = ${p.error},
@@ -103,6 +103,10 @@ function pgTx(t: postgres.TransactionSql): Tx {
         provider_id = coalesce(${p.providerId ?? null}::text, provider_id)
         where id = ${id}`
     },
+    finishCampaigns: async (now) => (await t`
+      update campaigns c set status = 'sent', finished_at = ${now}
+      where c.status = 'sending' and not exists (select 1 from messages m where m.campaign_id = c.id and m.status = 'queued')
+      returning c.id`).length,
     hasReportTemplate: async (wf) => (await t`select 1 from report_templates where workflow_id = ${wf}`).length > 0,
     queuePdf: async (x) => {
       // The insert's own row, or the queued row it collided with (the CTE cannot see its own insert in the second branch).

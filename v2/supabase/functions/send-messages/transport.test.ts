@@ -21,7 +21,7 @@ Deno.test('resend: posts the message with the key and an idempotency key per mes
 })
 Deno.test('resend: 429 and 5xx are retryable; other refusals are final; errors never echo the key', async () => {
   assertEquals(await resendTransport(KEY, FROM, fake(429, { message: 'Too many requests' })).send(mail),
-    { ok: false, retry: true, error: 'The email service refused this message: Too many requests' })
+    { ok: false, retry: true, rateLimited: true, error: 'The email service refused this message: Too many requests' })
   assertEquals((await resendTransport(KEY, FROM, fake(503, {})).send(mail)), { ok: false, retry: true, error: 'The email service refused this message: HTTP 503' })
   const final = await resendTransport(KEY, FROM, fake(422, { message: 'Invalid `to` field.' })).send(mail)
   assertEquals(final, { ok: false, retry: false, error: 'The email service refused this message: Invalid `to` field.' })
@@ -44,4 +44,17 @@ Deno.test('configuration is checked at boot and a bad value stops the function',
   assertThrows(() => transportFromEnv(env({ EMAIL_TRANSPORT: 'resend', EMAIL_FROM: FROM })), Error, 'RESEND_API_KEY is missing or malformed.')
   const err = assertThrows(() => transportFromEnv(env({ EMAIL_TRANSPORT: 'resend', EMAIL_FROM: FROM, RESEND_API_KEY: 'sk_live_secret' })))
   assertEquals((err as Error).message.includes('sk_live_secret'), false)
+})
+
+Deno.test('resend and mailpit pass extra headers through', async () => {
+  const headers = { 'List-Unsubscribe': '<https://x.test/u?m=1&t=2>', 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' }
+  const rc: Call[] = []
+  await resendTransport(KEY, FROM, fake(200, { id: 'rs_1' }, rc)).send({ ...mail, headers })
+  assertEquals(JSON.parse(String(rc[0].init.body)).headers, headers)
+  const mc: Call[] = []
+  await mailpitTransport('http://mailpit.test', FROM, fake(200, { ID: 'mp_1' }, mc)).send({ ...mail, headers })
+  assertEquals(JSON.parse(String(mc[0].init.body)).Headers, headers)
+  const plain: Call[] = []
+  await resendTransport(KEY, FROM, fake(200, { id: 'rs_2' }, plain)).send(mail)
+  assertEquals('headers' in JSON.parse(String(plain[0].init.body)), false)
 })

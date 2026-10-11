@@ -76,6 +76,8 @@ export interface Tx {
   /** FOR UPDATE SKIP LOCKED, queued and due rows only. */
   lockMessage(id: string, now: Date): Promise<MessageRow | null>
   finishMessage(id: string, patch: MessagePatch): Promise<void>
+  /** Campaigns whose emails have all left the queue move from sending to sent; returns how many. */
+  finishCampaigns(now: Date): Promise<number>
   hasReportTemplate(workflowId: string): Promise<boolean>
   /** The record's queued job, inserting one if there is none; wakes render-pdfs once the transaction commits. */
   queuePdf(row: { org_id: string; record_id: string; requested_by: string | null }): Promise<string>
