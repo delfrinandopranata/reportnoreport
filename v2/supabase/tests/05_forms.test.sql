@@ -23,7 +23,7 @@ select isnt_empty(format($$ select 1 from audit_log where action = 'form.update'
 
 -- Member reads but cannot write
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000a3');
-select results_eq(format($$ select count(*)::int from forms where org_id = %L $$, :'alpha'), array[2], 'member reads the org forms');
+select results_eq(format($$ select count(*)::int from forms where org_id = %L $$, :'alpha'), array[3], 'member reads the org forms');
 select throws_ok(format($$ insert into forms (org_id, name) values (%L, 'Nope') $$, :'alpha'), '42501', null, 'member cannot create forms');
 select is_empty(format($$ update forms set name = 'Hacked' where id = %L returning id $$, :'f1'), 'member cannot edit forms');
 select is_empty(format($$ delete from forms where id = %L returning id $$, :'f1'), 'member cannot delete forms');

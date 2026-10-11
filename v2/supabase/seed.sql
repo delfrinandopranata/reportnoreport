@@ -51,3 +51,31 @@ insert into forms (id, org_id, name, schema) values ('0000000a-0000-0000-0000-00
   {"key":"agree","type":"checkbox","label":"I confirm these details are true","required":true},
   {"key":"sig","type":"signature","label":"Signature","required":true}
 ]$json$);
+-- Phase 3: an approval form and a published "Leave approval" workflow (same shape as _shared/workflow/fixture.ts).
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+insert into forms (id, org_id, name, schema) values ('0000000a-0000-0000-0000-0000000000f3', '0000000a-0000-0000-0000-000000000001', 'Manager approval',
+  '[{"key":"comment","type":"long_text","label":"Comment"}]');
+insert into workflows (id, org_id, name) values ('0000000a-0000-0000-0000-00000000c001', '0000000a-0000-0000-0000-000000000001', 'Leave approval');
+update workflows set status = 'published', updated_by = '00000000-0000-0000-0000-0000000000a1', graph = replace($json${
+  "nodes": [
+    {"id":"start","type":"start","formId":"0000000a-0000-0000-0000-0000000000f1","position":{"x":0,"y":0}},
+    {"id":"approve","type":"form","label":"Manager approval","formId":"0000000a-0000-0000-0000-0000000000f3","assignee":{"role":"ROLE_ADMIN"},"mode":"approve","due":{"amount":2,"unit":"days"},"position":{"x":240,"y":0}},
+    {"id":"long","type":"condition","label":"More than 2 days?","rule":{"field":"days","operator":"gt","value":2},"position":{"x":480,"y":0}},
+    {"id":"wait","type":"time","label":"Wait a minute","after":{"amount":1,"unit":"minutes"},"position":{"x":720,"y":0}},
+    {"id":"done","type":"end","label":"Approved","status":"done","position":{"x":960,"y":0}},
+    {"id":"rejected","type":"end","label":"Rejected","status":"rejected","position":{"x":480,"y":160}}
+  ],
+  "edges": [
+    {"id":"e1","from":"start","outcome":"submitted","to":"approve","actions":[]},
+    {"id":"e2","from":"approve","outcome":"approved","to":"long","actions":[{"type":"send_message"}]},
+    {"id":"e3","from":"approve","outcome":"rejected","to":"rejected","actions":[{"type":"set_status","label":"Rejected by manager"}]},
+    {"id":"e4","from":"long","outcome":"yes","to":"wait","actions":[]},
+    {"id":"e5","from":"long","outcome":"no","to":"done","actions":[]},
+    {"id":"e6","from":"wait","outcome":"next","to":"done","actions":[{"type":"generate_pdf"}]}
+  ]
+}$json$, 'ROLE_ADMIN', (select id::text from roles where org_id = '0000000a-0000-0000-0000-000000000001' and name = 'Admin'))::jsonb
+where id = '0000000a-0000-0000-0000-00000000c001';
+
+-- pg_cron → resume (local values only; hosted projects set their own, see README).
+select vault.create_secret('http://host.docker.internal:54321/functions/v1/resume', 'resume_url');
+select vault.create_secret('local-cron-secret', 'cron_secret');

@@ -45,14 +45,14 @@ isOneToOne: false
                   ]
                 },"form_submissions": {
                   Row: {
-                    "answers": NonNullable<Json>,"created_at": string,"form_id": string,"id": string,"org_id": string,"submitted_by": string
+                    "answers": NonNullable<Json>,"created_at": string,"form_id": string,"id": string,"node_id": string | null,"org_id": string,"outcome": string,"record_id": string | null,"submitted_by": string,"task_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "answers": NonNullable<Json>,"created_at"?: string,"form_id": string,"id"?: string,"org_id": string,"submitted_by": string
+                    "answers": NonNullable<Json>,"created_at"?: string,"form_id": string,"id"?: string,"node_id"?: string | null,"org_id": string,"outcome"?: string,"record_id"?: string | null,"submitted_by": string,"task_id"?: string | null
                   }
                   Update: {
-                    "answers"?: NonNullable<Json>,"created_at"?: string,"form_id"?: string,"id"?: string,"org_id"?: string,"submitted_by"?: string
+                    "answers"?: NonNullable<Json>,"created_at"?: string,"form_id"?: string,"id"?: string,"node_id"?: string | null,"org_id"?: string,"outcome"?: string,"record_id"?: string | null,"submitted_by"?: string,"task_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -61,6 +61,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "forms"
       referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "form_submissions_record_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "form_submissions_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: true
+      referencedRelation: "tasks"
+      referencedColumns: ["id"]
     }
                   ]
                 },"forms": {
@@ -157,6 +169,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"record_events": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"detail": NonNullable<Json>,"id": number,"kind": string,"node_id": string | null,"org_id": string,"record_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"detail"?: NonNullable<Json>,"id"?: never,"kind": string,"node_id"?: string | null,"org_id": string,"record_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"detail"?: NonNullable<Json>,"id"?: never,"kind"?: string,"node_id"?: string | null,"org_id"?: string,"record_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "record_events_record_id_org_id_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"records": {
+                  Row: {
+                    "created_at": string,"current_node_id": string | null,"data": NonNullable<Json>,"error": string | null,"id": string,"label": string | null,"org_id": string,"started_by": string,"status": string,"step": number,"title": string,"updated_at": string,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"current_node_id"?: string | null,"data"?: NonNullable<Json>,"error"?: string | null,"id"?: string,"label"?: string | null,"org_id": string,"started_by": string,"status"?: string,"step"?: number,"title": string,"updated_at"?: string,"workflow_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"current_node_id"?: string | null,"data"?: NonNullable<Json>,"error"?: string | null,"id"?: string,"label"?: string | null,"org_id"?: string,"started_by"?: string,"status"?: string,"step"?: number,"title"?: string,"updated_at"?: string,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "records_workflow_id_org_id_fkey"
+      columns: ["workflow_id","org_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
                 },"role_permissions": {
                   Row: {
                     "permission": string,"role_id": string
@@ -203,6 +255,98 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"scheduled_actions": {
+                  Row: {
+                    "created_at": string,"error": string | null,"finished_at": string | null,"id": string,"org_id": string,"record_id": string,"resume_node_id": string,"run_at": string,"state_at_schedule": number,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"org_id": string,"record_id": string,"resume_node_id": string,"run_at": string,"state_at_schedule": number,"status"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"org_id"?: string,"record_id"?: string,"resume_node_id"?: string,"run_at"?: string,"state_at_schedule"?: number,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scheduled_actions_record_id_org_id_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"tasks": {
+                  Row: {
+                    "assignee_role_id": string | null,"assignee_user_id": string | null,"claimed_by": string | null,"created_at": string,"done_at": string | null,"due_at": string | null,"id": string,"node_id": string,"org_id": string,"overdue_notified_at": string | null,"record_id": string,"status": string,"is_mine": boolean | null
+                  }
+                  ComputedFields: "is_mine"
+                  Insert: {
+                    "assignee_role_id"?: string | null,"assignee_user_id"?: string | null,"claimed_by"?: string | null,"created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"node_id": string,"org_id": string,"overdue_notified_at"?: string | null,"record_id": string,"status"?: string
+                  }
+                  Update: {
+                    "assignee_role_id"?: string | null,"assignee_user_id"?: string | null,"claimed_by"?: string | null,"created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"node_id"?: string,"org_id"?: string,"overdue_notified_at"?: string | null,"record_id"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tasks_assignee_role_id_fkey"
+      columns: ["assignee_role_id"]
+isOneToOne: false
+      referencedRelation: "roles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "tasks_record_id_org_id_fkey"
+      columns: ["record_id","org_id"]
+isOneToOne: false
+      referencedRelation: "records"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"workflow_access": {
+                  Row: {
+                    "can_start": boolean,"can_view_all": boolean,"org_id": string,"role_id": string,"workflow_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "can_start"?: boolean,"can_view_all"?: boolean,"org_id": string,"role_id": string,"workflow_id": string
+                  }
+                  Update: {
+                    "can_start"?: boolean,"can_view_all"?: boolean,"org_id"?: string,"role_id"?: string,"workflow_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflow_access_role_id_org_id_fkey"
+      columns: ["role_id","org_id"]
+isOneToOne: false
+      referencedRelation: "roles"
+      referencedColumns: ["id","org_id"]
+    },{
+      foreignKeyName: "workflow_access_workflow_id_org_id_fkey"
+      columns: ["workflow_id","org_id"]
+isOneToOne: false
+      referencedRelation: "workflows"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"workflows": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"graph": NonNullable<Json>,"id": string,"name": string,"org_id": string,"published_at": string | null,"published_by": string | null,"status": string,"updated_at": string,"updated_by": string | null,"can_start": boolean | null
+                  }
+                  ComputedFields: "can_start"
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"graph"?: NonNullable<Json>,"id"?: string,"name": string,"org_id": string,"published_at"?: string | null,"published_by"?: string | null,"status"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"graph"?: NonNullable<Json>,"id"?: string,"name"?: string,"org_id"?: string,"published_at"?: string | null,"published_by"?: string | null,"status"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "workflows_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -215,6 +359,12 @@ isOneToOne: false
 "audit":
 { Args: { "p_action": string,"p_after": Json,"p_before": Json,"p_org": string,"p_target": string }; Returns: undefined
                            },
+"can_start":
+{ Args: { "w": Omit<Database["public"]['Tables']["workflows"]['Row'], Database["public"]['Tables']["workflows"]['ComputedFields']> }; Returns: boolean
+                           },
+"claim_task":
+{ Args: { "p_task": string }; Returns: undefined
+                           },
 "create_org":
 { Args: { "p_id"?: string,"p_name": string }; Returns: string
                            },
@@ -226,15 +376,28 @@ isOneToOne: false
                            },
 "has_permission":
 { Args: { "p_org": string,"p_perm": string }; Returns: boolean
+                           } |
+{ Args: { "p_org": string,"p_perm": string,"p_workflow": string }; Returns: boolean
                            },
 "is_member":
 { Args: { "p_org": string }; Returns: boolean
                            },
+"is_mine":
+{ Args: { "t": Omit<Database["public"]['Tables']["tasks"]['Row'], Database["public"]['Tables']["tasks"]['ComputedFields']> }; Returns: boolean
+                           },
 "my_permissions":
 { Args: { "p_org": string }; Returns: string[]
                            },
+"open_record_counts":
+{ Args: { "p_workflow": string }; Returns: {
+              "n": number,"node_id": string
+            }[]
+                           },
 "owner_count":
 { Args: { "p_org": string }; Returns: number
+                           },
+"record_visible":
+{ Args: { "p_record": string }; Returns: boolean
                            },
 "remove_member":
 { Args: { "p_member_id": string }; Returns: undefined
