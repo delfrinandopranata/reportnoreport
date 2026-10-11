@@ -1,3 +1,4 @@
+import { initShowcase } from './showcase'
 import { LOOP_MS, loopState, runLine, shouldAnimate } from './loop'
 
 const root = document.documentElement
@@ -21,6 +22,8 @@ const addRun = (fresh: boolean) => {
   while (runs.children.length > 4) runs.lastElementChild?.remove()
 }
 for (let i = 0; i < 4; i++) addRun(false)
+
+const showcase = initShowcase(animate)
 
 /* Reveals: one observer, each element once. Still mode shows everything at once. */
 const reveal = document.querySelectorAll('.rnr-rise, .lp-sharp')
@@ -69,7 +72,7 @@ function start() {
   const hubDots = [...document.querySelectorAll<SVGElement>('.lp-hd')]
   const hubLens = hubPaths.map((p) => (p ? len(p) : 0))
 
-  const targets = [hero, appr, hub]
+  const targets: (Element | null | undefined)[] = [hero, appr, hub, showcase?.root]
   const seen = new Map<Element, { on: boolean; t0: number }>(targets.flatMap((t) => (t ? [[t, { on: false, t0: 0 }] as const] : [])))
   const vis = new IntersectionObserver((es) => es.forEach((e) => {
     const s = seen.get(e.target)
@@ -115,6 +118,8 @@ function start() {
       const s = u >= 3700 && u < 8000
       if (s !== stamped) { stamped = s; stamp2.toggleAttribute('data-thump', s) }
     }
+    const sc = showcase && seen.get(showcase.root)
+    if (showcase && sc?.on) showcase.update(now - sc.t0)
     const hb = hub && seen.get(hub)
     if (hb?.on) {
       hubDots.forEach((el, i) => {
