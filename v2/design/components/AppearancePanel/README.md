@@ -1,20 +1,30 @@
-# AppearancePanel
+# Appearance panel
 
-The settings panel where a firm and each person customise the look: theme, colour preset, surface style, density and motion.
+Settings → Appearance. Theme, Density, Accent, a live preview and a caption. Classes `rnr-appearance`, `rnr-seg` / `rnr-seg-i`, `rnr-swatches`, `rnr-swatch`, `rnr-swatch-body|chip|check`, `rnr-prefs-preview`.
 
-v2 addition designed from the brief; it extends `ThemeToggle` (`src/ui.tsx`) and the firm `design_system` column (migration `20261007000004`).
-
-## What each choice sets (on `<html>`)
-| Control | Attribute | Values | Scope |
+## What each control sets (on `<html>`)
+| Control | Attribute | Values | Stored |
 |---|---|---|---|
-| Theme | `data-theme` (+ `.dark`) | light, dark, system → light/dark | per person |
-| Colour preset | `data-preset` | default, ocean, forest, sunset | per firm (admins) |
-| Black & White | `data-theme` | bw-light, bw-dark (follows light/dark) | per person; overrides preset |
-| Surface style | `data-style` | solid, glass, neu | per person |
+| Theme | `data-theme` | light, dark; System follows the OS | per person, `user_metadata.appearance` |
+| Accent | `data-accent` | midnight, ocean, bw, graphite, fern, rosewood, iris, saffron | per person |
 | Density | `data-density` | comfortable, compact | per person |
-| Motion | `data-motion` | full, flat (forced flat under `prefers-reduced-motion`) | per person |
+| Motion | `data-motion` | flat when the OS asks for reduced motion, else full | **not a setting** |
+Applied before first paint from `localStorage['rnr.appearance']`; the session value wins.
 
-## Rules
-- Apply before first paint (like the theme bootstrap script in `app/index.html`) to avoid a flash.
-- Preview changes live; no Save button for per-person choices.
-- Presets are shown as swatches with names in `aria-label`; the selected one gets an `ink` 2px ring.
+## Anatomy
+A folder panel (radius 20, tab "Settings · Appearance"). Theme and Density are segmented radio groups (native radios). Accent is **8 swatches in a 4 × 2 grid** (2 × 4 below 480px): each swatch is a radio (the input covers it for the keyboard) with a gradient chip (`data-accent` on the chip gives it its own colours, no inline styles) and the name. Selected: 2px `--ink` border + check badge, never colour alone. Preview row (`aria-hidden`): primary button with chip, trend chip, stamp.
+
+## States
+rest · hover · focus-visible (3px ring on the swatch body) · selected · saving (polite notice "Appearance saved.") · save failed (`role="alert"`: "Your appearance is saved on this device only. Try again to keep it on your other devices.").
+
+## Do
+Apply a change at once (the page is the live preview); save once at a time and queue a newer change.
+
+## Don't
+No Save button; no preset or surface-style choices (retired); no motion switch.
+
+## Accessibility
+Native radiogroups: arrow keys move and select, one tab stop; swatch names are in the label and `aria-label`; the panel is not modal.
+
+## Copy
+Caption: "Your choice follows you to every device you sign in on."

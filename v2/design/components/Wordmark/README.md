@@ -1,10 +1,24 @@
 # Wordmark
 
-The product name set in type — there is no drawn logo file in the repository.
+The name set in type: "ReportNoReport" in Fraunces with the second "R" struck through. Classes `rnr-wordmark`, `rnr-wordmark-rr`, `rnr-strike`; React: `Wordmark({ href? })`.
 
-Recreated from the landing page header and hero in `index.html` (the favicon in `public/` is Vite's default, not a brand mark).
+## Anatomy
+```html
+<span class="rnr-wordmark" data-draw role="img" aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span>
+```
+Fraunces 500, 20px, −0.02em, SOFT 100, opsz 36. Strike: `--strike` 3.2 stroke, round caps, `stroke-dasharray: 60`.
 
-## Rules
-- Lockup: a 40px `radius-lg` tile in `brand-solid` with a bold 14px "R" in `brand-solid-ink`, 12px gap, then "Report**No**Report" in the `wordmark` style with "No" in `ink-faint`.
-- Screen readers get `aria-label="ReportNoReport"`.
-- The hero joke "Report without repo~~r~~t." uses `rnr-strike`: a `danger` bar drawn in over 500ms after a 450ms delay (static in flat motion).
+## Motion
+With `data-draw` the strike is drawn once (0.7s, after 0.5s). Drawn already under `data-motion="flat"` and reduced motion. No loop.
+
+## Do
+Use it in the sidebar tab, the top bar, the landing header and public pages. Keep the casing exactly.
+
+## Don't
+Don't redraw it as an image, recolour the strike per surface (it is `--strike`), or set it in Hanken. Never uppercase it (the folder tab uppercases text; the class opts out with `text-transform: none`).
+
+## Accessibility
+One announced name via `role="img"`/`aria-label`; the link (if any) goes to the inbox or the home page. Strike ≥ 3:1 on canvas in every combination.
+
+## Copy
+"ReportNoReport", one word.

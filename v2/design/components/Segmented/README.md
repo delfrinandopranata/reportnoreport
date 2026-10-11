@@ -1,11 +1,24 @@
-# Segmented
+# Segmented control
 
-A pill track of 2–4 mutually exclusive options: In/Out, Comfortable/Compact, report period, appearance modes.
+One choice from 2–4 short options (Theme, Density, Map / List, widget width). Class `rnr-seg` with `button[role=radio|aria-pressed]` items, or native radios in `label.rnr-seg-i`.
 
-Hand-written from the In/Out picker in `src/ui.tsx` (`TxnForm`) and the density toggle in `src/table.tsx`.
+## Shape (concentric corners)
+Track radius `--r-track` = **14px** (12px compact), 4px padding, item radius = track − 4px = **10px** (8px compact). The selected item is filled with `--acc` and `--on-acc` (ink in Black & White).
 
-## Rules
-- Track: `surface-200`, `space-1` padding, `radius-lg`. Selected segment: `surface-100` + `shadow-sm` (B&W: inverted, `ink` fill).
-- As a choice in a form use `role="radiogroup"` + `role="radio"`/`aria-checked`, roving tabindex, arrow keys move. As a view toggle use buttons with `aria-pressed`.
-- In/Out segments colour the selected label `in` / `out` and always show the arrow icon.
-- More than 4 options → use a select.
+## Sizes
+Item height `--ctl-h − 8px` (36px comfortable, 28px compact, 36px+ on coarse pointers because `--ctl-h` becomes 44).
+
+## States
+rest (item `--ink-2` on `--soft`) · hover (item lifts to `--surface`) · focus-visible (3px ring) · selected (`aria-checked="true"` / `aria-pressed="true"` / `:checked`) · disabled (40%).
+
+## Do
+Use native radios for Theme-style settings (arrow keys come free). Use `role="group"` with `aria-pressed` for view toggles. Four options wrap to two columns below 640px.
+
+## Don't
+Don't use it for navigation (use Tabs) or for more than four options (use a select).
+
+## Accessibility
+Selected state is fill + weight, never fill alone for the only cue in B&W (ink fill). Radiogroups have an accessible name (`aria-label` or `legend`).
+
+## Copy
+One or two words, sentence case: "Comfortable", "Compact", "Map", "List".

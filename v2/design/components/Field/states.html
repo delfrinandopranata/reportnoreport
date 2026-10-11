@@ -1,0 +1,13 @@
+<div class="pv-grid">
+<div class="rnr-field"><label class="rnr-label" for="f1">Full name</label><input class="rnr-input" id="f1" value="Jo Okafor" autocomplete="name"></div>
+<div class="rnr-field"><label class="rnr-label" for="f2">Work email</label><input class="rnr-input" id="f2" type="email" placeholder="you@organisation.org"><span class="rnr-hint">Used for approval updates only.</span></div>
+<div class="rnr-field" data-invalid="true"><label class="rnr-label" for="f3">Number of days</label><input class="rnr-input" id="f3" aria-invalid="true" aria-describedby="f3e" value="abc"><span class="rnr-error" id="f3e">{{i:warning-circle}}Enter a number of days.</span></div>
+<div class="rnr-field"><label class="rnr-label" for="f4">Organisation</label><input class="rnr-input" id="f4" value="Northcote Council" disabled></div>
+<div class="rnr-field"><label class="rnr-label" for="f5">Team</label><span class="rnr-select"><select class="rnr-input" id="f5"><option>Housing</option><option>Planning</option></select></span></div>
+<div class="rnr-field"><label class="rnr-label" for="f6">Reason</label><textarea class="rnr-input" id="f6" placeholder="Say why you need the time"></textarea><span class="rnr-hint">Up to 10,000 characters.</span></div>
+<div class="rnr-field"><label class="rnr-label" for="f7">Search records</label><span class="rnr-input-wrap">{{i:magnifying-glass}}<input class="rnr-input" id="f7" type="search" placeholder="Search by name or number"></span></div>
+<div class="rnr-field"><span class="rnr-label">Reference</span><div class="rnr-readout rnr-mono">LV-4821</div></div>
+<div class="rnr-field rnr-combo"><label class="rnr-label" for="f8">Assign to role</label><input class="rnr-input" id="f8" role="combobox" aria-expanded="true" aria-controls="f8l" aria-autocomplete="list" value="Man">
+  <ul class="rnr-menu" id="f8l" role="listbox" style="position:static;margin-top:8px"><li class="rnr-menu-item" role="option" aria-selected="true" data-active="true">Manager</li><li class="rnr-menu-item" role="option" aria-selected="false">Manager (read only)</li></ul></div>
+</div>
+<p class="pv-state">Rest, filled, placeholder, hint, error (outline plus icon plus sentence), disabled, select, textarea, search, read-only readout, combobox with an open listbox. Hover darkens the edge; focus-visible draws the 3px ring.</p>
