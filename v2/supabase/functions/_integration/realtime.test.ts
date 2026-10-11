@@ -37,16 +37,22 @@ Deno.test({
     const admin = await signIn('admin@alpha.test')
     const sql = postgres(db!, { max: 1 })
     const got = { member: [] as string[], admin: [] as string[] }
-    const title = `rt-${crypto.randomUUID()}`
+    const titles: string[] = []
     try {
       await Promise.all([listen(member, got.member), listen(admin, got.admin)])
-      await sql`insert into notifications (user_id, org_id, kind, title, link) values (${MEMBER}, ${ALPHA}, 'custom', ${title}, '#/inbox')`
-      for (let i = 0; i < 50 && !got.member.includes(title); i++) await wait(100)
+      // A freshly started Realtime can report SUBSCRIBED before its replication stream is live,
+      // so keep inserting (a new title each time) until the member receives one.
+      for (let attempt = 0; attempt < 30 && !titles.some((t) => got.member.includes(t)); attempt++) {
+        const title = `rt-${crypto.randomUUID()}`
+        titles.push(title)
+        await sql`insert into notifications (user_id, org_id, kind, title, link) values (${MEMBER}, ${ALPHA}, 'custom', ${title}, '#/inbox')`
+        for (let i = 0; i < 10 && !got.member.includes(title); i++) await wait(100)
+      }
       await wait(1000) // give a leak time to arrive
-      assertEquals(got.member.includes(title), true)
-      assertEquals(got.admin.includes(title), false)
+      assertEquals(titles.some((t) => got.member.includes(t)), true)
+      assertEquals(titles.some((t) => got.admin.includes(t)), false)
     } finally {
-      await sql`delete from notifications where title = ${title}`
+      await sql`delete from notifications where title = any(${titles})`
       await sql.end()
       await member.removeAllChannels()
       await admin.removeAllChannels()
