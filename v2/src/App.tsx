@@ -12,14 +12,22 @@ import { MembersPage } from './members/MembersPage'
 import { RolesPage } from './roles/RolesPage'
 import { FormsPage } from './forms/FormsPage'
 import { FillPage } from './forms/fill/FillPage'
+import { FormBuilder } from './forms/builder/FormBuilder'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
+import { blocksNavigation } from './ui/navGuard'
 
 const useHash = () => {
   const [hash, setHash] = useState(location.hash || '#/members')
+  const current = useRef(hash)
   useEffect(() => {
-    const on = () => setHash(location.hash || '#/members')
+    const on = () => {
+      const next = location.hash || '#/members'
+      if (blocksNavigation(next)) { history.replaceState(null, '', current.current); return } // the page asks first
+      current.current = next
+      setHash(next)
+    }
     addEventListener('hashchange', on)
     return () => removeEventListener('hashchange', on)
   }, [])
@@ -30,6 +38,7 @@ function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'roles': return <RolesPage />
     case 'forms': return <FormsPage />
+    case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
     default: return <MembersPage />
   }
