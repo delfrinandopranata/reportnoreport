@@ -6,6 +6,8 @@
 @import "../design/tokens.css";
 @import "../design/components/bundle.css";
 @import "tailwindcss";
+/* In the base layer so the bundle's rnr-flow rules (components layer) win over xyflow's own unlayered stylesheet. */
+@import "@xyflow/react/dist/style.css" layer(base);
 
 /* design/ owns every rnr-* class (in @layer components). Never write unlayered CSS that targets rnr-* here: it beats the bundle and the utilities. */
 @theme inline {
@@ -52,58 +54,14 @@
 
 body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
-/* LEGACY until Task 7 (forms and workflows) moves the canvas to rnr-flow / rnr-node and deletes every wf-* rule below. Tokens already remapped. */
-.wf-board { padding: 0; overflow: hidden; background-image: none; }
-.wf-board .react-flow {
-  --xy-background-color: transparent;
-  --xy-edge-stroke: var(--ink-3);
-  --xy-edge-stroke-selected: var(--ink);
-  --xy-edge-stroke-width: 1.5;
-  --xy-edge-label-color: var(--ink-2);
-  --xy-edge-label-background-color: var(--surface);
-  --xy-handle-background-color: var(--surface);
-  --xy-handle-border-color: var(--ink-2);
-  --xy-controls-button-background-color: var(--surface);
-  --xy-controls-button-background-color-hover: var(--soft);
-  --xy-controls-button-color: var(--ink-2);
-  --xy-controls-button-border-color: var(--line);
-  --xy-attribution-background-color: transparent;
-  color: var(--ink-3);
-  font-family: var(--font-ui);
-}
-.wf-board .react-flow__background-pattern { fill: var(--chart-grid); stroke: none; }
-.wf-board .react-flow__edge-text { font-size: 12px; fill: var(--ink-2); }
-.wf-board .react-flow__edge-textbg { fill: var(--surface); stroke: var(--line); }
-.wf-board .react-flow__connection-path { stroke: var(--focus); stroke-width: 1.5; }
-.wf-board .react-flow__handle { border-radius: var(--r-avatar); background: var(--surface); border: 2px solid var(--ink-2); }
-.wf-board .react-flow__handle.connectionindicator:hover, .wf-board .react-flow__handle.connectingfrom { border-color: var(--focus); }
-.wf-board .react-flow__controls { border: 1px solid var(--line); border-radius: var(--r-control); overflow: hidden; }
-.wf-board .react-flow__controls-button { background: var(--surface); color: var(--ink-2); border-bottom: 1px solid var(--soft); min-width: 28px; min-height: 28px; }
-.wf-board .react-flow__controls-button:hover { background: var(--soft); }
-.wf-board .react-flow__controls-button svg { fill: currentColor; }
-.wf-board .react-flow__attribution { background: transparent; font-size: 12px; }
-.wf-board .react-flow__attribution a { color: var(--ink-3); }
-.wf-board .react-flow__node:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-card); }
-.wf-board .react-flow__node.dragging .wf-card { box-shadow: var(--sh-float); border-color: var(--line-strong); }
-[data-accent="bw"] .wf-board .react-flow__node.dragging .wf-card { box-shadow: 6px 6px 0 0 var(--ink); }
-@media (pointer: coarse) { .wf-board .react-flow__controls-button { min-width: var(--touch); min-height: var(--touch); } }
-@media (pointer: coarse) { .wf-board--readonly { pointer-events: none; } } /* a static picture on touch: page scroll is never trapped */
-
-.wf-card { width: 208px; flex-direction: column; align-items: stretch; gap: var(--space-1); padding: var(--space-3); overflow-wrap: anywhere; }
-.wf-card[data-issue="true"] { border-color: var(--down); }
-.wf-card[data-current="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
-.wf-card[data-readonly="true"] .react-flow__handle { pointer-events: none; }
-.wf-outs { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
-.wf-out { position: relative; display: flex; align-items: center; justify-content: flex-end; min-height: 28px; margin-right: calc(-1 * var(--space-3)); padding-right: var(--space-3); }
-.wf-card .react-flow__handle { width: 12px; height: 12px; }
-.wf-card .react-flow__handle::after { content: ''; position: absolute; inset: -8px; }
-.wf-card .react-flow__handle-right { right: -6px; }
-.wf-card .react-flow__handle-left { left: -6px; }
-.wf-outcome { gap: var(--space-3); } /* unlayered .rnr-field gap beats the Tailwind gap utility */
-
 .rnr-drag-overlay, .rnr-drag-overlay > .rnr-card { height: 100%; }
 
 /* phase 7: batch 6 — auth, orgs, inbox, records, members, roles (Task 6 only) */
 /* phase 7: batch 7 — forms, workflows (Task 7 only) */
+/* A selected workflow node: the same cue as a selected block. Layered so utilities and the bundle keep their order. */
+@layer components {
+  .rnr-node[data-selected="true"] .rnr-folder-body { background: var(--tint); box-shadow: 0 0 0 1px var(--focus); }
+  .rnr-node[data-selected="true"][data-issue="true"] .rnr-folder-body { box-shadow: 0 0 0 1px var(--focus), inset 0 0 0 1.5px var(--down); }
+}
 /* phase 7: batch 8 — comms, campaigns (Task 8 only) */
 /* phase 7: batch 9 — reports (Task 9 only) */

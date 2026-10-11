@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import type { Field } from '../../forms/logic'
 import { DraftInput } from '../../forms/builder/DraftInput'
 import { RuleEditor } from '../../forms/builder/RuleEditor'
+import { FolderCard } from '../../ui/FolderCard'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import {
   OUTCOME_LABELS, TYPE_LABELS, UNITS, outcomesOf,
@@ -79,14 +80,14 @@ function ActionList({ edgeId, actions, onChange, onSay, graph, roles, members, f
   }
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="label">Actions</h3>
+      <h3 className="rnr-fieldset-label">Actions</h3>
       <p className="rnr-caption">Actions run in the order you add them.</p>
       {actions.map((a, i) => {
         const title = ACTION_TITLES[a.type as keyof typeof ACTION_TITLES] ?? 'Unknown action'
         return (
           <div key={i} id={`act-${edgeId}-${i}`} className="rnr-block flex-col items-stretch gap-2">
             <div className="flex items-center gap-2">
-              <span className="label flex-1">{title}</span>
+              <span className="flex-1 font-medium">{title}</span>
               <button className="rnr-btn rnr-btn-ghost" type="button" aria-label={`Remove ${title} action`}
                 onClick={() => { onChange(actions.filter((_, j) => j !== i)); onSay(`${title} action removed.`) }}>Remove</button>
             </div>
@@ -138,12 +139,9 @@ export function SidePanel({ graph, node, open, forms, roles, members, messages, 
     onSay(target ? `${OUTCOME_LABELS[o]} of ${name} now goes to ${stepLabel(graph, target)}.` : `${OUTCOME_LABELS[o]} of ${name} is not connected.`)
   }
   const [recordsAre, them] = plural(open)
-  return (
-    <section className={inSheet ? 'flex flex-col gap-4' : 'rnr-card gap-4'} aria-labelledby={inSheet ? undefined : 'sp-h'}>
-      <div>
-        {!inSheet && <h2 id="sp-h" tabIndex={-1} className="dialog-title">{TYPE_LABELS[node.type]} step</h2>}
-        <p className="rnr-caption">{name}</p>
-      </div>
+  const body = (
+    <div className="flex flex-col gap-4">
+      <p className="rnr-caption">{name}</p>
       <DraftInput key={`${node.id}-label`} label="Step name" hint="Shown on the card and on the record's timeline." value={node.label ?? ''}
         onCommit={(t) => update({ ...node, label: t.trim() || undefined })} />
 
@@ -207,7 +205,7 @@ export function SidePanel({ graph, node, open, forms, roles, members, messages, 
       {outcomesOf(node).map((o) => {
         const edge = graph.edges.find((e) => e.from === node.id && e.outcome === o)
         return (
-          <fieldset key={o} id={`out-${o}`} className="rnr-field wf-outcome">
+          <fieldset key={o} id={`out-${o}`} className="rnr-outcome">
             <legend className="rnr-label" tabIndex={-1}>{WHEN[o]}</legend>
             {/* The keyboard way to connect: same result as dragging from the card's handle. */}
             <Select label="Goes to" value={edge?.to ?? ''} options={[['', 'Not connected'], ...targets]} onChange={(to) => goTo(o, to)} />
@@ -220,6 +218,7 @@ export function SidePanel({ graph, node, open, forms, roles, members, messages, 
       {open > 0
         ? <p className="rnr-caption" id="del-hint">{open} open {recordsAre} on this step, so it cannot be deleted. Let {them} finish first.</p>
         : <div><button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Delete ${name}`} onClick={onDelete}>Delete step</button></div>}
-    </section>
+    </div>
   )
+  return inSheet ? body : <FolderCard tab={<h2 id="sp-h" tabIndex={-1}>{TYPE_LABELS[node.type]} step</h2>}>{body}</FolderCard>
 }

@@ -10,9 +10,9 @@ type Props = {
 function Row({ graph, node, selected, issues, open, onSelect }: { graph: Graph; node: WfNode; selected: boolean; issues: string[]; open: number; onSelect(id: string): void }) {
   return (
     <li className="rnr-block" data-selected={selected ? 'true' : 'false'}>
-      <button type="button" id={`step-row-${node.id}`} className="rnr-pick rnr-focus" aria-pressed={selected} onClick={() => onSelect(node.id)}>
+      <button type="button" id={`step-row-${node.id}`} className="rnr-pick" aria-pressed={selected} onClick={() => onSelect(node.id)}>
         <span className="rnr-caption block">{TYPE_LABELS[node.type]}</span>
-        <span className="label block">{stepLabel(graph, node)}</span>
+        <span className="block font-medium" title={stepLabel(graph, node)}>{stepLabel(graph, node)}</span>
         {outcomesOf(node).map((o) => {
           const to = graph.edges.find((e) => e.from === node.id && e.outcome === o)?.to
           return (
@@ -41,7 +41,7 @@ export function StepList({ graph, selected, issues, open, onSelect }: Props) {
       {reached.length > 0 && rows(reached, 'Steps')}
       {loose.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="label">Not connected to Start</h3>
+          <h3 className="rnr-fieldset-label">Not connected to Start</h3>
           {rows(loose, 'Steps not connected to Start')}
         </div>
       )}

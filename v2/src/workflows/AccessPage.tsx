@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
+import { FolderCard } from '../ui/FolderCard'
 import { friendlyError } from '../ui/errors'
 import { CheckIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
@@ -58,45 +59,51 @@ function Access({ wf }: { wf: LoadedWorkflow }) {
   )
 
   return (
-    <section className="flex flex-col gap-4 max-w-3xl" aria-labelledby="acc-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 id="acc-h" tabIndex={-1} className="page-title">Workflow access</h1>
-          <p className="rnr-muted">{wf.name}</p>
+    <section className="flex flex-col gap-4" aria-labelledby="acc-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build · {wf.name}</p>
+          <h1 id="acc-h" tabIndex={-1} className="rnr-page-title">Workflow <em>access</em></h1>
         </div>
-        <a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${wf.id}/edit`}>Edit workflow</a>
-      </div>
-      <p className="rnr-caption">A role also needs Start records or View all records on the Roles page before these take effect. Everyone always sees the records they started, submitted to or have a task on.</p>
-      {error && <p className="rnr-error" role="alert">{error}</p>}
-      <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-      {(roles.isPending || grants.isPending) && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
-      {(roles.isError || grants.isError) && (
-        <div className="rnr-card gap-3">
-          <p role="alert">Access for this workflow did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => { roles.refetch(); grants.refetch() }}>Try again</button></div>
+        <div className="rnr-page-actions"><a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${wf.id}/edit`}>Edit workflow</a></div>
+      </header>
+      <FolderCard tab={<span>Access</span>}>
+        <div className="grid gap-4">
+          <p className="rnr-caption">A role also needs Start records or View all records on the Roles page before these take effect. Everyone always sees the records they started, submitted to or have a task on.</p>
+          {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
+          <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
+          {(roles.isPending || grants.isPending) && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
+          {(roles.isError || grants.isError) && (
+            <div className="rnr-note" data-tone="down" role="alert">
+              <div className="grid gap-3">
+                <p>Access for this workflow did not load. Check your connection and try again.</p>
+                <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => { roles.refetch(); grants.refetch() }}>Try again</button></div>
+              </div>
+            </div>
+          )}
+          {roles.data && grants.data && (
+            <>
+              <div className="rnr-card rnr-table-card">
+                <table className="rnr-table rnr-sticky-first">
+                  <caption className="rnr-sr-only">Workflow access for {wf.name}</caption>
+                  <thead><tr><th scope="col">Role</th><th scope="col">Can start</th><th scope="col">Can view all records</th></tr></thead>
+                  <tbody>
+                    {roles.data.map((r) => (
+                      <tr key={r.id}>
+                        <th scope="row">{r.name}</th>
+                        {r.is_owner
+                          ? <><td className="rnr-muted">Always</td><td className="rnr-muted">Always</td></>
+                          : <><td>{box(r, 'can_start', 'Can start')}</td><td>{box(r, 'can_view_all', 'Can view all records')}</td></>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {roles.data.every((r) => r.is_owner) && <p className="rnr-caption">Add roles on the Roles page to control who can start this workflow.</p>}
+            </>
+          )}
         </div>
-      )}
-      {roles.data && grants.data && (
-        <>
-          <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
-            <table className="rnr-table rnr-sticky-first">
-              <caption className="sr-only">Workflow access for {wf.name}</caption>
-              <thead><tr><th scope="col">Role</th><th scope="col">Can start</th><th scope="col">Can view all records</th></tr></thead>
-              <tbody>
-                {roles.data.map((r) => (
-                  <tr key={r.id}>
-                    <th scope="row">{r.name}</th>
-                    {r.is_owner
-                      ? <><td className="rnr-muted">Always</td><td className="rnr-muted">Always</td></>
-                      : <><td>{box(r, 'can_start', 'Can start')}</td><td>{box(r, 'can_view_all', 'Can view all records')}</td></>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {roles.data.every((r) => r.is_owner) && <p className="rnr-caption">Add roles on the Roles page to control who can start this workflow.</p>}
-        </>
-      )}
+      </FolderCard>
     </section>
   )
 }

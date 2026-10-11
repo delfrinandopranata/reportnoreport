@@ -85,8 +85,8 @@ function Row({ field: f, index, count, selected, hasIssue, onSelect, onStep }: R
     <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="rnr-block"
       data-key={f.key} data-selected={selected} data-dragging={isDragging || undefined}>
       <button ref={setActivatorNodeRef} type="button" className="rnr-handle" data-ctl="handle" aria-label={`Drag ${name}`} {...attributes} {...listeners}><GripIcon /></button>
-      <button type="button" className="rnr-pick rnr-focus" aria-pressed={selected} onClick={() => onSelect(f.key)}>
-        <span className="label block">{name}</span>
+      <button type="button" className="rnr-pick" aria-pressed={selected} onClick={() => onSelect(f.key)}>
+        <span className="block font-medium" title={name}>{name}</span>
         <span className="rnr-caption block">{meta(f, hasIssue)}</span>
       </button>
       <button type="button" className="rnr-icon-btn" data-ctl="up" aria-label={`Move ${name} up`} aria-disabled={index === 0 || undefined} onClick={() => onStep(index, -1, 'up')}><UpIcon size={14} /></button>

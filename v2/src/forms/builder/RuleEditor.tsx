@@ -64,7 +64,7 @@ export function RuleEditor({ rule, scope, self, onChange, required, legend = 'Sh
   const paths = rulePaths(scope, self)
   const missing = rule && !paths.some((p) => p.value === rule.field)
   return (
-    <fieldset className="rnr-field">
+    <fieldset className="rnr-filter">
       <legend className="rnr-label">{legend}</legend>
       {!required && <label className="rnr-check">
         <input type="checkbox" checked={!!rule} disabled={!rule && !paths.length}

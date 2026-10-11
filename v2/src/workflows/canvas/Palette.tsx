@@ -14,15 +14,14 @@ function dragStep(e: DragEvent, t: NodeType) {
   e.dataTransfer.effectAllowed = 'move'
 }
 
-function Blocks({ onAdd, className }: { onAdd(t: NodeType): void; className: string }) {
+function Blocks({ onAdd }: { onAdd(t: NodeType): void }) {
   return (
-    <ul className={className}>
+    <ul className="rnr-palette">
       {NODE_TYPES.map((t) => (
         <li key={t}>
-          <button type="button" draggable className="rnr-block rnr-focus h-full w-full text-left" aria-label={`Add ${TYPE_LABELS[t]} step`}
+          <button type="button" draggable className="rnr-palette-item w-full" title={HINTS[t]} aria-label={`Add ${TYPE_LABELS[t]} step`}
             onDragStart={(e) => dragStep(e, t)} onClick={() => onAdd(t)}>
-            <PlusIcon />
-            <span><span className="label block">{TYPE_LABELS[t]}</span><span className="rnr-caption block">{HINTS[t]}</span></span>
+            <PlusIcon />{TYPE_LABELS[t]}
           </button>
         </li>
       ))}
@@ -44,7 +43,7 @@ export function Palette({ onAdd, sheetOpen, setSheetOpen }: { onAdd(t: NodeType)
     return (
       <section aria-labelledby="pal-h" className="rnr-card gap-3">
         <div className="rnr-card-head"><h2 id="pal-h" className="rnr-card-title">Add a step</h2></div>
-        <Blocks onAdd={onAdd} className="grid gap-2 sm:grid-cols-2 md:grid-cols-5" />
+        <Blocks onAdd={onAdd} />
       </section>
     )
   }
@@ -58,7 +57,7 @@ export function Palette({ onAdd, sheetOpen, setSheetOpen }: { onAdd(t: NodeType)
           <button className="rnr-icon-btn" type="button" aria-label="Close dialog" onClick={() => setSheetOpen(false)}><XIcon /></button>
         </div>
         <div className="rnr-dialog-body">
-          <Blocks onAdd={(t) => { setSheetOpen(false); onAdd(t) }} className="grid gap-2" />
+          <Blocks onAdd={(t) => { setSheetOpen(false); onAdd(t) }} />
         </div>
       </dialog>
     </>

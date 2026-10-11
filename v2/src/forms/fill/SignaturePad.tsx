@@ -20,7 +20,7 @@ async function typedPng(text: string): Promise<Blob | null> {
   paintWhite(c)
   const g = c.getContext('2d')!
   g.fillStyle = '#000'; g.textBaseline = 'middle'
-  g.font = `italic 56px ${getComputedStyle(document.documentElement).getPropertyValue('--font-sans') || 'sans-serif'}`
+  g.font = `italic 56px ${getComputedStyle(document.documentElement).getPropertyValue('--font-ui') || 'sans-serif'}`
   g.fillText(text, 24, H / 2, W - 48)
   return new Promise((ok) => c.toBlob(ok, 'image/png'))
 }

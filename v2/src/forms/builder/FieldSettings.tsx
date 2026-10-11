@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { KEY_RE, compile, type Field, type SchemaIssue } from '../logic'
+import { FolderCard } from '../../ui/FolderCard'
 import { DraftInput } from './DraftInput'
 import { RuleEditor } from './RuleEditor'
 import { typeLabel } from './builderOps'
@@ -44,8 +45,8 @@ export function FieldSettings({ idBase, field: f, scope, taken, issues, onChange
     set({ key: k })
   }
   return (
-    <section aria-labelledby={`${idBase}-h`} className="rnr-card gap-3">
-      <div className="rnr-card-head"><h2 id={`${idBase}-h`} tabIndex={-1} className="rnr-card-title">{typeLabel(f.type)} settings</h2></div>
+    <FolderCard tab={<h2 id={`${idBase}-h`} tabIndex={-1}>{typeLabel(f.type)} settings</h2>}>
+      <div className="grid gap-4">
       {issues.length > 0 && <ul className="rnr-error">{issues.map((i) => <li key={i.message}>{i.message}</li>)}</ul>}
       <div className="rnr-field">
         <label htmlFor={`${idBase}-label`} className="rnr-label">{f.type === 'page_break' ? 'Page title' : 'Label'}</label>
@@ -84,6 +85,7 @@ export function FieldSettings({ idBase, field: f, scope, taken, issues, onChange
       )}
       {f.type !== 'page_break' && <RuleEditor rule={f.show_if} scope={scope} self={f.key} onChange={(show_if) => set({ show_if })} />}
       <div><button type="button" className="rnr-btn rnr-btn-danger" aria-label={`Remove ${f.label || typeLabel(f.type)}`} onClick={onRemove}>Remove field</button></div>
-    </section>
+      </div>
+    </FolderCard>
   )
 }

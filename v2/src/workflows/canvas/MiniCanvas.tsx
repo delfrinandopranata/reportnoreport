@@ -1,4 +1,3 @@
-import '@xyflow/react/dist/style.css'
 import { useMemo } from 'react'
 import { Background, ReactFlow, ReactFlowProvider } from '@xyflow/react'
 import { nodeById, nodeName, type Graph } from '../logic'
@@ -9,13 +8,13 @@ import { CARD_TYPES, EDGE_DEFAULTS } from './flowDefaults'
 export function MiniCanvas({ graph, current }: { graph: Graph; current: string | null }) {
   const view = useMemo(() => toFlow(graph, { current, readOnly: true }), [graph, current])
   return (
-    <div className="rnr-canvas wf-board wf-board--readonly" style={{ height: 'clamp(240px, 40dvh, 360px)' }} role="img"
+    <div className="rnr-canvas rnr-flow rnr-flow--readonly h-[clamp(240px,40dvh,360px)]" role="img"
       aria-label={`Workflow map. Current step: ${nodeName(current ? nodeById(graph, current) : undefined)}.`}>
       <ReactFlowProvider>
         <ReactFlow nodes={view.nodes} edges={view.edges} nodeTypes={CARD_TYPES} defaultEdgeOptions={EDGE_DEFAULTS}
           nodesDraggable={false} nodesConnectable={false} nodesFocusable={false} edgesFocusable={false} elementsSelectable={false}
           zoomOnScroll={false} preventScrolling={false} minZoom={0.3} fitView fitViewOptions={{ duration: 0 }}>
-          <Background gap={16} size={1} color="var(--chart-grid)" />
+          <Background gap={16} size={1} />
         </ReactFlow>
       </ReactFlowProvider>
     </div>

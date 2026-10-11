@@ -6,6 +6,8 @@ import { useAction } from '../../ui/useAction'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { inputId } from '../paths'
 import { FormRenderer } from './FormRenderer'
+import { Steps } from './Steps.tsx'
+import { stepLabels } from './steps.ts'
 import type { Uploader } from './FileInput'
 
 type Outcome = { value: string; label: string; busyLabel: string }
@@ -37,6 +39,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, outcomes, onS
   const topId = `${idPrefix}-top`
   const resolved = useMemo(() => resolve(fields, answers), [fields, answers])
   const visible = useMemo(() => visiblePages(fields, answers), [fields, answers])
+  const labels = useMemo(() => stepLabels(all), [all])
 
   if (!visible.length) return <p className="rnr-muted">{fields.length ? 'This form has no questions to answer right now.' : 'This form has no fields yet.'}</p>
   const current = Math.min(at, visible.length - 1)
@@ -77,38 +80,37 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, outcomes, onS
   }
 
   return (
-    <form noValidate className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (!last) next(); else if (!outcomes) finish() }}>
+    <form noValidate className="flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); if (!last) next(); else if (!outcomes) finish() }}>
       {anyRequired(fields) && <p className="rnr-caption">Fields marked * are required.</p>}
       {visible.length > 1 && (
-        <div id={topId} tabIndex={-1} className="flex flex-col gap-2">
-          <p className="rnr-caption">Page {current + 1} of {visible.length}</p>
-          <div aria-hidden="true" style={{ height: 4, borderRadius: 'var(--radius-full)', background: 'var(--rnr-track-bg)' }}>
-            <div style={{ height: '100%', width: `${((current + 1) / visible.length) * 100}%`, borderRadius: 'inherit', background: 'var(--ink-label)' }} />
-          </div>
-          {title && <h2 className="dialog-title">{title}</h2>}
+        <div id={topId} tabIndex={-1}>
+          <Steps labels={visible.map((i) => labels[i])} current={current} />
+          {title && <h2 className="rnr-dialog-title">{title}</h2>}
         </div>
       )}
       <FormRenderer fields={page} answers={answers} resolved={resolved} errors={errors} onChange={change} upload={upload} idPrefix={idPrefix} />
-      {formError && <p className="rnr-error" role="alert">{formError}</p>}
+      {formError && <p className="rnr-note" data-tone="down" role="alert">{formError}</p>}
       <p className="rnr-status" role="status">{checked && <><CheckIcon size={14} />These answers are valid. The preview does not save them.</>}</p>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        {current > 0 && <button type="button" className="rnr-btn rnr-btn-secondary w-full sm:w-auto" onClick={back}>Back</button>}
-        {last && onSubmit && outcomes
-          ? outcomes.map((o, i) => {
-            const mine = submit.busy && pressed === o.value
-            return (
-              <button key={o.value} type="button" className={`rnr-btn w-full sm:w-auto ${i === 0 ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`}
-                aria-busy={mine} onClick={() => finish(o.value)}>
-                {mine && <span className="rnr-spin" aria-hidden="true" />}{mine ? o.busyLabel : o.label}
+      <div className="rnr-actions">
+        {current > 0 ? <button type="button" className="rnr-btn rnr-btn-ghost" onClick={back}>Back</button> : <span />}
+        <div className="rnr-page-actions">
+          {last && onSubmit && outcomes
+            ? outcomes.map((o, i) => {
+              const mine = submit.busy && pressed === o.value
+              return (
+                <button key={o.value} type="button" className={`rnr-btn ${i === 0 ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`}
+                  aria-busy={mine} onClick={() => finish(o.value)}>
+                  {mine && <span className="rnr-spin" aria-hidden="true" />}{mine ? o.busyLabel : o.label}
+                </button>
+              )
+            })
+            : (
+              <button type="submit" className={`rnr-btn ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
+                {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
+                {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? submitLabel.busy : submitLabel.idle}
               </button>
-            )
-          })
-          : (
-            <button type="submit" className={`rnr-btn w-full sm:w-auto ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
-              {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
-              {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? submitLabel.busy : submitLabel.idle}
-            </button>
-          )}
+            )}
+        </div>
       </div>
     </form>
   )

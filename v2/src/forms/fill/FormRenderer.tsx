@@ -14,7 +14,7 @@ type Props = {
 export function FormRenderer({ fields, answers, resolved, errors, onChange, upload, idPrefix }: Props) {
   const set = (key: string, v: unknown) => onChange({ ...answers, [key]: v }, key)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {fields.map((f) => {
         if (resolved.hidden.has(f.key) || f.type === 'page_break') return null
         if (f.type === 'group') {
@@ -56,8 +56,8 @@ function GroupInput({ field: f, rows, answers, errors, upload, idPrefix, onChang
       {hint && <p id={`${id}-hint`} className="rnr-hint">{hint}</p>}
       {rows.length === 0 && <p className="rnr-muted">No rows yet.</p>}
       {rows.map((row, i) => (
-        <div key={i} role="group" aria-label={`${f.label}, row ${i + 1}`} className="flex flex-col gap-3 border-t border-line-200 pt-3">
-          <p className="label">Row {i + 1}</p>
+        <div key={i} role="group" aria-label={`${f.label}, row ${i + 1}`} className="flex flex-col gap-3 border-t border-line pt-3">
+          <p className="rnr-fieldset-label">Row {i + 1}</p>
           {(f.fields ?? []).map((c) => (c.show_if && !evaluate(c.show_if, { ...answers, ...row }) ? null : (
             <FieldInput key={c.key} id={inputId(idPrefix, `${f.key}.${i}.${c.key}`)} field={c} value={row[c.key]}
               error={errors[`${f.key}.${i}.${c.key}`]} upload={upload} onChange={(v) => setRow(i, c.key, v)} />

@@ -1,4 +1,3 @@
-import '@xyflow/react/dist/style.css'
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type Edge as FlowEdge, type NodeChange } from '@xyflow/react'
@@ -221,7 +220,12 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="wf-edit-h">
-      <h1 id="wf-edit-h" tabIndex={-1} className="page-title">Edit workflow</h1>
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build · Workflows</p>
+          <h1 id="wf-edit-h" tabIndex={-1} className="rnr-page-title">Edit <em>workflow</em></h1>
+        </div>
+      </header>
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
       <div className="rnr-card gap-3">
@@ -237,7 +241,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
           <a className="rnr-btn rnr-btn-ghost" href={`#/workflows/${wf.id}/access`}>Access</a>
           {isDraft ? <>{button(false, !canPublish, 'Save draft')}{canPublish && button(true, true, 'Publish workflow')}</> : button(false, true, 'Save changes')}
         </div>
-        {message?.error && <p className="rnr-error" role="alert">{message.text}</p>}
+        {message?.error && <p className="rnr-note" data-tone="down" role="alert">{message.text}</p>}
         <p className="rnr-status" role="status">{message && !message.error && <><CheckIcon size={14} />{message.text}</>}</p>
         {conflict && (
           <div className="flex flex-col gap-1 items-start">
@@ -249,8 +253,8 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
         {isDraft && !canPublish && <p className="rnr-caption">You can save drafts. Someone with the Publish workflows permission can publish this one.</p>}
       </div>
 
-      <section id="wf-issues" className="rnr-card gap-2" tabIndex={0} role="region" aria-labelledby="iss-h" style={{ maxHeight: '11rem', overflowY: 'auto' }}>
-        <h2 id="iss-h" className="dialog-title">{heading}</h2>
+      <section id="wf-issues" className="rnr-card max-h-44 gap-2 overflow-y-auto" tabIndex={0} role="region" aria-labelledby="iss-h">
+        <h2 id="iss-h" className="rnr-dialog-title">{heading}</h2>
         {issues.length > 0 && (
           <ul className="flex flex-col gap-2">
             {issues.map((i, n) => {
@@ -282,14 +286,14 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
             )}
           </div>
           {view === 'map' ? (
-            <div ref={board} className="rnr-canvas wf-board" style={{ height: 'clamp(480px, 70dvh, 720px)' }}
+            <div ref={board} className="rnr-canvas rnr-flow h-[clamp(480px,70dvh,720px)]"
               onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
               <ReactFlow nodes={mapView.nodes} edges={mapView.edges} nodeTypes={CARD_TYPES} onNodesChange={onNodesChange} onConnect={onConnect}
                 onEdgeClick={onEdgeClick} onPaneClick={() => setSel(null)} snapToGrid snapGrid={[16, 16]} deleteKeyCode={null}
                 selectionKeyCode={null} multiSelectionKeyCode={null} edgesFocusable={false} selectNodesOnDrag={false}
                 nodesDraggable={isMd} nodesConnectable={isMd} proOptions={{ hideAttribution: false }} defaultEdgeOptions={EDGE_DEFAULTS}
                 ariaLabelConfig={ARIA} minZoom={0.3}>
-                <Background gap={16} size={1} color="var(--chart-grid)" />
+                <Background gap={16} size={1} />
                 <Controls showInteractive={false} />
               </ReactFlow>
             </div>

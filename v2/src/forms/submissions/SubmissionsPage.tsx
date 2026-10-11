@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../data/supabase'
 import { useMemberEmails } from '../../members/useMemberEmails'
 import { useOrg } from '../../rbac/useOrg'
+import { FolderCard } from '../../ui/FolderCard'
+import { NAV_ICONS } from '../../ui/icons'
 import { Skeleton } from '../../ui/Skeleton'
 import type { Answers, Field } from '../logic'
 import type { LoadedForm } from '../api'
@@ -16,11 +18,13 @@ const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { dateStyle:
 function Row({ sub, fields, by }: { sub: Sub; fields: Field[]; by: string }) {
   const [open, setOpen] = useState(false) // file links are signed only for rows that are open
   return (
-    <li className="rnr-card">
-      <details onToggle={(e) => setOpen(e.currentTarget.open)}>
-        <summary className="rnr-focus" style={{ cursor: 'pointer' }}><span className="label">{by}</span> <span className="rnr-muted">· {when(sub.created_at)}</span></summary>
-        {open && <div className="pt-3"><AnswerList fields={fields} answers={sub.answers} createdAt={sub.created_at} by={by} /></div>}
-      </details>
+    <li>
+      <FolderCard tab={by}>
+        <details onToggle={(e) => setOpen(e.currentTarget.open)}>
+          <summary className="cursor-pointer"><span className="rnr-num">{when(sub.created_at)}</span></summary>
+          {open && <div className="pt-3"><AnswerList fields={fields} answers={sub.answers} createdAt={sub.created_at} by={by} /></div>}
+        </details>
+      </FolderCard>
     </li>
   )
 }
@@ -39,27 +43,32 @@ function Submissions({ form }: { form: LoadedForm }) {
   const n = subs.data?.length ?? 0
   return (
     <section className="flex flex-col gap-4" aria-labelledby="subs-h">
-      <div>
-        <h1 id="subs-h" tabIndex={-1} className="page-title">{manage ? 'Submissions' : 'Your submissions'}</h1>
-        <p className="rnr-muted">{form.name}</p>
-      </div>
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build · {form.name}</p>
+          <h1 id="subs-h" tabIndex={-1} className="rnr-page-title">{manage ? 'Submissions' : <>Your <em>submissions</em></>}</h1>
+        </div>
+      </header>
       {subs.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
       {subs.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The submissions did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => subs.refetch()}>Try again</button></div>
+        <div className="rnr-empty" role="alert">
+          <span className="rnr-kind"><NAV_ICONS.forms size={20} /></span>
+          <h2>The submissions did not load</h2>
+          <p>Check your connection, then try again.</p>
+          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => subs.refetch()}>Try again</button>
         </div>
       )}
       {subs.data?.length === 0 && (
-        <div className="rnr-card gap-3">
-          <h2 className="dialog-title">{manage ? 'No submissions yet' : 'You have not submitted this form yet.'}</h2>
-          <p className="rnr-muted">{manage ? 'Answers appear here as soon as someone submits this form.' : 'Answers you submit appear here.'}</p>
-          <div><a className="rnr-btn rnr-btn-primary" href={`#/forms/${form.id}/fill`}>Fill in this form</a></div>
+        <div className="rnr-empty">
+          <span className="rnr-kind"><NAV_ICONS.forms size={20} /></span>
+          <h2>{manage ? 'No submissions yet' : 'You have not submitted this form yet.'}</h2>
+          <p>{manage ? 'Answers appear here as soon as someone submits this form.' : 'Answers you submit appear here.'}</p>
+          <a className="rnr-btn rnr-btn-primary" href={`#/forms/${form.id}/fill`}>Fill in this form</a>
         </div>
       )}
       {n > 0 && <p className="rnr-caption">{n} {n === 1 ? 'submission' : 'submissions'}</p>}
       {n === LIMIT && <p className="rnr-caption">Showing the newest {LIMIT} submissions. Older ones are not shown yet.</p>}
-      {n > 0 && <ul className="flex flex-col gap-3">{subs.data!.map((s) => <Row key={s.id} sub={s} fields={form.schema} by={who(s.submitted_by)} />)}</ul>}
+      {n > 0 && <ul className="flex flex-col gap-6">{subs.data!.map((s) => <Row key={s.id} sub={s} fields={form.schema} by={who(s.submitted_by)} />)}</ul>}
     </section>
   )
 }

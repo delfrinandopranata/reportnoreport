@@ -16,14 +16,13 @@ function FileLink({ path, image, by }: { path: string; image: boolean; by: strin
   if (url.isPending) return <span className="rnr-muted">Loading…</span>
   if (url.isError) return <span className="rnr-error">This file did not open. Reload the page to try again.</span>
   return image
-    ? <img src={url.data} alt={`Signature of ${by}`} style={{ maxHeight: 96, maxWidth: '100%', objectFit: 'contain', background: 'var(--surface-100)', padding: 4, border: '1px solid var(--line-200)', borderRadius: 'var(--radius-lg)' }} />
+    ? <img src={url.data} alt={`Signature of ${by}`} className="max-h-24 max-w-full rounded-[var(--r-ctl)] border border-line bg-surface object-contain p-1" />
     : <a href={url.data} target="_blank" rel="noopener noreferrer" aria-label={`Open ${name} (opens in a new tab)`}>Open {name}</a>
 }
 
 const Pair = ({ label, children }: { label: string; children: ReactNode }) => (
-  <><dt className="rnr-fieldset-label">{label}</dt><dd>{children}</dd></>
+  <><dt>{label}</dt><dd>{children}</dd></>
 )
-const GRID = 'grid gap-x-3 gap-y-2 sm:grid-cols-[minmax(120px,max-content)_1fr]'
 
 function Value({ field: f, value, by }: { field: Field; value: unknown; by: string }) {
   if (value === undefined || value === null || value === '') return <span className="rnr-muted">Not answered</span>
@@ -40,7 +39,7 @@ function Value({ field: f, value, by }: { field: Field; value: unknown; by: stri
         {(value as Answers[]).map((row, i) => (
           <div key={i}>
             <p className="rnr-caption">Row {i + 1}</p>
-            <dl className={GRID}>{(f.fields ?? []).map((c) => <Pair key={c.key} label={c.label}><Value field={c} value={row[c.key]} by={by} /></Pair>)}</dl>
+            <dl className="rnr-review">{(f.fields ?? []).map((c) => <Pair key={c.key} label={c.label}><Value field={c} value={row[c.key]} by={by} /></Pair>)}</dl>
           </div>
         ))}
       </div>
@@ -53,7 +52,7 @@ function Value({ field: f, value, by }: { field: Field; value: unknown; by: stri
 export function AnswerList({ fields, answers, createdAt, by }: { fields: Field[]; answers: Answers; createdAt: string; by: string }) {
   const hidden = hiddenKeys(fields, answers, createdAt)
   return (
-    <dl className={GRID}>
+    <dl className="rnr-review">
       {fields.filter((f) => f.type !== 'page_break' && !hidden.has(f.key)).map((f) => (
         <Pair key={f.key} label={f.label}><Value field={f} value={answers[f.key]} by={by} /></Pair>
       ))}

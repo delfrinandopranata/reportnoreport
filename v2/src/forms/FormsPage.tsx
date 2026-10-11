@@ -4,7 +4,7 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, PlusIcon } from '../ui/icons'
+import { CheckIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useNotice } from '../ui/useNotice'
@@ -70,43 +70,44 @@ export function FormsPage() {
   )
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="forms-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 id="forms-h" tabIndex={-1} className="page-title">Forms</h1>
-        {manage && !firstRun && <span className="ml-auto">{newButton}</span>}
-      </div>
+    <section className="flex flex-col" aria-labelledby="forms-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build</p>
+          <h1 id="forms-h" tabIndex={-1} className="rnr-page-title">Forms</h1>
+        </div>
+        {manage && !firstRun && <div className="rnr-page-actions">{newButton}</div>}
+      </header>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-      {error && <p className="rnr-error" role="alert">{error}</p>}
+      {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
       {forms.isPending && (
         <div className="rnr-card"><Skeleton rows={[{ w: '40%' }, { w: '10%' }, { w: '14%' }]} /></div>
       )}
       {forms.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">Your forms did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => forms.refetch()}>Try again</button></div>
+        <div className="rnr-empty" role="alert">
+          <span className="rnr-kind"><XIcon size={20} /></span>
+          <h2>Your forms did not load</h2>
+          <p>Check your connection, then try again.</p>
+          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => forms.refetch()}>Try again</button>
         </div>
       )}
       {firstRun && (
-        <div className="rnr-card gap-3">
-          {manage && (
-            <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-              <span className="label">Leave request</span><span className="rnr-muted">6 fields</span>
-            </div>
-          )}
-          <h2 className="dialog-title">{manage ? 'Build your first form' : 'No forms yet'}</h2>
-          <p className="rnr-muted">{manage ? 'Add fields, set rules and preview it as you build. Members can fill it in once you save it.' : 'Ask a form manager to build one.'}</p>
-          {manage && <div>{newButton}</div>}
+        <div className="rnr-empty">
+          <span className="rnr-kind"><NAV_ICONS.forms size={20} /></span>
+          <h2>{manage ? 'Build your first form' : 'No forms yet'}</h2>
+          <p>{manage ? 'Add fields, set rules and preview it as you build. Members can fill it in once you save it.' : 'Ask a form manager to build one.'}</p>
+          {manage && newButton}
         </div>
       )}
       {!!forms.data?.length && (
-        <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
+        <div className="rnr-card rnr-table-card">
           <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Forms in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
-            <thead><tr><th scope="col">Name</th><th scope="col" className="num">Fields</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+            <caption className="rnr-sr-only">Forms in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
+            <thead><tr><th scope="col">Name</th><th scope="col" className="num">Fields</th><th scope="col" className="num">Updated</th><th scope="col"><span className="rnr-sr-only">Actions</span></th></tr></thead>
             <tbody>
               {forms.data.map((f) => (
                 <tr key={f.id}>
-                  <td>{f.name}</td>
+                  <th scope="row">{f.name}</th>
                   <td className="num">{fieldCount(f)}</td>
                   <td className="num">{day(f.updated_at)}</td>
                   <td>

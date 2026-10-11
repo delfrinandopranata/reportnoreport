@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../data/supabase'
 import type { Json } from '../../data/database.types'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
+import { FolderCard } from '../../ui/FolderCard'
 import { friendlyError } from '../../ui/errors'
 import { CheckIcon, PencilIcon } from '../../ui/icons'
 import { setNavGuard, type Next } from '../../ui/navGuard'
@@ -114,15 +115,20 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
   const kids = top?.fields ?? []
   return (
     <section aria-labelledby="builder-h" className="flex flex-col gap-4">
-      <h1 id="builder-h" tabIndex={-1} className="page-title">Edit form</h1>
-      <div className="flex flex-wrap items-end gap-3">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build · Forms</p>
+          <h1 id="builder-h" tabIndex={-1} className="rnr-page-title">Edit <em>form</em></h1>
+        </div>
+      </header>
+      <div className="rnr-card flex-row flex-wrap items-end gap-3">
         <div className="rnr-field flex-1 min-w-[240px]" data-invalid={nameError ? true : undefined}>
           <label htmlFor="form-name" className="rnr-label">Form name<span aria-hidden="true"> *</span></label>
           <input id="form-name" className="rnr-input" maxLength={120} value={name} aria-required="true" aria-invalid={nameError ? true : undefined}
             aria-describedby={nameError ? 'form-name-err' : undefined} onChange={(e) => { setName(e.target.value); setNameError(null) }} />
           {nameError && <p id="form-name-err" className="rnr-error">{nameError}</p>}
         </div>
-        {dirty && !save.busy && <p className="rnr-status"><PencilIcon size={14} />Unsaved changes</p>}
+        {dirty && !save.busy && <span className="rnr-chip" data-tone="warn"><PencilIcon size={14} />Unsaved changes</span>}
         <a className="rnr-btn rnr-btn-ghost" href={`#/forms/${form.id}/fill`}>Open form</a>
         <button type="button" className="rnr-btn rnr-btn-primary" aria-busy={save.busy} onClick={onSave}>
           {save.busy ? <><span className="rnr-spin" aria-hidden="true" />Saving…</> : save.saved ? <><span className="rnr-pop"><CheckIcon /></span>Saved</> : 'Save form'}
@@ -130,14 +136,16 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
       </div>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
       <p className="sr-only" role="status">{note}</p>
-      {error && <p className="rnr-error" role="alert">{error}</p>}
+      {error && <p className="rnr-note" data-tone="down" role="alert">{error}</p>}
       {conflict && (
-        <div className="rnr-card gap-3" role="alert">
-          <p>This form was changed by someone else, or you can no longer edit it. Reload to see the latest version. Your unsaved changes will be lost.</p>
-          <div>
-            <button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={reload.busy} onClick={() => reload.run(onReload)}>
-              {reload.busy && <span className="rnr-spin" aria-hidden="true" />}Reload form
-            </button>
+        <div className="rnr-note" data-tone="warn" role="alert">
+          <div className="grid gap-3">
+            <p>This form was changed by someone else, or you can no longer edit it. Reload to see the latest version. Your unsaved changes will be lost.</p>
+            <div>
+              <button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={reload.busy} onClick={() => reload.run(onReload)}>
+                {reload.busy && <span className="rnr-spin" aria-hidden="true" />}Reload form
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -172,10 +180,13 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
               onRemove={removeChild} />
           )}
         </div>
-        <aside aria-labelledby="preview-h" className="rnr-card gap-3 min-w-0 lg:sticky lg:top-4 lg:self-start">
-          <div className="rnr-card-head"><h2 id="preview-h" className="rnr-card-title">Preview</h2><span className="rnr-chip ml-auto">Not saved</span></div>
-          <p className="rnr-caption">Changes appear here as you edit. Nothing you enter is saved.</p>
-          <FormRunner fields={fields} idPrefix="preview" />
+        <aside aria-labelledby="preview-h" className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+          <FolderCard tab={<h2 id="preview-h">Preview</h2>}>
+            <div className="grid gap-3">
+              <p className="rnr-caption">Changes appear here as you edit. Nothing you enter is saved.</p>
+              <FormRunner fields={fields} idPrefix="preview" />
+            </div>
+          </FolderCard>
         </aside>
       </div>
       <ConfirmDialog open={!!leaveTo} title="Leave without saving?" body={`Your changes to ${name.trim() || 'this form'} will be lost.`}

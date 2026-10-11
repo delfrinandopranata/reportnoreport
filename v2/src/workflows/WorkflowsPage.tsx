@@ -4,7 +4,7 @@ import { supabase } from '../data/supabase'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { CheckIcon, PlusIcon } from '../ui/icons'
+import { CheckIcon, NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
 import { Skeleton } from '../ui/Skeleton'
 import { Day } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -66,39 +66,42 @@ export function WorkflowsPage() {
   )
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="wf-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 id="wf-h" tabIndex={-1} className="page-title">Workflows</h1>
-        {!firstRun && <span className="ml-auto">{newButton}</span>}
-      </div>
+    <section className="flex flex-col" aria-labelledby="wf-h">
+      <header className="rnr-page-head">
+        <div>
+          <p className="rnr-micro">Build</p>
+          <h1 id="wf-h" tabIndex={-1} className="rnr-page-title">Workflows</h1>
+        </div>
+        {!firstRun && <div className="rnr-page-actions">{newButton}</div>}
+      </header>
       <p className="rnr-status" role="status">{notice && <><CheckIcon size={14} />{notice}</>}</p>
-      {createError && <p className="rnr-error" role="alert">{createError}</p>}
+      {createError && <p className="rnr-note" data-tone="down" role="alert">{createError}</p>}
       {list.isPending && <div className="rnr-card"><Skeleton rows={[{ w: '40%' }, { w: '10%' }, { w: '14%' }]} /></div>}
       {list.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The workflows did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button></div>
+        <div className="rnr-empty" role="alert">
+          <span className="rnr-kind"><XIcon size={20} /></span>
+          <h2>The workflows did not load</h2>
+          <p>Check your connection, then try again.</p>
+          <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button>
         </div>
       )}
       {firstRun && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <span className="label">Leave approval</span><span className="rnr-muted">5 steps · Draft</span>
-          </div>
-          <h2 className="dialog-title">Build your first workflow</h2>
-          <p className="rnr-muted">Chain your forms into steps, approvals and timers. Members start it from their Inbox once you publish it.</p>
-          <div>{newButton}</div>
+        <div className="rnr-empty">
+          <span className="rnr-kind"><NAV_ICONS.workflows size={20} /></span>
+          <h2>Build your first workflow</h2>
+          <p>Chain your forms into steps, approvals and timers. Members start it from their Inbox once you publish it.</p>
+          {newButton}
         </div>
       )}
       {!!list.data?.length && (
-        <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
+        <div className="rnr-card rnr-table-card">
           <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Workflows in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
-            <thead><tr><th scope="col">Name</th><th scope="col">Status</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+            <caption className="rnr-sr-only">Workflows in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
+            <thead><tr><th scope="col">Name</th><th scope="col">Status</th><th scope="col" className="num">Updated</th><th scope="col"><span className="rnr-sr-only">Actions</span></th></tr></thead>
             <tbody>
               {list.data.map((w) => (
                 <tr key={w.id}>
-                  <td>{w.name}</td>
+                  <th scope="row">{w.name}</th>
                   <td><WorkflowStatusMark status={w.status} /></td>
                   <td className="num"><Day iso={w.updated_at} /></td>
                   <td>
