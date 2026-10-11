@@ -78,7 +78,7 @@ function pgTx(t: postgres.TransactionSql): Tx {
       : []),
     peopleInRole: async (org, role) => [...await t<Person[]>`
       select ${person} from members m join member_roles mr on mr.member_id = m.id
-      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role} order by m.email limit ${MAX_PEOPLE}`],
+      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role} order by m.email limit ${MAX_PEOPLE + 1}`],
     roleName: async (role, org) => (await one<{ name: string }>(t`select name from roles where id = ${role} and org_id = ${org}`))?.name ?? null,
     emailMuted: async (ids, kind) => new Set(ids.length
       ? (await t`select user_id from notification_prefs where type = ${kind} and not email_enabled and user_id in ${t(ids)}`).map((r) => r.user_id as string)

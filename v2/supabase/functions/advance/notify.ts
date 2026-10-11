@@ -64,7 +64,7 @@ export async function notifyTask(tx: Tx, kind: 'task_assigned' | 'task_overdue',
   const holder = task.claimed_by ?? task.assignee_user_id
   const people = holder
     ? await tx.peopleByIds(rec.org_id, [holder])
-    : task.assignee_role_id ? await tx.peopleInRole(rec.org_id, task.assignee_role_id) : []
+    : task.assignee_role_id ? (await tx.peopleInRole(rec.org_id, task.assignee_role_id)).slice(0, MAX_PEOPLE) : []
   const assignee = holder
     ? people[0]?.name ?? FORMER
     : (task.assignee_role_id ? await tx.roleName(task.assignee_role_id, rec.org_id) : null) ?? 'Unassigned'

@@ -56,7 +56,7 @@ export interface Tx {
   template(orgId: string, ref: { id: string } | { kind: TemplateKind }): Promise<TemplateRow | null>
   /** Active members among these users. */
   peopleByIds(orgId: string, userIds: string[]): Promise<Person[]>
-  /** Active holders of the role, by email, at most MAX_PEOPLE. */
+  /** Active holders of the role, by email, at most MAX_PEOPLE + 1, so a caller can tell the role is over the cap. */
   peopleInRole(orgId: string, roleId: string): Promise<Person[]>
   roleName(roleId: string, orgId: string): Promise<string | null>
   /** Of these users, the ones who turned email off for this kind. */

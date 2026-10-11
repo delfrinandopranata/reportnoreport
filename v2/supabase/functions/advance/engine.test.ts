@@ -295,3 +295,28 @@ Deno.test('an in-app template notifies members and queues no email; raw addresse
   assertEquals(s.db.notifications.filter((n) => n.kind === 'record_approved').map((n) => n.user_id), [MEMBER])
   assertEquals(s.db.events.find((e) => e.kind === 'action')?.detail.skipped, 1)
 })
+
+const withHolders = (n: number) => {
+  const s = sendTo([{ role: ROLE_ADMIN }])
+  for (let i = 0; i < n; i++) {
+    const u = `00000000-0000-4000-9000-${String(i).padStart(12, '0')}`
+    s.db.members.push({ user_id: u, org_id: s.db.members[0].org_id, email: `h${i}@alpha.test`, name: `h${i}` })
+    s.db.holders.add(`${u}:${ROLE_ADMIN}`)
+  }
+  return s
+}
+Deno.test('a role of exactly 500 people is sent to; 501 stops the record with the reason', async () => {
+  const ok = withHolders(499) // plus the seeded admin holder = 500
+  await ok.start()
+  ok.claim()
+  await ok.act(ok.db.tasks[0].id, 'approved')
+  assertEquals(ok.db.records[0].status, 'open')
+  assertEquals(ok.db.messages.filter((m) => m.template_id === T_APPROVED).length, 500)
+  const over = withHolders(500)
+  await over.start()
+  over.claim()
+  await over.act(over.db.tasks[0].id, 'approved')
+  assertEquals([over.db.records[0].status, over.db.records[0].error],
+    ['error', '"Send message" would send "Record approved" to more than 500 people. Ask a workflow manager to narrow its recipients.'])
+  assertEquals(over.db.messages.filter((m) => m.template_id === T_APPROVED).length, 0)
+})

@@ -107,7 +107,7 @@ export function fakeStore(db: Db): Store {
         template: async (org, ref) =>
           db.templates.find((x) => x.org_id === org && ('id' in ref ? x.id === ref.id : x.kind === ref.kind && x.kind !== 'custom')) ?? null,
         peopleByIds: async (org, ids) => db.members.filter((m) => m.org_id === org && ids.includes(m.user_id)).map(person),
-        peopleInRole: async (org, role) => db.members.filter((m) => m.org_id === org && db.holders.has(`${m.user_id}:${role}`)).map(person),
+        peopleInRole: async (org, role) => db.members.filter((m) => m.org_id === org && db.holders.has(`${m.user_id}:${role}`)).map(person).slice(0, 501),
         roleName: async (role, org) => db.roles.find((r) => r.id === role && r.org_id === org)?.name ?? null,
         emailMuted: async (ids, kind) => new Set(ids.filter((u) => db.muted.has(`${u}:${kind}`))),
         notify: async (rows) => { db.notifications.push(...rows) },

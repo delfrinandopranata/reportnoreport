@@ -56,7 +56,8 @@ async function sendOne(tx: Tx, id: string, transport: Transport, now: Date): Pro
   try {
     res = await transport.send({ id: m.id, to: m.recipient_email, subject: m.subject, html: m.body_html, text: m.body_text })
   } catch (e) {
-    res = { ok: false, retry: true, error: `Could not reach the email service: ${e instanceof Error ? e.message : String(e)}` }
+    console.error('email transport threw', id, e) // detail stays in the server log; the stored reason is shown to admins
+    res = { ok: false, retry: true, error: 'The email service could not be reached.' }
   }
   if (res.ok) {
     await tx.finishMessage(id, { status: 'sent', attempts, error: null, sentAt: now, providerId: res.providerId })

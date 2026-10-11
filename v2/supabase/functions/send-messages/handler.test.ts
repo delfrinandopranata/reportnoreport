@@ -68,9 +68,9 @@ Deno.test('a refusal that can never succeed fails at once', async () => {
 Deno.test('a thrown transport error is retried, and a later success clears the error', async () => {
   const s = setup()
   await s.start()
-  const { t } = transport([new Error('connection reset'), { ok: true, providerId: 'rs_2' }])
+  const { t } = transport([new Error('connection reset http://host.docker.internal:54324/api/v1/send'), { ok: true, providerId: 'rs_2' }])
   await run(s.store, t, T0)
-  assertEquals([s.db.messages[0].status, s.db.messages[0].error], ['queued', 'Could not reach the email service: connection reset'])
+  assertEquals([s.db.messages[0].status, s.db.messages[0].error], ['queued', 'The email service could not be reached.'])
   await run(s.store, t, at(MIN))
   assertEquals([s.db.messages[0].status, s.db.messages[0].attempts, s.db.messages[0].error], ['sent', 2, null])
 })
