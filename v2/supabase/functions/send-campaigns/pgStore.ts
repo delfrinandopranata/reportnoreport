@@ -7,8 +7,6 @@ import type { CampaignRow, CampaignStore, CampaignTx, SenderReads } from './stor
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 const PAGE = 1000
-const MESSAGE = ['id', 'org_id', 'campaign_id', 'template_id', 'recipient_user_id', 'recipient_email', 'channel', 'status', 'subject', 'body_html', 'body_text', 'unsubscribe_url', 'sent_at']
-const NOTICE = ['org_id', 'user_id', 'campaign_id', 'kind', 'title', 'body', 'link']
 
 /** Connects as `postgres`; asSender switches to the authenticated role with the sender's claims so RLS applies to those reads. */
 export function pgCampaignStore(url: string): CampaignStore & { end(): Promise<void> } {
@@ -25,7 +23,12 @@ function campaignTx(t: postgres.TransactionSql): CampaignTx {
   const rows = (r: unknown) => r as Record<string, postgres.ParameterOrJSON<never>>[]
   return {
     dueCampaigns: async (now, limit) =>
-      (await t`select id from campaigns where status = 'scheduled' and scheduled_at <= ${now} order by scheduled_at limit ${limit}`).map((r) => r.id as string),
+      (await t`select id from campaigns where status = 'scheduled' and scheduled_at <= ${now} and (claimed_until is null or claimed_until <= ${now})
+        order by scheduled_at limit ${limit}`).map((r) => r.id as string),
+    startAttempt: async (id, now, leaseUntil) => (await one<{ attempts: number }>(t`
+      update campaigns set attempts = attempts + 1, claimed_until = ${leaseUntil}
+      where id = ${id} and status = 'scheduled' and scheduled_at <= ${now} and (claimed_until is null or claimed_until <= ${now})
+      returning attempts`))?.attempts ?? null,
     // The row lock makes a concurrent run wait here, then find the status changed and get no row (decision 3).
     claim: (id, now) => one<CampaignRow>(t`
       update campaigns set status = 'sending' where id = ${id} and status = 'scheduled' and scheduled_at <= ${now}
@@ -43,9 +46,13 @@ function campaignTx(t: postgres.TransactionSql): CampaignTx {
     template: (org, id) => one<TemplateRow>(t`select id, org_id, kind, name, channel, subject, body from message_templates where id = ${id} and org_id = ${org}`),
     orgName: async (org) => (await one<{ name: string }>(t`select name from orgs where id = ${org}`))?.name ?? '',
     roleExists: async (org, role) => (await t`select 1 from roles where id = ${role} and org_id = ${org}`).length > 0,
-    roleMembers: async (org, role, limit) => [...await t<Person[]>`
+    roleEligible: async (org, role) => (await t`
+      select count(distinct lower(m.email::text))::int as n from members m join member_roles mr on mr.member_id = m.id
+      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role}
+        and not exists (select 1 from email_optouts o where o.org_id = m.org_id and o.email = m.email)`)[0].n as number,
+    roleMembers: async (org, role) => [...await t<Person[]>`
       select ${person} from members m join member_roles mr on mr.member_id = m.id
-      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role} order by m.email limit ${limit}`],
+      where m.org_id = ${org} and m.status = 'active' and mr.role_id = ${role} order by m.email`],
     peopleByIds: async (org, ids) => (ids.length
       ? [...await t<Person[]>`select ${person} from members m where m.org_id = ${org} and m.status = 'active' and m.user_id in ${t(ids)} order by m.email`]
       : []),
@@ -62,8 +69,34 @@ function campaignTx(t: postgres.TransactionSql): CampaignTx {
     optedOut: async (org, emails) => new Set(emails.length
       ? (await t`select lower(email::text) as e from email_optouts where org_id = ${org} and email in ${t(emails)}`).map((r) => r.e as string)
       : []),
-    queue: async (r) => { await t`insert into messages ${t(rows(r), MESSAGE)}` },
-    notify: async (r) => { await t`insert into notifications ${t(rows(r), NOTICE)}` },
+    // The whole audience in one statement: ids, unsubscribe tokens (HMAC-SHA256, the same as unsubscribeLink), names and
+    // links are made by the database, so the function does no per-person work (QA-P6-3).
+    queueAudience: async (q) => {
+      const email = q.channel === 'email'
+      const esc = t`replace(replace(replace(replace(replace(p.name, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '"', '&quot;'), '''', '&#39;')`
+      const link = t`${q.unsubscribe.page} || '?t=' || p.id || '.' || p.sig`
+      const made = await t`
+        with src as (
+          select gen_random_uuid() as id, r."userId", r.email, regexp_replace(r.name, '[\r\n\t]+', ' ', 'g') as name
+          from jsonb_to_recordset(${t.json(q.list as never)}) as r("userId" uuid, email text, name text)
+        ), p as (
+          select src.*, rtrim(translate(encode(extensions.hmac('unsubscribe:' || src.id::text, ${q.unsubscribe.secret}, 'sha256'), 'base64'), '+/', '-_'), '=') as sig
+          from src
+        )
+        insert into messages (id, org_id, campaign_id, template_id, recipient_user_id, recipient_email, channel, status, subject, body_html, body_text, unsubscribe_url, sent_at)
+        select p.id, ${q.orgId}, ${q.campaignId}, ${q.templateId}, p."userId", p.email, ${q.channel}, ${email ? 'queued' : 'sent'},
+          left(btrim(replace(${q.subject}, ${q.nameToken}, p.name)), 200),
+          replace(replace(${q.html}, ${q.nameToken}, ${esc}), ${q.linkToken}, ${link}),
+          replace(replace(${q.text}, ${q.nameToken}, p.name), ${q.linkToken}, ${link}),
+          ${email ? t`${q.unsubscribe.url} || '?t=' || p.id || '.' || p.sig` : null}, ${email ? null : q.now}
+        from p returning id`
+      if (made.length !== q.list.length) throw new Error('The audience was not queued completely.') // rolls the transaction back
+      if (!email) {
+        await t`insert into notifications (org_id, user_id, campaign_id, kind, title, body, link)
+          select org_id, recipient_user_id, campaign_id, 'campaign', subject, left(body_text, 2000), '#/inbox'
+          from messages where campaign_id = ${q.campaignId} and recipient_user_id is not null`
+      }
+    },
     finish: async (id, f) => {
       await t`update campaigns set status = ${f.status}, recipients = ${f.recipients}, excluded = ${t.json(f.excluded)}, channel = ${f.channel},
         audience_snapshot_at = ${f.at}, finished_at = ${f.status === 'sent' ? f.at : null} where id = ${id}`

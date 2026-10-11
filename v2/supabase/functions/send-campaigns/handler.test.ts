@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertMatch } from 'jsr:@std/assert@1'
-import { CHUNK, NOT_PREPARED, PROBLEMS, sendCampaigns, type Deps } from './handler.ts'
-import type { CampaignMessage, CampaignNotice, CampaignRow, CampaignStore, CampaignTx, Finish, SenderReads } from './store.ts'
+import { LEASE_MS, LINK_TOKEN, MAX_ATTEMPTS, NAME_TOKEN, NOT_PREPARED, PROBLEMS, sendCampaigns, type Deps } from './handler.ts'
+import type { CampaignRow, CampaignStore, CampaignTx, Finish, QueueInput, SenderReads } from './store.ts'
 import { MAX_AUDIENCE, TOO_BIG, type Person } from '../_shared/comms/campaign.ts'
 import { rec } from '../_shared/reports/fixture.ts'
 import type { ReportRecord } from '../_shared/reports/index.ts'
@@ -24,19 +24,19 @@ const SAVED: SavedRow = { name: 'Staff', workflow_id: WF, columns: [{ meta: 'tit
 
 type Parent = { status: string; linked_workflow_id: string | null; recipients: { userId: string | null; email: string; opened: boolean; done: boolean }[] }
 type World = {
-  campaign: CampaignRow & { status: string }
+  campaign: CampaignRow & { status: string; attempts: number; leasedUntil: Date | null }
   templates: TemplateRow[]; roles: Map<string, Person[]>; members: Person[]; optouts: Set<string>
   perms: Map<string, Set<string>>; saved: Map<string, SavedRow>; records: ReportRecord[]; parents: Map<string, Parent>
-  messages: CampaignMessage[]; notices: CampaignNotice[]; finished: Finish | null; failed: string | null; queueCalls: number; boom: boolean
+  messages: { recipient_email: string; recipient_user_id: string | null; channel: string; status: string }[]; inputs: QueueInput[]; finished: Finish | null; failed: string | null; boom: boolean
 }
 const world = (over: Partial<World> = {}): World => ({
-  campaign: { id: C, org_id: ORG, name: 'Term news', template_id: 't1', audience: { kind: 'role', roleId: ROLE }, sent_by: ADMIN, status: 'scheduled' },
+  campaign: { id: C, org_id: ORG, name: 'Term news', template_id: 't1', audience: { kind: 'role', roleId: ROLE }, sent_by: ADMIN, status: 'scheduled', attempts: 0, leasedUntil: null },
   templates: [EMAIL_T], roles: new Map([[ROLE, [person(1), person(2)]]]),
   members: [person(1), person(2), { userId: MEMBER, email: 'member@alpha.test', name: 'Member' }, { userId: ADMIN, email: 'admin@alpha.test', name: 'Admin' }],
   optouts: new Set(),
   perms: new Map([[ADMIN, new Set(['comms.broadcast', 'reports.view', 'records.view_all'])], [MEMBER, new Set(['comms.broadcast', 'reports.view'])]]),
   saved: new Map([[REPORT, SAVED]]), records: [], parents: new Map(),
-  messages: [], notices: [], finished: null, failed: null, queueCalls: 0, boom: false, ...over,
+  messages: [], inputs: [], finished: null, failed: null, boom: false, ...over,
 })
 // RLS in miniature: records.view_all sees every record, anyone else only what they started.
 const reads = (w: World, user: string): SenderReads => ({
@@ -48,26 +48,32 @@ const reads = (w: World, user: string): SenderReads => ({
 function store(w: World): CampaignStore {
   return {
     async tx<T>(fn: (tx: CampaignTx) => Promise<T>) {
-      const p = { messages: [] as CampaignMessage[], notices: [] as CampaignNotice[], finished: null as Finish | null, claimed: false, failed: null as string | null, calls: 0 }
+      const p = { inputs: [] as QueueInput[], finished: null as Finish | null, claimed: false, failed: null as string | null }
       const tx: CampaignTx = {
         dueCampaigns: async () => [w.campaign.id],
+        startAttempt: async (id, now, until) => {
+          const c = w.campaign
+          if (id !== c.id || c.status !== 'scheduled' || (c.leasedUntil && c.leasedUntil > now)) return null
+          c.attempts += 1 // committed before the work, like the real store, so a killed run still counts
+          c.leasedUntil = until
+          return c.attempts
+        },
         claim: async (id) => (id === w.campaign.id && w.campaign.status === 'scheduled' ? (p.claimed = true, { ...w.campaign }) : null),
         asSender: (user, f) => f(reads(w, user)),
         template: async (org, id) => w.templates.find((t) => t.id === id && t.org_id === org) ?? null,
         orgName: async () => 'Alpha School',
         roleExists: async (_o, r) => w.roles.has(r),
-        roleMembers: async (_o, r, limit) => (w.roles.get(r) ?? []).slice(0, limit),
+        roleEligible: async (_o, r) => new Set((w.roles.get(r) ?? []).map((m) => m.email.toLowerCase()).filter((e) => !w.optouts.has(e))).size,
+        roleMembers: async (_o, r) => w.roles.get(r) ?? [],
         peopleByIds: async (_o, ids) => w.members.filter((m) => ids.includes(m.userId)),
         parent: async (org, id) => (org === ORG ? w.parents.get(id) ?? null : null),
         parentRecipients: async (_o, id, who) => (w.parents.get(id)?.recipients ?? [])
           .filter((r) => (who === 'not_opened' ? !r.opened : !!r.userId && !r.done)).map(({ userId, email }) => ({ userId, email })),
         optedOut: async (_o, emails) => new Set(emails.map((e) => e.toLowerCase()).filter((e) => w.optouts.has(e))),
-        queue: async (rows) => {
+        queueAudience: async (q) => {
           if (w.boom) throw new Error('connection reset by peer at 10.0.0.1:5432')
-          p.messages.push(...rows)
-          p.calls += 1
+          p.inputs.push(q)
         },
-        notify: async (rows) => { p.notices.push(...rows) },
         finish: async (_id, f) => { p.finished = f },
         fail: async (_id, error) => (w.campaign.status === 'scheduled' ? (p.failed = error, true) : false),
       }
@@ -75,9 +81,10 @@ function store(w: World): CampaignStore {
       if (p.claimed) w.campaign.status = 'sending'
       if (p.finished) { w.campaign.status = p.finished.status; w.finished = p.finished }
       if (p.failed) { w.campaign.status = 'failed'; w.failed = p.failed }
-      w.messages.push(...p.messages)
-      w.notices.push(...p.notices)
-      w.queueCalls += p.calls
+      for (const q of p.inputs) {
+        w.inputs.push(q)
+        w.messages.push(...q.list.map((r) => ({ recipient_email: r.email, recipient_user_id: r.userId, channel: q.channel, status: q.channel === 'email' ? 'queued' : 'sent' })))
+      }
       return out
     },
   }
@@ -91,17 +98,17 @@ Deno.test('401 without the cron secret, and nothing is queued', async () => {
   assertEquals([w.messages.length, w.campaign.status], [0, 'scheduled'])
 })
 
-Deno.test('a role campaign queues one email per member with the footer and an unsubscribe link', async () => {
+Deno.test('a role campaign queues one email per member; the template is rendered once with the footer', async () => {
   const w = world()
   assertEquals((await sendCampaigns(deps(w))).body, { started: 1, failed: 0 })
-  assertEquals(w.messages.map((m) => [m.recipient_email, m.subject, m.status, m.channel]),
-    [['p1@alpha.test', 'News from Alpha School', 'queued', 'email'], ['p2@alpha.test', 'News from Alpha School', 'queued', 'email']])
-  const m = w.messages[0]
-  // header link: the function (one-click POST); footer link: the public page
-  assertMatch(m.unsubscribe_url!, new RegExp(`^https://x\\.test/functions/v1/unsubscribe\\?t=${m.id}\\.[A-Za-z0-9_-]{43}$`))
-  const page = m.unsubscribe_url!.replace('functions/v1/unsubscribe', 'unsubscribe')
-  assertMatch(m.body_text, /^Hello Person 1\n\n--\n/)
-  assert(m.body_text.endsWith(`Unsubscribe from Alpha School campaign emails: ${page}`))
+  assertEquals(w.messages.map((m) => [m.recipient_email, m.status, m.channel]), [['p1@alpha.test', 'queued', 'email'], ['p2@alpha.test', 'queued', 'email']])
+  assertEquals(w.inputs.length, 1) // one set-based insert, not one per person
+  const q = w.inputs[0]
+  // Per-person values are filled in by the insert; the handler renders the shared text once around two tokens.
+  assertEquals([q.subject, q.unsubscribe], ['News from Alpha School', UNSUB])
+  assertMatch(q.text, new RegExp(`^Hello ${NAME_TOKEN}\n\n--\n`))
+  assert(q.text.endsWith(`Unsubscribe from Alpha School campaign emails: ${LINK_TOKEN}`))
+  assertMatch(q.html, new RegExp(`<a href="${LINK_TOKEN}"[^>]*>Unsubscribe from Alpha School campaign emails</a>`))
   assertEquals(w.finished, { recipients: 2, excluded: ZERO, channel: 'email', status: 'sending', at: NOW })
   assertEquals(w.campaign.status, 'sending')
 })
@@ -112,14 +119,38 @@ Deno.test('an opted-out member is left out and counted', async () => {
   assertEquals([w.messages.map((m) => m.recipient_email), w.finished?.excluded], [['p1@alpha.test'], { ...ZERO, unsubscribed: 1 }])
 })
 
-Deno.test('a 10,000-person audience is queued in ten chunks with nobody dropped', async () => {
+Deno.test('a 10,000-person audience is queued in one insert with nobody dropped', async () => {
   const w = world({ roles: new Map([[ROLE, people(MAX_AUDIENCE)]]) })
   await sendCampaigns(deps(w))
-  assertEquals([w.messages.length, new Set(w.messages.map((m) => m.recipient_email)).size, w.queueCalls, CHUNK], [10_000, 10_000, 10, 1_000])
+  assertEquals([w.messages.length, new Set(w.messages.map((m) => m.recipient_email)).size, w.inputs.length], [10_000, 10_000, 1])
   assertEquals(w.finished?.recipients, 10_000)
   const over = world({ roles: new Map([[ROLE, people(MAX_AUDIENCE + 1)]]) })
   assertEquals((await sendCampaigns(deps(over))).body, { started: 0, failed: 1 })
   assertEquals([over.messages.length, over.campaign.status, over.failed], [0, 'failed', TOO_BIG])
+})
+
+Deno.test('the limit counts who is left after opt-outs: 10,000 eligible send, 10,001 fail, nobody is cut (QA-P6-1)', async () => {
+  const optouts = new Set(['p0@alpha.test', 'p1@alpha.test'])
+  const fits = world({ roles: new Map([[ROLE, people(MAX_AUDIENCE + 2)]]), optouts })
+  assertEquals((await sendCampaigns(deps(fits))).body, { started: 1, failed: 0 })
+  assertEquals([fits.messages.length, fits.finished?.excluded], [10_000, { ...ZERO, unsubscribed: 2 }])
+  assert(fits.messages.some((m) => m.recipient_email === `p${MAX_AUDIENCE + 1}@alpha.test`)) // the last person is not truncated
+  const over = world({ roles: new Map([[ROLE, people(MAX_AUDIENCE + 3)]]), optouts })
+  assertEquals((await sendCampaigns(deps(over))).body, { started: 0, failed: 1 })
+  assertEquals([over.messages.length, over.failed], [0, TOO_BIG])
+})
+
+Deno.test('a run that was killed is retried after its lease, and the third killed run fails the campaign with a reason (QA-P6-3)', async () => {
+  const leased = world({ campaign: { ...world().campaign, attempts: 1, leasedUntil: new Date(NOW.getTime() + LEASE_MS) } })
+  assertEquals((await sendCampaigns(deps(leased))).body, { started: 0, failed: 0 }) // another run still holds it
+  assertEquals([leased.campaign.attempts, leased.campaign.status], [1, 'scheduled'])
+  const retry = world({ campaign: { ...world().campaign, attempts: MAX_ATTEMPTS - 1, leasedUntil: new Date(NOW.getTime() - 1) } })
+  assertEquals((await sendCampaigns(deps(retry))).body, { started: 1, failed: 0 })
+  assertEquals([retry.campaign.attempts, retry.campaign.status], [MAX_ATTEMPTS, 'sending'])
+  const spent = world({ campaign: { ...world().campaign, attempts: MAX_ATTEMPTS, leasedUntil: new Date(NOW.getTime() - 1) } })
+  assertEquals((await sendCampaigns(deps(spent))).body, { started: 0, failed: 1 })
+  assertEquals([spent.failed, spent.messages.length, spent.campaign.status], [PROBLEMS.attempts, 0, 'failed'])
+  assert(!/\bwe\b/i.test(PROBLEMS.attempts))
 })
 
 Deno.test('a report audience is filtered and read with the sender\'s visibility', async () => {
@@ -157,12 +188,11 @@ Deno.test('a grouped report, a missing template and a sender without comms.broad
   assertEquals([lost.failed, lost.messages.length], [PROBLEMS.senderLost, 0])
 })
 
-Deno.test('an in-app campaign writes notices and sent rows, and finishes at once', async () => {
+Deno.test('an in-app campaign is queued as sent rows with no footer, and finishes at once', async () => {
   const w = world({ templates: [{ ...EMAIL_T, channel: 'in_app' }] })
   await sendCampaigns(deps(w))
-  assertEquals(w.messages.map((m) => [m.channel, m.status, m.unsubscribe_url, m.sent_at?.toISOString()]),
-    [['in_app', 'sent', null, NOW.toISOString()], ['in_app', 'sent', null, NOW.toISOString()]])
-  assertEquals(w.notices.map((n) => [n.user_id, n.title, n.link, n.campaign_id]), [[person(1).userId, 'News from Alpha School', '#/inbox', C], [person(2).userId, 'News from Alpha School', '#/inbox', C]])
+  assertEquals(w.messages.map((m) => [m.channel, m.status]), [['in_app', 'sent'], ['in_app', 'sent']])
+  assertEquals([w.inputs[0].channel, w.inputs[0].text.includes('Unsubscribe'), w.inputs[0].html.includes(LINK_TOKEN)], ['in_app', false, false])
   assertEquals([w.campaign.status, w.finished?.status], ['sent', 'sent'])
 })
 

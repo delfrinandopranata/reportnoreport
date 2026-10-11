@@ -42,13 +42,17 @@ Deno.test('an unknown message is 200 so Resend does not retry it', async () => {
   assertEquals(await handleWebhook(await signed(body), body, d), { status: 200, body: { matched: false } })
 })
 
-Deno.test('other types are ignored, a signed non-event is 400, an oversized body is 413', async () => {
+Deno.test('other types are ignored with a reason, and so is a signed event that is not a usable Resend event (200 stops Resend retrying)', async () => {
   const { d, applied } = deps()
-  const sent = event('email.sent')
-  assertEquals(await handleWebhook(await signed(sent), sent, d), { status: 200, body: { ignored: true } })
-  const junk = '{"hello":'
-  assertEquals(await handleWebhook(await signed(junk), junk, d), { status: 400, body: { error: 'Not a Resend event.' } })
+  const ignored = async (body: string) => handleWebhook(await signed(body), body, d)
+  assertEquals(await ignored(event('email.sent')), { status: 200, body: { ignored: true, reason: 'This event type is not tracked.' } })
+  assertEquals(await ignored('{"type":"domain.updated","data":{"id":"d_1"}}'), { status: 200, body: { ignored: true, reason: 'This event type is not tracked.' } })
+  assertEquals(await ignored('{"hello":'), { status: 200, body: { ignored: true, reason: 'This is not a Resend event.' } })
+  assertEquals(await ignored('[]'), { status: 200, body: { ignored: true, reason: 'This is not a Resend event.' } })
+  for (const bad of ['{"type":"email.opened"}', '{"type":"email.opened","data":{}}', '{"type":"email.opened","data":{"email_id":7}}']) {
+    assertEquals(await ignored(bad), { status: 200, body: { ignored: true, reason: 'This event has no usable email id.' } })
+  }
+  assertEquals(applied.length, 0)
   const big = 'x'.repeat(MAX_BODY + 1)
   assertEquals((await handleWebhook(await signed(big), big, d)).status, 413)
-  assertEquals(applied.length, 0)
 })

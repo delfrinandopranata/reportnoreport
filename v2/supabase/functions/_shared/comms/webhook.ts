@@ -35,12 +35,17 @@ export async function verifyWebhook(secret: Uint8Array<ArrayBuffer>, h: SignedHe
   return h.signature.split(' ').some((s) => sameText(s, want)) // several signatures appear while a secret is rotated
 }
 
-/** A tracking event, 'ignored' for any other type, or null when the body is not a Resend event. */
-export function readTrackingEvent(body: unknown, now: Date): TrackingEvent | 'ignored' | null {
-  if (!isObj(body) || typeof body.type !== 'string' || !isObj(body.data)) return null
-  const id = body.data.email_id
-  if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(id)) return null
-  if (!Object.hasOwn(TRACKING, body.type)) return 'ignored'
+export type Ignored = { ignored: string }
+
+/**
+ * A tracking event, or `{ ignored: reason }` for anything else, malformed included. The caller has already verified the
+ * signature, so a bad shape is an event that cannot be used, and a non-2xx answer would only make Resend retry it forever.
+ */
+export function readTrackingEvent(body: unknown, now: Date): TrackingEvent | Ignored {
+  if (!isObj(body) || typeof body.type !== 'string') return { ignored: 'This is not a Resend event.' }
+  if (!Object.hasOwn(TRACKING, body.type)) return { ignored: 'This event type is not tracked.' } // domain.*, contact.* and email.sent carry no usable id
+  const id = isObj(body.data) ? body.data.email_id : undefined
+  if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(id)) return { ignored: 'This event has no usable email id.' }
   const t = typeof body.created_at === 'string' ? Date.parse(body.created_at) : Number.NaN
   const at = Number.isFinite(t) && t <= now.getTime() + TOLERANCE_MS ? new Date(t) : now
   return { providerId: id, columns: TRACKING[body.type], at, complaint: body.type === 'email.complained' }

@@ -10,9 +10,9 @@ export async function handleWebhook(headers: Headers, body: string, deps: Deps):
   const signedBy = { id: headers.get('svix-id'), timestamp: headers.get('svix-timestamp'), signature: headers.get('svix-signature') }
   if (!(await verifyWebhook(deps.secret, signedBy, body, deps.now()))) return { status: 401, body: { error: 'Not allowed.' } }
   let parsed: unknown = null
-  try { parsed = JSON.parse(body) } catch { parsed = null } // a signed body that is not JSON is answered 400 below
+  try { parsed = JSON.parse(body) } catch { parsed = null } // signed but not JSON: ignored below, like any other unusable event
   const event = readTrackingEvent(parsed, deps.now())
-  if (event === null) return { status: 400, body: { error: 'Not a Resend event.' } }
-  if (event === 'ignored') return { status: 200, body: { ignored: true } }
+  // 200, not 400: Resend retries every non-2xx answer, and an unusable event never becomes usable.
+  if ('ignored' in event) return { status: 200, body: { ignored: true, reason: event.ignored } }
   return { status: 200, body: { matched: await deps.apply(event) } }
 }

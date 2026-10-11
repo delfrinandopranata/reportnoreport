@@ -1,6 +1,7 @@
 import { assertEquals } from 'jsr:@std/assert@1'
 import postgres from 'npm:postgres@3.4.5'
 import { PROBLEMS, sendCampaigns, type Deps } from './handler.ts'
+import { TOO_BIG, checkUnsubscribe } from '../_shared/comms/campaign.ts'
 import { pgCampaignStore } from './pgStore.ts'
 import { pgStore } from '../advance/pgStore.ts'
 import { sendMessages } from '../send-messages/handler.ts'
@@ -128,6 +129,149 @@ Deno.test({
       await sql`delete from campaigns where name = ${`Drain ${tag}`}` // messages cascade
       await sql`delete from roles where org_id = ${ALPHA} and name = ${`Drain ${tag}`}`
       await mail.end()
+      await store.end()
+      await sql.end()
+    }
+  },
+})
+
+/** n active members of a new role, emails sorted `bigNNNNNN-tag@big.test`, so a cut at a row count would drop the last ones. */
+async function bigRole(sql: postgres.Sql, tag: string, n: number, optedOut: number): Promise<string> {
+  const like = `big%-${tag}@big.test`
+  const [role] = await sql`insert into roles (org_id, name) values (${ALPHA}, ${`Big ${tag}`}) returning id`
+  await sql`insert into auth.users (id, email, instance_id, aud, role)
+    select gen_random_uuid(), 'big' || lpad(g::text, 6, '0') || '-' || ${tag} || '@big.test', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'
+    from generate_series(1, ${n}) g`
+  await sql`insert into members (org_id, user_id, email, status) select ${ALPHA}, id, email, 'active' from auth.users where email like ${like}`
+  await sql`insert into member_roles (member_id, role_id) select id, ${role.id} from members where org_id = ${ALPHA} and email like ${like}`
+  await sql`insert into email_optouts (org_id, email, reason)
+    select ${ALPHA}, email, 'unsubscribe' from members where org_id = ${ALPHA} and email like ${like} order by email limit ${optedOut}`
+  return role.id as string
+}
+async function dropBigRole(sql: postgres.Sql, tag: string) {
+  const like = `big%-${tag}@big.test`
+  await sql`delete from campaigns where name like ${`Big ${tag}%`}` // messages cascade
+  await sql`delete from email_optouts where org_id = ${ALPHA} and email like ${like}`
+  await sql`delete from members where org_id = ${ALPHA} and email like ${like}`
+  await sql`delete from auth.users where email like ${like}`
+  await sql`delete from roles where org_id = ${ALPHA} and name = ${`Big ${tag}`}`
+}
+
+Deno.test({
+  name: 'real Postgres: the limit counts who is left after opt-outs, and nobody is cut (QA-P6-1)',
+  ignore: !url,
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const sql = postgres(url!, { max: 1 })
+    const store = pgCampaignStore(url!)
+    const deps: Deps = { authorised: true, store, now: () => new Date(), unsubscribe: UNSUB }
+    const tag = crypto.randomUUID().slice(0, 8)
+    const tag2 = crypto.randomUUID().slice(0, 8)
+    try {
+      // 10,002 members, 2 opted out: 10,000 are eligible, so all 10,000 are sent to and the 2 are counted.
+      const fits = await bigRole(sql, tag, 10_002, 2)
+      const id = await campaign(sql, `Big ${tag}`, { kind: 'role', roleId: fits }, ADMIN)
+      await sendCampaigns(deps)
+      const [row] = await sql`select status, recipients, excluded, error,
+        (select count(*)::int from messages where campaign_id = c.id) as messages,
+        (select count(*)::int from messages where campaign_id = c.id and recipient_email = ${`big010002-${tag}@big.test`}) as last_one
+        from campaigns c where c.id = ${id}`
+      assertEquals([row.status, row.recipients, row.excluded.unsubscribed, row.messages, row.last_one, row.error], ['sending', 10_000, 2, 10_000, 1, null])
+      // 10,003 members, 2 opted out: 10,001 are eligible, which is over the limit, so it fails loudly and queues nothing.
+      const over = await bigRole(sql, tag2, 10_003, 2)
+      const id2 = await campaign(sql, `Big ${tag2}`, { kind: 'role', roleId: over }, ADMIN)
+      await sendCampaigns(deps)
+      const [bad] = await sql`select status, error, (select count(*)::int from messages where campaign_id = c.id) as messages from campaigns c where c.id = ${id2}`
+      assertEquals([bad.status, bad.error, bad.messages], ['failed', TOO_BIG, 0])
+    } finally {
+      await dropBigRole(sql, tag)
+      await dropBigRole(sql, tag2)
+      await store.end()
+      await sql.end()
+    }
+  },
+})
+
+Deno.test({
+  name: 'real Postgres: the set-based insert fills in each person\'s name, footer link and unsubscribe token',
+  ignore: !url,
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const sql = postgres(url!, { max: 1 })
+    const store = pgCampaignStore(url!)
+    const tag = crypto.randomUUID().slice(0, 8)
+    try {
+      const [role] = await sql`insert into roles (org_id, name) values (${ALPHA}, ${`Render ${tag}`}) returning id`
+      await sql`insert into auth.users (id, email, instance_id, aud, role) values
+        (gen_random_uuid(), ${`r1-${tag}@render.test`}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
+        (gen_random_uuid(), ${`r2-${tag}@render.test`}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated')`
+      await sql`insert into members (org_id, user_id, email, full_name, status)
+        select ${ALPHA}, id, email, case when email like 'r1-%' then 'A & <B>' else null end, 'active' from auth.users where email like ${`r_-${tag}@render.test`}`
+      await sql`insert into member_roles (member_id, role_id) select id, ${role.id} from members where org_id = ${ALPHA} and email like ${`r_-${tag}@render.test`}`
+      const [tpl] = await sql`insert into message_templates (org_id, name, subject, body) values (${ALPHA}, ${`Render ${tag}`}, 'Hi {{recipient.name}}', 'Hello {{recipient.name}}.
+
+From {{org.name}}') returning id`
+      const [inApp] = await sql`insert into message_templates (org_id, name, channel, subject, body) values (${ALPHA}, ${`Render ${tag} app`}, 'in_app', 'Notice for {{recipient.name}}', 'Read {{recipient.name}}') returning id`
+      const make = async (name: string, template: string) => (await sql`
+        insert into campaigns (org_id, name, template_id, audience, status, scheduled_at, sent_by)
+        values (${ALPHA}, ${name}, ${template}, ${sql.json({ kind: 'role', roleId: role.id })}, 'scheduled', now() - interval '1 minute', ${ADMIN}) returning id`)[0].id as string
+      const mail = await make(`Render ${tag} mail`, tpl.id)
+      const app = await make(`Render ${tag} app`, inApp.id)
+      await sendCampaigns({ authorised: true, store, now: () => new Date(), unsubscribe: UNSUB })
+      const rows = await sql`select id, recipient_email::text as email, status, subject, body_html, body_text, unsubscribe_url, sent_at from messages where campaign_id = ${mail} order by 2`
+      assertEquals(rows.map((r) => [r.status, r.subject]), [['queued', 'Hi A & <B>'], ['queued', `Hi r2-${tag}@render.test`]])
+      assertEquals(rows[0].body_html.includes('<p>Hello A &amp; &lt;B&gt;.</p>'), true) // escaped in html, raw in text
+      assertEquals(rows[0].body_text.startsWith('Hello A & <B>.\n\nFrom Alpha'), true)
+      for (const r of rows) {
+        const fn = new URL(r.unsubscribe_url)
+        assertEquals([fn.origin + fn.pathname, await checkUnsubscribe(UNSUB.secret, fn.searchParams.get('t'))], [UNSUB.url, r.id]) // the token the function verifies
+        const page = `${UNSUB.page}?t=${fn.searchParams.get('t')}`
+        assertEquals([r.body_text.endsWith(`campaign emails: ${page}`), r.body_html.includes(`<a href="${page}"`), r.body_text.includes('@@')], [true, true, false])
+      }
+      const apps = await sql`select recipient_user_id, status, channel, unsubscribe_url, sent_at is not null as sent, subject from messages where campaign_id = ${app} order by subject`
+      assertEquals(apps.map((r) => [r.status, r.channel, r.unsubscribe_url, r.sent]), [['sent', 'in_app', null, true], ['sent', 'in_app', null, true]])
+      const notices = await sql`select title, link, body from notifications where campaign_id = ${app} order by title`
+      assertEquals(notices.map((n) => [n.title, n.link]), [['Notice for A & <B>', '#/inbox'], [`Notice for r2-${tag}@render.test`, '#/inbox']])
+      assertEquals(notices.length, apps.filter((a) => a.recipient_user_id).length)
+    } finally {
+      await sql`delete from campaigns where name like ${`Render ${tag}%`}` // messages and notifications cascade
+      await sql`delete from message_templates where name like ${`Render ${tag}%`}`
+      await sql`delete from members where org_id = ${ALPHA} and email like ${`r_-${tag}@render.test`}`
+      await sql`delete from auth.users where email like ${`r_-${tag}@render.test`}`
+      await sql`delete from roles where org_id = ${ALPHA} and name = ${`Render ${tag}`}`
+      await store.end()
+      await sql.end()
+    }
+  },
+})
+
+Deno.test({
+  name: 'real Postgres: a leased campaign waits, and one whose runs were killed three times fails with a reason (QA-P6-3)',
+  ignore: !url,
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const sql = postgres(url!, { max: 1 })
+    const store = pgCampaignStore(url!)
+    const tag = crypto.randomUUID().slice(0, 8)
+    try {
+      const audience = { kind: 'role', roleId: (await sql`select id from roles where org_id = ${ALPHA} and name = 'Member'`)[0].id }
+      const leased = await campaign(sql, `Lease ${tag} held`, audience, ADMIN)
+      const killed = await campaign(sql, `Lease ${tag} killed`, audience, ADMIN)
+      const retried = await campaign(sql, `Lease ${tag} retried`, audience, ADMIN)
+      await sql`update campaigns set attempts = 1, claimed_until = now() + interval '3 minutes' where id = ${leased}`
+      await sql`update campaigns set attempts = 3, claimed_until = now() - interval '1 minute' where id = ${killed}`
+      await sql`update campaigns set attempts = 2, claimed_until = now() - interval '1 minute' where id = ${retried}`
+      await sendCampaigns({ authorised: true, store, now: () => new Date(), unsubscribe: UNSUB })
+      const read = async (id: string) => (await sql`select status, attempts, error from campaigns where id = ${id}`)[0]
+      assertEquals(await read(leased), { status: 'scheduled', attempts: 1, error: null })
+      assertEquals(await read(killed), { status: 'failed', attempts: 4, error: PROBLEMS.attempts })
+      assertEquals((await read(retried)).status, 'sending')
+      assertEquals((await read(retried)).attempts, 3)
+    } finally {
+      await sql`delete from campaigns where name like ${`Lease ${tag}%`}`
       await store.end()
       await sql.end()
     }

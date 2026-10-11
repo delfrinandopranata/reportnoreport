@@ -38,14 +38,22 @@ test('reads tracking events; an open proves delivery, a click proves both', () =
   const complained = readTrackingEvent({ type: 'email.complained', created_at: 'garbage', data: { email_id: 'rs_9' } }, NOW)
   assert.deepEqual(complained, { providerId: 'rs_9', columns: ['complained_at'], at: NOW, complaint: true })
   const future = readTrackingEvent({ type: 'email.delivered', created_at: '2026-10-12T00:00:00Z', data: { email_id: 'rs_1' } }, NOW)
-  assert.equal(future !== 'ignored' && future?.at.getTime(), NOW.getTime())
+  assert.equal('at' in future && future.at.getTime(), NOW.getTime())
 })
 
-test('other event types are ignored and malformed ones refused', () => {
-  assert.equal(readTrackingEvent({ type: 'email.sent', data: { email_id: 'rs_1' } }, NOW), 'ignored')
-  assert.equal(readTrackingEvent({ type: 'toString', data: { email_id: 'rs_1' } }, NOW), 'ignored')
-  for (const bad of [null, [], { type: 'email.opened' }, { type: 'email.opened', data: {} }, { type: 'email.opened', data: { email_id: 'a b' } }]) {
-    assert.equal(readTrackingEvent(bad, NOW), null)
+test('other event types are ignored and malformed ones ignored with a reason, never thrown or refused', () => {
+  const NOT_TRACKED = { ignored: 'This event type is not tracked.' }
+  assert.deepEqual(readTrackingEvent({ type: 'email.sent', data: { email_id: 'rs_1' } }, NOW), NOT_TRACKED)
+  assert.deepEqual(readTrackingEvent({ type: 'toString', data: { email_id: 'rs_1' } }, NOW), NOT_TRACKED)
+  // Resend also signs events with no email_id (domain.*, contact.*): ignoring them is what stops Resend retrying
+  assert.deepEqual(readTrackingEvent({ type: 'domain.updated', data: { id: 'd_1' } }, NOW), NOT_TRACKED)
+  assert.deepEqual(readTrackingEvent({ type: 'domain.updated' }, NOW), NOT_TRACKED)
+  for (const bad of [null, [], 'text', 7, {}, { type: 5 }]) {
+    assert.deepEqual(readTrackingEvent(bad, NOW), { ignored: 'This is not a Resend event.' })
+  }
+  for (const bad of [{ type: 'email.opened' }, { type: 'email.opened', data: null }, { type: 'email.opened', data: {} },
+    { type: 'email.opened', data: { email_id: 5 } }, { type: 'email.opened', data: { email_id: 'a b' } }, { type: 'email.opened', data: { email_id: 'x'.repeat(101) } }]) {
+    assert.deepEqual(readTrackingEvent(bad, NOW), { ignored: 'This event has no usable email id.' })
   }
 })
 
