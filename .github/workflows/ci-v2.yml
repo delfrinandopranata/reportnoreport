@@ -36,5 +36,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with: { version: 2.120.0 }
-      - run: supabase db start
+      # The API, Auth and Realtime are needed by the env-gated Edge tests below; the rest is not.
+      - run: supabase start -x studio,imgproxy,mailpit,edge-runtime,vector,logflare,supavisor,postgres-meta
       - run: supabase test db
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      # Real-database tests the plain `deno test` job skips: advance and send-messages races, run-report visibility, Realtime isolation.
+      - name: Env-gated Edge tests
+        env: { DENO_NO_PACKAGE_JSON: "1" }
+        run: |
+          eval "$(supabase status -o env)"
+          export RNR_TEST_SUPABASE_URL="$API_URL" RNR_TEST_ANON_KEY="$ANON_KEY" RNR_TEST_DB_URL="$DB_URL"
+          deno test --allow-env --allow-net --allow-read \
+            supabase/functions/advance/race.test.ts supabase/functions/send-messages/race.test.ts \
+            supabase/functions/run-report/visibility.test.ts supabase/functions/_integration/realtime.test.ts
