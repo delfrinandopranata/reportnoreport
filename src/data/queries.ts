@@ -1,3 +1,4 @@
+import { localiseBlockReason } from '../trial'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { fillClient, statement, type Client, type ClientInput, type Kind, type StatementLine, type Txn } from '../ledger'
@@ -34,7 +35,7 @@ function useFail() {
       void qc.invalidateQueries({ queryKey: ['session', userId] })
       if ((error as { code?: string }).code === '42501') {
         const fresh = await supabase.rpc('firm_write_block_reason', { firm: firm.id })
-        if (!fresh.error) reason = fresh.data as string | null
+        if (!fresh.error) reason = localiseBlockReason(fresh.data as string | null, firm.trialEndsAt)
       }
     }
     throw new Error(toUserMessage(error, { writeBlockReason: reason }))

@@ -43,3 +43,9 @@ test('parseAmount rejects amounts above the database cap', () => {
   assert.match((parseAmount('99999999999999') as { error: string }).error, /too large/)
   assert.equal(parseAmount('abc').ok, false)
 })
+
+test('parseAmount rejects a zero amount with a field message', async () => {
+  const { parseAmount } = await import('./mappers.ts')
+  for (const zero of ['0', '0.00', ' 0.0 ']) assert.deepEqual(parseAmount(zero), { ok: false, error: 'Enter an amount greater than 0.' })
+  assert.deepEqual(parseAmount('0.07'), { ok: true, cents: 7 })
+})

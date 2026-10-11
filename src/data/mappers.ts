@@ -119,6 +119,7 @@ export const rowToAttachment = (r: AttachmentRow): Attachment => ({
 export function parseAmount(input: string): { ok: true; cents: number } | { ok: false; error: string } {
   const cents = parseCents(input)
   if (cents === null) return { ok: false, error: 'Enter an amount, up to 2 decimal places.' }
+  if (cents === 0) return { ok: false, error: 'Enter an amount greater than 0.' }
   if (Math.abs(cents) > AMOUNT_CAP) return { ok: false, error: 'That amount is too large. The maximum is ±100,000,000,000.00.' }
   return { ok: true, cents }
 }

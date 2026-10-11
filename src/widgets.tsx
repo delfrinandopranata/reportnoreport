@@ -1,3 +1,4 @@
+import { axisGutter } from './chartGeometry'
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { monthlyFlow, today, type Txn } from './ledger'
 import { sumBalances } from './data/mappers'
@@ -77,7 +78,7 @@ function ClientsKpi() {
   )
 }
 
-const CHART = { w: 640, h: 220, top: 12, bottom: 28, left: 64 }
+const CHART = { w: 640, h: 220, top: 12, bottom: 28 }
 
 const barPath = (x: number, y: number, w: number, h: number) => {
   const r = Math.min(4, w / 2, h)
@@ -99,12 +100,13 @@ export function CashflowChart({ txns }: { txns: Txn[] }) {
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(1, ...flow.flatMap((f) => [f.in, f.out]))
   const plotH = CHART.h - CHART.top - CHART.bottom
-  const slot = (CHART.w - CHART.left) / flow.length
-  const barW = Math.min(28, slot * 0.28)
   const y = (v: number) => CHART.top + plotH - (v / max) * plotH
   const ticks = [0, 0.5, 1].map((p) => p * max)
+  const left = axisGutter(ticks.map(money.compact))
+  const slot = (CHART.w - left) / flow.length
+  const barW = Math.min(28, slot * 0.28)
   const active = hover === null ? null : flow[hover]
-  const tipX = hover === null ? 0 : Math.min(Math.max(CHART.left + slot * hover + slot / 2 - TIP.w / 2, CHART.left), CHART.w - TIP.w)
+  const tipX = hover === null ? 0 : Math.min(Math.max(left + slot * hover + slot / 2 - TIP.w / 2, left), CHART.w - TIP.w)
 
   return (
     <div className="rnr-chart-wrap">
@@ -121,14 +123,14 @@ export function CashflowChart({ txns }: { txns: Txn[] }) {
         </defs>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={CHART.left} x2={CHART.w} y1={y(t)} y2={y(t)} className={t ? 'rnr-chart-grid' : 'rnr-chart-zero'} strokeDasharray={t ? '3 4' : undefined} />
-            <text x={CHART.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="rnr-chart-axis">
+            <line x1={left} x2={CHART.w} y1={y(t)} y2={y(t)} className={t ? 'rnr-chart-grid' : 'rnr-chart-zero'} strokeDasharray={t ? '3 4' : undefined} />
+            <text x={left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="rnr-chart-axis">
               {money.compact(t)}
             </text>
           </g>
         ))}
         {flow.map((f, i) => {
-          const cx = CHART.left + slot * i + slot / 2
+          const cx = left + slot * i + slot / 2
           const on = hover === i ? '' : undefined
           return (
             <g key={f.key} onMouseEnter={() => setHover(i)}>

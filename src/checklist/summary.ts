@@ -30,3 +30,8 @@ export function summarise(items: ChecklistItem[]): ChecklistSummary {
     totalCount: items.length,
   }
 }
+
+/** After the row at `index` leaves the to-do list, the row that takes focus: the one now in its place, else the last, else none. */
+export function nextFocusIndex(index: number, remaining: number): number {
+  return remaining === 0 ? -1 : Math.min(index, remaining - 1)
+}

@@ -20,7 +20,8 @@ export function useMoneyCell() {
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (value: T) => void; label: string }) {
   return (
-    <div className="rnr-seg" role="group" aria-label={label}>
+    // The bundle makes a phone segmented control two columns wide; three options need their own row of three.
+    <div className={`rnr-seg${options.length === 3 ? ' max-sm:grid-cols-3' : ''}`} role="group" aria-label={label}>
       {options.map(([key, text]) => (
         <button key={key} type="button" aria-pressed={value === key} onClick={() => onChange(key)} className="whitespace-nowrap">
           {text}

@@ -9,8 +9,10 @@ test('receipts and payments columns are series with their own words', () => {
   assert.equal(seriesOf('balance'), null)
 })
 
-test('the CSV headers still read In and Out', () => {
+test('on screen the headers say Receipts and Payments; exports keep In and Out', () => {
   const src = readFileSync(new URL('./ClientsPage.tsx', import.meta.url), 'utf8')
-  assert.match(src, /id: 'receipts', label: 'In'/)
-  assert.match(src, /id: 'payments', label: 'Out'/)
+  assert.match(src, /id: 'receipts', label: 'Receipts'/)
+  assert.match(src, /id: 'payments', label: 'Payments'/)
+  assert.match(src, /\{ receipts: 'In', payments: 'Out' \}/)
+  assert.doesNotMatch(src, /label: 'In'|label: 'Out'/)
 })

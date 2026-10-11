@@ -1,6 +1,6 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Icon, btn, ring } from '../ui'
-import { summarise, type ChecklistItem } from './summary'
+import { nextFocusIndex, summarise, type ChecklistItem } from './summary'
 import sprite from '../../v2/design/icons/sprite.svg?url'
 
 export interface ChecklistProps {
@@ -38,6 +38,18 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
   const [showSkipped, setShowSkipped] = useState(false)
   const summary = summarise(items)
   const skippedId = useId()
+  const list = useRef<HTMLOListElement>(null)
+  const dismiss = useRef<HTMLButtonElement>(null)
+  const refocus = useRef<number | null>(null)
+
+  // The skipped row unmounts, so focus would fall to the page start: move it to the row now in its place.
+  useEffect(() => {
+    if (refocus.current === null) return
+    const next = nextFocusIndex(refocus.current, summary.todoItems.length)
+    refocus.current = null
+    const buttons = list.current?.querySelectorAll<HTMLElement>('li:not([data-state="done"]) button')
+    ;(next < 0 ? dismiss.current : buttons?.[next])?.focus()
+  }, [summary.todoItems.length])
 
   if (items.length === 0) return null
 
@@ -51,14 +63,14 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
             {summary.doneCount} of {summary.totalCount} done
           </span>
           <progress className="rnr-progress" max={summary.totalCount} value={summary.doneCount} aria-label={`Setup progress, ${summary.doneCount} of ${summary.totalCount}`} />
-          <button type="button" onClick={onDismiss} className={`${btn.ghost} rnr-btn-sm`} aria-label="Dismiss checklist">
+          <button ref={dismiss} type="button" onClick={onDismiss} className={`${btn.ghost} rnr-btn-sm`} aria-label="Dismiss checklist">
             <Icon name="x" className="size-4" />
           </button>
         </div>
 
-        <ol className="rnr-checklist">
+        <ol ref={list} className="rnr-checklist">
           {summary.todoItems.map((item, i) => (
-            <Row key={item.id} item={item} state={i === 0 ? 'current' : 'todo'} action={{ label: 'Skip', aria: `Skip "${item.title}"`, run: () => onSkip(item.id) }} />
+            <Row key={item.id} item={item} state={i === 0 ? 'current' : 'todo'} action={{ label: 'Skip', aria: `Skip "${item.title}"`, run: () => { refocus.current = i; onSkip(item.id) } }} />
           ))}
           {summary.doneItems.map((item) => (
             <Row key={item.id} item={item} state="done" />

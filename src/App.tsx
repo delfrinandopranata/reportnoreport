@@ -212,7 +212,7 @@ export default function App() {
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button className={btn.ghost} onClick={() => setShowRemoveConfirm(false)}>Cancel</button>
             <button
-              className={btn.primary}
+              className={btn.danger}
               onClick={async () => {
                 await removeSample.mutateAsync()
                 setShowRemoveConfirm(false)
@@ -274,13 +274,13 @@ export default function App() {
             <p className="rnr-lede">{HEADINGS[route.view].subtitle}</p>
           </div>
           <div className="rnr-page-actions">
-          <button type="button" className={`${btn.ghost}`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
+          <button type="button" className={`${btn.ghost} pointer-coarse:min-w-11`} onClick={tour.replay} aria-label="Take the tour" title="Take the tour" data-tour="help-menu">
             <Icon name="search" />
           </button>
           {isDashboard && canImport && (
             <button
               type="button"
-              className={`${btn.ghost}`}
+              className={`${btn.ghost} pointer-coarse:min-w-11`}
               onClick={() => loadSample.mutate()}
               disabled={loadSample.isPending}
               title="Import sample data"

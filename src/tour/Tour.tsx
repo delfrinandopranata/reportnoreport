@@ -126,7 +126,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
     }
 
     // Focus the first button in the dialog
-    const firstButton = dialogRef.current.querySelector('button')
+    const firstButton = dialogRef.current.querySelector<HTMLElement>('button:not(:disabled)')
     if (firstButton) {
       firstButton.focus()
     }
@@ -136,7 +136,7 @@ export function Tour({ open, step, currentIndex, totalSteps, onNext, onPrev, onS
 
     // Focus trap: keep focus within dialog
     const focusableElements = dialog.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      'button:not(:disabled), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     )
     const firstElement = focusableElements[0] as HTMLElement
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement

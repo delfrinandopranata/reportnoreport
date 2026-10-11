@@ -111,3 +111,10 @@ test('summarise: all items skipped', () => {
   assert.equal(summary.doneItems.length, 0)
   assert.equal(summary.skippedItems.length, 4)
 })
+
+test('nextFocusIndex keeps focus in the list after a skip', async () => {
+  const { nextFocusIndex } = await import('./summary.ts')
+  assert.equal(nextFocusIndex(0, 3), 0)
+  assert.equal(nextFocusIndex(2, 2), 1)
+  assert.equal(nextFocusIndex(0, 0), -1)
+})

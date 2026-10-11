@@ -192,12 +192,12 @@ function ManageDialog({ id, members, onClose }: { id: string | null; members: Me
 
 function RolesPanel() {
   return (
-    <section className="rnr-folder" aria-labelledby="roles-heading">
+    <section className="rnr-folder min-w-0" aria-labelledby="roles-heading">
       <span className="rnr-folder-tab" id="roles-heading">Roles and permissions</span>
       <div className="rnr-folder-body">
         <div className="rnr-perf" aria-hidden="true" />
         <p className="rnr-muted mb-4">What each role can do. Everyone can view clients, balances and statements.</p>
-        <div className="rnr-table-bare" tabIndex={0} role="region" aria-label="Roles and permissions table">
+        <div className="rnr-table-bare relative max-w-full min-w-0 overflow-x-auto" tabIndex={0} role="region" aria-label="Roles and permissions table">
           <table className="rnr-table min-w-[560px]">
             <thead>
               <tr>
@@ -278,7 +278,7 @@ export function UsersPage() {
       text: (u) => u.name,
     },
     { id: 'email', label: 'Email', width: 230, sortKey: 'email', cell: (u) => <span className="rnr-muted block truncate" title={u.email}>{u.email}</span>, text: (u) => u.email },
-    { id: 'role', label: 'Role', width: 120, sortKey: 'role', cell: (u) => <RoleBadge role={u.role} />, text: (u) => ROLE_LABEL[u.role] },
+    { id: 'role', label: 'Role', width: 150, sortKey: 'role', cell: (u) => <RoleBadge role={u.role} />, text: (u) => ROLE_LABEL[u.role] },
     { id: 'status', label: 'Status', width: 120, sortKey: 'status', cell: (u) => <StatusBadge status={u.status} />, text: (u) => STATUS_LABEL[u.status] },
     { id: 'active', label: 'Last active', width: 150, sortKey: 'active', cell: (u) => <span className="rnr-muted">{lastActive(u, dateFormat)}</span>, text: (u) => lastActive(u, dateFormat) },
     {

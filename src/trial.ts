@@ -4,7 +4,7 @@ export type TrialState =
   | { kind: 'ended'; endedOn: string }
   | { kind: 'read_only'; endedOn: string }
 
-function formatLocalDate(date: Date): string {
+export function formatLocalDate(date: Date): string {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const day = date.getDate()
   const month = monthNames[date.getMonth()]
@@ -45,4 +45,13 @@ export function trialState(
   const daysLeft = Math.max(1, Math.ceil(daysRemaining))
 
   return { kind: 'active' as const, daysLeft, endsOn: formatLocalDate(endDate) }
+}
+
+/**
+ * The server words the block reason with the trial end in UTC ("ended on 10 Oct"), a day behind the
+ * local date Billing shows; the date is re-derived with the same formatter so one screen never has two.
+ */
+export function localiseBlockReason(reason: string | null, trialEndsAt: string | null): string | null {
+  if (!reason || !trialEndsAt || !/^The free trial ended on /.test(reason)) return reason
+  return `The free trial ended on ${formatLocalDate(new Date(trialEndsAt))}.`
 }

@@ -18,6 +18,7 @@ import {
 } from './ledger'
 import { AddClient } from './clients/AddClient'
 import { StatusBadge, TagList } from './clients/fields'
+import { LedgerSkeleton, MobileCard } from './clients/LedgerParts'
 import { LoadError, monthLabel, Segmented, select, shortDate, Skeleton, useGate, useMoneyCell, useUserNames } from './clients/shared'
 import { sumBalances, toStatement } from './data/mappers'
 import { useMoney } from './data/money'
@@ -39,6 +40,8 @@ type TypeFilter = 'all' | Kind
 type ClientBalance = { client: Client; soa: ReturnType<typeof toStatement>; count: number; last: string }
 
 const PAGE = 200
+/** On screen the headers say Receipts and Payments; exports keep the In / Out headers that imports read back. */
+const csvLabel = (c: { id: string; label: string }) => ({ receipts: 'In', payments: 'Out' })[c.id] ?? c.label
 export const ClientsPage = () => <LedgerView />
 
 /** Clients list (balances + transactions) or, with `fixedClientId`, one client's transactions. */
@@ -147,23 +150,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     return list.sort((a, b) => a.key.localeCompare(b.key) * (txnSort.key === 'date' && txnSort.dir === 'asc' ? 1 : -1))
   }, [txnRows, mode, txnSort, showBalance, balances, summary]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const txnColumns: Column<StatementLine, TxnSort>[] = [
-    { id: 'date', label: 'Date', width: 136, sortKey: 'date', cell: (t) => <span className="rnr-muted">{shortDate(t.date)}</span>, text: (t) => t.date },
-    {
-      id: 'client',
-      label: 'Client',
-      width: 190,
-      sortKey: 'client',
-      cell: (t) => <a href={`#clients/${t.clientId}`} className="rnr-link font-medium">{nameOf(t.clientId)}</a>,
-      text: (t) => nameOf(t.clientId),
-    },
-    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (t) => <span className="rnr-muted">{accountNo(t.clientId)}</span>, text: (t) => accountNo(t.clientId) },
-    {
-      id: 'description',
-      label: 'Description',
-      width: 240,
-      flex: true,
-      cell: (t) => (
+  // The card heading reads from this directly, so hiding the Description column never removes a row's name.
+  const describe = (t: StatementLine) => (
         <span className="flex items-center gap-2.5">
           <KindBadge kind={t.kind} />
           <span className="truncate">{t.note || (t.kind === 'in' ? 'Receipt' : 'Payment')}</span>
@@ -183,12 +171,30 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             </span>
           )}
         </span>
-      ),
+  )
+
+  const txnColumns: Column<StatementLine, TxnSort>[] = [
+    { id: 'date', label: 'Date', width: 136, sortKey: 'date', cell: (t) => <span className="rnr-muted">{shortDate(t.date)}</span>, text: (t) => t.date },
+    {
+      id: 'client',
+      label: 'Client',
+      width: 190,
+      sortKey: 'client',
+      cell: (t) => <a href={`#clients/${t.clientId}`} className="rnr-link font-medium">{nameOf(t.clientId)}</a>,
+      text: (t) => nameOf(t.clientId),
+    },
+    { id: 'account', label: 'Account no.', width: 120, hidden: true, cell: (t) => <span className="rnr-muted">{accountNo(t.clientId)}</span>, text: (t) => accountNo(t.clientId) },
+    {
+      id: 'description',
+      label: 'Description',
+      width: 240,
+      flex: true,
+      cell: describe,
       text: (t) => t.note,
     },
     { id: 'type', label: 'Type', width: 100, hidden: true, cell: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment'), text: (t) => (t.kind === 'in' ? 'Receipt' : 'Payment') },
-    { id: 'receipts', label: 'In', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
-    { id: 'payments', label: 'Out', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
+    { id: 'receipts', label: 'Receipts', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'in' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'in' ? plainAmount(t.amount) : '') },
+    { id: 'payments', label: 'Payments', width: 170, align: 'right', sortKey: 'amount', cell: (t) => (t.kind === 'out' ? fmt(t.amount) : ''), text: (t) => (t.kind === 'out' ? plainAmount(t.amount) : '') },
     {
       id: 'balance',
       label: 'Balance',
@@ -254,8 +260,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     { id: 'clientCode', label: 'Client ID', width: 150, hidden: true, cell: (r) => r.client.clientCode || '—', text: (r) => r.client.clientCode },
     { id: 'industry', label: 'Industry', width: 170, hidden: true, cell: (r) => r.client.industry || '—', text: (r) => r.client.industry },
     { id: 'opening', label: 'Opening balance', width: 180, align: 'right', sortKey: 'opening', cell: (r) => money(r.soa.opening), text: (r) => plainAmount(r.soa.opening) },
-    { id: 'receipts', label: 'In', width: 170, align: 'right', sortKey: 'in', cell: (r) => fmt(r.soa.receipts), text: (r) => plainAmount(r.soa.receipts) },
-    { id: 'payments', label: 'Out', width: 170, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
+    { id: 'receipts', label: 'Receipts', width: 170, align: 'right', sortKey: 'in', cell: (r) => fmt(r.soa.receipts), text: (r) => plainAmount(r.soa.receipts) },
+    { id: 'payments', label: 'Payments', width: 170, align: 'right', sortKey: 'out', cell: (r) => fmt(r.soa.payments), text: (r) => plainAmount(r.soa.payments) },
     { id: 'closing', label: 'Closing balance', width: 180, align: 'right', sortKey: 'closing', cell: (r) => money(r.soa.closing), text: (r) => plainAmount(r.soa.closing) },
     { id: 'count', label: 'Transactions', width: 120, align: 'right', sortKey: 'count', hidden: true, cell: (r) => r.count, text: (r) => String(r.count) },
     { id: 'last', label: 'Last transaction', width: 170, align: 'right', sortKey: 'last', cell: (r) => <span className="rnr-muted">{r.last ? shortDate(r.last) : '—'}</span>, text: (r) => r.last },
@@ -293,8 +299,8 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
     const who = fixedClientId ? `_${nameOf(fixedClientId).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}` : ''
     const baseName = isTxns ? `client-ledger${who}_${stamp}` : `client-balances_${stamp}`
     const rows = isTxns
-      ? [txnVisible.map((c) => c.label), ...txnRows.map((r) => txnVisible.map((c) => c.text(r)))]
-      : [balanceVisible.map((c) => c.label), ...balanceRows.map((r) => balanceVisible.map((c) => c.text(r)))]
+      ? [txnVisible.map(csvLabel), ...txnRows.map((r) => txnVisible.map((c) => c.text(r)))]
+      : [balanceVisible.map(csvLabel), ...balanceRows.map((r) => balanceVisible.map((c) => c.text(r)))]
     if (!includeAttachments) return downloadCsv(`${baseName}.csv`, rows)
     setExporting(true)
     setExportError('')
@@ -532,7 +538,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
 
           {isTxns && (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 max-sm:w-full [&>.rnr-seg]:max-sm:flex-1">
                 <span className="rnr-muted whitespace-nowrap">Type</span>
                 <Segmented<TypeFilter> label="Transaction type" value={type} onChange={setType} options={[['all', 'All'], ['in', 'In'], ['out', 'Out']]} />
               </div>
@@ -565,7 +571,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             trigger={<Icon name="more" />}
             triggerLabel="More actions"
             menuLabel="More actions"
-            triggerClassName={`${btn.ghost} px-2`}
+            triggerClassName={`${btn.ghost} px-2 pointer-coarse:min-w-11`}
           >
             {(close) => (
               <>
@@ -588,7 +594,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
             )}
           </Menu>
           {!fixedClientId && (
-            <button type="button" className={btn.ghost} onClick={() => setSoaOpen(true)} disabled={!rowsCount} title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
+            <button type="button" className={`${btn.ghost} pointer-coarse:min-w-11`} onClick={() => setSoaOpen(true)} disabled={!rowsCount} title={rowsCount ? 'Statement of account' : 'Nothing to export'}>
               <Icon name="file" /> <span className="max-sm:sr-only">Statement of account</span>
             </button>
           )}
@@ -632,7 +638,7 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
               ? shownTxns.map((t) => (
                   <MobileCard
                     key={t.id}
-                    heading={txnVisible.find((c) => c.id === 'description')!.cell(t)}
+                    heading={describe(t)}
                     figureLabel="Amount"
                     figure={amountCell(t)}
                     fields={txnCardFields(t)}
@@ -763,46 +769,6 @@ export function LedgerView({ fixedClientId }: { fixedClientId?: string }) {
           </div>
         )}
       </Dialog>
-    </div>
-  )
-}
-
-/** Mobile reflow of one table row: heading + prominent figure up top, every other column below as label:value. */
-function MobileCard({ heading, figure, figureLabel, fields, href, negative }: { heading: ReactNode; figure: ReactNode; figureLabel: string; fields: { label: string; value: ReactNode }[]; href?: string; negative?: boolean }) {
-  const body = (
-    <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">{heading}</div>
-        <div className="shrink-0 text-right">
-          <p className="rnr-muted text-xs">{figureLabel}</p>
-          <p className="rnr-amt" data-neg={negative || undefined}>{figure}</p>
-        </div>
-      </div>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-soft pt-2 text-xs">
-        {fields.map((f, i) => (
-          <div key={i} className="min-w-0">
-            <dt className="rnr-muted">{f.label}</dt>
-            <dd className="truncate">{f.value || '—'}</dd>
-          </div>
-        ))}
-      </dl>
-    </>
-  )
-  const className = 'rnr-card grid gap-2'
-  return href ? <a href={href} className={className}>{body}</a> : <div className={className}>{body}</div>
-}
-
-function LedgerSkeleton() {
-  return (
-    <div role="status" aria-label="Loading clients" className="grid grid-cols-1 gap-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="rnr-card grid gap-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-32" /><Skeleton className="h-4 w-20" /></div>
-        ))}
-      </div>
-      <div className="rnr-card grid gap-3"><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /></div>
-      <div className="rnr-card grid gap-3">{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-full" />)}</div>
-      <span className="sr-only">Loading…</span>
     </div>
   )
 }

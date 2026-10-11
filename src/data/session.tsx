@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session as AuthSession } from '@supabase/supabase-js'
 import { can as roleCan, type Action } from '../users/rules'
+import { localiseBlockReason } from '../trial'
 import { rowToFirm, rowToMember, type Firm, type Member } from './mappers'
 import { openedFromSetPasswordLink, supabase } from './supabase'
 import { toUserMessage } from './errors'
@@ -141,10 +142,12 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
   if (!firm) return <FullPageMessage title="No access to this firm" text="Your access is suspended, or your firm is not set up yet. Contact your firm owner." action={() => supabase.auth.signOut()} />
 
   const member = rowToMember(profile)
+  const mappedFirm = rowToFirm(firm)
+  const blockReason = localiseBlockReason(reason, mappedFirm.trialEndsAt)
   const session: Session = {
-    userId: userId!, profile: member, firm: rowToFirm(firm),
+    userId: userId!, profile: member, firm: mappedFirm,
     can: (a) => member.status === 'active' && roleCan(member.role, a),
-    canWrite: reason === null, writeBlockReason: reason,
+    canWrite: reason === null, writeBlockReason: blockReason,
     signOut: async () => { await supabase.auth.signOut() },
   }
   return <Ctx.Provider value={session}>{children}</Ctx.Provider>
