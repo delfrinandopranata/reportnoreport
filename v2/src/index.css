@@ -1,113 +1,96 @@
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/fraunces/full-italic.css";
+@import "@fontsource-variable/hanken-grotesk/index.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 @import "../design/tokens.css";
 @import "../design/components/bundle.css";
 @import "tailwindcss";
 
+/* design/ owns every rnr-* class (in @layer components). Never write unlayered CSS that targets rnr-* here: it beats the bundle and the utilities. */
 @theme inline {
-  --color-surface-000: var(--surface-000);
-  --color-surface-100: var(--surface-100);
-  --color-surface-200: var(--surface-200);
-  --color-surface-canvas: var(--surface-canvas);
-  --color-line-100: var(--line-100);
-  --color-line-200: var(--line-200);
-  --color-line-300: var(--line-300);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-field: var(--field);
+  --color-soft: var(--soft);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-edge: var(--edge);
   --color-ink: var(--ink);
-  --color-ink-label: var(--ink-label);
-  --color-ink-muted: var(--ink-muted);
-  --color-ink-faint: var(--ink-faint);
-  --color-brand: var(--brand-solid);
-  --color-brand-ink: var(--brand-solid-ink);
-  --color-in: var(--in);
-  --color-out: var(--out);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-acc-a: var(--acc-a);
+  --color-on-acc: var(--on-acc);
+  --color-down: var(--down);
+  --color-down-bg: var(--down-bg);
+  --color-ok-ink: var(--ok-ink);
+  --color-tint: var(--tint);
+  --color-stamp: var(--stamp);
+  --color-strike: var(--strike);
+  --color-link: var(--link);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  /* Old names the unmigrated screens still use (design/README section 13); Tasks 6 to 9 move them to the names above. */
+  --color-surface-000: var(--canvas);
+  --color-surface-canvas: var(--canvas);
+  --color-surface-100: var(--surface);
+  --color-surface-200: var(--soft);
+  --color-line-100: var(--soft);
+  --color-line-200: var(--line);
+  --color-line-300: var(--line-strong);
+  --color-ink-label: var(--ink-2);
+  --color-ink-muted: var(--ink-3);
+  --color-ink-faint: var(--ink-3);
+  --color-brand: var(--acc-a);
+  --color-brand-ink: var(--on-acc);
+  --color-in: var(--series-1);
+  --color-out: var(--series-2);
+  --color-success: var(--ok-ink);
+  --color-danger: var(--down);
+  --font-sans: var(--font-ui);
 }
 
-body { background: var(--surface-000); color: var(--ink); font-family: var(--font-sans); }
+body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 
-dialog.rnr-dialog { margin: auto; padding: 0; width: calc(100% - 2rem); }
-dialog.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
-
-/* Native checkboxes in labels: ink tint (brand-solid is reserved), readable size, touch-sized rows on phones. */
-input[type="checkbox"] { width: 16px; height: 16px; flex: none; accent-color: var(--ink); }
-.rnr-check { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-label); font-size: 14px; line-height: 20px; }
-.rnr-check:has(:focus-visible) input { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.rnr-fieldset-label { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ink-label); }
-.rnr-caption { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
-a:focus-visible, select:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-@media (pointer: coarse) {
-  .rnr-btn, .rnr-input { min-height: var(--touch-min); }
-  .rnr-check { min-height: var(--touch-min); }
-  .rnr-seg button { min-height: var(--touch-min); }
-  input[type="checkbox"] { width: 20px; height: 20px; }
-  .rnr-card summary { padding-block: var(--space-3); }
-}
-
-/* Phase 2 form fields (design/phase-2-screens.md §0, §5). */
-.rnr-field[data-invalid="true"] > .rnr-label, fieldset[data-invalid="true"] > legend { color: var(--danger); }
-textarea.rnr-input { height: auto; padding: var(--space-2) var(--space-3); resize: vertical; }
-input[type="file"].rnr-input { height: auto; padding: var(--space-2) var(--space-3); }
-/* Segmented inactive label: ink-muted on the track is 4.4:1, below AA for 14px text. */
-.rnr-field .rnr-seg button[aria-checked="false"] { color: var(--ink-label); }
-.rnr-readout { display: flex; align-items: center; min-height: var(--rnr-control-h); padding: 0 var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-200); color: var(--ink); font-variant-numeric: tabular-nums; }
-.rnr-sign { display: block; width: 100%; aspect-ratio: 5 / 2; border: 1px solid var(--line-200); border-radius: var(--radius-xl); touch-action: none; }
-
-/* Builder canvas and palette (design/phase-2-screens.md §0, §2). */
-.rnr-block[data-selected="true"] { border-color: var(--focus-ring); box-shadow: 0 0 0 1px var(--focus-ring); }
-.rnr-block[data-dragging="true"] { position: relative; z-index: 1; box-shadow: var(--shadow-2xl); border-color: var(--line-300); }
-[data-theme^="bw"] .rnr-block[data-dragging="true"] { box-shadow: 6px 6px 0 0 var(--ink); }
-.rnr-block .rnr-icon-btn svg { width: 14px; height: 14px; margin-top: 0; }
-.rnr-icon-btn[aria-disabled="true"] { opacity: var(--opacity-disabled); cursor: default; }
-.rnr-pick { flex: 1; min-width: 0; text-align: left; font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-.rnr-pick > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (pointer: coarse) { .rnr-pick { min-height: var(--touch-min); } }
-dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 80dvh; padding: 0; border-radius: var(--radius-2xl) var(--radius-2xl) 0 0; }
-.rnr-sheet .rnr-dialog-body { overflow-y: auto; }
-
-/* Forms list: below sm the card scrolls sideways and the name stays in view. */
-@media (max-width: 639px) {
-  .rnr-sticky-first th:first-child, .rnr-sticky-first td:first-child { position: sticky; left: 0; background: var(--rnr-card-bg); }
-}
-
-/* Phase 3: workflow board (design/phase-3-screens.md §2.6). xyflow chrome is restyled with tokens only. */
+/* LEGACY until Task 7 (forms and workflows) moves the canvas to rnr-flow / rnr-node and deletes every wf-* rule below. Tokens already remapped. */
 .wf-board { padding: 0; overflow: hidden; background-image: none; }
 .wf-board .react-flow {
   --xy-background-color: transparent;
-  --xy-edge-stroke: var(--ink-muted);
+  --xy-edge-stroke: var(--ink-3);
   --xy-edge-stroke-selected: var(--ink);
   --xy-edge-stroke-width: 1.5;
-  --xy-edge-label-color: var(--ink-label);
-  --xy-edge-label-background-color: var(--surface-100);
-  --xy-handle-background-color: var(--surface-100);
-  --xy-handle-border-color: var(--ink-label);
-  --xy-controls-button-background-color: var(--surface-100);
-  --xy-controls-button-background-color-hover: var(--surface-200);
-  --xy-controls-button-color: var(--ink-label);
-  --xy-controls-button-border-color: var(--line-200);
+  --xy-edge-label-color: var(--ink-2);
+  --xy-edge-label-background-color: var(--surface);
+  --xy-handle-background-color: var(--surface);
+  --xy-handle-border-color: var(--ink-2);
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-background-color-hover: var(--soft);
+  --xy-controls-button-color: var(--ink-2);
+  --xy-controls-button-border-color: var(--line);
   --xy-attribution-background-color: transparent;
-  color: var(--ink-muted);
-  font-family: var(--font-sans);
+  color: var(--ink-3);
+  font-family: var(--font-ui);
 }
 .wf-board .react-flow__background-pattern { fill: var(--chart-grid); stroke: none; }
-.wf-board .react-flow__edge-text { font-size: 12px; fill: var(--ink-label); }
-.wf-board .react-flow__edge-textbg { fill: var(--surface-100); stroke: var(--line-200); }
-.wf-board .react-flow__connection-path { stroke: var(--focus-ring); stroke-width: 1.5; }
-.wf-board .react-flow__handle { border-radius: var(--radius-full); background: var(--surface-100); border: 2px solid var(--ink-label); }
-.wf-board .react-flow__handle.connectionindicator:hover, .wf-board .react-flow__handle.connectingfrom { border-color: var(--focus-ring); }
-.wf-board .react-flow__controls { box-shadow: var(--shadow-xs); border: 1px solid var(--line-200); border-radius: var(--radius-lg); overflow: hidden; }
-.wf-board .react-flow__controls-button { background: var(--surface-100); color: var(--ink-label); border-bottom: 1px solid var(--line-100); min-width: 28px; min-height: 28px; }
-.wf-board .react-flow__controls-button:hover { background: var(--surface-200); }
+.wf-board .react-flow__edge-text { font-size: 12px; fill: var(--ink-2); }
+.wf-board .react-flow__edge-textbg { fill: var(--surface); stroke: var(--line); }
+.wf-board .react-flow__connection-path { stroke: var(--focus); stroke-width: 1.5; }
+.wf-board .react-flow__handle { border-radius: var(--r-avatar); background: var(--surface); border: 2px solid var(--ink-2); }
+.wf-board .react-flow__handle.connectionindicator:hover, .wf-board .react-flow__handle.connectingfrom { border-color: var(--focus); }
+.wf-board .react-flow__controls { border: 1px solid var(--line); border-radius: var(--r-control); overflow: hidden; }
+.wf-board .react-flow__controls-button { background: var(--surface); color: var(--ink-2); border-bottom: 1px solid var(--soft); min-width: 28px; min-height: 28px; }
+.wf-board .react-flow__controls-button:hover { background: var(--soft); }
 .wf-board .react-flow__controls-button svg { fill: currentColor; }
 .wf-board .react-flow__attribution { background: transparent; font-size: 12px; }
-.wf-board .react-flow__attribution a { color: var(--ink-muted); }
-.wf-board .react-flow__node:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-xl); }
-.wf-board .react-flow__node.dragging .wf-card { box-shadow: var(--shadow-2xl); border-color: var(--line-300); }
-[data-theme^="bw"] .wf-board .react-flow__node.dragging .wf-card { box-shadow: 6px 6px 0 0 var(--ink); }
-@media (pointer: coarse) { .wf-board .react-flow__controls-button { min-width: var(--touch-min); min-height: var(--touch-min); } }
+.wf-board .react-flow__attribution a { color: var(--ink-3); }
+.wf-board .react-flow__node:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-card); }
+.wf-board .react-flow__node.dragging .wf-card { box-shadow: var(--sh-float); border-color: var(--line-strong); }
+[data-accent="bw"] .wf-board .react-flow__node.dragging .wf-card { box-shadow: 6px 6px 0 0 var(--ink); }
+@media (pointer: coarse) { .wf-board .react-flow__controls-button { min-width: var(--touch); min-height: var(--touch); } }
 @media (pointer: coarse) { .wf-board--readonly { pointer-events: none; } } /* a static picture on touch: page scroll is never trapped */
 
 .wf-card { width: 208px; flex-direction: column; align-items: stretch; gap: var(--space-1); padding: var(--space-3); overflow-wrap: anywhere; }
-.wf-card[data-issue="true"] { border-color: var(--danger); }
+.wf-card[data-issue="true"] { border-color: var(--down); }
 .wf-card[data-current="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
 .wf-card[data-readonly="true"] .react-flow__handle { pointer-events: none; }
 .wf-outs { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
@@ -116,148 +99,11 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .wf-card .react-flow__handle::after { content: ''; position: absolute; inset: -8px; }
 .wf-card .react-flow__handle-right { right: -6px; }
 .wf-card .react-flow__handle-left { left: -6px; }
-/* Segmented as a view toggle: the inactive label on the track is 4.4:1 in ink-muted, below AA at 14px. */
-.rnr-seg button[aria-pressed="false"] { color: var(--ink-label); }
-.rnr-pick .rnr-caption svg { margin-top: 0; width: 14px; height: 14px; }
 .wf-outcome { gap: var(--space-3); } /* unlayered .rnr-field gap beats the Tailwind gap utility */
 
-/* Phase 4: bell, notices, comms (design/phase-4-screens.md §1, §4, §6, §11). */
-.rnr-bell { position: relative; min-width: var(--rnr-control-h); min-height: var(--rnr-control-h); color: var(--ink-label); }
-.rnr-bell svg { width: 20px; height: 20px; }
-.rnr-bell .rnr-chip { position: absolute; top: -4px; right: -4px; min-width: 20px; justify-content: center; padding: 0 6px; }
-
-.rnr-menu.rnr-notices { position: absolute; z-index: 20; top: calc(100% + var(--space-2)); right: 0; width: 360px; max-height: min(70dvh, 28rem); overflow-y: auto; }
-@media (max-width: 639px) { .rnr-menu.rnr-notices { left: var(--space-4); right: var(--space-4); width: auto; } }
-.rnr-notices-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3); }
-.rnr-notices-sub, .rnr-notices-foot { padding: 0 var(--space-3) var(--space-2); }
-.rnr-notices-list { margin: 0; padding: 0; list-style: none; }
-.rnr-notice { display: grid; grid-template-columns: 8px 1fr; column-gap: var(--space-2); row-gap: var(--space-1); align-items: start; text-decoration: none; }
-.rnr-notice > :not(.rnr-notice-dot) { grid-column: 2; }
-.rnr-notice-dot { grid-row: 1; margin-top: 6px; width: 8px; height: 8px; border-radius: var(--radius-full); background: transparent; }
-.rnr-notice[data-unread="true"] .rnr-notice-dot { background: var(--ink); }
-.rnr-notice-title { font-weight: 400; color: var(--ink-label); }
-.rnr-notice[data-unread="true"] .rnr-notice-title { font-weight: 600; color: var(--ink); }
-.rnr-notice-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-@media (pointer: coarse) { .rnr-notice, .rnr-menu-item { min-height: var(--touch-min); } }
-
-.rnr-menu.rnr-menu--wide { width: min(320px, calc(100vw - 2rem)); max-height: 20rem; overflow-y: auto; }
-.rnr-menu-item--stack { flex-direction: column; align-items: flex-start; gap: 0; }
-.rnr-menu-item[aria-disabled="true"] { color: var(--ink-muted); cursor: default; }
-.rnr-menu-item[aria-disabled="true"]:hover { background: transparent; }
-
-.rnr-preview { padding: var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-200); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.rnr-problem { min-width: 16rem; max-width: 28rem; overflow-wrap: anywhere; }
-.rnr-table tbody tr:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
-/* sr-only cells are absolutely positioned: without a positioned scroll container they sit at the table's far edge and widen the page. */
-.rnr-card:has(> table.rnr-table) { position: relative; }
-/* Inbox "Overdue" under the due time: the bundle's inline-flex beats the Tailwind `flex` utility (layer trap), so it sat beside the date. */
-.rnr-table td.num > .rnr-status { display: flex; }
-/* Menu panels scroll or clip, so the 2px outer ring is cut off: draw it inside, and mark the roving item even when focus was set by script. */
-.rnr-menu .rnr-menu-item:focus-visible { outline-offset: -2px; }
-.rnr-menu [role="menuitem"]:focus { background: var(--surface-200); }
-/* A status that wraps onto a second line (unknown variables): keep the icon full size and on the first line. */
-.rnr-status svg { flex: none; }
-.rnr-status[data-wrap] { align-items: flex-start; }
-.rnr-status[data-wrap] svg { margin-top: 3px; }
-/* Action blocks stack their rows full width: the bundle's align-items: flex-start beats the Tailwind items-stretch utility (layer trap). */
-.rnr-block.flex-col { align-items: stretch; }
-/* .rnr-bell's 36px minimum comes later in the cascade than the bundle's 44px coarse-pointer rule. */
-@media (pointer: coarse) { .rnr-bell { min-width: var(--touch-min); min-height: var(--touch-min); } }
-
-/* Phase 4 QA: classes instead of inline styles. */
-.rnr-table-card { padding: 0; overflow-x: auto; }
-.rnr-card.rnr-card-open { overflow: visible; }
-.rnr-pref-caption { margin-left: var(--space-6); }
-
-/* Phase 5: PDF template, reports, dashboard, charts (design/phase-5-screens.md §12). */
-.rnr-btn[aria-disabled="true"] { opacity: var(--opacity-disabled); cursor: not-allowed; } /* pager and unavailable actions; never disabled="" */
-.rnr-btn-ghost[aria-pressed="true"] { background: var(--surface-200); color: var(--ink); } /* Show as table */
-
-/* Results and lists. */
-.rnr-table tbody th[scope="row"] { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--ink); border-bottom: 1px solid var(--line-100); }
-.rnr-table tfoot th, .rnr-table tfoot td { border-top: 1px solid var(--line-200); border-bottom: 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); }
-.rnr-results th, .rnr-results td { min-width: 96px; } /* DataTable README: never squeeze under 96px */
-.rnr-cell { max-width: 24rem; overflow-wrap: anywhere; }
-.rnr-table-bare { overflow-x: auto; } /* a table inside a widget: not a card inside a card */
-.rnr-pager { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.rnr-pager select { width: auto; }
-.rnr-pager-size { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; color: var(--ink-label); }
-
-/* Builder and template editor. */
-.rnr-filter { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-xl); }
-.rnr-order { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
-.rnr-order li { display: flex; align-items: center; gap: var(--space-1); min-height: var(--rnr-control-h); }
-.rnr-order-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.rnr-paper { display: grid; gap: var(--space-2); padding: var(--space-5); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-100); color: var(--ink); }
-.rnr-paper-header { white-space: pre-wrap; overflow-wrap: anywhere; }
-.rnr-paper-label { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted); }
-.rnr-paper-rule { margin: 0; border: 0; border-top: 1px solid var(--line-200); }
-.rnr-paper-sig { width: 120px; height: 48px; border-bottom: 1px solid var(--line-300); }
-
-/* Dashboard. */
-.rnr-menu-anchor { position: relative; }
-.rnr-menu.rnr-widget-menu { position: absolute; z-index: 20; top: calc(100% + var(--space-1)); right: 0; max-width: calc(100vw - 2rem); }
 .rnr-drag-overlay, .rnr-drag-overlay > .rnr-card { height: 100%; }
-/* Width options in the widget menu: a tick plus weight, so the current one is not shown by colour alone. */
-.rnr-menu-item[role="menuitemradio"] { position: relative; padding-left: calc(var(--space-3) + 20px); }
-.rnr-menu-item[role="menuitemradio"][aria-checked="true"] { color: var(--ink); font-weight: 600; }
-.rnr-menu-item[role="menuitemradio"][aria-checked="true"]::before { content: ""; position: absolute; left: var(--space-3); top: 50%; width: 5px; height: 10px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-65%) rotate(45deg); }
 
-/* Chart (single series, --in; geometry in SVG attributes). */
-.rnr-chart-wrap { min-width: 0; }
-.rnr-chart { display: block; width: 100%; height: auto; }
-.rnr-chart-grid { stroke: var(--chart-grid); stroke-width: 1; }
-.rnr-chart-zero { stroke: var(--ink-muted); stroke-width: 1; }
-.rnr-chart-axis { fill: var(--ink-muted); font: 400 11px/14px var(--font-sans); }
-.rnr-chart-value { fill: var(--ink); font: 500 11px/14px var(--font-sans); }
-.rnr-chart-bar { fill: var(--in); }
-.rnr-chart-line { fill: none; stroke: var(--in); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.rnr-chart-dot { fill: var(--in); stroke: var(--surface-100); stroke-width: 2; }
-.rnr-chart-hit { fill: transparent; }
-.rnr-chart-bar[data-active], .rnr-chart-dot[data-active] { stroke: var(--focus-ring); stroke-width: 2; }
-.rnr-chart-tip { pointer-events: none; }
-.rnr-chart-tip rect { fill: var(--surface-100); stroke: var(--line-300); }
-.rnr-chart-tip text { fill: var(--ink); font: 400 12px/16px var(--font-sans); }
-.rnr-chart-bar, .rnr-chart-dot { transition: opacity var(--rnr-t); }
-@media (hover: hover) {
-  [data-motion="full"] .rnr-chart[data-hovering] :is(.rnr-chart-bar, .rnr-chart-dot):not([data-active]) { opacity: var(--opacity-dim); }
-}
-
-/* Widget titles wrap instead of truncating, so a Small widget still shows its full name (bundle sets nowrap, unlayered). */
-.rnr-card-head .rnr-card-title { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
-.rnr-card-head { align-items: flex-start; }
-
-/* Phase 6: campaigns (design/phase-6-screens.md §12). */
-.rnr-campaign-tiles { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr); margin: 0; padding: 0; list-style: none; }
-.rnr-campaign-tiles > li { min-width: 0; }
-.rnr-campaign-tiles .rnr-card-head { margin-bottom: var(--space-2); } /* tighter than a dashboard widget */
-@media (min-width: 640px) {
-  .rnr-campaign-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rnr-campaign-tiles[data-count="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (min-width: 1024px) { .rnr-campaign-tiles[data-count="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-.rnr-campaign-tiles[data-count="2"] { max-width: 28rem; }
-.rnr-kpi[data-empty] { font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--ink-muted); } /* "No data yet": same 32px line, so tiles stay level */
-
-/* Review list (send dialog, scheduled summary). */
-.rnr-review { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); margin: 0; }
-.rnr-review dt { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted); padding-top: 2px; }
-.rnr-review dd { margin: 0; overflow-wrap: anywhere; }
-@media (max-width: 639px) { .rnr-review { grid-template-columns: minmax(0, 1fr); gap: 0; } .rnr-review dd { margin-bottom: var(--space-2); } }
-
-/* Template warning: a caution, so heavier than a muted hint but not an error. */
-.rnr-field > .rnr-hint.rnr-hint-warn { color: var(--ink-label); font-weight: 500; }
-
-/* Chart: second series and legend (single --in series is the Phase 5 default). */
-.rnr-chart-line[data-series="out"] { stroke: var(--out); stroke-dasharray: 6 4; }
-.rnr-chart-dot[data-series="out"] { fill: var(--out); }
-.rnr-chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 16px; color: var(--ink-label); }
-.rnr-chart-legend li { display: flex; align-items: center; gap: var(--space-2); }
-.rnr-chart-legend .rnr-chart-dot { stroke-width: 1; }
-.rnr-chart-line { transition: opacity var(--rnr-t); }
-@media (hover: hover) {
-  [data-motion="full"] .rnr-chart[data-active="in"] [data-series="out"],
-  [data-motion="full"] .rnr-chart[data-active="out"] [data-series="in"] { opacity: var(--opacity-dim); }
-}
-/* The bundle's .rnr-seg is one grid row; four filters run past a phone-width card, so below sm it becomes two columns (unlayered, so utilities cannot do this). */
-@media (max-width: 639px) { .rnr-seg[role="group"] { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 100%; } }
+/* phase 7: batch 6 — auth, orgs, inbox, records, members, roles (Task 6 only) */
+/* phase 7: batch 7 — forms, workflows (Task 7 only) */
+/* phase 7: batch 8 — comms, campaigns (Task 8 only) */
+/* phase 7: batch 9 — reports (Task 9 only) */

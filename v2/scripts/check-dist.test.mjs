@@ -1,7 +1,7 @@
 // scripts/check-dist.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { findSecrets, findMissingAlt, findPlaceholders, internalRefs, resolveRef } from './check-dist.mjs'
+import { findSecrets, findMissingAlt, findPlaceholders, findExternalFonts, internalRefs, resolveRef } from './check-dist.mjs'
 
 const jwt = (role) => `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ role })).toString('base64url')}.sig_abc`
 
@@ -37,4 +37,11 @@ test('resolves clean URLs, directories and hashes', () => {
   assert.equal(resolveRef('/', 'privacy.html', exists), true)
   assert.equal(resolveRef('/consent.js', 'index.html', exists), true)
   assert.equal(resolveRef('/pricing', 'index.html', exists), false)
+})
+
+test('external font hosts are refused', () => {
+  assert.deepEqual(findExternalFonts('<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">'),
+    ['https://fonts.googleapis.com/css2?family=Inter&display=swap'])
+  assert.deepEqual(findExternalFonts('@font-face{src:url(https://fonts.gstatic.com/s/inter/v1.woff2)}'), ['https://fonts.gstatic.com/s/inter/v1.woff2'])
+  assert.deepEqual(findExternalFonts('@font-face{src:url(/assets/fraunces-latin-wght-normal-AbC123.woff2)}'), [])
 })

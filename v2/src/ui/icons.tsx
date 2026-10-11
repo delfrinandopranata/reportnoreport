@@ -1,16 +1,41 @@
-const base = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, viewBox: '0 0 24 24' } as const
-export const CheckIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M20 6 9 17l-5-5" /></svg>
-export const XIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M18 6 6 18M6 6l12 12" /></svg>
-export const ClockIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-export const PlusIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M5 12h14M12 5v14" /></svg>
-export const TrashIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-export const GripIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01" /></svg>
-export const UpIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m18 15-6-6-6 6" /></svg>
-export const DownIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m6 9 6 6 6-6" /></svg>
-export const BackIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m15 18-6-6 6-6" /></svg>
-export const PencilIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-export const StopIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
-export const RightIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m9 18 6-6-6-6" /></svg>
-export const BellIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
-export const DownloadIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5" /></svg>
-export const MoreIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M12 4.5v1M12 11.5v1M12 18.5v1" /></svg>
+import type { ComponentType } from 'react'
+import {
+  ArrowLeftIcon, ArrowRightIcon as PhArrowRight, ArrowUpRightIcon as PhArrowUpRight, BellSimpleIcon, CaretDownIcon, CaretRightIcon,
+  CaretUpIcon, ChartLineUpIcon, CheckIcon as PhCheck, ClockIcon as PhClock, DatabaseIcon, DotsSixVerticalIcon, DotsThreeVerticalIcon,
+  DownloadSimpleIcon, EnvelopeSimpleIcon, FileTextIcon, GearSixIcon, GitBranchIcon, ListIcon, MagnifyingGlassIcon, MegaphoneIcon,
+  MinusIcon as PhMinus, NotePencilIcon, PencilSimpleIcon, PlusIcon as PhPlus, ShieldCheckIcon, SquaresFourIcon, StopIcon as PhStop,
+  TrashIcon as PhTrash, TrayIcon, UsersThreeIcon, XIcon as PhX, type Icon,
+} from '@phosphor-icons/react'
+import type { NavIcon } from './nav'
+
+export type IconComponent = ComponentType<{ size?: number }>
+/** Every icon is decorative: the control around it carries the name. Phosphor regular, currentColor. */
+const icon = (C: Icon): IconComponent => ({ size = 16 }) => <C size={size} aria-hidden="true" focusable="false" />
+
+export const CheckIcon = icon(PhCheck)
+export const XIcon = icon(PhX)
+export const ClockIcon = icon(PhClock)
+export const PlusIcon = icon(PhPlus)
+export const TrashIcon = icon(PhTrash)
+export const GripIcon = icon(DotsSixVerticalIcon)
+export const UpIcon = icon(CaretUpIcon)
+export const DownIcon = icon(CaretDownIcon)
+export const BackIcon = icon(ArrowLeftIcon)
+export const PencilIcon = icon(PencilSimpleIcon)
+export const StopIcon = icon(PhStop)
+export const RightIcon = icon(CaretRightIcon)
+export const BellIcon = icon(BellSimpleIcon)
+export const DownloadIcon = icon(DownloadSimpleIcon)
+export const MoreIcon = icon(DotsThreeVerticalIcon)
+export const SearchIcon = icon(MagnifyingGlassIcon)
+export const GearIcon = icon(GearSixIcon)
+export const MenuIcon = icon(ListIcon)
+export const ArrowRightIcon = icon(PhArrowRight)
+export const ArrowUpRightIcon = icon(PhArrowUpRight)
+export const MinusIcon = icon(PhMinus)
+
+export const NAV_ICONS: Record<NavIcon, IconComponent> = {
+  inbox: icon(TrayIcon), records: icon(DatabaseIcon), dashboard: icon(SquaresFourIcon), reports: icon(ChartLineUpIcon),
+  forms: icon(NotePencilIcon), workflows: icon(GitBranchIcon), templates: icon(FileTextIcon), campaigns: icon(MegaphoneIcon),
+  members: icon(UsersThreeIcon), roles: icon(ShieldCheckIcon), messages: icon(EnvelopeSimpleIcon),
+}

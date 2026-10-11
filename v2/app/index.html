@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -7,20 +7,18 @@
     <title>ReportNoReport</title>
     <meta name="robots" content="noindex">
     <script src="/consent.js" defer></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
       (() => {
+        // Mirrors src/ui/appearance.ts htmlAttrs(readAppearance(stored)); appearance.test.ts runs this against it.
         let s = {}
-        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
-        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
-        const h = document.documentElement
-        h.dataset.theme = s.bw ? (dark ? 'bw-dark' : 'bw-light') : (dark ? 'dark' : 'light')
-        h.dataset.preset = s.preset || 'default'
-        h.dataset.style = s.style || 'solid'
-        h.dataset.density = s.density || 'comfortable'
-        h.dataset.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : (s.motion || 'full')
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const pick = (list, v, d) => (list.includes(v) ? v : d)
+        const theme = pick(['light', 'dark', 'system'], s.theme, 'system')
+        const h = document.documentElement.dataset
+        h.theme = theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme
+        h.accent = pick(['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron'], s.accent, 'midnight')
+        h.density = pick(['comfortable', 'compact'], s.density, 'comfortable')
+        h.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : 'full'
       })()
     </script>
   </head>

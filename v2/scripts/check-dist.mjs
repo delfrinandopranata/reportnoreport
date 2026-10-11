@@ -14,6 +14,7 @@ export const findSecrets = (text) => [
   ...(/sb_secret_[A-Za-z0-9_-]{10,}/.test(text) ? ['sb_secret_ key'] : []),
 ]
 export const findMissingAlt = (html) => (html.match(/<img\b[^>]*>/gi) ?? []).filter((tag) => !/\balt\s*=/i.test(tag))
+export const findExternalFonts = (text) => text.match(/https?:\/\/fonts\.(?:googleapis|gstatic)\.com[^\s"')]*/g) ?? []
 export const findPlaceholders = (text) => text.match(/\[(?:Company name|Governing law|TBD|TODO)[^\]]*\]/g) ?? []
 
 export const internalRefs = (html) =>
@@ -43,6 +44,7 @@ export function checkDist(dir) {
     if (!/\.(html|js|css|xml|txt|json)$/.test(rel)) continue
     const text = readFileSync(file, 'utf8')
     for (const s of findSecrets(text)) problems.push(`${rel}: contains "${s}"`)
+    if (/\.(html|css|js)$/.test(rel)) for (const url of findExternalFonts(text)) problems.push(`${rel}: loads a font from ${url} (bundle it instead)`)
     if (!rel.endsWith('.html')) continue
     for (const p of findPlaceholders(text)) problems.push(`${rel}: placeholder ${p}`)
     for (const tag of findMissingAlt(text)) problems.push(`${rel}: <img> without alt: ${tag}`)
