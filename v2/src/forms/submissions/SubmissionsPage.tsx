@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../data/supabase'
+import { useMemberEmails } from '../../members/useMemberEmails'
 import { useOrg } from '../../rbac/useOrg'
 import { Skeleton } from '../../ui/Skeleton'
 import type { Answers, Field } from '../logic'
@@ -83,11 +84,7 @@ function Submissions({ form }: { form: LoadedForm }) {
     if (error) throw error
     return data as unknown as Sub[]
   } })
-  const emails = useQuery({ queryKey: ['member-emails', orgId], queryFn: async () => {
-    const { data, error } = await supabase.from('members').select('user_id, email').eq('org_id', orgId!)
-    if (error) throw error
-    return new Map(data.filter((m) => m.user_id).map((m) => [m.user_id as string, m.email]))
-  } })
+  const emails = useMemberEmails(orgId)
   const who = (id: string) => (id === userId ? 'You' : (emails.data?.get(id) ?? 'Former member'))
   const n = subs.data?.length ?? 0
   return (

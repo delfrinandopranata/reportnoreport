@@ -9,3 +9,5 @@ export const UpIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width
 export const DownIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m6 9 6 6 6-6" /></svg>
 export const BackIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m15 18-6-6 6-6" /></svg>
 export const PencilIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+export const StopIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+export const RightIcon = ({ size = 16 }: { size?: number }) => <svg {...base} width={size} height={size}><path d="m9 18 6-6-6-6" /></svg>

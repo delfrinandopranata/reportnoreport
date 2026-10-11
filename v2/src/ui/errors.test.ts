@@ -16,3 +16,13 @@ test('form messages', () => {
   )
   assert.equal(friendlyError({ code: '42501', message: 'new row violates row-level security policy for table "forms"' }), 'You do not have permission to do that.')
 })
+test('workflow messages', () => {
+  assert.equal(
+    friendlyError({ code: '23503', message: 'update or delete on table "workflows" violates foreign key constraint "records_workflow_id_org_id_fkey" on table "records"' }),
+    'This workflow has records, so it cannot be deleted. Keep it, or rename it so people know it is no longer used.',
+  )
+  assert.equal(
+    friendlyError({ code: 'P0001', message: 'This task was already claimed or completed.' }),
+    'Someone else claimed this task first, or it is already done. Check your inbox for what is left.',
+  )
+})

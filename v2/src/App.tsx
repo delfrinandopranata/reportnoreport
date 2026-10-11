@@ -14,6 +14,7 @@ import { FormsPage } from './forms/FormsPage'
 import { FillPage } from './forms/fill/FillPage'
 import { FormBuilder } from './forms/builder/FormBuilder'
 import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
+import { WorkflowsPage } from './workflows/WorkflowsPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -39,6 +40,7 @@ function Page({ route }: { route: Route }) {
   switch (route.page) {
     case 'roles': return <RolesPage />
     case 'forms': return <FormsPage />
+    case 'workflows': return <WorkflowsPage />
     case 'form-edit': return <FormBuilder id={route.id} />
     case 'form-submissions': return <SubmissionsPage id={route.id} />
     case 'form-fill': return <FillPage id={route.id} />
@@ -49,7 +51,7 @@ function Page({ route }: { route: Route }) {
 function Shell() {
   const { orgs, orgId, loading, failed, can } = useOrg()
   const rawHash = useHash()
-  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage') })
+  const hash = loading ? rawHash : guardHash(rawHash, { roles: can('roles.manage'), forms: can('forms.manage'), workflows: can('workflows.manage') })
   useEffect(() => { if (hash !== rawHash) location.replace(hash) }, [hash, rawHash])
   const out = useAction()
   if (loading) {
@@ -87,6 +89,7 @@ function Shell() {
           <nav aria-label="Main" className="flex gap-1 order-last sm:order-none">
             {link('#/members', 'Members', route.page === 'members')}
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
+            {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
           <button className="rnr-btn rnr-btn-ghost ml-auto" type="button" aria-busy={out.busy}

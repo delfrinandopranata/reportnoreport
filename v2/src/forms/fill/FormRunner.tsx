@@ -10,7 +10,8 @@ import type { Uploader } from './FileInput'
 
 type Props = {
   fields: Field[]; idPrefix: string; filePrefix?: string; upload?: Uploader
-  onSubmit?(answers: Answers): Promise<SubmitResult>; onDone?(submissionId: string): void
+  onSubmit?(answers: Answers): Promise<SubmitResult>; onDone?(result: Extract<SubmitResult, { ok: true }>): void
+  submitLabel?: { idle: string; busy: string }
 }
 
 const FIX = 'Some answers need fixing. The fields to fix are marked below.'
@@ -20,7 +21,7 @@ const anyRequired = (fields: Field[]): boolean => fields.some((f) => f.required 
 const seedRows = (fields: Field[]): Answers =>
   Object.fromEntries(fields.filter((f) => f.type === 'group' && (f.repeat?.min ?? 0) > 0).map((f) => [f.key, Array.from({ length: f.repeat!.min }, () => ({}))]))
 
-export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onDone }: Props) {
+export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onDone, submitLabel = { idle: 'Submit form', busy: 'Submitting…' } }: Props) {
   const all = useMemo(() => pages(fields), [fields])
   const [answers, setAnswers] = useState<Answers>(() => seedRows(fields))
   const [at, setAt] = useState(0)
@@ -60,7 +61,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
     setErrors({})
     if (!onSubmit) { setChecked(true); return }
     const res = await onSubmit(answers)
-    if (res.ok) { onDone?.(res.submissionId); return }
+    if (res.ok) { onDone?.(res); return }
     if (res.fieldErrors) showErrors(res.fieldErrors)
     else setFormError(res.error)
   })
@@ -90,7 +91,7 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
         {current > 0 && <button type="button" className="rnr-btn rnr-btn-secondary w-full sm:w-auto" onClick={back}>Back</button>}
         <button type="submit" className={`rnr-btn w-full sm:w-auto ${onSubmit ? 'rnr-btn-primary' : 'rnr-btn-secondary'}`} aria-busy={submit.busy}>
           {submit.busy && <span className="rnr-spin" aria-hidden="true" />}
-          {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? 'Submitting…' : 'Submit form'}
+          {!last ? 'Next page' : !onSubmit ? 'Check answers' : submit.busy ? submitLabel.busy : submitLabel.idle}
         </button>
       </div>
     </form>

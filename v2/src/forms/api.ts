@@ -25,12 +25,15 @@ export const useForm = (id: string) => useQuery({
   },
 })
 
-export type SubmitResult = { ok: true; submissionId: string } | { ok: false; error: string; fieldErrors?: Record<string, string> }
+/** `id` is the submission, or the record for a workflow start; `status` / `recordError` come from `advance` only. */
+export type SubmitResult =
+  | { ok: true; id: string; status?: 'open' | 'done' | 'rejected' | 'error'; recordError?: string | null }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> }
 
 /** submit-form writes its own user-facing sentences; anything else falls back to the generic one. */
 export async function submitAnswers(formId: string, answers: Answers): Promise<SubmitResult> {
   const { data, error } = await supabase.functions.invoke('submit-form', { body: { formId, answers } })
-  if (!error) return { ok: true, submissionId: data.submissionId }
+  if (!error) return { ok: true, id: data.submissionId }
   if (error instanceof FunctionsHttpError) {
     const body = await error.context.json().catch(() => null)
     if (typeof body?.error === 'string') return { ok: false, error: body.error, fieldErrors: body.fieldErrors }

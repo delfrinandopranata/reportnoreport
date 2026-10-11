@@ -4,6 +4,8 @@ type Err = { message?: string; code?: string } | null | undefined
 
 const SENTENCES: [RegExp, string][] = [
   [/on table "form_submissions"/, 'This form has submissions, so it cannot be deleted. Keep it, or rename it so people know it is no longer used.'],
+  [/on table "records"/, 'This workflow has records, so it cannot be deleted. Keep it, or rename it so people know it is no longer used.'],
+  [/already claimed or completed/, 'Someone else claimed this task first, or it is already done. Check your inbox for what is left.'],
   [/row-level security/, 'You do not have permission to do that.'],
   [/at least one Owner/, 'An organisation needs at least one Owner. Make someone else an Owner first.'],
   [/cannot grant permissions you do not hold|cannot assign a role with permissions/, 'You cannot give a permission you do not hold. Untick it and save again.'],
