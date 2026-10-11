@@ -1,5 +1,7 @@
 import { parsePath, type Field, type FieldType, type Operator } from '../logic.ts'
 
+/** Readable name for a field, including a type the builder does not know (corrupted schema). */
+export const typeLabel = (type: string) => (TYPE_LABELS as Record<string, string>)[type] ?? 'Unknown field'
 export const TYPE_LABELS: Record<FieldType, string> = {
   short_text: 'Short text', long_text: 'Long text', number: 'Number', date: 'Date',
   single_select: 'Single select', multi_select: 'Multi select', checkbox: 'Checkbox', file: 'File upload',

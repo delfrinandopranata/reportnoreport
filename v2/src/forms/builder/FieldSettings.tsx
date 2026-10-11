@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { KEY_RE, compile, type Field, type SchemaIssue } from '../logic'
 import { DraftInput } from './DraftInput'
 import { RuleEditor } from './RuleEditor'
-import { TYPE_LABELS } from './builderOps'
+import { typeLabel } from './builderOps'
 
 type Props = { idBase: string; field: Field; scope: Field[]; taken: string[]; issues: SchemaIssue[]; onChange(f: Field): void; onRemove(): void }
 
@@ -45,7 +45,7 @@ export function FieldSettings({ idBase, field: f, scope, taken, issues, onChange
   }
   return (
     <section aria-labelledby={`${idBase}-h`} className="rnr-card gap-3">
-      <div className="rnr-card-head"><h2 id={`${idBase}-h`} tabIndex={-1} className="rnr-card-title">{TYPE_LABELS[f.type]} settings</h2></div>
+      <div className="rnr-card-head"><h2 id={`${idBase}-h`} tabIndex={-1} className="rnr-card-title">{typeLabel(f.type)} settings</h2></div>
       {issues.length > 0 && <ul className="rnr-error">{issues.map((i) => <li key={i.message}>{i.message}</li>)}</ul>}
       <div className="rnr-field">
         <label htmlFor={`${idBase}-label`} className="rnr-label">{f.type === 'page_break' ? 'Page title' : 'Label'}</label>
@@ -83,7 +83,7 @@ export function FieldSettings({ idBase, field: f, scope, taken, issues, onChange
         </label>
       )}
       {f.type !== 'page_break' && <RuleEditor rule={f.show_if} scope={scope} self={f.key} onChange={(show_if) => set({ show_if })} />}
-      <div><button type="button" className="rnr-btn rnr-btn-danger" aria-label={`Remove ${f.label || TYPE_LABELS[f.type]}`} onClick={onRemove}>Remove field</button></div>
+      <div><button type="button" className="rnr-btn rnr-btn-danger" aria-label={`Remove ${f.label || typeLabel(f.type)}`} onClick={onRemove}>Remove field</button></div>
     </section>
   )
 }

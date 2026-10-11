@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import type { Field } from '../logic'
 import { DownIcon, GripIcon, UpIcon } from '../../ui/icons'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
-import { TYPE_LABELS } from './builderOps'
+import { typeLabel } from './builderOps'
 
 type Ctl = 'handle' | 'up' | 'down'
 type ListProps = {
@@ -13,11 +13,11 @@ type ListProps = {
   onSelect(key: string): void; onMove(from: number, to: number): void; onNote(text: string): void
 }
 
-const nameOf = (f: Field) => f.label || TYPE_LABELS[f.type]
+const nameOf = (f: Field) => f.label || typeLabel(f.type)
 const calm = () => document.documentElement.dataset.motion === 'flat' || matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function meta(f: Field, hasIssue: boolean) {
-  const parts = [TYPE_LABELS[f.type]]
+  const parts = [typeLabel(f.type)]
   if (f.type === 'group' && f.repeat) parts.push(`${f.repeat.min}–${f.repeat.max} rows`)
   if (f.required) parts.push('Required')
   if (f.show_if) parts.push('Conditional')

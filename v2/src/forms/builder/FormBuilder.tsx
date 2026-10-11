@@ -5,7 +5,7 @@ import type { Json } from '../../data/database.types'
 import { ConfirmDialog } from '../../ui/ConfirmDialog'
 import { friendlyError } from '../../ui/errors'
 import { CheckIcon, PencilIcon } from '../../ui/icons'
-import { setNavGuard } from '../../ui/navGuard'
+import { setNavGuard, type Next } from '../../ui/navGuard'
 import { useAction } from '../../ui/useAction'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { useNotice } from '../../ui/useNotice'
@@ -16,10 +16,10 @@ import { FormRunner } from '../fill/FormRunner'
 import { FieldList } from './FieldList'
 import { FieldSettings } from './FieldSettings'
 import { Palette, SectionPalette } from './Palette'
-import { TYPE_LABELS, move, newField } from './builderOps'
+import { TYPE_LABELS, move, newField, typeLabel } from './builderOps'
 
 type Sel = { key: string; child?: string } | null
-const nameOf = (f: Field) => f.label || TYPE_LABELS[f.type]
+const nameOf = (f: Field) => f.label || typeLabel(f.type)
 
 function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<void> }) {
   const qc = useQueryClient()
@@ -31,7 +31,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
   const [nameError, setNameError] = useState<string | null>(null)
   const [conflict, setConflict] = useState(false)
   const [note, setNote] = useState('')
-  const [leaveTo, setLeaveTo] = useState<string | null>(null)
+  const [leaveTo, setLeaveTo] = useState<Next | null>(null)
   const [notice, setNotice] = useNotice()
   const save = useAction()
   const reload = useAction()
@@ -44,7 +44,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
     if (!dirty) return
     const warn = (e: BeforeUnloadEvent) => e.preventDefault()
     addEventListener('beforeunload', warn)
-    setNavGuard((next) => { if (next === `#/forms/${form.id}/edit`) return false; setLeaveTo(next); return true })
+    setNavGuard((next) => { if (next === `#/forms/${form.id}/edit`) return false; setLeaveTo(() => next); return true })
     return () => { removeEventListener('beforeunload', warn); setNavGuard(null) }
   }, [dirty, form.id])
 
@@ -180,7 +180,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
       </div>
       <ConfirmDialog open={!!leaveTo} title="Leave without saving?" body={`Your changes to ${name.trim() || 'this form'} will be lost.`}
         confirmLabel="Leave without saving" busyLabel="Leaving…" busy={false} error={null}
-        onConfirm={() => { const to = leaveTo; setNavGuard(null); setLeaveTo(null); if (to) location.hash = to }}
+        onConfirm={() => { const to = leaveTo; setNavGuard(null); setLeaveTo(null); if (typeof to === 'function') to(); else if (to) location.hash = to }}
         onClose={() => setLeaveTo(null)} />
     </section>
   )

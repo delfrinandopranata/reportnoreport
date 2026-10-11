@@ -8,6 +8,7 @@ import type { LoadedForm } from '../api'
 import { FormGate } from '../FormGate'
 import { fileName } from '../paths'
 import { FILE_BUCKET } from '../upload'
+import { formatDay, hiddenKeys } from './display'
 
 type Sub = { id: string; answers: Answers; submitted_by: string; created_at: string }
 const LIMIT = 200 // shortcut: newest 200 only; paging arrives with aggregate reports (Phase 5)
@@ -23,7 +24,7 @@ function FileLink({ path, image, by }: { path: string; image: boolean; by: strin
   if (url.isPending) return <span className="rnr-muted">Loading…</span>
   if (url.isError) return <span className="rnr-error">We could not open this file. Reload the page to try again.</span>
   return image
-    ? <img src={url.data} alt={`Signature of ${by}`} style={{ maxHeight: 96, maxWidth: '100%', objectFit: 'contain', background: '#fff', border: '1px solid var(--line-200)', borderRadius: 'var(--radius-lg)' }} />
+    ? <img src={url.data} alt={`Signature of ${by}`} style={{ maxHeight: 96, maxWidth: '100%', objectFit: 'contain', background: 'var(--surface-100)', padding: 4, border: '1px solid var(--line-200)', borderRadius: 'var(--radius-lg)' }} />
     : <a href={url.data} target="_blank" rel="noopener noreferrer" aria-label={`Open ${name} (opens in a new tab)`}>Open {name}</a>
 }
 
@@ -34,6 +35,7 @@ const GRID = 'grid gap-x-3 gap-y-2 sm:grid-cols-[minmax(120px,max-content)_1fr]'
 
 function Value({ field: f, value, by }: { field: Field; value: unknown; by: string }) {
   if (value === undefined || value === null || value === '') return <span className="rnr-muted">Not answered</span>
+  if (f.type === 'date' && typeof value === 'string') return <span className="rnr-num">{formatDay(value)}</span>
   if (f.type === 'checkbox') return <>{value ? 'Yes' : 'No'}</>
   if (f.type === 'multi_select' && Array.isArray(value)) return <>{value.join(', ')}</>
   if ((f.type === 'file' || f.type === 'signature') && typeof value === 'string') return <FileLink path={value} image={f.type === 'signature'} by={by} />
@@ -56,6 +58,7 @@ function Value({ field: f, value, by }: { field: Field; value: unknown; by: stri
 }
 
 function Row({ sub, fields, by }: { sub: Sub; fields: Field[]; by: string }) {
+  const hidden = hiddenKeys(fields, sub.answers, sub.created_at) // not shown at submit time, so not "Not answered"
   const [open, setOpen] = useState(false) // file links are signed only for rows that are open
   return (
     <li className="rnr-card">
@@ -63,7 +66,7 @@ function Row({ sub, fields, by }: { sub: Sub; fields: Field[]; by: string }) {
         <summary className="rnr-focus" style={{ cursor: 'pointer' }}><span className="label">{by}</span> <span className="rnr-muted">· {when(sub.created_at)}</span></summary>
         {open && (
           <dl className={`${GRID} pt-3`}>
-            {fields.filter((f) => f.type !== 'page_break').map((f) => <Pair key={f.key} label={f.label}><Value field={f} value={sub.answers[f.key]} by={by} /></Pair>)}
+            {fields.filter((f) => f.type !== 'page_break' && !hidden.has(f.key)).map((f) => <Pair key={f.key} label={f.label}><Value field={f} value={sub.answers[f.key]} by={by} /></Pair>)}
           </dl>
         )}
       </details>

@@ -17,7 +17,7 @@ import { SubmissionsPage } from './forms/submissions/SubmissionsPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
-import { blocksNavigation } from './ui/navGuard'
+import { blocksNavigation, guarded } from './ui/navGuard'
 
 const useHash = () => {
   const [hash, setHash] = useState(location.hash || '#/members')
@@ -90,7 +90,7 @@ function Shell() {
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
           <button className="rnr-btn rnr-btn-ghost ml-auto" type="button" aria-busy={out.busy}
-            onClick={() => out.run(() => supabase.auth.signOut())}>
+            onClick={() => guarded(() => out.run(() => supabase.auth.signOut()))}>
             {out.busy && <span className="rnr-spin" aria-hidden="true" />}{out.busy ? 'Signing out…' : 'Sign out'}
           </button>
         </div>
