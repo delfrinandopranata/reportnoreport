@@ -1,1 +1,53 @@
-<!doctype html><title>stub</title>
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found — ReportNoReport</title>
+    <meta name="description" content="This page doesn't exist." />
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/site/site.css" />
+    <script>
+      (() => {
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
+        const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      })()
+    </script>
+    <script src="/consent.js" defer></script>
+  </head>
+  <body class="rnr">
+    <header class="site-header">
+      <a href="/" class="flex items-center gap-3" aria-label="ReportNoReport home">
+        <span class="mark" aria-hidden="true">R</span>
+        <span class="wordmark" aria-hidden="true">Report<span style="color: var(--ink-faint)">No</span>Report</span>
+      </a>
+      <a class="rnr-btn rnr-btn-secondary" href="/app/">Sign in</a>
+    </header>
+    <main class="site-main flex flex-col gap-4" style="padding-top: 4rem; padding-bottom: 4rem">
+      <p class="overline" style="color: var(--ink-muted)">404</p>
+      <h1 class="page-title">This page doesn't exist.</h1>
+      <p class="body" style="color: var(--ink-label)">Check the address, or go back to the home page.</p>
+      <div class="flex gap-3">
+        <a class="rnr-btn rnr-btn-primary" href="/">Go to home page</a>
+        <a class="rnr-btn rnr-btn-secondary" href="/app/">Sign in</a>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <span>© 2026 ReportNoReport</span>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/terms">Terms and conditions</a>
+      <button type="button" class="rnr-btn rnr-btn-ghost" data-consent-settings>Cookie settings</button>
+    </footer>
+  </body>
+</html>
