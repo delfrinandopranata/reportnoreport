@@ -1,6 +1,6 @@
 # ReportNoReport v2 — design
 
-Date: 2026-10-11 · Status: approved in brainstorming, awaiting spec review
+Date: 2026-10-11 · Status: implemented — Phases 1–6 built on `feat/v2-workflow-platform`; each phase's plan and QA report are in `docs/superpowers/plans/` and `docs/superpowers/qa/`
 
 ## 1. Purpose
 
@@ -195,6 +195,8 @@ Campaign report:
 - Opens are labelled approximate (Apple Mail Privacy Protection inflates them). In-app campaigns
   report read only.
 
+As built (Phase 6 plan, decisions 1–11): a report audience is the records' starters or an email answer, read with the scheduler's visibility when sending starts; at most 10,000 people per campaign, refused rather than cut; campaigns also have a `failed` status with the reason; campaign email opt-outs are per organisation and by address (`email_optouts`, one-click unsubscribe), not `notification_prefs`, because report audiences include people without an account; the webhook keeps the earliest time of each event, so replays change nothing. The unsubscribe page is static HTML on the public site and the `unsubscribe` function answers JSON only, because hosted Supabase serves function HTML as plain text.
+
 ## 9. Reports module
 
 ### 9.1 Per-record PDF
@@ -229,14 +231,14 @@ bar/line chart.
 
 ## 12. Build order
 
-| # | Phase | Ships | Est. |
-|---|---|---|---|
-| 1 | Foundation + RBAC | orgs, invites, roles, permissions, members page, audit log | 1 wk |
-| 2 | Form builder | 12 field types, preview, standalone submit | 1.5 wk |
-| 3 | Workflow canvas + runtime | 5 cards, publish check, `advance`, inbox, record page, timers | 2 wk |
-| 4 | Communication | templates, in-app bell, task emails, Messages page | 1 wk |
-| 5 | Reports | record PDF, aggregate tables + CSV, dashboard | 1 wk |
-| 6 | Campaigns | broadcast, scheduling, webhook tracking, campaign report, follow-ups | 1 wk |
+| # | Phase | Ships | Est. | Status |
+|---|---|---|---|---|
+| 1 | Foundation + RBAC | orgs, invites, roles, permissions, members page, audit log | 1 wk | Done |
+| 2 | Form builder | 12 field types, preview, standalone submit | 1.5 wk | Done |
+| 3 | Workflow canvas + runtime | 5 cards, publish check, `advance`, inbox, record page, timers | 2 wk | Done |
+| 4 | Communication | templates, in-app bell, task emails, Messages page | 1 wk | Done |
+| 5 | Reports | record PDF, aggregate tables + CSV, dashboard | 1 wk | Done |
+| 6 | Campaigns | broadcast, scheduling, webhook tracking, campaign report, follow-ups | 1 wk | Done |
 
 ≈ 7.5 weeks solo. Each phase gets its own implementation plan.
 
