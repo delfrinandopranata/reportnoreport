@@ -20,7 +20,11 @@
 - Frontend loads the caller's permissions once per org switch, to hide controls only.
 - The browser is never trusted for permissions.
 - No code copied from employer repositories. Patterns from v1 (`~/ntucsm/platform-internal`, own repo) may be reused.
-- British English in UI copy.
+- British English in UI copy, sentence case, buttons start with a verb; errors say what happened and what to do; no emoji (`design/README.md` → Content fundamentals).
+- **Design system:** `design/` is authoritative for visuals. Colours come only from `design/tokens.css` (via the Tailwind `@theme` mapping in Task 1), components use `design/components/bundle.css` `rnr-*` classes. Never a raw Tailwind palette class (`blue-600`, `gray-500`, `bg-white`).
+- `brand-solid` is used only for primary buttons, active nav, the sidebar mark and the focus ring. One primary button per view.
+- Font: Inter 400/500/600/700 from Google Fonts. Mode attributes (`data-theme`, `data-preset`, `data-style`, `data-density`, `data-motion`) live on `<html>` and are applied before first paint.
+- Don't disable submit buttons: validate on click, set `aria-busy` while saving. Modals use native `<dialog>`.
 - `workflow_access` (§7) depends on `workflows` and ships in Phase 3, not here.
 
 ## Review Focus
@@ -36,6 +40,7 @@
 ## File Structure
 
 ```
+design/                        design system (README, tokens.css/json, components/bundle.css + per-component README/preview) — authoritative, edit only to change the system
 package.json, vite.config.ts, tsconfig*.json, index.html, .env.example, .oxlintrc.json
 .github/workflows/ci.yml
 supabase/config.toml
@@ -95,10 +100,56 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({ plugins: [react(), tailwindcss()] })
 ```
 
-`src/index.css`:
+`src/index.css` — design system first, then Tailwind with the tokens exposed as utilities (`bg-surface-100`, `text-ink-muted`, `border-line-200`):
 ```css
+@import "../design/tokens.css";
+@import "../design/components/bundle.css";
 @import "tailwindcss";
+
+@theme inline {
+  --color-surface-000: var(--surface-000);
+  --color-surface-100: var(--surface-100);
+  --color-surface-200: var(--surface-200);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-line-100: var(--line-100);
+  --color-line-200: var(--line-200);
+  --color-line-300: var(--line-300);
+  --color-ink: var(--ink);
+  --color-ink-label: var(--ink-label);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand-solid);
+  --color-brand-ink: var(--brand-solid-ink);
+  --color-in: var(--in);
+  --color-out: var(--out);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body { background: var(--surface-000); color: var(--ink); font-family: var(--font-sans); }
 ```
+
+`index.html` `<head>` — Inter, and the modes applied before first paint (person choices from `localStorage`, System theme follows the OS):
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (() => {
+    let s = {}
+    try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') } catch {}
+    const dark = s.theme === 'dark' || (!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches
+    const h = document.documentElement
+    h.dataset.theme = s.bw ? (dark ? 'bw-dark' : 'bw-light') : (dark ? 'dark' : 'light')
+    h.dataset.preset = s.preset || 'default'
+    h.dataset.style = s.style || 'solid'
+    h.dataset.density = s.density || 'comfortable'
+    h.dataset.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : (s.motion || 'full')
+  })()
+</script>
+```
+The AppearancePanel that writes `rnr.appearance` is not part of Phase 1; defaults apply until it ships.
 
 `package.json` scripts:
 ```json
@@ -1111,17 +1162,17 @@ const useHash = () => {
 function Shell() {
   const { orgs, orgId, loading, can } = useOrg()
   const hash = useHash()
-  if (loading) return <p className="p-8 text-gray-500">Loading…</p>
+  if (loading) return <p className="rnr-skeleton m-8 h-8 w-48">Loading…</p>
   if (!orgs.length || hash === '#/new-org') return <CreateOrgPage />
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="flex items-center gap-6 border-b bg-white px-6 py-3">
+    <div className="min-h-screen bg-surface-000 text-ink">
+      <header className="flex items-center gap-6 border-b border-line-200 bg-surface-100 px-6 py-3">
         <OrgSwitcher />
         <nav className="flex gap-4 text-sm">
           <a href="#/members">Members</a>
           {can('roles.manage') && <a href="#/roles">Roles</a>}
         </nav>
-        <button className="ml-auto text-sm" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        <button className="rnr-btn rnr-btn-ghost ml-auto" onClick={() => supabase.auth.signOut()}>Sign out</button>
       </header>
       <main className="mx-auto max-w-5xl p-6">
         {hash === '#/roles' ? <RolesPage key={orgId} /> : <MembersPage key={orgId} />}
@@ -1167,12 +1218,12 @@ export function AuthPage() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-24 flex max-w-sm flex-col gap-3">
-      <h1 className="text-xl font-semibold">{mode === 'sign-in' ? 'Sign in' : 'Create account'}</h1>
-      <label className="flex flex-col text-sm">Email<input className="rounded border p-2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label className="flex flex-col text-sm">Password<input className="rounded border p-2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button className="rounded bg-blue-600 p-2 text-white">{mode === 'sign-in' ? 'Sign in' : 'Create account'}</button>
-      <button type="button" className="text-sm text-blue-600" onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>
+      <h1 className="page-title">{mode === 'sign-in' ? 'Sign in' : 'Create account'}</h1>
+      <label className="rnr-field"><span className="rnr-label">Email</span><input className="rnr-input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+      <label className="rnr-field"><span className="rnr-label">Password</span><input className="rnr-input" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+      {error && <p role="alert" className="rnr-error">{error}</p>}
+      <button className="rnr-btn rnr-btn-primary">{mode === 'sign-in' ? 'Sign in' : 'Create account'}</button>
+      <button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>
         {mode === 'sign-in' ? 'Create an account' : 'I already have an account'}
       </button>
     </form>
@@ -1204,10 +1255,10 @@ export function CreateOrgPage() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-24 flex max-w-sm flex-col gap-3">
-      <h1 className="text-xl font-semibold">Create your organisation</h1>
-      <label className="flex flex-col text-sm">Organisation name<input className="rounded border p-2" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button className="rounded bg-blue-600 p-2 text-white">Create organisation</button>
+      <h1 className="page-title">Create your organisation</h1>
+      <label className="rnr-field"><span className="rnr-label">Organisation name</span><input className="rnr-input" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
+      {error && <p role="alert" className="rnr-error">{error}</p>}
+      <button className="rnr-btn rnr-btn-primary">Create organisation</button>
     </form>
   )
 }
@@ -1220,7 +1271,7 @@ import { useOrg } from '../rbac/useOrg'
 export function OrgSwitcher() {
   const { orgs, orgId, setOrgId } = useOrg()
   return (
-    <select aria-label="Organisation" className="rounded border p-1 text-sm" value={orgId ?? ''}
+    <select aria-label="Organisation" className="rnr-input" value={orgId ?? ''}
       onChange={(e) => (e.target.value === '__new' ? (location.hash = '#/new-org') : setOrgId(e.target.value))}>
       {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       <option value="__new">+ New organisation</option>
@@ -1281,21 +1332,21 @@ export function MembersPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold">Members</h1>
-      {error && <p role="alert" className="rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+      <h1 className="page-title">Members</h1>
+      {error && <p role="alert" className="rnr-error">{error}</p>}
       {manage && (
-        <form onSubmit={invite} className="flex flex-wrap items-end gap-3 rounded border bg-white p-4">
-          <label className="flex flex-col text-sm">Email<input className="rounded border p-2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <form onSubmit={invite} className="rnr-card flex flex-wrap items-end gap-3">
+          <label className="rnr-field"><span className="rnr-label">Email</span><input className="rnr-input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
           <fieldset className="flex gap-2 text-sm"><legend className="sr-only">Roles</legend>
             {roles.data?.filter((r) => !r.is_owner).map((r) => (
               <label key={r.id} className="flex items-center gap-1"><input type="checkbox" checked={inviteRoles.includes(r.id)} onChange={() => setInviteRoles(toggle(inviteRoles, r.id))} />{r.name}</label>
             ))}
           </fieldset>
-          <button className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Send invite</button>
+          <button className="rnr-btn rnr-btn-primary">Send invite</button>
         </form>
       )}
-      <table className="w-full rounded border bg-white text-sm">
-        <thead><tr className="text-left text-gray-500"><th className="p-2">Email</th><th>Status</th><th>Roles</th><th /></tr></thead>
+      <table className="rnr-table w-full">
+        <thead><tr className="text-left text-ink-muted"><th className="p-2">Email</th><th>Status</th><th>Roles</th><th /></tr></thead>
         <tbody>
           {members.data?.map((m) => {
             const held = m.member_roles.map((r) => r.role_id)
@@ -1313,7 +1364,7 @@ export function MembersPage() {
                   ))}
                 </td>
                 <td>{manage && (
-                  <button className="text-red-600" onClick={() => confirm(`Remove ${m.email}?`) && run(supabase.rpc('remove_member', { p_member_id: m.id }))}>Remove</button>
+                  <button className="rnr-btn rnr-btn-danger" onClick={() => confirm(`Remove ${m.email}?`) && run(supabase.rpc('remove_member', { p_member_id: m.id }))}>Remove</button>
                 )}</td>
               </tr>
             )
@@ -1341,9 +1392,9 @@ export function RoleEditor({ role, onSave, onCancel }: { role: RoleDraft; onSave
   const toggle = (k: string) => setDraft({ ...draft, permissions: draft.permissions.includes(k) ? draft.permissions.filter((p) => p !== k) : [...draft.permissions, k] })
 
   return (
-    <div className="flex flex-col gap-3 rounded border bg-white p-4">
-      <label className="flex flex-col text-sm">Role name
-        <input className="rounded border p-2" maxLength={60} disabled={draft.is_owner} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+    <div className="rnr-card flex flex-col gap-3">
+      <label className="rnr-field"><span className="rnr-label">Role name</span>
+        <input className="rnr-input" maxLength={60} disabled={draft.is_owner} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
       </label>
       {PERMISSION_GROUPS.map((g) => (
         <fieldset key={g.group} className="text-sm">
@@ -1352,14 +1403,14 @@ export function RoleEditor({ role, onSave, onCancel }: { role: RoleDraft; onSave
             <label key={i.key} className="flex items-center gap-2">
               <input type="checkbox" checked={draft.is_owner || draft.permissions.includes(i.key)}
                 disabled={draft.is_owner || !can(i.key)} onChange={() => toggle(i.key)} />
-              {i.label}{!can(i.key) && !draft.is_owner && <span className="text-gray-400"> (you don’t hold this)</span>}
+              {i.label}{!can(i.key) && !draft.is_owner && <span className="text-ink-faint"> (you don’t hold this)</span>}
             </label>
           ))}
         </fieldset>
       ))}
       {draft.is_owner
-        ? <p className="text-sm text-gray-500">The Owner role always has every permission and cannot be changed.</p>
-        : <div className="flex gap-2"><button className="rounded bg-blue-600 px-3 py-2 text-sm text-white" onClick={() => onSave(draft)}>Save role</button><button className="text-sm" onClick={onCancel}>Cancel</button></div>}
+        ? <p className="text-sm text-ink-muted">The Owner role always has every permission and cannot be changed.</p>
+        : <div className="flex gap-2"><button className="rnr-btn rnr-btn-primary" onClick={() => onSave(draft)}>Save role</button><button className="rnr-btn rnr-btn-ghost" onClick={onCancel}>Cancel</button></div>}
     </div>
   )
 }
@@ -1401,20 +1452,20 @@ export function RolesPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center"><h1 className="text-lg font-semibold">Roles</h1>
-        <button className="ml-auto rounded bg-blue-600 px-3 py-2 text-sm text-white" onClick={() => setEditing({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
+      <div className="flex items-center"><h1 className="page-title">Roles</h1>
+        <button className="rnr-btn rnr-btn-primary ml-auto" onClick={() => setEditing({ id: null, name: '', permissions: [], is_owner: false })}>New role</button>
       </div>
-      {error && <p role="alert" className="rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+      {error && <p role="alert" className="rnr-error">{error}</p>}
       {editing && <RoleEditor key={editing.id ?? 'new'} role={editing} onSave={save} onCancel={() => setEditing(null)} />}
-      <ul className="divide-y rounded border bg-white text-sm">
+      <ul className="rnr-card divide-y divide-line-100">
         {roles.data?.map((r) => (
           <li key={r.id} className="flex items-center gap-3 p-3">
             <span className="font-medium">{r.name}</span>
-            <span className="text-gray-500">{r.is_owner ? 'All permissions' : `${r.role_permissions.length} permissions`}</span>
-            <button className="ml-auto" onClick={() => setEditing({ id: r.id, name: r.name, is_owner: r.is_owner, permissions: r.role_permissions.map((p) => p.permission) })}>
+            <span className="text-ink-muted">{r.is_owner ? 'All permissions' : `${r.role_permissions.length} permissions`}</span>
+            <button className="rnr-btn rnr-btn-ghost ml-auto" onClick={() => setEditing({ id: r.id, name: r.name, is_owner: r.is_owner, permissions: r.role_permissions.map((p) => p.permission) })}>
               {r.is_owner ? 'View' : 'Edit'}
             </button>
-            {!r.is_owner && <button className="text-red-600" onClick={() => remove(r.id, r.name)}>Delete</button>}
+            {!r.is_owner && <button className="rnr-btn rnr-btn-danger" onClick={() => remove(r.id, r.name)}>Delete</button>}
           </li>
         ))}
       </ul>

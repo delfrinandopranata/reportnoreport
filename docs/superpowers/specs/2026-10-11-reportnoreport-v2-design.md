@@ -246,3 +246,6 @@ templates per workflow, more than one group-by per report.
 
 ## 14. Constraints
 Ideas may be informed by prior work, but no code is copied from employer repositories.
+
+## 15. Design system
+`design/` (imported from the ReportNoReport v2 design-system artifact, 2026-10-11) is authoritative for every visual decision: tokens, the five appearance modes (theme incl. Black & White, colour preset, surface style, density, motion), components (`rnr-*` classes), copy rules and accessibility rules. Where this spec and `design/README.md` disagree on a visual or copy point, `design/README.md` wins.
