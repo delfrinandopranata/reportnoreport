@@ -88,7 +88,7 @@ export default function App() {
     <div className="rnr-account">
       <Avatar name={profile.name} size="size-8" />
       <div className="min-w-0 flex-1">
-        <p className="rnr-account-email" title={profile.name}>{profile.name}</p>
+        <p className="rnr-account-email line-clamp-2 whitespace-normal break-words" title={profile.name}>{profile.name}</p>
         <p className="rnr-caption truncate">{ROLE_LABEL[profile.role]}</p>
       </div>
       <ThemeToggle theme={appearance.theme} setTheme={(theme) => void saveAppearance({ ...appearance, theme })} className="shrink-0" />
@@ -99,7 +99,7 @@ export default function App() {
   )
   const sideBody = (inDrawer: boolean) => (
     <>
-      <p className="truncate px-3 text-sm font-medium text-ink" title={firm.name}>{firm.name}</p>
+      <p className="line-clamp-2 break-words px-3 text-sm font-medium text-ink" title={firm.name}>{firm.name}</p>
       <nav aria-label={inDrawer ? 'Main menu' : 'Main'}>
         <ul className="grid gap-0.5 p-0 list-none">{items.filter((n) => n.place === 'main').map((n) => sideLink(n, inDrawer))}</ul>
       </nav>

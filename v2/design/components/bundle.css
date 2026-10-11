@@ -671,7 +671,7 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 @media (hover: hover) { .rnr-ledger tbody tr:hover td { background: var(--hover); } }
 @media (pointer: coarse) {
   .rnr-ledger-resize { width: 24px; }
-  .rnr-ledger-resize::before { content: ""; position: absolute; inset: 0 -10px; } /* 44px wide hit area, same look */
+  .rnr-ledger-resize::before { content: ""; position: absolute; inset: 0 0 0 -20px; } /* 44px wide hit area, same look; it grows left because each sticky th is its own stacking context and the next header would paint over anything on the right */
 }
 @media (max-width: 639px) { .rnr-ledger th:first-child, .rnr-ledger td:first-child { position: sticky; left: 0; background: var(--surface); } .rnr-ledger thead th:first-child { z-index: calc(var(--z-sticky) + 1); } }
 

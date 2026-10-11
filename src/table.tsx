@@ -99,11 +99,11 @@ export function ColumnHeader<R, K extends string>({
     >
       {column.sortKey && onSort ? (
         <button type="button" onClick={() => onSort(column.sortKey!)} className={`rnr-th-sort max-w-full ${right ? 'flex-row-reverse' : ''}`}>
-          <span className="truncate">{label}</span>
+          <span className={`${flow ? 'inline-flex items-center ' : ''}truncate`}>{label}</span>
           <Icon name={active && sort.dir === 'asc' ? 'up' : 'down'} className="size-3.5" />
         </button>
       ) : (
-        <span className="block truncate">{label}</span>
+        <span className={`${flow ? 'flex items-center ' : 'block '}truncate`}>{label}</span>
       )}
       <button
         type="button"
