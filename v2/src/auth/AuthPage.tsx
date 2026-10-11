@@ -3,12 +3,13 @@ import { supabase } from '../data/supabase'
 import { friendlyError } from '../ui/errors'
 
 import { useAction } from '../ui/useAction'
-import { Wordmark } from '../ui/Wordmark'
+import { AuthFrame } from './AuthFrame'
+import { ForgotPassword } from './ForgotPassword'
 import { Note } from '../ui/Note.tsx'
 import { PageHead } from '../ui/PageHead'
 
 export function AuthPage() {
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in')
+  const [mode, setMode] = useState<'sign-in' | 'sign-up' | 'forgot'>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -16,7 +17,7 @@ export function AuthPage() {
   const { busy, run } = useAction()
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
-  const signIn = mode === 'sign-in'
+  const signIn = mode !== 'sign-up'
   useEffect(() => emailRef.current?.focus(), [mode])
 
   function submit(e: FormEvent<HTMLFormElement>) {
@@ -32,10 +33,9 @@ export function AuthPage() {
     })
   }
 
+  if (mode === 'forgot') return <ForgotPassword initialEmail={email} onBack={() => setMode('sign-in')} />
   return (
-    <main className="min-h-screen grid place-items-center p-4 sm:p-6">
-      <div className="w-full max-w-[440px] flex flex-col items-center gap-6">
-        <Wordmark size="lg" />
+    <AuthFrame>
         <form className="rnr-paper rnr-paper--panel w-full flex flex-col gap-4 p-6 pt-8" aria-busy={busy} onSubmit={submit} noValidate={false}>
           {confirmSent ? (
             <>
@@ -56,6 +56,7 @@ export function AuthPage() {
                   aria-invalid={error ? true : undefined} aria-describedby={error ? 'auth-err' : undefined}
                   onChange={(e) => setPassword(e.target.value)} />
                 <span className="rnr-error-text">Enter at least 8 characters.</span></label>
+              {signIn && <button className="rnr-btn rnr-btn-ghost self-start" type="button" onClick={() => setMode('forgot')}>Forgot password?</button>}
               {error && <div id="auth-err"><Note>{error}</Note></div>}
               <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={busy}>
                 {busy && <span className="rnr-spin" aria-hidden="true" />}
@@ -68,7 +69,6 @@ export function AuthPage() {
             </>
           )}
         </form>
-      </div>
-    </main>
+    </AuthFrame>
   )
 }

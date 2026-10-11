@@ -103,7 +103,7 @@ Metric-matched fallback faces (`Fraunces Fallback` over Georgia at 89.7%, `Hanke
 Each is `--type-<name>` (a `font` shorthand) and `--tracking-<name>`. One page title per view. Every number in a table, KPI, field or chart axis is tabular. Text sits on `--ink`, `--ink-2` or `--ink-3` only.
 
 ## 5. Shape, paper and the folder tab
-- **Corner scale** (tokens `--r-*`): control **10** (8 compact), card / KPI tile / menu / popover / table container **14**, panel / dialog / sheet / sidebar folder / landing window **20**, avatar circle. Small marks: key cap 6, bar 3. Nested corners are concentric: inner = outer − padding, floor 6 (menu 14 − 4 = item 10; sidebar 20 − 10 = nav row 10; segmented track 14 − 4 = item 10). A chip's radius is ≤ ~40% of its height: no pills.
+- **Corner scale** (tokens `--r-*`): control **10** (8 compact), card / KPI tile / menu / popover / table container **14**, panel / dialog / sheet / sidebar folder / landing window **20**, avatar circle. Chips, tags and badges **6** (`--r-chip`, Apple's small-badge corner; owner ruling QA-P7-7), key cap 6, bar 3. Nested corners are concentric: inner = outer − padding, floor 6 (menu 14 − 4 = item 10; sidebar 20 − 10 = nav row 10; segmented track 14 − 4 = item 10). A chip's radius is 6, never a pill.
 - **Smooth corners**: `corner-shape: squircle` under `@supports`; plain `border-radius` elsewhere. Avatars, radios, dots and the spinner opt out (`round`).
 - **Paper** (`rnr-paper`): raised, with the perforation. **Card** (`rnr-card`): flat, hairline. **Folder** (`rnr-folder`): a titled section, tab 32px (44 for the sidebar, 22 for a node), `min-width: max-content`, concave shoulder; never nested. **Perf** (`rnr-perf`): 4px band, 10px pitch, `--perf` dots.
 - Elevation: cards separate by hairline, shadows mean "raised" (paper, menus, dialogs, dragging). Black & White: hard offsets, never blur.
@@ -200,7 +200,7 @@ Authoritative specs in `components/<Name>/README.md`: Button · Field (input, te
 `data-theme="bw-light|bw-dark"` → `data-accent="bw"` + `data-theme="light|dark"` · `data-preset` → `data-accent` · `data-style` → removed · `data-motion` → set by the OS preference, not chosen · `data-density` unchanged.
 
 ### Type classes
-`.display`, `.headline` → `.rnr-display` / `--type-hero`, `--type-section` · `.page-title` → `.rnr-page-title` (the old name is kept as an alias) · `.dialog-title` → `.rnr-dialog-title` (alias kept) · `.kpi` → `.rnr-kpi-figure` (`.rnr-kpi` kept as an alias) · `.wordmark` → `.rnr-wordmark` (markup changes, see Wordmark) · `.body`, `.label`, `.caption` → `--type-body-sm`, `--type-label`, `.rnr-caption` · `.overline` → `.rnr-micro` · `.axis` → `.rnr-chart-axis`.
+`.display`, `.headline` → `.rnr-display` / `--type-hero`, `--type-section` · `.page-title` → `.rnr-page-title` · `.dialog-title` → `.rnr-dialog-title` (the old names are removed) · `.kpi` → `.rnr-kpi-figure` · `.wordmark` → `.rnr-wordmark` (markup changes, see Wordmark) · `.body`, `.label`, `.caption` → `--type-body-sm`, `--type-label`, `.rnr-caption` · `.overline` → `.rnr-micro` · `.axis` → `.rnr-chart-axis`.
 
 ### Classes
 | Old | New |
@@ -209,7 +209,7 @@ Authoritative specs in `components/<Name>/README.md`: Button · Field (input, te
 | `rnr-btn*`, `rnr-icon-btn`, `rnr-input`, `rnr-field`, `rnr-label`, `rnr-hint`, `rnr-error(-text)`, `rnr-seg`, `rnr-menu(-item/-sep)`, `rnr-dialog(-head/-body)`, `rnr-table`, `rnr-status`, `rnr-kbd`, `rnr-skeleton`, `rnr-spin`, `rnr-pop`, `rnr-block`, `rnr-drop`, `rnr-handle`, `rnr-grid`, `rnr-avatar`, `rnr-ground`, `rnr-muted`, `rnr-num`, `rnr-focus` | same names, restyled (the busy spinner may always be in markup) |
 | `rnr-chip` (blue) | `rnr-chip` neutral, tones via `data-tone`; count: `rnr-chip--count` |
 | `rnr-kind.is-in` / `.is-out` | `rnr-kind` / `rnr-kind.is-out` |
-| `rnr-pill` (plan name) | `rnr-input` (same rules; 10px, not a pill) |
+| `rnr-pill` (plan name) | `rnr-input` (the `rnr-pill` alias is removed) |
 | `dialog.rnr-sheet` | `.rnr-dialog.rnr-sheet` |
 | `.rnr-seg button` | same; native radios may use `rnr-seg-i` |
 | `rnr-reveal` | `rnr-rise` (landing); app screens do not reveal |

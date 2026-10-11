@@ -7,7 +7,7 @@ Icon (16px) + word, no coloured pill. Default is grey; `data-tone="ok|warn|down|
 Words: Draft, Scheduled, Sending, Sent, Not sent, Approved, Rejected, Overdue.
 
 ## Chip (`rnr-chip`)
-A mark like "System", "Beta", "Needs fixing", or a count. Radius `--r-ctl` (10px; 8px compact), 26px high, mono 12px. Tones: neutral, `accent`, `ok`, `warn`, `info`, `down` (down adds a 1.5px outline and should carry an icon and the word "Error"). `rnr-chip--count` is the unread count on the bell (positioned absolutely).
+A mark like "System", "Beta", "Needs fixing", or a count. Radius `--r-chip` (6px in every density, Apple's small-badge corner), 26px high, mono 12px. Tones: neutral, `accent`, `ok`, `warn`, `info`, `down` (down adds a 1.5px outline and should carry an icon and the word "Error"). `rnr-chip--count` is the unread count on the bell (positioned absolutely).
 
 ## Trend (`rnr-trend`)
 Landing and design system only. `data-dir="up|flat|down"`; arrow icon + signed figure; down is outlined so it never relies on red.

@@ -22,8 +22,18 @@ export function JumpBar({ items }: { items: Item[] }) {
   const go = (i: Item | undefined) => {
     if (!i) return
     leaving.current = true // the page takes focus (its heading); only Esc sends it back to the dock
+    const before = document.querySelector<HTMLElement>('main h1')
     dialog.current?.close()
+    if (location.hash === i.href) { before?.focus(); return }
     location.hash = i.href
+    // The new page renders after the hash change (some after a fetch): wait for its heading, up to 3s, then focus it.
+    const start = performance.now()
+    const tick = () => {
+      const h = document.querySelector<HTMLElement>('main h1')
+      if (h && h !== before) { h.focus(); return }
+      if (performance.now() - start < 3000) setTimeout(tick, 40) // a timer, not rAF: rAF stops in a hidden tab
+    }
+    setTimeout(tick, 40)
   }
   useEffect(() => {
     const on = (e: KeyboardEvent) => {

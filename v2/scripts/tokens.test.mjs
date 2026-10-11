@@ -119,6 +119,9 @@ test('corners follow the Apple scale: controls 10, cards 14, panels 20, only ava
   assert.deepEqual([r.control, r['control-sm'], r.card, r.panel], ['10px', '8px', '14px', '20px'])
   for (const [k, v] of Object.entries(r)) if (k !== 'avatar') assert.ok(parseInt(v) <= 20, `${k} is ${v}`)
   assert.equal(r.avatar, '9999px')
+  assert.equal(r.chip, '6px') // chips, tags and badges: small-badge corner, never a pill
+  assert.match(bundle, /\.rnr-chip, \.rnr-trend \{[^}]*border-radius: var\(--r-chip\)/)
+  assert.ok(!/\.page-title|\.dialog-title|\.rnr-pill|\.rnr-kpi\b(?!-)/.test(bundle), 'legacy aliases are removed')
   assert.ok(!('pill' in r) && !('full' in r))
 })
 

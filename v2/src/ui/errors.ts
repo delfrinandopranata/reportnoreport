@@ -26,6 +26,8 @@ const SENTENCES: [RegExp, string][] = [
   [/link a workflow whose records you can all see/, 'You can only link a workflow whose records you can all see. Choose another, or ask an admin for access.'],
   [/Not allowed|permission to invite/, 'You do not have permission to do that.'],
   [/Invalid login credentials/, 'That email or password is incorrect. Check them and try again.'],
+  [/different from the old password/i, 'Choose a password you have not used before.'],
+  [/Auth session missing|session.*expired/i, 'This link has expired. Ask for a new one.'],
   [/already registered/i, 'That email already has an account. Sign in instead.'],
 ]
 

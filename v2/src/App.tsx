@@ -6,6 +6,8 @@ import { OrgProvider } from './rbac/OrgProvider'
 import { useOrg } from './rbac/useOrg'
 import { guardHash, parseRoute, type Route } from './rbac/route'
 import { AuthPage } from './auth/AuthPage'
+import { SetPassword } from './auth/SetPassword'
+import { isSetPasswordFlow } from './auth/password'
 import { CreateOrgPage } from './orgs/CreateOrgPage'
 import { MembersPage } from './members/MembersPage'
 import { RolesPage } from './roles/RolesPage'
@@ -99,7 +101,7 @@ function Signed({ email }: { email: string }) {
     return (
       <main className="min-h-screen grid place-items-center p-4 sm:p-6">
         <div className="rnr-card gap-3 w-full max-w-[400px]">
-          <h1 className="page-title">Your organisations did not load</h1>
+          <h1 className="rnr-page-title">Your organisations did not load</h1>
           <p className="rnr-muted">Check your connection and reload the page.</p>
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => location.reload()}>Reload page</button>
         </div>
@@ -119,6 +121,7 @@ function Signed({ email }: { email: string }) {
 export default function App() {
   useFollowSystem()
   const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [settingPassword, setSettingPassword] = useState(() => isSetPasswordFlow(location.search))
   const qc = useQueryClient()
   const lastUser = useRef<string | undefined>(undefined)
   useEffect(() => {
@@ -142,6 +145,10 @@ export default function App() {
     return () => data.subscription.unsubscribe()
   }, [qc])
   if (session === undefined) return null
+  if (settingPassword) {
+    // The reset email signed this person in; saving the password (or giving up on an expired link) carries on to the app or sign in.
+    return <SetPassword hasSession={!!session} onDone={() => { history.replaceState(null, '', `${location.pathname}#/inbox`); setSettingPassword(false) }} />
+  }
   if (!session) return <AuthPage />
   return <OrgProvider key={session.user.id} userId={session.user.id}><Signed email={session.user.email ?? ''} /></OrgProvider>
 }
