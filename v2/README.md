@@ -10,7 +10,7 @@ pnpm install
 supabase start
 supabase db reset          # migrations + seed
 cp .env.example .env.local # paste ANON_KEY from `supabase status`
-supabase functions serve & # invite-member
+supabase functions serve & # invite-member, submit-form
 pnpm dev
 ```
 
@@ -18,6 +18,6 @@ Seed users (password `password123`): `owner@alpha.test`, `admin@alpha.test`, `me
 
 ## Tests
 
-- `pnpm test` — unit
-- `supabase test db` — RLS, roles, guards
-- `deno test supabase/functions` — Edge Functions
+- `pnpm test` — unit (incl. the shared form logic in `supabase/functions/_shared/forms`)
+- `supabase test db` — RLS, roles, guards, forms and form-file storage
+- `deno test supabase/functions` — Edge Functions and the same shared form tests under Deno
