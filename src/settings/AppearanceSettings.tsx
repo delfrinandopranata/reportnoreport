@@ -8,8 +8,12 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
 
 /** Settings → Appearance: personal, applied at once and saved one change at a time. Spec: v2/design/components/AppearancePanel. */
 export function AppearanceSettings() {
-  const { profile } = useSession()
-  const [a, save] = useAppearance(profile.id)
+  return <AppearancePanel profileId={useSession().profile.id} />
+}
+
+/** Takes the profile id so the super-admin console, which has no firm session, can show it too. */
+export function AppearancePanel({ profileId }: { profileId: string }) {
+  const [a, save] = useAppearance(profileId)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const chain = useRef<Promise<void>>(Promise.resolve())

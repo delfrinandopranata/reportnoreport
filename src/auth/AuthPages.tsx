@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../data/supabase'
-import { btn, Field, Icon, input } from '../ui'
+import { btn, Field, Icon, input, Wordmark } from '../ui'
 import { takeReturnTo } from './route'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'set-password'
@@ -96,60 +96,66 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
   const errorId = error ? 'auth-error' : undefined
   const fieldError = { 'aria-invalid': error ? true : undefined, 'aria-describedby': errorId }
 
+  const errorNote = error && (
+    <div id="auth-error" className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>{error}</div></div>
+  )
+  const noticeNote = notice && (
+    <div className="rnr-note" data-tone="ok" role="status"><Icon name="check" className="size-5" /><div>{notice}</div></div>
+  )
+  const submitButton = (label: string) => (
+    <button className={`${btn.primary} w-full`} disabled={busy} aria-busy={busy}>
+      <span className="rnr-spin" aria-hidden />
+      {busy ? 'Please wait...' : label}
+    </button>
+  )
+
   return (
-    <main className="grid min-h-dvh place-items-center bg-zinc-50 p-4 dark:bg-zinc-950">
+    <main className="grid min-h-dvh place-items-center p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"><Icon name="wallet" className="size-5" /></span>
-          <span className="text-sm leading-tight font-semibold">ReportNoReport</span>
-        </div>
-        <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-          <h1 className="mb-2 text-xl font-semibold leading-snug">{copy.title}</h1>
-          <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">{copy.help}</p>
+        <div className="mb-6 flex justify-center"><Wordmark size="lg" /></div>
+        <div className="rnr-paper p-6 pt-8">
+          <h1 className="rnr-heading mb-2">{copy.title}</h1>
+          <p className="mb-6 text-ink-2">{copy.help}</p>
           {mode === 'signup' && platformStatus && !platformStatus.accepting_signups ? (
             <form key={mode} ref={formRef} className="grid gap-4" noValidate onSubmit={(e) => run(e, joinWaitlist)}>
-              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">Early access is full. Join the waitlist to be notified when a place opens.</p>
+              <div className="rnr-note" data-tone="warn"><Icon name="alert" className="size-5" /><div>Early access is full. Join the waitlist to be notified when a place opens.</div></div>
               <Field label="Your email"><input name="email" type="email" autoComplete="email" inputMode="email" autoFocus required className={input} {...fieldError} /></Field>
               <Field label="Firm name"><input name="firm_name" type="text" autoComplete="organization" required className={input} {...fieldError} /></Field>
-              {error && <p id="auth-error" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
-              {notice && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200" role="status">{notice}</p>}
-              <button className={`${btn.primary} ${focusRing} w-full py-2.5`} disabled={busy} aria-busy={busy}>
-                {busy && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
-                {busy ? 'Please wait...' : 'Join waitlist'}
-              </button>
-              <p className="text-center text-sm"><a href="#signin" className={linkCls}>Already have an account? Sign in</a></p>
+              {errorNote}
+              {noticeNote}
+              {submitButton('Join waitlist')}
+              <p className="text-center text-sm"><a href="#signin" className="rnr-link">Already have an account? Sign in</a></p>
             </form>
           ) : (
             <form key={mode} ref={formRef} className="grid gap-4" noValidate onSubmit={(e) => run(e, mode === 'signin' ? signIn : mode === 'signup' ? signUp : mode === 'forgot' ? forgot : setPassword)}>
               {mode === 'signup' && <>
                 <Field label="Firm name"><input name="firm_name" type="text" autoComplete="organization" autoFocus required className={input} {...fieldError} /></Field>
-                <div className="grid gap-1.5">
-                  <label htmlFor="currency" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Currency</label>
-                  <select id="currency" name="currency" defaultValue="MYR" required className={input}>
-                    <option value="MYR">MYR (Malaysia)</option>
-                    <option value="SGD">SGD (Singapore)</option>
-                    <option value="USD">USD (United States)</option>
-                  </select>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Your firm's currency cannot be changed later.</p>
+                <div className="rnr-field">
+                  <label htmlFor="currency" className="rnr-label">Currency</label>
+                  <div className="rnr-select">
+                    <select id="currency" name="currency" defaultValue="MYR" required className={input}>
+                      <option value="MYR">MYR (Malaysia)</option>
+                      <option value="SGD">SGD (Singapore)</option>
+                      <option value="USD">USD (United States)</option>
+                    </select>
+                  </div>
+                  <p className="rnr-hint">Your firm's currency cannot be changed later.</p>
                 </div>
                 <Field label="Your name"><input name="name" type="text" autoComplete="name" required className={input} {...fieldError} /></Field>
               </>}
-              {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete={mode === 'signup' ? 'email' : 'email'} inputMode="email" autoFocus={mode !== 'signup'} required className={input} {...(mode === 'forgot' ? fieldError : {})} /></Field>}
+              {mode !== 'set-password' && <Field label="Email"><input name="email" type="email" autoComplete="email" inputMode="email" autoFocus={mode !== 'signup'} required className={input} {...(mode === 'forgot' ? fieldError : {})} /></Field>}
               {mode !== 'forgot' && <PasswordField label="Password" name="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} autoFocus={mode === 'set-password'} describedBy={mode === 'set-password' ? ['pw-rules', errorId].filter(Boolean).join(' ') : errorId} invalid={!!error} />}
               {(mode === 'signup' || mode === 'set-password') && <>
-                <p id="pw-rules" className="text-xs text-zinc-600 dark:text-zinc-400">At least 8 characters. Use a password you do not use anywhere else.</p>
+                <p id="pw-rules" className="rnr-hint">At least 8 characters. Use a password you do not use anywhere else.</p>
                 <PasswordField label="Confirm password" name="confirm" autoComplete="new-password" describedBy={errorId} invalid={!!error} />
               </>}
-              {error && <p id="auth-error" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" role="alert">{error}</p>}
-              {notice && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200" role="status">{notice}</p>}
-              <button className={`${btn.primary} ${focusRing} w-full py-2.5`} disabled={busy} aria-busy={busy}>
-                {busy && <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />}
-                {busy ? 'Please wait...' : copy.submit}
-              </button>
+              {errorNote}
+              {noticeNote}
+              {submitButton(copy.submit)}
             </form>
           )}
           {!forceSetPassword && <p className="mt-4 text-center text-sm">
-            {mode === 'signin' ? <a href="#forgot" className={linkCls}>Forgot password?</a> : mode === 'signup' ? <a href="#signin" className={linkCls}>Already have an account? Sign in</a> : <a href="#signin" className={linkCls}>Back to sign in</a>}
+            {mode === 'signin' ? <a href="#forgot" className="rnr-link">Forgot password?</a> : mode === 'signup' ? <a href="#signin" className="rnr-link">Already have an account? Sign in</a> : <a href="#signin" className="rnr-link">Back to sign in</a>}
           </p>}
         </div>
       </div>
@@ -157,17 +163,14 @@ export function AuthPages({ forceSetPassword = false, onPasswordSet }: { forceSe
   )
 }
 
-const focusRing = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
-const linkCls = `rounded text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${focusRing}`
-
 function PasswordField({ label, name, autoComplete, autoFocus, describedBy, invalid }: { label: string; name: string; autoComplete: string; autoFocus?: boolean; describedBy?: string; invalid: boolean }) {
   const [shown, setShown] = useState(false)
   return (
-    <div className="grid gap-1.5 text-sm">
-      <label htmlFor={name} className="font-medium text-zinc-700 dark:text-zinc-300">{label}</label>
+    <div className="rnr-field">
+      <label htmlFor={name} className="rnr-label">{label}</label>
       <div className="relative">
-        <input id={name} name={name} type={shown ? 'text' : 'password'} autoComplete={autoComplete} autoFocus={autoFocus} required aria-invalid={invalid || undefined} aria-describedby={describedBy} className={`${input} pr-16`} />
-        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} className={`absolute inset-y-0 right-1 my-1 px-2.5 rounded px-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition ${focusRing}`}>{shown ? 'Hide' : 'Show'}</button>
+        <input id={name} name={name} type={shown ? 'text' : 'password'} autoComplete={autoComplete} autoFocus={autoFocus} required aria-invalid={invalid || undefined} aria-describedby={describedBy} className={`${input} pr-20`} />
+        <button type="button" onClick={() => setShown((v) => !v)} aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} className="rnr-btn rnr-btn-ghost rnr-btn-sm absolute right-1 top-1/2 -translate-y-1/2">{shown ? 'Hide' : 'Show'}</button>
       </div>
     </div>
   )

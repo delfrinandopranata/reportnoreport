@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Field, btn, input } from '../ui'
+import { Field, Icon, btn, input } from '../ui'
 import { callAdmin, type AdminGetSettingsResponse } from './api'
 
 export function PlatformSettings() {
@@ -45,73 +45,63 @@ export function PlatformSettings() {
   }
 
   if (settings.isPending) {
-    return <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">Loading settings...</div>
+    return <p className="text-center text-ink-2" role="status">Loading settings...</p>
   }
 
   if (settings.isError) {
-    return <div className="text-center text-sm text-red-600 dark:text-red-400">Failed to load settings</div>
+    return <div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>Failed to load settings</div></div>
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Field label="Maximum self-serve firms">
-              <input
-                type="number"
-                min="0"
-                max="1000"
-                value={formData.firm_cap ?? ''}
-                onChange={(e) => setFormData({ ...formData, firm_cap: e.target.value ? parseInt(e.target.value) : undefined })}
-                className={input}
-                aria-describedby="firm-cap-help"
-              />
-              <p id="firm-cap-help" className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Maximum number of firms allowed to self-serve sign up
-              </p>
-            </Field>
-          </div>
+    <section className="rnr-folder rnr-folder--panel max-w-2xl" aria-labelledby="platform-limits-h">
+      <span className="rnr-folder-tab" id="platform-limits-h">Self-serve limits</span>
+      <div className="rnr-folder-body">
+        <form onSubmit={handleSubmit} className="grid gap-6">
+          <Field label="Maximum self-serve firms">
+            <input
+              type="number"
+              min="0"
+              max="1000"
+              value={formData.firm_cap ?? ''}
+              onChange={(e) => setFormData({ ...formData, firm_cap: e.target.value ? parseInt(e.target.value) : undefined })}
+              className={input}
+              aria-describedby="firm-cap-help"
+            />
+            <span id="firm-cap-help" className="rnr-hint">Maximum number of firms allowed to self-serve sign up</span>
+          </Field>
 
-          <div>
-            <Field label="Default trial days">
-              <input
-                type="number"
-                min="1"
-                max="365"
-                value={formData.trial_days ?? ''}
-                onChange={(e) => setFormData({ ...formData, trial_days: e.target.value ? parseInt(e.target.value) : undefined })}
-                className={input}
-                aria-describedby="trial-days-help"
-              />
-              <p id="trial-days-help" className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                Number of days each new trial firm gets
-              </p>
-            </Field>
-          </div>
+          <Field label="Default trial days">
+            <input
+              type="number"
+              min="1"
+              max="365"
+              value={formData.trial_days ?? ''}
+              onChange={(e) => setFormData({ ...formData, trial_days: e.target.value ? parseInt(e.target.value) : undefined })}
+              className={input}
+              aria-describedby="trial-days-help"
+            />
+            <span id="trial-days-help" className="rnr-hint">Number of days each new trial firm gets</span>
+          </Field>
 
           {settings.data && (
-            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
-              <div className="font-medium">Self-serve usage</div>
-              <div className="mt-1">
-                <strong>{settings.data.self_serve_firms}</strong> of <strong>{settings.data.firm_cap}</strong> places used
+            <div className="rnr-note" data-tone="info">
+              <Icon name="info" className="size-5" />
+              <div>
+                <p className="font-medium">Self-serve usage</p>
+                <p><strong>{settings.data.self_serve_firms}</strong> of <strong>{settings.data.firm_cap}</strong> places used</p>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-200" role="alert">
-              {error}
-            </div>
+            <div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>{error}</div></div>
           )}
 
           {success && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-600 dark:border-green-900 dark:bg-green-950 dark:text-green-200" role="status">
-              Settings saved.
-            </div>
+            <div className="rnr-note" data-tone="ok" role="status"><Icon name="check" className="size-5" /><div>Settings saved.</div></div>
           )}
 
-          <div className="flex gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div>
             <button
               type="submit"
               className={btn.primary}
@@ -123,6 +113,6 @@ export function PlatformSettings() {
           </div>
         </form>
       </div>
-    </div>
+    </section>
   )
 }

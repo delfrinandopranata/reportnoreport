@@ -135,7 +135,7 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
   }
   const result = context.data!
   if (result.isSuperAdmin) {
-    return <AdminConsole name={result.profile!.name} onSignOut={() => supabase.auth.signOut()} />
+    return <AdminConsole profileId={result.profile!.id} name={result.profile!.name} onSignOut={() => supabase.auth.signOut()} />
   }
   const { profile, firm, reason } = result
   if (!firm) return <FullPageMessage title="No access to this firm" text="Your access is suspended, or your firm is not set up yet. Contact your firm owner." action={() => supabase.auth.signOut()} />
@@ -151,23 +151,24 @@ function RealSessionProvider({ children }: { children: ReactNode }) {
 }
 
 function FullPageMessage({ text, title, action, retry }: { text: string; title?: string; action?: () => void; retry?: () => void }) {
-  const ring = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-white'
   if (!title) return (
-    <div className="grid min-h-dvh place-items-center bg-zinc-50 p-6 dark:bg-zinc-950" role="status" aria-live="polite">
-      <div className="grid justify-items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-        <span className="size-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white" aria-hidden />
+    <div className="grid min-h-dvh place-items-center p-6" role="status" aria-live="polite">
+      <div className="grid justify-items-center gap-3 text-ink-2">
+        <span className="rnr-spin size-6" aria-hidden />
         {text}
       </div>
     </div>
   )
   return (
-    <main className="grid min-h-dvh place-items-center bg-zinc-50 p-4 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs dark:border-zinc-800 dark:bg-zinc-900" role="alert">
-        <h1 className="mb-2 text-lg font-semibold leading-snug">{title}</h1>
-        <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">{text}</p>
-        <div className="grid gap-2">
-          {retry && <button type="button" onClick={retry} className={`${btn.primary} ${ring}`}>Try again</button>}
-          {action && <button type="button" onClick={action} className={`${retry ? btn.ghost : btn.primary} ${ring}`}>Sign out</button>}
+    <main className="grid min-h-dvh place-items-center p-4">
+      <div className="rnr-paper w-full max-w-sm p-6 pt-8" role="alert">
+        <div className="rnr-empty border-0 p-0">
+          <h1 className="rnr-heading">{title}</h1>
+          <p>{text}</p>
+          <div className="grid w-full gap-2">
+            {retry && <button type="button" onClick={retry} className={btn.primary}>Try again</button>}
+            {action && <button type="button" onClick={action} className={retry ? btn.ghost : btn.primary}>Sign out</button>}
+          </div>
         </div>
       </div>
     </main>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { btn, Avatar, Dialog, Icon, ring } from '../ui'
+import { btn, Dialog, Icon, input } from '../ui'
 import { callAdmin, type AdminListFirmsResponse } from './api'
 import { formatDate } from '../settings/constants'
 import { trialState } from '../trial'
@@ -9,7 +9,7 @@ type Firm = AdminListFirmsResponse['firms'][0]
 
 type Action = { type: 'suspend' | 'reactivate' | 'extend' | 'makeComplimentary'; firmId: string; days?: 7 | 14; firmName?: string }
 
-function ActionMenu({ firmId, firmName, firm, onSetConfirmAction, isBusy }: { firmId: string; firmName: string; firm: Firm; onSetConfirmAction: (action: Action) => void; isBusy: boolean }) {
+function ActionMenu({ firmId, firmName, firm, onSetConfirmAction, onSupportView, isBusy }: { firmId: string; firmName: string; firm: Firm; onSetConfirmAction: (action: Action) => void; onSupportView: () => void; isBusy: boolean }) {
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [showMenu, setShowMenu] = useState(false)
@@ -46,32 +46,33 @@ function ActionMenu({ firmId, firmName, firm, onSetConfirmAction, isBusy }: { fi
   ]
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className="rnr-menu-anchor">
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setShowMenu(!showMenu)}
-        className={`${btn.ghost} !px-2 !py-1 text-xs`}
+        className="rnr-icon-btn"
         aria-haspopup="menu"
         aria-expanded={showMenu}
         aria-label={`Actions for ${firmName}`}
         disabled={isBusy}
       >
-        <Icon name="sliders" className="size-3" />
+        <Icon name="more" className="size-5" />
       </button>
       {showMenu && (
-        <div className="absolute right-0 top-8 z-50 min-w-max rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800" role="menu" onKeyDown={onKeyDown}>
+        <div className="rnr-menu" role="menu" onKeyDown={onKeyDown}>
+          <button type="button" role="menuitem" onClick={onSupportView} className="rnr-menu-item">
+            <Icon name="building" />
+            View support details
+          </button>
+          <div className="rnr-menu-sep" />
           {items.map((item, i) => (
             <button
               key={i}
               type="button"
               role="menuitem"
               onClick={item.action}
-              className={`block w-full px-3 py-2 text-left text-xs font-medium rounded transition first:rounded-t last:rounded-b ${
-                item.danger
-                  ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/50'
-                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700'
-              }`}
+              className={`rnr-menu-item${item.danger ? ' is-danger' : ''}`}
             >
               {item.label}
             </button>
@@ -210,126 +211,83 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
   )
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <input
-          type="text"
-          placeholder="Search by name or currency…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={`w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-900/25 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-400 dark:focus:ring-white/30 ${ring}`}
-        />
+    <div className="grid gap-4">
+      <div className="rnr-card rnr-table-card min-h-80 lg:overflow-visible">
+        <div className="rnr-admin-bar">
+          <input
+            type="text"
+            aria-label="Search firms"
+            placeholder="Search by name or currency…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={input}
+          />
+          {!list.isPending && !list.isError && <span className="rnr-caption" role="status">{filtered.length} {filtered.length === 1 ? 'firm' : 'firms'}</span>}
+        </div>
+
+        {list.isPending && <p className="p-8 text-center text-ink-2" role="status">Loading firms…</p>}
+
+        {list.isError && (
+          <div className="p-4"><div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>Failed to load firms</div></div></div>
+        )}
+
+        {!list.isPending && !list.isError && filtered.length === 0 && (
+          <div className="p-4">
+            <div className="rnr-empty">
+              <h2>{search ? 'No firms found' : 'No firms yet'}</h2>
+              <p>{search ? 'Try a different search' : 'Create your first firm'}</p>
+            </div>
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <table className="rnr-table rnr-admin-table">
+            <caption className="rnr-sr-only">Firms</caption>
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Currency</th>
+                <th scope="col">Source</th>
+                <th scope="col">Status</th>
+                <th scope="col">Billing</th>
+                <th scope="col" className="num">Members</th>
+                <th scope="col">Created</th>
+                <th scope="col"><span className="rnr-sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((firm) => (
+                <tr key={firm.id} data-muted={firm.status === 'suspended' ? '' : undefined}>
+                  <td className="rnr-admin-id"><strong>{firm.name}</strong></td>
+                  <td>{firm.currency}</td>
+                  <td>{getSourceLabel(firm.source)}</td>
+                  <td>
+                    <span className="rnr-status" data-tone={firm.status === 'active' ? 'ok' : 'down'}>
+                      <Icon name={firm.status === 'active' ? 'check' : 'x'} />
+                      {getStatusLabel(firm.status)}
+                    </span>
+                  </td>
+                  <td><span className="rnr-chip">{getBillingLabel(firm)}</span></td>
+                  <td className="num">{firm.members}</td>
+                  <td>{formatDate(firm.created_at.slice(0, 10), 'text')}</td>
+                  <td className="rnr-admin-act">
+                    <ActionMenu firmId={firm.id} firmName={firm.name} firm={firm} onSetConfirmAction={setConfirmAction} onSupportView={() => onSupportView(firm.id, firm.name, firm.currency)} isBusy={isBusy} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      {list.isPending && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading firms…</div>
-        </div>
-      )}
-
-      {list.isError && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-900 dark:bg-red-950">
-          <div className="text-sm text-red-600 dark:text-red-400">Failed to load firms</div>
-        </div>
-      )}
-
-      {!list.isPending && !list.isError && filtered.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="font-medium text-zinc-900 dark:text-zinc-100">
-            {search ? 'No firms found' : 'No firms yet'}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {search ? 'Try a different search' : 'Create your first firm'}
-          </p>
-        </div>
-      )}
-
-      {filtered.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
-                  <th className="px-4 py-3 text-left font-medium">Name</th>
-                  <th className="px-4 py-3 text-left font-medium">Currency</th>
-                  <th className="px-4 py-3 text-left font-medium">Source</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Billing</th>
-                  <th className="px-4 py-3 text-right font-medium">Members</th>
-                  <th className="px-4 py-3 text-left font-medium">Created</th>
-                  <th className="px-4 py-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((firm) => (
-                  <tr
-                    key={firm.id}
-                    className="border-b border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Avatar name={firm.name} size="size-6" />
-                        <span className="font-medium">{firm.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">{firm.currency}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">{getSourceLabel(firm.source)}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                          firm.status === 'active'
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                        }`}
-                        aria-label={getStatusLabel(firm.status)}
-                      >
-                        <Icon
-                          name={firm.status === 'active' ? 'check' : 'x'}
-                          className="size-3"
-                        />
-                        {getStatusLabel(firm.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                        {getBillingLabel(firm)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-tabular-nums text-sm">{firm.members}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
-                      {formatDate(firm.created_at.slice(0, 10), 'text')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => onSupportView(firm.id, firm.name, firm.currency)}
-                          className={`${btn.primary} !px-2 !py-1 text-xs gap-1`}
-                          title="View support details for this firm"
-                        >
-                          <Icon name="building" className="size-3" />
-                          Support
-                        </button>
-                        <ActionMenu firmId={firm.id} firmName={firm.name} firm={firm} onSetConfirmAction={setConfirmAction} isBusy={isBusy} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {actionError && actionError.firmId && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-          {actionError.message}
-        </div>
+        <div className="rnr-note" data-tone="down" role="alert"><Icon name="alert" className="size-5" /><div>{actionError.message}</div></div>
       )}
 
       <Dialog open={!!confirmAction} onClose={() => setConfirmAction(null)} title={confirmTitle ?? ''}>
         {confirmAction && (
-          <div className="grid gap-4 text-sm">
-            <p className="text-zinc-600 dark:text-zinc-400">
+          <div className="grid gap-4">
+            <p className="text-ink-2">
               {confirmAction.type === 'suspend' && "Members can't sign in until you reactivate it."}
               {confirmAction.type === 'reactivate' && 'Members will regain access to the firm.'}
               {confirmAction.type === 'extend' && `Trial will be extended by ${confirmAction.days} days.`}
@@ -351,11 +309,11 @@ export function FirmsTable({ onSupportView }: { onSupportView: (firmId: string, 
                   else if (confirmAction.type === 'extend') extendTrial.mutate({ firmId: confirmAction.firmId, days: confirmAction.days! })
                   else if (confirmAction.type === 'makeComplimentary') makeComplimentary.mutate(confirmAction.firmId)
                 }}
-                className={confirmAction.type === 'suspend' ? 'inline-flex items-center justify-center rounded-lg bg-red-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-red-800 disabled:opacity-40 dark:bg-red-600 dark:hover:bg-red-500' : btn.primary}
-                disabled={suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending}
-                aria-busy={suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending}
+                className={confirmAction.type === 'suspend' ? btn.danger : btn.primary}
+                disabled={isBusy}
+                aria-busy={isBusy}
               >
-                {suspend.isPending || reactivate.isPending || extendTrial.isPending || makeComplimentary.isPending ? 'Working…' : 'Confirm'}
+                {isBusy ? 'Working…' : 'Confirm'}
               </button>
             </div>
           </div>

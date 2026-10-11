@@ -22,7 +22,7 @@ if [ -f "$DIST_PATH/index.html" ]; then
   # Use sed to insert the banner after <body>
   # Match <body> and insert the banner on the next line (portable across macOS and Linux)
   sed -i.bak '/<body>/a\
-    <div style="background: #fff3cd; border-bottom: 2px solid #ffc107; padding: 12px 16px; font-size: 14px; font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #333;">Demo — data stays in your browser. <a href="/app/" style="color: #0066cc; text-decoration: none; font-weight: 500;">Sign in</a></div>' \
+    <div class="rnr-note rnr-note--bar" data-tone="info" role="status">Demo — data stays in your browser. <a href="/app/" class="rnr-link">Sign in</a></div>' \
     "$DIST_PATH/index.html"
   # Remove the backup file created by sed
   rm -f "$DIST_PATH/index.html.bak"

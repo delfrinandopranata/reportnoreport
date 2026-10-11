@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-GB">
+<html lang="en-GB" data-theme="light" data-accent="midnight" data-density="comfortable" data-motion="full">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -11,308 +11,209 @@
     <meta property="og:url" content="https://reportnoreport.com/" />
     <!-- canonical: https://reportnoreport.com/ -->
     <title>ReportNoReport — Report without report.</title>
-    <style>
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-          scroll-behavior: auto !important;
-        }
-      }
-
-      /* Scroll/on-load reveal: elements start hidden and settle in once visible.
-         Covered by the reduced-motion override above, which collapses the transition to ~0ms. */
-      .reveal {
-        opacity: 0;
-        transform: translateY(14px);
-        transition: opacity 400ms ease-out, transform 400ms ease-out;
-      }
-      .reveal.is-visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      .reveal-group > :nth-child(1) { transition-delay: 0ms; }
-      .reveal-group > :nth-child(2) { transition-delay: 80ms; }
-      .reveal-group > :nth-child(3) { transition-delay: 160ms; }
-      .reveal-group > :nth-child(4) { transition-delay: 240ms; }
-      .reveal-group > :nth-child(5) { transition-delay: 320ms; }
-      .reveal-group > :nth-child(6) { transition-delay: 400ms; }
-      .reveal-group > :nth-child(7) { transition-delay: 480ms; }
-
-      /* The headline joke: "report" struck through to read "repot". Bar draws itself in on load. */
-      @keyframes strike-draw {
-        from { clip-path: inset(0 100% 0 0); }
-        to { clip-path: inset(0 0 0 0); }
-      }
-      .strike-mark {
-        position: relative;
-        display: inline-block;
-      }
-      .strike-mark::after {
-        content: '';
-        pointer-events: none;
-        position: absolute;
-        left: 50%;
-        top: 55%;
-        width: 0.95em;
-        height: 0.085em;
-        border-radius: 9999px;
-        background: #dc2626;
-        transform: translate(-50%, -50%) rotate(-62deg);
-        animation: strike-draw 500ms ease-out 450ms both;
-      }
-      .dark .strike-mark::after {
-        background: #ef4444;
-      }
-    </style>
+    <script>
+      // Light theme only. The accent follows the visitor's stored choice (Midnight otherwise); motion follows the OS.
+      (() => {
+        let s = {}
+        try { s = JSON.parse(localStorage.getItem('rnr.appearance') || '{}') || {} } catch {}
+        const h = document.documentElement
+        if (['midnight', 'ocean', 'bw', 'graphite', 'fern', 'rosewood', 'iris', 'saffron'].includes(s.accent)) h.dataset.accent = s.accent
+        h.dataset.motion = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'flat' : 'full'
+        h.classList.add('js')
+      })()
+    </script>
     <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments) }</script>
     <script defer src="/_vercel/insights/script.js"></script>
   </head>
-  <body class="bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
-    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-zinc-900 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:focus:bg-white dark:focus:text-zinc-900 dark:focus:outline-white">
-      Skip to main content
-    </a>
-    <header class="sticky top-0 z-40 border-b border-zinc-200 bg-zinc-50/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-      <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+  <body>
+    <a href="#main" class="rnr-skip rnr-btn rnr-btn-secondary">Skip to main content</a>
+    <div class="rnr-wash" aria-hidden="true"><span class="rnr-wash-blob"></span><span class="rnr-wash-blob"></span><span class="rnr-wash-blob"></span></div>
+    <header class="sticky top-0 z-40 border-b border-line bg-canvas/80 backdrop-blur">
+      <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-100">
-              <span class="text-sm font-bold text-white dark:text-zinc-900">R</span>
-            </div>
-            <span class="text-lg font-semibold whitespace-nowrap" aria-label="ReportNoReport"><span aria-hidden="true">Report<span class="text-zinc-400 dark:text-zinc-500">No</span>Report</span></span>
-          </div>
-          <nav class="hidden gap-8 md:flex">
-            <a href="#features" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">Features</a>
-            <a href="#pricing" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">Pricing</a>
-            <a href="#faq" class="text-sm font-medium text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">FAQ</a>
+          <a href="/" class="rnr-wordmark" data-draw aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3" /></svg></span>eport</a>
+          <nav class="hidden gap-2 md:flex" aria-label="Page sections">
+            <a href="#features" class="rnr-btn rnr-btn-ghost">Features</a>
+            <a href="#pricing" class="rnr-btn rnr-btn-ghost">Pricing</a>
+            <a href="#faq" class="rnr-btn rnr-btn-ghost">FAQ</a>
           </nav>
           <div class="flex items-center gap-3">
-            <a href="/app/" class="whitespace-nowrap text-sm font-medium text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">Sign in</a>
-            <button id="cta-primary" class="hidden whitespace-nowrap sm:inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 dark:focus:outline-white">Get started free</button>
+            <a href="/app/" class="rnr-btn rnr-btn-ghost whitespace-nowrap">Sign in</a>
+            <button id="cta-primary" class="rnr-btn rnr-btn-primary hidden whitespace-nowrap sm:inline-flex">Get started free</button>
           </div>
         </div>
       </div>
     </header>
 
-    <section id="main" class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-      <div class="grid lg:grid-cols-2 lg:gap-12 lg:items-center">
-        <div class="reveal">
-          <span class="inline-flex items-center gap-2 rounded-full bg-[var(--color-in)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-in)] dark:bg-[var(--color-in)]/15">
-            Free while we're in early access
-          </span>
-          <h1 class="mt-5 text-5xl font-bold tracking-tight leading-tight sm:text-6xl lg:text-7xl">Report without <span class="whitespace-nowrap">repo<span class="strike-mark text-zinc-400 dark:text-zinc-500">r</span>t.</span></h1>
-          <p class="mt-5 text-sm font-medium text-zinc-700 dark:text-zinc-300 max-w-prose">Report without complicated reporting.</p>
-          <p class="mt-6 text-lg leading-relaxed text-zinc-600 dark:text-zinc-400 max-w-prose">
+    <main id="main" tabindex="-1">
+    <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+      <div class="grid lg:grid-cols-2 lg:items-center lg:gap-12">
+        <div class="rnr-rise">
+          <span class="rnr-chip" data-tone="accent">Free while we're in early access</span>
+          <h1 class="rnr-display mt-5 text-5xl sm:text-6xl lg:text-7xl">Report without <span class="whitespace-nowrap">repo<span class="strike-mark">r</span>t.</span></h1>
+          <p class="mt-5 max-w-prose text-sm font-medium text-ink-2">Report without complicated reporting.</p>
+          <p class="mt-6 max-w-prose text-lg leading-relaxed text-ink-2">
             Keep a separate, auditable ledger for every client. Send professional statements in minutes, not spreadsheets. Control exactly who sees what. Built for law firms, accountants, and corporate secretaries who hold client money.
           </p>
-          <div class="mt-10 flex flex-col sm:flex-row gap-3">
-            <button id="cta-primary-hero" class="rounded-lg bg-zinc-900 px-6 py-3 font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 dark:focus:outline-white">
-              Get started free
-            </button>
-            <a href="/demo/" class="rounded-lg border-2 border-zinc-300 px-6 py-3 font-medium text-zinc-900 text-center transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-100 hover:border-zinc-400 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:border-zinc-700 dark:text-white dark:hover:bg-zinc-900 dark:focus:outline-white">
-              See the demo
-            </a>
+          <div class="mt-10 flex flex-col gap-3 sm:flex-row">
+            <button id="cta-primary-hero" class="rnr-btn rnr-btn-primary">Get started free</button>
+            <a href="/demo/" class="rnr-btn rnr-btn-secondary">See the demo</a>
           </div>
         </div>
-        <div class="reveal hidden lg:block mt-10 lg:mt-0" style="transition-delay: 120ms">
-          <div class="rounded-2xl bg-white border border-zinc-200 p-6 dark:bg-zinc-800 dark:border-zinc-700 shadow-lg">
-            <div class="space-y-3">
+        <div class="rnr-rise mt-10 hidden lg:mt-0 lg:block">
+          <div class="rnr-paper p-6 pt-8">
+            <div class="grid gap-3">
               <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Client Account</p>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400">2 Oct</p>
+                <p class="rnr-micro">Client Account</p>
+                <p class="rnr-caption">2 Oct</p>
               </div>
-              <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3">
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-zinc-600 dark:text-zinc-400">Opening balance</span>
-                    <span class="font-medium text-zinc-900 dark:text-white">MYR 5,000.00</span>
-                  </div>
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-zinc-600 dark:text-zinc-400">Invoice paid (INV-2847)</span>
-                    <span class="font-medium text-green-600 dark:text-green-400">+MYR 1,250.00</span>
-                  </div>
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-zinc-600 dark:text-zinc-400">Service charge</span>
-                    <span class="font-medium text-red-600 dark:text-red-400">−MYR 75.50</span>
-                  </div>
+              <div class="grid gap-2 border-t border-line pt-3">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-ink-2">Opening balance</span>
+                  <span class="rnr-num font-medium">MYR 5,000.00</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-ink-2">Invoice paid (INV-2847)</span>
+                  <span class="rnr-num font-medium text-ok-ink">+MYR 1,250.00</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-ink-2">Service charge</span>
+                  <span class="rnr-num font-medium text-down">−MYR 75.50</span>
                 </div>
               </div>
-              <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3">
-                <div class="flex items-center justify-between bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-3">
-                  <p class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Balance</p>
-                  <p class="text-lg font-bold text-zinc-900 dark:text-white">MYR 6,174.50</p>
-                </div>
+              <div class="flex items-center justify-between rounded-(--r-ctl) bg-soft p-3">
+                <p class="text-sm font-semibold text-ink-2">Balance</p>
+                <p class="rnr-num text-lg font-semibold">MYR 6,174.50</p>
               </div>
             </div>
           </div>
-          <p class="mt-4 text-xs text-zinc-500 dark:text-zinc-400">Every transaction is recorded, auditable, and separate per client.</p>
+          <p class="rnr-caption mt-4">Every transaction is recorded, auditable, and separate per client.</p>
         </div>
       </div>
     </section>
 
-    <section id="features" class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+    <section id="features" class="border-t border-line bg-soft">
       <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-        <h2 class="text-center text-3xl font-bold sm:text-4xl">What it does</h2>
-        <p class="mt-3 text-center text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">Three things every firm holding client money needs, in one place.</p>
+        <h2 class="rnr-page-title text-center">What it does</h2>
+        <p class="mx-auto mt-3 max-w-2xl text-center text-ink-2">Three things every firm holding client money needs, in one place.</p>
         <div class="reveal-group mt-12 grid gap-8 md:grid-cols-3">
-          <div class="reveal rounded-2xl bg-white p-8 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex items-center gap-3 mb-4">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-              <h3 class="text-lg font-semibold">Client ledgers</h3>
+          <div class="rnr-card rnr-rise p-8">
+            <div class="mb-4 flex items-center gap-3">
+              <svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+              <h3 class="rnr-card-title text-ink text-lg">Client ledgers</h3>
             </div>
-            <p class="text-zinc-600 dark:text-zinc-400">A complete, separate record of every receipt and payment for each client, with the running balance always current.</p>
+            <p class="text-ink-2">A complete, separate record of every receipt and payment for each client, with the running balance always current.</p>
           </div>
-          <div class="reveal rounded-2xl bg-white p-8 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex items-center gap-3 mb-4">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <h3 class="text-lg font-semibold">Statements</h3>
+          <div class="rnr-card rnr-rise p-8">
+            <div class="mb-4 flex items-center gap-3">
+              <svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+              <h3 class="rnr-card-title text-ink text-lg">Statements</h3>
             </div>
-            <p class="text-zinc-600 dark:text-zinc-400">Professional, printable statements in your chosen currency (MYR, SGD, USD). Send to clients or archive for audit.</p>
+            <p class="text-ink-2">Professional, printable statements in your chosen currency (MYR, SGD, USD). Send to clients or archive for audit.</p>
           </div>
-          <div class="reveal rounded-2xl bg-white p-8 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex items-center gap-3 mb-4">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 10H9m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 class="text-lg font-semibold">Role-based access</h3>
+          <div class="rnr-card rnr-rise p-8">
+            <div class="mb-4 flex items-center gap-3">
+              <svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 10H9m6 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <h3 class="rnr-card-title text-ink text-lg">Role-based access</h3>
             </div>
-            <p class="text-zinc-600 dark:text-zinc-400">Assign fine-grained permissions: owner, admin, accountant, or viewer. Each team member sees only what they need.</p>
+            <p class="text-ink-2">Assign fine-grained permissions: owner, admin, accountant, or viewer. Each team member sees only what they need.</p>
           </div>
         </div>
       </div>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div class="reveal rounded-2xl bg-blue-50 border border-blue-200 p-8 dark:bg-blue-950 dark:border-blue-900">
-        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100">Built for trust</h3>
-        <div class="mt-4 grid sm:grid-cols-3 gap-6 text-sm text-blue-800 dark:text-blue-200">
+      <div class="rnr-note rnr-rise block p-8" data-tone="info">
+        <h3 class="text-lg font-semibold text-ink">Built for trust</h3>
+        <div class="mt-4 grid gap-6 text-sm sm:grid-cols-3">
           <div>
             <p class="font-medium">Data isolation</p>
-            <p class="mt-1 text-blue-700 dark:text-blue-300">Each firm's data is completely separate. You cannot see other firms' records, and they cannot see yours.</p>
+            <p class="mt-1 text-ink-2">Each firm's data is completely separate. You cannot see other firms' records, and they cannot see yours.</p>
           </div>
           <div>
             <p class="font-medium">Hosted in Singapore</p>
-            <p class="mt-1 text-blue-700 dark:text-blue-300">Data is stored in a Supabase instance in Singapore for fast, compliant access.</p>
+            <p class="mt-1 text-ink-2">Data is stored in a Supabase instance in Singapore for fast, compliant access.</p>
           </div>
           <div>
             <p class="font-medium">Complete audit trail</p>
-            <p class="mt-1 text-blue-700 dark:text-blue-300">Every change is recorded with who made it and when. The full history stays with your data.</p>
+            <p class="mt-1 text-ink-2">Every change is recorded with who made it and when. The full history stays with your data.</p>
           </div>
         </div>
       </div>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-      <h2 class="text-center text-3xl font-bold sm:text-4xl">How it works</h2>
+      <h2 class="rnr-page-title text-center">How it works</h2>
       <div class="reveal-group mt-12 grid gap-8 md:grid-cols-3">
-        <div class="reveal text-center">
-          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-            <span class="font-semibold">1</span>
-          </div>
+        <div class="rnr-rise text-center">
+          <div class="rnr-kind mx-auto size-12"><span class="font-semibold">1</span></div>
           <h3 class="mt-4 font-semibold">Sign up and verify</h3>
-          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Create an account and confirm your email in seconds.</p>
+          <p class="mt-2 text-ink-2">Create an account and confirm your email in seconds.</p>
         </div>
-        <div class="reveal text-center">
-          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-            <span class="font-semibold">2</span>
-          </div>
+        <div class="rnr-rise text-center">
+          <div class="rnr-kind mx-auto size-12"><span class="font-semibold">2</span></div>
           <h3 class="mt-4 font-semibold">Add clients and accounts</h3>
-          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Add your bank accounts and clients, or import them from a spreadsheet.</p>
+          <p class="mt-2 text-ink-2">Add your bank accounts and clients, or import them from a spreadsheet.</p>
         </div>
-        <div class="reveal text-center">
-          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-            <span class="font-semibold">3</span>
-          </div>
+        <div class="rnr-rise text-center">
+          <div class="rnr-kind mx-auto size-12"><span class="font-semibold">3</span></div>
           <h3 class="mt-4 font-semibold">Record and send</h3>
-          <p class="mt-2 text-zinc-600 dark:text-zinc-400">Record receipts and payments, then send statements straight to your clients.</p>
+          <p class="mt-2 text-ink-2">Record receipts and payments, then send statements straight to your clients.</p>
         </div>
       </div>
     </section>
 
-    <section class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+    <section class="border-t border-line bg-soft">
       <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-        <h2 class="text-center text-3xl font-bold sm:text-4xl">Key features</h2>
+        <h2 class="rnr-page-title text-center">Key features</h2>
         <div class="reveal-group mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
             <div>
               <h3 class="font-semibold">Firm-level isolation</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Your data is completely separate from other firms.</p>
+              <p class="mt-1 text-sm text-ink-2">Your data is completely separate from other firms.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg></div>
             <div>
               <h3 class="font-semibold">Roles and permissions</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Fine-grained control over who sees what.</p>
+              <p class="mt-1 text-sm text-ink-2">Fine-grained control over who sees what.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></div>
             <div>
               <h3 class="font-semibold">CSV import and export</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Migrate data in and out easily.</p>
+              <p class="mt-1 text-sm text-ink-2">Migrate data in and out easily.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></div>
             <div>
               <h3 class="font-semibold">Printable statements</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Professional PDFs for your records and clients.</p>
+              <p class="mt-1 text-sm text-ink-2">Professional PDFs for your records and clients.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
             <div>
               <h3 class="font-semibold">Multi-currency</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Choose MYR, SGD, or USD per firm.</p>
+              <p class="mt-1 text-sm text-ink-2">Choose MYR, SGD, or USD per firm.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
             <div>
               <h3 class="font-semibold">Full change history</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">See who did what and when.</p>
+              <p class="mt-1 text-sm text-ink-2">See who did what and when.</p>
             </div>
           </div>
-          <div class="reveal flex gap-3 rounded-2xl bg-white p-6 dark:bg-zinc-800 shadow-sm transition-shadow hover:shadow-md">
-            <div class="flex-shrink-0">
-              <svg class="h-6 w-6 text-zinc-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7h-3V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2H4a1 1 0 00-1 1v10a2 2 0 002 2h14a2 2 0 002-2V8a1 1 0 00-1-1zM9 5h6v2H9V5z" />
-              </svg>
-            </div>
+          <div class="rnr-card rnr-rise flex-row gap-3 p-6">
+            <div class="flex-shrink-0"><svg class="h-6 w-6 text-ink flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7h-3V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2H4a1 1 0 00-1 1v10a2 2 0 002 2h14a2 2 0 002-2V8a1 1 0 00-1-1zM9 5h6v2H9V5z" /></svg></div>
             <div>
               <h3 class="font-semibold">Contract manager</h3>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Track every client contract, its review status, and renewal date in one place.</p>
+              <p class="mt-1 text-sm text-ink-2">Track every client contract, its review status, and renewal date in one place.</p>
             </div>
           </div>
         </div>
@@ -320,91 +221,70 @@
     </section>
 
     <section id="pricing" class="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-      <div class="reveal rounded-2xl border-2 border-zinc-900 bg-white p-10 text-center dark:border-white dark:bg-zinc-800 shadow-lg max-w-2xl mx-auto">
-        <h2 class="text-3xl font-bold">Simple pricing</h2>
-        <p class="mt-8 text-zinc-900 dark:text-white">
-          <span class="text-5xl font-bold block">Free</span>
-          <span class="block text-sm text-zinc-600 dark:text-zinc-400 mt-2">while we're in early access.</span>
+      <div class="rnr-paper rnr-rise mx-auto max-w-2xl p-10 pt-12 text-center">
+        <h2 class="rnr-page-title">Simple pricing</h2>
+        <p class="mt-8 text-ink">
+          <span class="rnr-display block text-5xl">Free</span>
+          <span class="mt-2 block text-sm text-ink-2">while we're in early access.</span>
         </p>
-        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Full access to every feature. No card required, nothing to cancel. We'll introduce pricing later and tell existing firms well in advance before anything is asked of you.</p>
-        <button id="cta-primary-pricing" class="mt-10 rounded-lg bg-zinc-900 px-8 py-4 font-semibold text-white text-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 dark:focus:outline-white">
-          Get started free
-        </button>
+        <p class="mt-2 text-sm text-ink-2">Full access to every feature. No card required, nothing to cancel. We'll introduce pricing later and tell existing firms well in advance before anything is asked of you.</p>
+        <button id="cta-primary-pricing" class="rnr-btn rnr-btn-primary mt-10">Get started free</button>
       </div>
     </section>
 
-    <section id="faq" class="border-t border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+    <section id="faq" class="border-t border-line bg-soft">
       <div class="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-        <h2 class="text-center text-3xl font-bold sm:text-4xl">Frequently asked questions</h2>
-        <div class="reveal-group mt-12 space-y-4">
-          <details class="reveal rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 group focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-zinc-900 dark:focus-within:outline-white transition-shadow hover:shadow-md">
-            <summary class="cursor-pointer font-semibold text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-2">
+        <h2 class="rnr-page-title text-center">Frequently asked questions</h2>
+        <div class="reveal-group mt-12 grid gap-4">
+          <details class="rnr-card rnr-rise group">
+            <summary class="flex cursor-pointer items-center gap-2 font-semibold text-ink">
               <span class="flex-1">Is my data separate from other firms?</span>
-              <svg class="h-5 w-5 flex-shrink-0 text-zinc-600 dark:text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <svg class="h-5 w-5 flex-shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </summary>
-            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
-              Yes. Each firm's data is completely isolated at the database level. You cannot see other firms' data, and they cannot see yours. This is enforced by row-level security policies.
-            </p>
+            <p class="mt-4 text-ink-2">Yes. Each firm's data is completely isolated at the database level. You cannot see other firms' data, and they cannot see yours. This is enforced by row-level security policies.</p>
           </details>
-          <details class="reveal rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 group focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-zinc-900 dark:focus-within:outline-white transition-shadow hover:shadow-md">
-            <summary class="cursor-pointer font-semibold text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-2">
+          <details class="rnr-card rnr-rise group">
+            <summary class="flex cursor-pointer items-center gap-2 font-semibold text-ink">
               <span class="flex-1">Which currencies do you support?</span>
-              <svg class="h-5 w-5 flex-shrink-0 text-zinc-600 dark:text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <svg class="h-5 w-5 flex-shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </summary>
-            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
-              ReportNoReport supports Malaysian Ringgit (MYR), Singapore Dollar (SGD), and US Dollar (USD). You choose one currency per firm when you sign up, and it applies to all ledgers and statements.
-            </p>
+            <p class="mt-4 text-ink-2">ReportNoReport supports Malaysian Ringgit (MYR), Singapore Dollar (SGD), and US Dollar (USD). You choose one currency per firm when you sign up, and it applies to all ledgers and statements.</p>
           </details>
-          <details class="reveal rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 group focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-zinc-900 dark:focus-within:outline-white transition-shadow hover:shadow-md">
-            <summary class="cursor-pointer font-semibold text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-2">
+          <details class="rnr-card rnr-rise group">
+            <summary class="flex cursor-pointer items-center gap-2 font-semibold text-ink">
               <span class="flex-1">Do I need to pay anything right now?</span>
-              <svg class="h-5 w-5 flex-shrink-0 text-zinc-600 dark:text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <svg class="h-5 w-5 flex-shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </summary>
-            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
-              No. ReportNoReport is free while we're in early access, with full access to every feature. There's nothing to enter and nothing to cancel. If that changes in future, we'll tell existing firms well in advance.
-            </p>
+            <p class="mt-4 text-ink-2">No. ReportNoReport is free while we're in early access, with full access to every feature. There's nothing to enter and nothing to cancel. If that changes in future, we'll tell existing firms well in advance.</p>
           </details>
-          <details class="reveal rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 group focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-zinc-900 dark:focus-within:outline-white transition-shadow hover:shadow-md">
-            <summary class="cursor-pointer font-semibold text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-2">
+          <details class="rnr-card rnr-rise group">
+            <summary class="flex cursor-pointer items-center gap-2 font-semibold text-ink">
               <span class="flex-1">Can I import from a spreadsheet?</span>
-              <svg class="h-5 w-5 flex-shrink-0 text-zinc-600 dark:text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <svg class="h-5 w-5 flex-shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </summary>
-            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
-              Yes. You can import clients and transactions via CSV during initial setup and at any time afterward. ReportNoReport shows you the import format and validates your data before committing.
-            </p>
+            <p class="mt-4 text-ink-2">Yes. You can import clients and transactions via CSV during initial setup and at any time afterward. ReportNoReport shows you the import format and validates your data before committing.</p>
           </details>
-          <details class="reveal rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 group focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-zinc-900 dark:focus-within:outline-white transition-shadow hover:shadow-md">
-            <summary class="cursor-pointer font-semibold text-zinc-900 dark:text-white hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center gap-2">
+          <details class="rnr-card rnr-rise group">
+            <summary class="flex cursor-pointer items-center gap-2 font-semibold text-ink">
               <span class="flex-1">Who can see what?</span>
-              <svg class="h-5 w-5 flex-shrink-0 text-zinc-600 dark:text-zinc-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <svg class="h-5 w-5 flex-shrink-0 text-ink-2 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             </summary>
-            <p class="mt-4 text-zinc-600 dark:text-zinc-400">
-              You control access completely. Assign roles to your team: owner or admin (full access), accountant (posts transactions), or viewer (read-only). Each role has finely-tuned permissions.
-            </p>
+            <p class="mt-4 text-ink-2">You control access completely. Assign roles to your team: owner or admin (full access), accountant (posts transactions), or viewer (read-only). Each role has finely-tuned permissions.</p>
           </details>
         </div>
       </div>
     </section>
+    </main>
 
-    <footer class="border-t border-zinc-200 dark:border-zinc-800">
+    <footer class="border-t border-line">
       <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p class="text-sm text-zinc-600 dark:text-zinc-400">
+          <p class="text-sm text-ink-2">
             © <span id="year"></span> ReportNoReport
           </p>
           <div class="flex gap-6">
-            <a href="/app/" class="text-sm text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">Sign in</a>
-            <a id="contact-link" href="mailto:hello@reportnoreport.com" class="text-sm text-zinc-600 hover:text-zinc-900 focus:outline-2 focus:outline-offset-2 focus:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus:outline-white">
+            <a href="/app/" class="rnr-link text-sm">Sign in</a>
+            <a id="contact-link" href="mailto:hello@reportnoreport.com" class="rnr-link text-sm">
               Contact us
             </a>
           </div>
@@ -412,48 +292,41 @@
       </div>
     </footer>
 
-    <dialog id="waitlist-dialog" class="rounded-2xl border border-zinc-300 p-6 dark:border-zinc-700 dark:bg-zinc-800">
-      <h2 class="text-2xl font-bold">Join the waitlist</h2>
-      <p class="mt-2 text-zinc-600 dark:text-zinc-400">We're at capacity right now, but we'd love to have you when space opens up.</p>
-      <form id="waitlist-form" class="mt-6 space-y-4">
-        <label for="waitlist-email" class="block text-sm font-medium">Email address</label>
-        <input
-          id="waitlist-email"
-          type="email"
-          placeholder="your@firm.com"
-          required
-          class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 dark:border-zinc-700 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-400"
-        />
-        <label for="waitlist-firm-name" class="block text-sm font-medium">Firm name</label>
-        <input
-          id="waitlist-firm-name"
-          type="text"
-          placeholder="Your firm name"
-          required
-          class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 dark:border-zinc-700 dark:bg-zinc-700 dark:text-white dark:placeholder-zinc-400"
-        />
-        <button type="submit" class="w-full rounded-lg bg-zinc-900 py-2 font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
-          Join the waitlist
+    <dialog id="waitlist-dialog" class="rnr-dialog" aria-labelledby="waitlist-title">
+      <div class="rnr-dialog-head">
+        <h2 id="waitlist-title">Join the waitlist</h2>
+      </div>
+      <div class="rnr-dialog-body">
+        <p class="text-ink-2">We're at capacity right now, but we'd love to have you when space opens up.</p>
+        <form id="waitlist-form" class="mt-6 grid gap-4">
+          <div class="rnr-field">
+            <label for="waitlist-email" class="rnr-label">Email address</label>
+            <input id="waitlist-email" type="email" placeholder="your@firm.com" required class="rnr-input" />
+          </div>
+          <div class="rnr-field">
+            <label for="waitlist-firm-name" class="rnr-label">Firm name</label>
+            <input id="waitlist-firm-name" type="text" placeholder="Your firm name" required class="rnr-input" />
+          </div>
+          <button type="submit" class="rnr-btn rnr-btn-primary w-full">Join the waitlist</button>
+        </form>
+        <div id="waitlist-message" role="status" class="rnr-note mt-4 hidden" data-tone="ok"></div>
+        <div id="waitlist-error" role="alert" class="rnr-note mt-4 hidden" data-tone="down"></div>
+        <button type="button" onclick="document.getElementById('waitlist-dialog').close()" class="rnr-btn rnr-btn-secondary mt-6 w-full">
+          Close
         </button>
-      </form>
-      <div id="waitlist-message" role="status" class="mt-4 hidden rounded-lg bg-green-50 p-3 text-sm text-green-900 dark:bg-green-900/20 dark:text-green-300"></div>
-      <div id="waitlist-error" role="alert" class="mt-4 hidden rounded-lg bg-red-50 p-3 text-sm text-red-900 dark:bg-red-900/20 dark:text-red-300"></div>
-      <button type="button" onclick="document.getElementById('waitlist-dialog').close()" class="mt-6 w-full rounded-lg border border-zinc-300 py-2 font-medium text-zinc-900 dark:border-zinc-700 dark:text-white">
-        Close
-      </button>
+      </div>
     </dialog>
 
     <script type="module" src="/src/home/home.ts"></script>
     <script>
-      // Scroll-reveal: fade/slide sections and cards in as they enter view.
-      // prefers-reduced-motion users get the same classes with a ~0ms transition (see <style> above).
-      var revealEls = document.querySelectorAll('.reveal')
+      // Scroll-reveal: .rnr-rise content is hidden only once html.js is set, so the page is complete without JavaScript.
+      var revealEls = document.querySelectorAll('.rnr-rise')
       if ('IntersectionObserver' in window) {
         var observer = new IntersectionObserver(
           function (entries) {
             entries.forEach(function (entry) {
               if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible')
+                entry.target.classList.add('in')
                 observer.unobserve(entry.target)
               }
             })
@@ -462,7 +335,7 @@
         )
         revealEls.forEach(function (el) { observer.observe(el) })
       } else {
-        revealEls.forEach(function (el) { el.classList.add('is-visible') })
+        revealEls.forEach(function (el) { el.classList.add('in') })
       }
     </script>
   </body>

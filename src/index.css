@@ -25,6 +25,23 @@ body { background: var(--canvas); color: var(--ink); font: var(--type-body); }
 /* v1 paper: batch 8 — dashboard, checklist, tour (Task 8 only) */
 /* v1 paper: batch 9 — settings, users, contracts (Task 9 only) */
 /* v1 paper: batch 10 — auth, admin, homepage (Task 10 only) */
+/* The homepage headline joke: "report" struck through to read "repot". The bar draws itself in on load. */
+@keyframes strike-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.strike-mark { position: relative; display: inline-block; color: var(--ink-3); }
+.strike-mark::after {
+  content: ""; pointer-events: none; position: absolute; left: 50%; top: 55%; width: .95em; height: .085em;
+  border-radius: var(--r-bar); background: var(--strike); transform: translate(-50%, -50%) rotate(-62deg);
+  animation: strike-draw 500ms ease-out 450ms both;
+}
+[data-motion="flat"] .strike-mark::after { animation: none; }
+@media (prefers-reduced-motion: reduce) { .strike-mark::after { animation: none; } }
+.reveal-group > :nth-child(2) { transition-delay: 80ms; }
+.reveal-group > :nth-child(3) { transition-delay: 160ms; }
+.reveal-group > :nth-child(4) { transition-delay: 240ms; }
+.reveal-group > :nth-child(5) { transition-delay: 320ms; }
+.reveal-group > :nth-child(6) { transition-delay: 400ms; }
+.reveal-group > :nth-child(7) { transition-delay: 480ms; }
+
 
 @media print {
   @page {

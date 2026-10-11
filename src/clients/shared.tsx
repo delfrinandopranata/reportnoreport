@@ -38,7 +38,7 @@ export function LoadError({ error, what = 'this page', compact }: { error: Error
   const qc = useQueryClient()
   return (
     <div role="alert" className={`rnr-empty rounded-(--r-card) border border-down bg-down-bg ${compact ? 'px-4 py-5' : ''}`}>
-      <p className="font-medium text-ink"><Icon name="alert" className="mr-1.5 inline size-5 align-text-bottom text-down" />We couldn’t load {what}.</p>
+      <p className="font-medium text-ink"><Icon name="alert" className="mr-1.5 inline size-5 align-text-bottom text-down" />{what.charAt(0).toUpperCase() + what.slice(1)} did not load. Check your connection, then try again.</p>
       <p className="max-w-md text-sm text-ink-2">{error.message}</p>
       <button type="button" className={compact ? btn.ghost : btn.primary} onClick={() => qc.invalidateQueries()}>Try again</button>
     </div>
