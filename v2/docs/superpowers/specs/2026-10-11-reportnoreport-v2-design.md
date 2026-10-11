@@ -22,7 +22,7 @@ multi-tenant org pattern only.
 - React 19 · TypeScript · Vite · Tailwind CSS 4 · dnd-kit · TanStack Query · `@xyflow/react` v12
 - Supabase: Postgres (RLS, `pg_cron`), Auth, Storage, Realtime, Edge Functions (Deno)
 - Email: Resend (Mailpit locally via `supabase start`)
-- Repo: `~/ntucsm/personal/reportnoreport-v2`, GitHub account `delfrinandopranata`, branch `main`
+- Repo: `delfrinandopranata/reportnoreport, folder `v2/``, GitHub account `delfrinandopranata`, branch `main`
   plus feature branches, CI copied from v1.
 
 ## 3. Tenancy

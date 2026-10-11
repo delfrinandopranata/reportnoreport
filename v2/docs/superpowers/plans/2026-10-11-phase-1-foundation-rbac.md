@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Repo: `~/ntucsm/personal/reportnoreport-v2`, GitHub `delfrinandopranata`, branch `main` + feature branches.
+- Repo: `delfrinandopranata/reportnoreport, folder `v2/``, GitHub `delfrinandopranata`, branch `main` + feature branches.
 - Every table carries `org_id`; every RLS policy checks membership and permission via `has_permission()`.
 - Permissions are a fixed list in code: `forms.manage`, `workflows.manage`, `workflows.publish`, `records.view_all`, `records.start`, `reports.view`, `reports.manage`, `members.manage`, `roles.manage`, `comms.manage`, `comms.broadcast`.
 - Seeded roles: Owner (all permissions, not editable or deletable), Admin, Member, Viewer (seeded, editable).
@@ -84,7 +84,7 @@ README.md
 - [ ] **Step 1: Scaffold**
 
 ```bash
-cd ~/ntucsm/personal/reportnoreport-v2
+cd delfrinandopranata/reportnoreport, folder `v2/`
 pnpm create vite@latest . --template react-ts   # accept "ignore existing files"
 pnpm add @supabase/supabase-js @tanstack/react-query
 pnpm add -D tailwindcss @tailwindcss/vite oxlint @types/node
