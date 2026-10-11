@@ -32,13 +32,19 @@ export const pointAt = ([a, b, c, d]: [Pt, Pt, Pt, Pt], t: number): Pt => {
   }
 }
 
+/** Bounding box of the tilted APPROVED stamp that lands under an approval card (see .sl-stamp in site.css). */
+export const stampRect = (st: Step): Rect => {
+  const { x, y } = pos(st), cx = x + CARD_W + 6 - 43.5, cy = y + 80 + 11
+  return { x: cx - 48, y: cy - 20, w: 96, h: 40 }
+}
+
 export const labelSize = (text: string) => ({ w: text.length * 6 + 10, h: 14 })
 const hit = (a: Rect, b: Rect, pad: number) => a.x < b.x + b.w + pad && b.x < a.x + a.w + pad && a.y < b.y + b.h + pad && b.y < a.y + a.h + pad
 
 /** Puts each edge label as close to its edge as it can go without touching a card or another label. */
 export function placeLabels(p: Programme): Map<number, Rect> {
   const byId = new Map(p.steps.map((s) => [s.id, s]))
-  const cards = p.steps.map(cardRect)
+  const cards = [...p.steps.map(cardRect), ...p.steps.filter((s) => s.type === 'APPROVAL').map(stampRect)]
   const placed = new Map<number, Rect>()
   const cols = Math.max(...p.steps.map((s) => s.col)) + 1
   const W = LANE_W + cols * COL_W, H = p.lanes.length * ROW_H + TAIL
