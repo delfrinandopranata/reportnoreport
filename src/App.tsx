@@ -88,7 +88,7 @@ export default function App() {
     <div className="rnr-account">
       <Avatar name={profile.name} size="size-8" />
       <div className="min-w-0 flex-1">
-        <p className="rnr-account-email">{profile.name}</p>
+        <p className="rnr-account-email" title={profile.name}>{profile.name}</p>
         <p className="rnr-caption truncate">{ROLE_LABEL[profile.role]}</p>
       </div>
       <ThemeToggle theme={appearance.theme} setTheme={(theme) => void saveAppearance({ ...appearance, theme })} className="shrink-0" />

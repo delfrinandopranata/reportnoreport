@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Icon, btn, ring } from '../ui'
+import { Icon, btn } from '../ui'
 import { nextFocusIndex, summarise, type ChecklistItem } from './summary'
 import sprite from '../../v2/design/icons/sprite.svg?url'
 
@@ -21,7 +21,7 @@ function Row({ item, state, action }: { item: ChecklistItem; state: keyof typeof
         <use href={`${sprite}#i-${STATE_GLYPH[state]}`} />
       </svg>
       <div className="rnr-checklist-label">
-        <a href={item.href} className={`${ring} rnr-link`}>{item.title}</a>
+        <a href={item.href} className="rnr-link">{item.title}</a>
         {state !== 'done' && <span className="rnr-caption block">{item.description}</span>}
       </div>
       <span className={state === 'todo' ? 'rnr-sr-only' : 'rnr-checklist-state'}>{STATE_WORD[state]}</span>
