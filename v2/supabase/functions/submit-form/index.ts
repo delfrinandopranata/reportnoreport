@@ -36,6 +36,12 @@ Deno.serve(async (req) => {
         if (error) throw error
         return data.id
       },
+      fileExists: async (path) => {
+        const i = path.lastIndexOf('/')
+        const { data, error } = await admin.storage.from('form-files').list(path.slice(0, i), { search: path.slice(i + 1), limit: 10 })
+        if (error) throw error
+        return data.some((o) => o.name === path.slice(i + 1))
+      },
       now: () => new Date(),
     })
     return json(res.status, res.body)

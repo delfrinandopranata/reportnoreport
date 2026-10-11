@@ -1,5 +1,5 @@
 import type { Answers, Field } from './types.ts'
-import { evaluate, isEmpty, toDay } from './rules.ts'
+import { evaluate, isEmpty, parsePath, toDay } from './rules.ts'
 import { calculate } from './expr.ts'
 
 export type Resolved = { answers: Answers; hidden: Set<string> }
@@ -32,7 +32,27 @@ export function resolve(fields: Field[], raw: unknown, now: Date = new Date()): 
     for (const f of calcs) if (!hidden.has(f.key)) answers[f.key] = calculate(f.expression ?? '', answers)
   }
   fillCalcs() // first pass so a show_if may read a calculated value
-  for (const f of fields) if (f.show_if && !evaluate(f.show_if, answers, now)) hidden.add(f.key)
+  // Dependency order: a field is judged against answers with hidden fields removed.
+  // A field met again while still being judged (a show_if cycle) counts as hidden.
+  const byKey = new Map(fields.map((f) => [f.key, f]))
+  const pending = new Set<string>()
+  const done = new Set<string>()
+  const judge = (f: Field) => {
+    if (done.has(f.key) || pending.has(f.key)) return
+    pending.add(f.key)
+    if (f.show_if) {
+      const dep = parsePath(f.show_if.field)?.root
+      const target = dep ? byKey.get(dep) : undefined
+      if (target) judge(target)
+      const view: Answers = {}
+      for (const k of Object.keys(answers)) if (!hidden.has(k) && !pending.has(k)) view[k] = answers[k]
+      pending.delete(f.key)
+      if (!evaluate(f.show_if, view, now)) hidden.add(f.key)
+    }
+    pending.delete(f.key)
+    done.add(f.key)
+  }
+  for (const f of fields) judge(f)
   for (const k of hidden) delete answers[k]
   for (const f of fields) {
     const rows = answers[f.key]

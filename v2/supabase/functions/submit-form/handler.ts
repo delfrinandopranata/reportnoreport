@@ -6,6 +6,8 @@ export type Deps = {
   /** Caller-scoped read: RLS returns the form only to active members of its org. */
   loadForm(id: string): Promise<LoadedForm | null>
   insert(row: { org_id: string; form_id: string; answers: Answers; submitted_by: string }): Promise<string>
+  /** Service-level lookup: does this object exist in the form-files bucket? */
+  fileExists(path: string): Promise<boolean>
   now(): Date
 }
 export type Result = { status: number; body: Record<string, unknown> }
@@ -27,6 +29,25 @@ export async function submitForm(body: unknown, deps: Deps): Promise<Result> {
   }
   const checked = validateAnswers(form.schema as Field[], body.answers, { now: deps.now(), filePrefix: `${form.org_id}/${userId}/` })
   if (!checked.ok) return { status: 400, body: { error: 'Some answers need fixing.', fieldErrors: checked.errors } }
+  const missing = await missingUploads(form.schema as Field[], checked.answers, deps)
+  if (Object.keys(missing).length) return { status: 400, body: { error: 'Some answers need fixing.', fieldErrors: missing } }
   const submissionId = await deps.insert({ org_id: form.org_id, form_id: form.id, answers: checked.answers, submitted_by: userId })
   return { status: 200, body: { submissionId, answers: checked.answers } }
+}
+
+/** Shape and prefix are already checked; this proves each referenced object was really uploaded. */
+async function missingUploads(fields: Field[], answers: Answers, deps: Deps): Promise<Record<string, string>> {
+  const jobs: Promise<[string, string] | null>[] = []
+  const probe = (f: Field, v: unknown, key: string) => {
+    if ((f.type !== 'file' && f.type !== 'signature') || typeof v !== 'string') return
+    const msg = f.type === 'file' ? 'Upload the file again.' : 'Sign again.'
+    jobs.push(deps.fileExists(v).then((ok) => (ok ? null : [key, msg])))
+  }
+  for (const f of fields) {
+    const v = answers[f.key]
+    if (f.type === 'group' && Array.isArray(v)) {
+      v.forEach((row, i) => { for (const c of f.fields ?? []) if (isObj(row)) probe(c, row[c.key], `${f.key}.${i}.${c.key}`) })
+    } else probe(f, v, f.key)
+  }
+  return Object.fromEntries((await Promise.all(jobs)).filter((x): x is [string, string] => !!x))
 }

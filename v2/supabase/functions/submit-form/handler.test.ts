@@ -11,6 +11,7 @@ function setup(over: Partial<Deps> = {}) {
     loadForm: (id) => Promise.resolve(id === FORM_ID ? { id, org_id: ORG, schema: FORM } : null),
     insert: (row) => { inserted.push(row); return Promise.resolve('sub-1') },
     now: () => new Date('2026-10-11T12:00:00Z'),
+    fileExists: () => Promise.resolve(true),
     ...over,
   }
   return { deps, inserted }
@@ -57,4 +58,16 @@ Deno.test("rejects a file from another user's folder", async () => {
   const other = PREFIX.replace(USER, '00000000-0000-0000-0000-0000000000a2') + 'sig.png'
   const res = await submitForm({ formId: FORM_ID, answers: { ...VALID, sig: other } }, deps)
   assertEquals([res.status, res.body.fieldErrors], [400, { sig: 'Sign again.' }])
+})
+Deno.test('rejects a file or signature that was never uploaded', async () => {
+  const { deps, inserted } = setup({ fileExists: (p) => Promise.resolve(!p.endsWith('sig.png')) })
+  const res = await submitForm({ formId: FORM_ID, answers: VALID }, deps)
+  assertEquals([res.status, res.body.fieldErrors], [400, { sig: 'Sign again.' }])
+  assertEquals(inserted.length, 0)
+})
+Deno.test('looks up uploads under the caller prefix', async () => {
+  const seen: string[] = []
+  const { deps } = setup({ fileExists: (p) => { seen.push(p); return Promise.resolve(true) } })
+  await submitForm({ formId: FORM_ID, answers: VALID }, deps)
+  assertEquals(seen, [PREFIX + 'sig.png'])
 })

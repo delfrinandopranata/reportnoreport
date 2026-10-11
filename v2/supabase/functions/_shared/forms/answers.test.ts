@@ -77,3 +77,27 @@ test('non-object answers never throw', () => {
   for (const bad of [null, 'x', 42, []]) assert.equal(check(bad).ok, false)
   assert.equal(resolve(FORM, null, now).answers.total, 0)
 })
+
+test('a hidden field cannot make its dependants visible', () => {
+  const f: Field[] = [
+    { key: 'c', type: 'short_text', label: 'C' },
+    { key: 'a', type: 'short_text', label: 'A', show_if: { field: 'c', operator: 'is', value: 'go' } },
+    { key: 'b', type: 'short_text', label: 'B', required: true, show_if: { field: 'a', operator: 'is', value: 'x' } },
+  ]
+  assert.deepEqual(validateAnswers(f, { c: 'no', a: 'x' }), { ok: true, answers: { c: 'no' } })
+  assert.equal(validateAnswers(f, { c: 'go', a: 'x' }).ok, false)
+})
+
+test('declared order does not matter and show_if cycles terminate', () => {
+  const rev: Field[] = [
+    { key: 'b', type: 'short_text', label: 'B', required: true, show_if: { field: 'a', operator: 'is', value: 'x' } },
+    { key: 'a', type: 'short_text', label: 'A', show_if: { field: 'c', operator: 'is', value: 'go' } },
+    { key: 'c', type: 'short_text', label: 'C' },
+  ]
+  assert.equal(validateAnswers(rev, { c: 'no', a: 'x' }).ok, true)
+  const loop: Field[] = [
+    { key: 'a', type: 'short_text', label: 'A', show_if: { field: 'b', operator: 'is', value: 'x' } },
+    { key: 'b', type: 'short_text', label: 'B', show_if: { field: 'a', operator: 'is', value: 'x' } },
+  ]
+  assert.deepEqual(resolve(loop, { a: 'x', b: 'x' }).answers, {})
+})
