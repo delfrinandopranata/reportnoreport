@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.120.0
       - run: supabase link --project-ref "$PROJECT_REF"
       # --include-all: several agents numbered migrations by calendar date rather than by
       # true apply order, so a later-dated migration can land in main (and get recorded as
