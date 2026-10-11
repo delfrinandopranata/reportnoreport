@@ -5,6 +5,7 @@ export const DRAG_TYPE = 'application/x-rnr-step'
 export const GRID = 16
 /** Card width (208) plus room for the Yes/No labels and arrowheads between cards. */
 export const STEP_GAP = 320
+export const READABLE_ZOOM = 0.55
 export const snap = (p: { x: number; y: number }) => ({ x: Math.round(p.x / GRID) * GRID, y: Math.round(p.y / GRID) * GRID })
 
 export function newId(prefix: string, taken: Iterable<string>): string {
@@ -117,4 +118,20 @@ export function toFlow(g: Graph, opts: FlowOpts = {}): { nodes: CardNode[]; edge
       label: e.actions.length ? `${OUTCOME_LABELS[e.outcome]} · ${plural(e.actions.length, 'action', 'actions')}` : OUTCOME_LABELS[e.outcome],
     })),
   }
+}
+
+const CARD_W = 208
+/**
+ * The viewport the Map opens with, from positions alone (ReactFlow cannot fit before it has measured the cards, and
+ * its own fit may go below the pane minimum). Never below READABLE_ZOOM: a wider graph opens at its left edge, where Start is.
+ */
+export function readableViewport(g: { nodes: { x: number; y: number; outs: number }[] }, pane: { w: number; h: number }) {
+  const MARGIN = 24
+  const minX = Math.min(...g.nodes.map((n) => n.x))
+  const minY = Math.min(...g.nodes.map((n) => n.y))
+  const width = Math.max(...g.nodes.map((n) => n.x + CARD_W)) - minX
+  const height = Math.max(...g.nodes.map((n) => n.y + 72 + n.outs * 28)) - minY
+  const zoom = Math.min(1, Math.max(READABLE_ZOOM, Math.min((pane.w - 2 * MARGIN) / width, (pane.h - 2 * MARGIN) / height)))
+  const fits = width * zoom <= pane.w - 2 * MARGIN
+  return { zoom, x: fits ? (pane.w - width * zoom) / 2 - minX * zoom : MARGIN - minX * zoom, y: height * zoom <= pane.h - 2 * MARGIN ? (pane.h - height * zoom) / 2 - minY * zoom : MARGIN - minY * zoom }
 }

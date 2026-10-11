@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { STEP_GAP, addNode, connect, issuesByNode, nextSpot, removeNode, setActions, snap, stepLabel, stepOrder, toFlow } from './canvasOps.ts'
+import { READABLE_ZOOM, STEP_GAP, readableViewport, addNode, connect, issuesByNode, nextSpot, removeNode, setActions, snap, stepLabel, stepOrder, toFlow } from './canvasOps.ts'
 import { LEAVE, leave } from '../../../supabase/functions/_shared/workflow/fixture.ts'
 
 test('new steps get unique ids and snap to the 16px grid', () => {
@@ -70,4 +70,12 @@ test('new steps added without a pointer go one card gap to the right of the righ
   assert.deepEqual(nextSpot({ nodes: [], edges: [] }), { x: 0, y: 0 })
   assert.deepEqual(nextSpot(LEAVE), { x: 960 + STEP_GAP, y: 0 })
   assert.ok(STEP_GAP >= 208 + 96) // room for a card plus its edge labels
+})
+test('the map opens at a readable zoom: centred when it fits, panned to Start when it does not', () => {
+  const small = readableViewport({ nodes: [{ x: 0, y: 0, outs: 1 }, { x: 240, y: 0, outs: 0 }] }, { w: 600, h: 480 })
+  assert.ok(small.zoom >= READABLE_ZOOM && small.zoom <= 1)
+  assert.ok(small.x > 0) // centred, not pinned left
+  const wide = readableViewport({ nodes: LEAVE.nodes.map((n) => ({ x: n.position.x, y: n.position.y, outs: 2 })) }, { w: 598, h: 480 })
+  assert.equal(wide.zoom, READABLE_ZOOM) // 1170px of graph never shrinks below 0.55
+  assert.equal(wide.x, 24) // panned so the left edge, where Start is, sits at the pane margin
 })

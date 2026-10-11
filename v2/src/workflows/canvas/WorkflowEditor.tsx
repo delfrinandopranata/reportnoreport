@@ -11,11 +11,11 @@ import { setNavGuard, type Next } from '../../ui/navGuard'
 import { useAction } from '../../ui/useAction'
 import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { useMedia } from '../../ui/useMedia'
-import { NODE_TYPES, OUTCOME_LABELS, TYPE_LABELS, checkGraph, nodeName, type NodeType, type Outcome } from '../logic'
+import { NODE_TYPES, OUTCOME_LABELS, outcomesOf, TYPE_LABELS, checkGraph, nodeName, type NodeType, type Outcome } from '../logic'
 import { saveWorkflow, useOpenCounts, useRoles, type LoadedWorkflow } from '../api'
 import { WorkflowStatusMark } from '../StatusMark'
 import { WorkflowGate } from '../WorkflowGate'
-import { DRAG_TYPE, addNode, connect, nextSpot, issuesByNode, moveNode, removeNode, toFlow, type CardNode } from './canvasOps'
+import { DRAG_TYPE, addNode, connect, nextSpot, issuesByNode, moveNode, readableViewport, removeNode, toFlow, type CardNode } from './canvasOps'
 import { CARD_TYPES, EDGE_DEFAULTS } from './flowDefaults'
 import { Palette } from './Palette'
 import { SidePanel } from './SidePanel'
@@ -88,6 +88,21 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
     setNavGuard((next) => { if (next === `#/workflows/${wf.id}/edit`) return false; setLeaveTo(() => next); return true })
     return () => { removeEventListener('beforeunload', warn); setNavGuard(null) }
   }, [dirty, wf.id])
+
+  // Open at a readable zoom from positions alone; a timer, not rAF or measurement, so it also runs in a hidden tab.
+  const opened = useRef(false)
+  useEffect(() => {
+    if (view !== 'map') { opened.current = false; return }
+    if (opened.current || !graph.nodes.length) return
+    const id = window.setTimeout(() => {
+      const pane = board.current
+      if (!pane) return
+      opened.current = true
+      const outs = (n: (typeof graph.nodes)[number]) => outcomesOf(n).length
+      flow.setViewport(readableViewport({ nodes: graph.nodes.map((n) => ({ x: n.position.x, y: n.position.y, outs: outs(n) })) }, { w: pane.clientWidth, h: pane.clientHeight }), { duration: 0 })
+    }, 30)
+    return () => clearTimeout(id)
+  }, [view, graph, flow])
 
   const chooseView = (v: View) => {
     setView(v)
@@ -267,7 +282,7 @@ function Editor({ wf, onReload, reloaded }: { wf: LoadedWorkflow; onReload(): vo
                 onEdgeClick={onEdgeClick} onPaneClick={() => setSel(null)} snapToGrid snapGrid={[16, 16]} deleteKeyCode={null}
                 selectionKeyCode={null} multiSelectionKeyCode={null} edgesFocusable={false} selectNodesOnDrag={false}
                 nodesDraggable={isMd} nodesConnectable={isMd} proOptions={{ hideAttribution: false }} defaultEdgeOptions={EDGE_DEFAULTS}
-                ariaLabelConfig={ARIA} minZoom={0.3} fitView fitViewOptions={{ duration: 0, minZoom: 0.55, maxZoom: 1, padding: 0.1 }}>
+                ariaLabelConfig={ARIA} minZoom={0.3}>
                 <Background gap={16} size={1} color="var(--chart-grid)" />
                 <Controls showInteractive={false} />
               </ReactFlow>
