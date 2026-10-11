@@ -38,7 +38,7 @@ export function TemplateEditor({ id }: { id: string }) {
     <div className="flex flex-col gap-4">
       <a className="rnr-btn rnr-btn-ghost self-start" href="#/templates"><BackIcon />Back to templates</a>
       {tpl.isPending && <Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />}
-      {tpl.isError && card('We could not load this template', 'Check your connection and try again.',
+      {tpl.isError && card('This template did not load', 'Check your connection and try again.',
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void tpl.refetch()}>Try again</button>)}
       {tpl.isSuccess && (!tpl.data || tpl.data.org_id !== orgId) && card('This template does not exist', 'It may have been deleted, or it belongs to another organisation.')}
       {tpl.data && tpl.data.org_id === orgId && <Editor key={`${tpl.data.id}:${epoch}`} tpl={tpl.data} reloaded={epoch > 0} onReload={reload} />}
@@ -220,7 +220,7 @@ function Editor({ tpl, reloaded, onReload }: { tpl: TemplateRow; reloaded: boole
                 : <><option value="">No record (example values)</option>{records.data?.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</>}
             </select>
             <p className="rnr-hint">You stand in for the recipient and the step assignee. Links are filled in when the message is sent.</p>
-            {records.isError && <p className="rnr-error">We could not load records to preview with. Example values are shown.</p>}
+            {records.isError && <p className="rnr-error">Records to preview with did not load. Example values are shown.</p>}
             {records.isSuccess && records.data.length === 0 && <p className="rnr-hint">No records to preview with yet. Example values are shown.</p>}
           </div>
           <div>

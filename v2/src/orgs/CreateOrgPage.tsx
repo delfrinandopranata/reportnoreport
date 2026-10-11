@@ -20,7 +20,7 @@ export function CreateOrgPage() {
     return run(async () => {
       setError(null)
       const { data, error } = await supabase.rpc('create_org', { p_name: name.trim() })
-      if (error) { setError('We could not create your organisation. Try again.'); return }
+      if (error) { setError('Your organisation was not created. Try again.'); return }
       setOrgId(data)
       await qc.invalidateQueries({ queryKey: ['orgs'] })
       location.hash = '#/members'

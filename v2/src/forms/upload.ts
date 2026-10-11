@@ -16,4 +16,4 @@ export async function uploadFile(orgId: string, userId: string, file: Blob, file
 export const uploadMessage = (e: unknown) =>
   (e as Error)?.message === 'too-large'
     ? 'Choose a file under 10 MB.'
-    : 'We could not upload that file. Check your connection and choose it again.'
+    : 'That file did not upload. Check your connection and choose it again.'

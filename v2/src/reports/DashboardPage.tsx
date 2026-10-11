@@ -131,7 +131,7 @@ export function DashboardPage() {
       {widgets.isPending && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
       {widgets.isError && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load the dashboard. Check your connection and try again.</p>
+          <p role="alert">The dashboard did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void widgets.refetch()}>Try again</button></div>
         </div>
       )}

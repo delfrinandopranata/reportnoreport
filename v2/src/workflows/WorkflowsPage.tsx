@@ -76,7 +76,7 @@ export function WorkflowsPage() {
       {list.isPending && <div className="rnr-card"><Skeleton rows={[{ w: '40%' }, { w: '10%' }, { w: '14%' }]} /></div>}
       {list.isError && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load the workflows. Check your connection and try again.</p>
+          <p role="alert">The workflows did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => list.refetch()}>Try again</button></div>
         </div>
       )}

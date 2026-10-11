@@ -64,7 +64,7 @@ export function TemplatesPage() {
       {templates.isPending && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
       {templates.isError && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load the templates. Check your connection and try again.</p>
+          <p role="alert">The templates did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void templates.refetch()}>Try again</button></div>
         </div>
       )}

@@ -63,8 +63,8 @@ export function SignaturePad({ id, value, onChange, upload, describedBy, invalid
     if (!upload) return
     if (!hasInk) { setError('Draw or type your signature first.'); return }
     const blob = mode === 'type' ? await typedPng(typed.trim()) : await new Promise<Blob | null>((ok) => ref.current!.toBlob(ok, 'image/png'))
-    if (!blob) { setError('We could not save your signature. Clear it and sign again.'); return }
-    try { onChange(await upload(blob, 'signature.png')) } catch { setError('We could not save your signature. Clear it and sign again.') }
+    if (!blob) { setError('Your signature was not saved. Clear it and sign again.'); return }
+    try { onChange(await upload(blob, 'signature.png')) } catch { setError('Your signature was not saved. Clear it and sign again.') }
   })
 
   return (

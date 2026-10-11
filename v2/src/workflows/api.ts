@@ -172,7 +172,7 @@ export type SaveResult =
   | { ok: true; updatedAt: string; status: WorkflowStatus }
   | { ok: false; error: string; conflict?: boolean; nodeId?: string; issues?: Issue[] }
 export async function saveWorkflow(input: { workflowId: string; name: string; graph: Graph; updatedAt: string; publish: boolean }): Promise<SaveResult> {
-  const r = await call('save-workflow', { ...input }, 'We could not save this workflow. Try again.')
+  const r = await call('save-workflow', { ...input }, 'This workflow was not saved. Try again.')
   if (r.ok) return { ok: true, updatedAt: r.data.updatedAt as string, status: r.data.status as WorkflowStatus }
   return { ok: false, ...(r.body as { error: string; conflict?: boolean; nodeId?: string; issues?: Issue[] }) }
 }
@@ -182,7 +182,7 @@ export type AdvanceBody =
   | { action: 'submit'; taskId: string; outcome: Outcome; answers: Answers }
 /** Same shape FormRunner expects; `id` is the record id and `status` says where the record ended up. */
 export async function advance(body: AdvanceBody): Promise<SubmitResult> {
-  const r = await call('advance', { ...body }, 'We could not save this step. Try again.')
+  const r = await call('advance', { ...body }, 'This step was not saved. Try again.')
   if (r.ok) return { ok: true, id: r.data.recordId as string, status: r.data.status as RecordStatus, recordError: (r.data.error as string | null) ?? null }
   return { ok: false, error: r.body.error as string, fieldErrors: r.body.fieldErrors as Record<string, string> | undefined, terminal: r.status === 403 || r.status === 404 || r.status === 409 }
 }

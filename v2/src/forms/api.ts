@@ -39,5 +39,5 @@ export async function submitAnswers(formId: string, answers: Answers): Promise<S
     const body = await error.context.json().catch(() => null)
     if (typeof body?.error === 'string') return { ok: false, error: body.error, fieldErrors: body.fieldErrors }
   }
-  return { ok: false, error: 'We could not save your answers. Try again.' }
+  return { ok: false, error: 'Your answers were not saved. Try again.' }
 }

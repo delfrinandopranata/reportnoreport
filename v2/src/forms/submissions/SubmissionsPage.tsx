@@ -46,7 +46,7 @@ function Submissions({ form }: { form: LoadedForm }) {
       {subs.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
       {subs.isError && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load the submissions. Check your connection and try again.</p>
+          <p role="alert">The submissions did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => subs.refetch()}>Try again</button></div>
         </div>
       )}

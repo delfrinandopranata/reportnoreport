@@ -60,7 +60,7 @@ export function RolesPage() {
       {editing && <RoleEditor key={editing.id ?? 'new'} role={editing} onSave={save} onClose={close} />}
       {roles.isError ? (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load roles.</p>
+          <p role="alert">Roles did not load. Reload the page to try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => roles.refetch()}>Try again</button></div>
         </div>
       ) : !roles.data ? (

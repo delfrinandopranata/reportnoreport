@@ -72,7 +72,7 @@ function Access({ wf }: { wf: LoadedWorkflow }) {
       {(roles.isPending || grants.isPending) && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
       {(roles.isError || grants.isError) && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load access for this workflow. Check your connection and try again.</p>
+          <p role="alert">Access for this workflow did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => { roles.refetch(); grants.refetch() }}>Try again</button></div>
         </div>
       )}

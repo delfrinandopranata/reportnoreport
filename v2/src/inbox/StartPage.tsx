@@ -51,7 +51,7 @@ function StartForm({ wf, formId }: { wf: LoadedWorkflow; formId: string }) {
   if (form.isError) {
     return (
       <Card>
-        <p role="alert">We could not load the form. Check your connection and try again.</p>
+        <p role="alert">The form did not load. Check your connection and try again.</p>
         <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => form.refetch()}>Try again</button></div>
       </Card>
     )
@@ -92,7 +92,7 @@ function Start({ wf }: { wf: LoadedWorkflow }) {
   else if (startable.isError) {
     body = (
       <Card>
-        <p role="alert">We could not check your access. Check your connection and try again.</p>
+        <p role="alert">Your access could not be checked. Check your connection and try again.</p>
         <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => startable.refetch()}>Try again</button></div>
       </Card>
     )

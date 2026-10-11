@@ -36,7 +36,7 @@ export function OrgProvider({ userId, children }: { userId: string; children: Re
   return (
     <OrgContext.Provider value={{
       orgs, orgId: activeId, userId, setOrgId: setOrgIdState, permissions,
-      can: (p) => canHold(permissions, p), loading: orgsQ.isLoading || permsQ.isLoading,
+      can: (p) => canHold(permissions, p), loading: orgsQ.isLoading || (!!activeId && permsQ.isPending), // a gap render between orgs and permissions must not run the route guard
       failed: orgsQ.isError || permsQ.isError,
     }}>{children}</OrgContext.Provider>
   )

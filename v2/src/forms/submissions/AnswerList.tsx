@@ -14,7 +14,7 @@ function FileLink({ path, image, by }: { path: string; image: boolean; by: strin
   } })
   const name = fileName(path)
   if (url.isPending) return <span className="rnr-muted">Loading…</span>
-  if (url.isError) return <span className="rnr-error">We could not open this file. Reload the page to try again.</span>
+  if (url.isError) return <span className="rnr-error">This file did not open. Reload the page to try again.</span>
   return image
     ? <img src={url.data} alt={`Signature of ${by}`} style={{ maxHeight: 96, maxWidth: '100%', objectFit: 'contain', background: 'var(--surface-100)', padding: 4, border: '1px solid var(--line-200)', borderRadius: 'var(--radius-lg)' }} />
     : <a href={url.data} target="_blank" rel="noopener noreferrer" aria-label={`Open ${name} (opens in a new tab)`}>Open {name}</a>

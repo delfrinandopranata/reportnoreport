@@ -49,7 +49,7 @@ function Earlier({ task }: { task: TaskDetail }) {
   const emails = useMemberEmails(orgId)
   const who = (id: string) => (id === userId ? 'You' : emails.data?.get(id) ?? 'Former member')
   if (subs.isPending) return <Skeleton rows={[{ w: '100%', h: 48 }]} />
-  if (subs.isError) return <p role="alert">We could not load the earlier steps. Reload the page to try again.</p>
+  if (subs.isError) return <p role="alert">The earlier steps did not load. Reload the page to try again.</p>
   if (!subs.data.length) return null
   return (
     <section className="flex flex-col gap-2" aria-labelledby="earlier-h">
@@ -205,7 +205,7 @@ export function TaskPage({ id }: { id: string }) {
     <div className="flex flex-col gap-4">
       <a className="rnr-btn rnr-btn-ghost self-start" href="#/inbox"><BackIcon />Back to inbox</a>
       {task.isPending && <Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />}
-      {task.isError && notice('We could not load this task', 'Check your connection and try again.',
+      {task.isError && notice('This task did not load', 'Check your connection and try again.',
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => task.refetch()}>Try again</button>)}
       {task.isSuccess && (!task.data || task.data.org_id !== orgId) && notice('This task does not exist', 'It may be finished and no longer visible to you, or it belongs to another organisation.')}
       {task.data && task.data.org_id === orgId && <TaskView task={task.data} />}

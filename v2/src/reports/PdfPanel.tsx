@@ -50,7 +50,7 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
   if (pdf.isError || template.isError) {
     return (
       <section className="rnr-card gap-2" aria-label="PDF">
-        <p role="alert">We could not load the PDF for this record. Check your connection and try again.</p>
+        <p role="alert">The PDF for this record did not load. Check your connection and try again.</p>
         <div><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => { void pdf.refetch(); void template.refetch() }}>Try again</button></div>
       </section>
     )
@@ -107,8 +107,9 @@ export function PdfPanel({ recordId, workflowId, recordTitle, recordStatus }: { 
         )}
       </div>
       <p className="rnr-caption">Times in the PDF are shown in UTC.</p>
+      <p className="rnr-caption">Names and answers in Tamil, Chinese, Japanese and other scripts the PDF font does not cover print as empty boxes.</p>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announce}</p>
-      {(open.isError || save.isError) && <p className="rnr-error" role="alert">We could not open the PDF. Reload the page and try again.</p>}
+      {(open.isError || save.isError) && <p className="rnr-error" role="alert">The PDF did not open. Reload the page and try again.</p>}
       {error && <p className="rnr-error" role="alert">{error}</p>}
     </section>
   )

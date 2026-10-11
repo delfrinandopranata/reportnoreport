@@ -98,7 +98,7 @@ function Shell() {
     return (
       <main className="min-h-screen grid place-items-center p-4 sm:p-6">
         <div className="rnr-card gap-3 w-full max-w-[400px]">
-          <h1 className="page-title">We could not load your organisations</h1>
+          <h1 className="page-title">Your organisations did not load</h1>
           <p className="rnr-muted">Check your connection and reload the page.</p>
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => location.reload()}>Reload page</button>
         </div>

@@ -11,7 +11,7 @@ import { useNotice } from '../ui/useNotice'
 import { announcement, newArrivals } from './arrivals'
 import { NOTIFICATION_LIMIT, type Notification, markAllRead, markRead, useNotificationFeed, useNotifications, useUnreadCount } from './api'
 
-const MARK_FAILED = 'We could not mark your notifications as read. Try again.'
+const MARK_FAILED = 'Your notifications were not marked as read. Try again.'
 
 export function NotificationBell() {
   const { orgId, orgs, userId } = useOrg()
@@ -100,7 +100,7 @@ export function NotificationBell() {
           {list.isPending && <div className="px-3"><Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }, { w: '100%', h: 48 }]} /></div>}
           {list.isError && (
             <div className="flex flex-col items-start gap-2 px-3">
-              <p className="rnr-error" role="alert">We could not load your notifications. Check your connection and try again.</p>
+              <p className="rnr-error" role="alert">Your notifications did not load. Check your connection and try again.</p>
               <button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => void list.refetch()}>Try again</button>
             </div>
           )}

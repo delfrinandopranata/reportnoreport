@@ -89,7 +89,7 @@ export class ReportError extends Error {
   status: number | null // null: the network or something unexpected; a number: run-report's own refusal
   constructor(message: string, status: number | null) { super(message); this.status = status }
 }
-const RUN_FAILED = 'We could not run this report. Try again.'
+const RUN_FAILED = 'This report did not run. Try again.'
 /** The server's "Not allowed." says nothing to do, so each refusal gets a sentence a person can act on. */
 async function reportError(error: unknown, mayManage: boolean): Promise<ReportError> {
   if (error instanceof FunctionsHttpError) {

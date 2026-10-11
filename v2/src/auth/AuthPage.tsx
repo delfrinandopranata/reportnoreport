@@ -37,7 +37,7 @@ export function AuthPage() {
           {confirmSent ? (
             <>
               <h1 className="page-title">Check your email</h1>
-              <p role="status" className="rnr-muted">We sent a link to {email}. Open it to finish creating your account.</p>
+              <p role="status" className="rnr-muted">A link was sent to {email}. Open it to finish creating your account.</p>
             </>
           ) : (
             <>

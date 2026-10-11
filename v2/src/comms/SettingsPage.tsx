@@ -14,7 +14,7 @@ const CAPTIONS: Record<MutableKind, string> = {
   record_rejected: 'A workflow tells you a record was rejected.',
   custom: 'Any other message a workflow sends you.',
 }
-const SAVE_FAILED = 'We could not save that setting. Try again.'
+const SAVE_FAILED = 'That setting was not saved. Try again.'
 
 export function SettingsPage() {
   const { userId } = useOrg()
@@ -55,7 +55,7 @@ export function SettingsPage() {
         {prefs.isPending && <Skeleton rows={MUTABLE_KINDS.map(() => ({ w: '220px' }))} />}
         {prefs.isError && (
           <div className="flex flex-col items-start gap-2">
-            <p className="rnr-error" role="alert">We could not load your settings. Check your connection and try again.</p>
+            <p className="rnr-error" role="alert">Your settings did not load. Check your connection and try again.</p>
             <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void prefs.refetch()}>Try again</button>
           </div>
         )}

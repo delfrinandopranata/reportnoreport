@@ -18,7 +18,7 @@ export function WidgetBody({ w }: { w: WidgetRow }) {
     const e = run.error instanceof ReportError ? run.error : null
     return (
       <div className="flex flex-col gap-2">
-        <p className="rnr-error" role="alert">{e ? e.message : 'We could not load this widget.'}</p>
+        <p className="rnr-error" role="alert">{e ? e.message : 'This widget did not load. Try again.'}</p>
         {(!e || e.status === null) && <div><button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => void run.refetch()}>Try again</button></div>}
       </div>
     )

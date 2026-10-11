@@ -58,7 +58,7 @@ export function InboxPage() {
         {tasks.isPending && <Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }]} />}
         {tasks.isError && (
           <div className="rnr-card gap-3">
-            <p role="alert">We could not load your tasks. Check your connection and try again.</p>
+            <p role="alert">Your tasks did not load. Check your connection and try again.</p>
             <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => tasks.refetch()}>Try again</button></div>
           </div>
         )}
@@ -112,7 +112,7 @@ export function InboxPage() {
         {startable.isPending && <Skeleton rows={[{ w: '100%', h: 48 }]} />}
         {startable.isError && (
           <div className="rnr-card gap-3">
-            <p role="alert">We could not load the workflows you can start. Check your connection and try again.</p>
+            <p role="alert">The workflows you can start did not load. Check your connection and try again.</p>
             <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => startable.refetch()}>Try again</button></div>
           </div>
         )}

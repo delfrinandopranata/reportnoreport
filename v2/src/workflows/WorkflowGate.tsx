@@ -24,7 +24,7 @@ export function WorkflowGate({ id, back = { href: '#/workflows', label: 'Back to
   )
   if (wf.isPending) return shell(<Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 480 }]} />)
   if (wf.isError) {
-    return shell(<Notice title="We could not load this workflow" body="Check your connection and try again."
+    return shell(<Notice title="This workflow did not load" body="Check your connection and try again."
       action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => wf.refetch()}>Try again</button>} />)
   }
   if (!wf.data || wf.data.org_id !== orgId) {

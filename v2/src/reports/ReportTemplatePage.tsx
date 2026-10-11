@@ -31,7 +31,7 @@ export function ReportTemplatePage({ id }: { id: string }) {
   if (wf.isError || forms.isError || tpl.isError) {
     return (
       <div className="rnr-card gap-3 max-w-xl">
-        <p role="alert">We could not load this PDF template. Check your connection and try again.</p>
+        <p role="alert">This PDF template did not load. Check your connection and try again.</p>
         <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => { void wf.refetch(); void forms.refetch(); void tpl.refetch() }}>Try again</button></div>
       </div>
     )

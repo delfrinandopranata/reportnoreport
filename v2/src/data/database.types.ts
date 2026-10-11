@@ -574,8 +574,16 @@ isOneToOne: false
 "is_mine":
 { Args: { "t": Omit<Database["public"]['Tables']["tasks"]['Row'], Database["public"]['Tables']["tasks"]['ComputedFields']> }; Returns: boolean
                            },
+"my_active_orgs":
+{ Args: Record<PropertyKey, never>; Returns: string[]
+                           },
 "my_permissions":
 { Args: { "p_org": string }; Returns: string[]
+                           },
+"my_view_all_workflows":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "org_id": string,"workflow_id": string
+            }[]
                            },
 "open_record_counts":
 { Args: { "p_workflow": string }; Returns: {
@@ -605,6 +613,9 @@ isOneToOne: false
                            },
 "save_role":
 { Args: { "p_name": string,"p_org": string,"p_permissions": (string)[],"p_role_id": string }; Returns: string
+                           },
+"saved_report_shape_ok":
+{ Args: { "p_aggregate": Json,"p_columns": Json,"p_filters": Json,"p_group_by": Json }; Returns: boolean
                            },
 "seed_message_templates":
 { Args: { "p_org": string }; Returns: undefined

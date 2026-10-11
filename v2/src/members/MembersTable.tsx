@@ -15,7 +15,7 @@ export function MembersTable({ orgName, members, roles, failed, manage, canRemov
   if (failed) {
     return (
       <div className="rnr-card gap-3">
-        <p role="alert">We could not load members.</p>
+        <p role="alert">Members did not load. Reload the page to try again.</p>
         <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={onRetry}>Try again</button></div>
       </div>
     )

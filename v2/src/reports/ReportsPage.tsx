@@ -66,7 +66,7 @@ export function ReportsPage() {
       {reports.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
       {reports.isError && (
         <div className="rnr-card gap-3">
-          <p role="alert">We could not load the reports. Check your connection and try again.</p>
+          <p role="alert">The reports did not load. Check your connection and try again.</p>
           <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void reports.refetch()}>Try again</button></div>
         </div>
       )}

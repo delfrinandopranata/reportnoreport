@@ -23,7 +23,7 @@ export function FormGate({ id, children }: { id: string; children(form: LoadedFo
   const shell = (inner: ReactNode) => <div className="flex flex-col gap-4"><Back />{inner}</div>
   if (form.isPending) return shell(<Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />)
   if (form.isError) {
-    return shell(<Notice title="We could not load this form" body="Check your connection and try again."
+    return shell(<Notice title="This form did not load" body="Check your connection and try again."
       action={<button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => form.refetch()}>Try again</button>} />)
   }
   if (!form.data || form.data.org_id !== orgId) {

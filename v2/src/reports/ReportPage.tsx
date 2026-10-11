@@ -30,7 +30,7 @@ export function ReportPage({ id }: { id: string }) {
   if (report.isError) {
     return (
       <div className="rnr-card gap-3 max-w-xl">
-        <p role="alert">We could not load this report. Check your connection and try again.</p>
+        <p role="alert">This report did not load. Check your connection and try again.</p>
         <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void report.refetch()}>Try again</button></div>
       </div>
     )
@@ -112,7 +112,7 @@ function ReportView({ saved, onReload }: { saved: SavedReport; onReload(): Promi
     })
   }
 
-  const failed = run.error instanceof ReportError ? run.error : run.error ? new ReportError('We could not run this report. Try again.', null) : null
+  const failed = run.error instanceof ReportError ? run.error : run.error ? new ReportError('This report did not run. Try again.', null) : null
   const filename = csvFilename(f.name, today)
   const announce = r ? [totalsText(r), r.kind === 'groups' ? skippedText(r.skipped) : ''].filter(Boolean).join('. ') : ''
   const noDraft = !check.ok && dirty

@@ -58,7 +58,7 @@ function RecordView({ rec }: { rec: RecordRow }) {
       <section className="rnr-card gap-3" aria-labelledby="timeline-h">
         <h2 id="timeline-h" className="dialog-title">Timeline</h2>
         {(events.isPending || subs.isPending) && <Skeleton rows={[{ w: '100%', h: 32 }, { w: '100%', h: 32 }]} />}
-        {(events.isError || subs.isError) && <p role="alert">We could not load the timeline. Reload the page to try again.</p>}
+        {(events.isError || subs.isError) && <p role="alert">The timeline did not load. Reload the page to try again.</p>}
         {events.data && subs.data && (
           <ol className="flex flex-col">
             {events.data.map((e) => {
@@ -94,7 +94,7 @@ export function RecordPage({ id }: { id: string }) {
     <div className="flex flex-col gap-4">
       <a className="rnr-btn rnr-btn-ghost self-start" href="#/records"><BackIcon />Back to records</a>
       {rec.isPending && <Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />}
-      {rec.isError && notice('We could not load this record', 'Check your connection and try again.',
+      {rec.isError && notice('This record did not load', 'Check your connection and try again.',
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => rec.refetch()}>Try again</button>)}
       {rec.isSuccess && (!rec.data || rec.data.org_id !== orgId) && notice('This record does not exist', 'You may not have access to it, or it belongs to another organisation.')}
       {rec.data && rec.data.org_id === orgId && <RecordView rec={rec.data} />}
