@@ -1,12 +1,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { validateInvite } from './validate.ts'
 import { claimInvite } from './claim.ts'
+import { inviteMessage } from './message.ts'
+import { readAppUrl } from '../_shared/comms/render.ts'
+
+const appUrl = readAppUrl(Deno.env.get('APP_URL')) // throws at boot
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } })
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' } })
+  if (req.method === 'OPTIONS') return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } })
   const parsed = validateInvite(await req.json().catch(() => null))
   if (!parsed.ok) return json(400, { error: parsed.error })
   const { orgId, email, roleIds } = parsed.value
@@ -33,9 +37,15 @@ Deno.serve(async (req) => {
     return json(403, { error: rolesError.message })
   }
 
-  const { error: mailError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${req.headers.get('origin') ?? ''}/app/` })
-  // An existing auth user cannot be re-invited; they accept on next sign-in via accept_invites().
-  if (mailError && !/already been registered/i.test(mailError.message)) {
+  // Invites go through the queue with the org's editable "Invite to org" template; always email, whatever its channel.
+  const [{ data: tpl }, { data: org }] = await Promise.all([
+    admin.from('message_templates').select('id, subject, body').eq('org_id', orgId).eq('kind', 'invite').eq('is_system', true).maybeSingle(),
+    admin.from('orgs').select('name').eq('id', orgId).maybeSingle(),
+  ])
+  const { error: queueError } = tpl && org
+    ? await admin.from('messages').insert(inviteMessage(tpl, { orgId, orgName: org.name, email, appUrl }))
+    : { error: new Error('invite template missing') }
+  if (queueError) {
     await admin.from('members').delete().eq('id', member.id)
     return json(500, { error: 'Could not send the invite email.' })
   }
