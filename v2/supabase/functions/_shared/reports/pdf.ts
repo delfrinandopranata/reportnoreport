@@ -17,7 +17,7 @@ export type PdfSource = {
   names: Record<string, string> // user id → display name
 }
 export type PdfItem =
-  | { kind: 'text'; label: string; text: string }
+  | { kind: 'text'; label: string; text: string; placeholder?: true }
   | { kind: 'signature'; label: string; path: string }
   | { kind: 'rows'; label: string; rows: string[] }
 export type PdfModel = {
@@ -35,6 +35,9 @@ const OUTCOMES = { submitted: 'Submitted', approved: 'Approved', rejected: 'Reje
 
 export const formatWhen = (iso: string) => `${WHEN.format(new Date(iso))} UTC`
 const fileLabel = (path: string) => path.slice(path.lastIndexOf('/') + 1).replace(/^[0-9a-f-]{36}-/, '')
+const textItem = (label: string, text: string, placeholder = false): PdfItem =>
+  (placeholder ? { kind: 'text', label, text, placeholder: true } : { kind: 'text', label, text })
+const NOT_ANSWERED = 'Not answered'
 const unanswered = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)
 
 export function answerText(f: Field, v: unknown): string {
@@ -42,7 +45,7 @@ export function answerText(f: Field, v: unknown): string {
   switch (f.type) {
     case 'checkbox': return v === true ? 'Yes' : 'No'
     case 'date': { const d = toDay(v); return d === null ? String(v) : DAY.format(new Date(d * 86_400_000)) }
-    case 'number': case 'calculated': return typeof v === 'number' && Number.isFinite(v) ? NUM.format(v) : 'Not answered'
+    case 'number': case 'calculated': return typeof v === 'number' && Number.isFinite(v) ? NUM.format(v).replace(/^-/, '\u2212') : 'Not answered'
     case 'multi_select': return Array.isArray(v) ? v.map(String).join(', ') : String(v)
     case 'file': return typeof v === 'string' ? fileLabel(v) : 'Not answered'
     case 'signature': return 'Signed'
@@ -57,19 +60,20 @@ function inOrg(path: string, orgId: string, step: string): string {
 
 function itemFor(step: StepFields, key: string, sub: PdfSubmission | undefined, orgId: string): PdfItem | null {
   const f = step.fields.find((x) => x.key === key)
-  if (!f) return { kind: 'text', label: key, text: 'This question is no longer on the form.' }
-  if (!sub) return { kind: 'text', label: f.label, text: 'Not submitted yet' }
+  if (!f) return textItem(key, 'This question is no longer on the form.', true)
+  if (!sub) return textItem(f.label, 'Not submitted yet', true)
   // Judged as it was when submitted, so a within_days rule gives the same answer it gave then.
   if (resolve(step.fields, sub.answers, new Date(sub.created_at)).hidden.has(key)) return null
   const v = sub.answers[key]
   if (f.type === 'signature' && typeof v === 'string' && v) return { kind: 'signature', label: f.label, path: inOrg(v, orgId, step.step) }
   if (f.type === 'group') {
-    if (!Array.isArray(v) || !v.length) return { kind: 'text', label: f.label, text: 'Not answered' }
+    if (!Array.isArray(v) || !v.length) return textItem(f.label, NOT_ANSWERED, true)
     const rows = v.map((row, i) => `${i + 1}. ${(f.fields ?? []).map((c) =>
       `${c.label}: ${answerText(c, row && typeof row === 'object' ? (row as Answers)[c.key] : undefined)}`).join(' · ')}`)
     return { kind: 'rows', label: f.label, rows }
   }
-  return { kind: 'text', label: f.label, text: answerText(f, v) }
+  const text = answerText(f, v)
+  return textItem(f.label, text, text === NOT_ANSWERED && v !== NOT_ANSWERED) // a typed "Not answered" stays ink
 }
 
 /** What the PDF says, from each step's latest submission. Pure: render-pdfs lays it out and draws it. */

@@ -37,30 +37,41 @@ export function wrapText(text: string, width: number, size: number, bold: boolea
   return lines
 }
 
-/** Places the model on A4 pages (PDF coordinates, origin bottom-left). A heading never ends a page; a sign-off entry never splits. */
+/** Places the model on A4 pages (PDF coordinates, origin bottom-left), to design spec §3.4. A heading never ends a page; a sign-off entry never splits. */
 export function layoutPdf(m: PdfModel, measure: Measure): Op[][] {
   const { width: W, height: H, margin: M } = PAGE
   const inner = W - 2 * M
   const pages: Op[][] = [[]]
   let y = H - M
   const page = () => pages[pages.length - 1]
-  const need = (h: number) => { if (y - h < M + FOOTER) { pages.push([]); y = H - M } }
+  const newPage = () => {
+    pages.push([])
+    // Running head: a loose sheet can be matched to its record. Truncated with an ellipsis to the column.
+    let head = `${m.org} · ${m.title}`.replace(/\s+/g, ' ')
+    while (head.length > 1 && measure(head, 8, false) > inner) head = `${head.slice(0, -2).trimEnd()}…`
+    page().push({ op: 'text', x: M, y: H - M - 8, size: 8, bold: false, muted: true, text: head })
+    y = H - M - 16
+  }
+  const need = (h: number) => { if (y - h < M + FOOTER) newPage() }
   const gap = (h: number) => { y -= h }
-  const lines = (text: string, size: number, bold: boolean, muted: boolean, indent = 0) => {
-    for (const l of wrapText(text, inner - indent, size, bold, measure)) {
+  const wrap = (text: string, size: number, bold: boolean, indent = 0) => wrapText(text, inner - indent, size, bold, measure)
+  const put = (ls: string[], size: number, bold: boolean, muted: boolean, indent = 0) => {
+    for (const l of ls) {
       need(size * LEAD)
       y -= size * LEAD
       page().push({ op: 'text', x: M + indent, y, size, bold, muted, text: l })
     }
   }
+  const lines = (text: string, size: number, bold: boolean, muted: boolean, indent = 0) => put(wrap(text, size, bold, indent), size, bold, muted, indent)
   const image = (path: string) => {
     need(SIG.height + 6)
     y -= SIG.height + 6
     page().push({ op: 'image', x: M, y, width: SIG.width, height: SIG.height, path })
+    page().push({ op: 'rule', x: M, y: y - 2, width: SIG.width }) // baseline
   }
   const heading = (text: string) => {
     gap(14)
-    need(12 * LEAD + 8 + 9 * LEAD + 10.5 * LEAD)
+    need(12 * LEAD + 8 + 9 * LEAD + 2 * 10.5 * LEAD)
     lines(text, 12, true, false)
     page().push({ op: 'rule', x: M, y: y - 4, width: inner })
     gap(8)
@@ -75,10 +86,12 @@ export function layoutPdf(m: PdfModel, measure: Measure): Op[][] {
     heading(s.step)
     for (const it of s.items) {
       gap(6)
-      need(9 * LEAD + 10.5 * LEAD)
+      if (it.kind === 'signature') need(9 * LEAD + SIG.height + 6) // label and image never separate
+      else if (it.kind === 'text') need(9 * LEAD + Math.min(2, wrap(it.text, 10.5, false).length) * 10.5 * LEAD) // label + two lines
+      else need(9 * LEAD + 10.5 * LEAD)
       lines(it.label, 9, true, true)
-      if (it.kind === 'text') lines(it.text, 10.5, false, false)
-      else if (it.kind === 'rows') for (const r of it.rows) lines(r, 10.5, false, false, 12)
+      if (it.kind === 'text') lines(it.text, 10.5, false, !!it.placeholder)
+      else if (it.kind === 'rows') it.rows.forEach((r, i) => { if (i) gap(2); lines(r, 10.5, false, false, 12) })
       else image(it.path)
     }
   }
@@ -86,13 +99,16 @@ export function layoutPdf(m: PdfModel, measure: Measure): Op[][] {
     heading('Sign-off')
     for (const s of m.signoffs) {
       gap(6)
-      need(9 * LEAD + 10.5 * LEAD * 2 + (s.signature ? SIG.height + 6 : 0))
+      need(9 * LEAD + 10.5 * LEAD + (s.signature ? SIG.height + 6 : 0))
       lines(s.step, 9, true, true)
-      lines(s.line, 10.5, false, false)
+      lines(s.line, 10.5, false, s.line === 'Not done yet')
       if (s.signature) image(s.signature)
     }
   }
-  return pages.map((ops, i) => [...ops, {
-    op: 'text', x: M, y: M / 2, size: 8, bold: false, muted: true, text: `${m.generated} · Page ${i + 1} of ${pages.length}`,
-  } as Op])
+  return pages.map((ops, i) => {
+    const right = `Page ${i + 1} of ${pages.length}`
+    return [...ops,
+      { op: 'text', x: M, y: M / 2, size: 8, bold: false, muted: true, text: m.generated } as Op,
+      { op: 'text', x: M + inner - measure(right, 8, false), y: M / 2, size: 8, bold: false, muted: true, text: right } as Op]
+  })
 }
