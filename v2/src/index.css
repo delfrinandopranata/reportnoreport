@@ -117,3 +117,4 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .wf-card .react-flow__handle-left { left: -6px; }
 /* Segmented as a view toggle: the inactive label on the track is 4.4:1 in ink-muted, below AA at 14px. */
 .rnr-seg button[aria-pressed="false"] { color: var(--ink-label); }
+.rnr-pick .rnr-caption svg { margin-top: 0; width: 14px; height: 14px; }

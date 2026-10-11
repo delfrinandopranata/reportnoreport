@@ -16,7 +16,7 @@ function Row({ graph, node, selected, issues, open, onSelect }: { graph: Graph; 
         {outcomesOf(node).map((o) => {
           const to = graph.edges.find((e) => e.from === node.id && e.outcome === o)?.to
           return (
-            <span key={o} className="rnr-caption block"><RightIcon size={14} /> {OUTCOME_LABELS[o]}: {to ? nodeName(nodeById(graph, to)) : 'Not connected'}</span>
+            <span key={o} className="rnr-caption flex items-center gap-1"><RightIcon size={14} />{OUTCOME_LABELS[o]}: {to ? nodeName(nodeById(graph, to)) : 'Not connected'}</span>
           )
         })}
         {node.type === 'end' && <span className="rnr-caption block">Closes as {node.status}</span>}

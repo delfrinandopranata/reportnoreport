@@ -65,7 +65,10 @@ function ActionList({ edgeId, actions, onChange, onSay }: { edgeId: string; acti
     onChange([...actions, next])
     setChoice('')
     onSay(`${ACTION_TITLES[type]} action added.`)
-    focusLater(() => document.getElementById(`act-${edgeId}-${actions.length}`)?.querySelector<HTMLElement>('input, button'))
+    focusLater(() => {
+      const block = document.getElementById(`act-${edgeId}-${actions.length}`)
+      return block?.querySelector<HTMLElement>('input') ?? block?.querySelector<HTMLElement>('button') // Status text, else Remove
+    })
   }
   return (
     <div className="flex flex-col gap-2">

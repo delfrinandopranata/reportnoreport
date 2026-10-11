@@ -7,6 +7,7 @@ import { useForm, type SubmitResult } from '../forms/api'
 import { FormRunner } from '../forms/fill/FormRunner'
 import { uploadFile } from '../forms/upload'
 import { validateSchema } from '../forms/logic'
+import { stoppedBody } from '../records/status'
 import { advance, useStartable, type LoadedWorkflow } from '../workflows/api'
 import { WorkflowGate } from '../workflows/WorkflowGate'
 import type { StartNode } from '../workflows/logic'
@@ -28,7 +29,7 @@ function Success({ wf, done }: { wf: LoadedWorkflow; done: Started }) {
       {stopped ? <span aria-hidden="true"><StopIcon size={24} /></span> : <span className="rnr-pop" aria-hidden="true"><CheckIcon size={24} /></span>}
       <h2 ref={heading} tabIndex={-1} className="dialog-title">{stopped ? 'Saved, but the record stopped' : closed ? 'Record started and closed' : 'Record started'}</h2>
       <p className="rnr-muted">
-        {stopped ? `Your answers were saved, but the workflow stopped at a later step: ${done.recordError ?? 'a step could not run'}. Ask a workflow manager to fix it, then start a new record.`
+        {stopped ? stoppedBody(done.recordError)
           : closed ? `Your answers were saved and the record is already ${done.status}.`
             : `Your answers were saved and ${wf.name} has moved to its next step.`}
       </p>

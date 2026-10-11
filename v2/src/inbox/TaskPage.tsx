@@ -15,6 +15,7 @@ import { validateSchema } from '../forms/logic'
 import { AnswerList } from '../forms/submissions/AnswerList'
 import { useMemberEmails } from '../members/useMemberEmails'
 import { nodeById, nodeName, type FormNode } from '../workflows/logic'
+import { stoppedBody } from '../records/status'
 import { advance, claimTask, useRecordSubmissions, useTask, type RecordSubmission, type TaskDetail } from '../workflows/api'
 
 type Done = Extract<SubmitResult, { ok: true }>
@@ -87,7 +88,7 @@ function Completed({ task, done }: { task: TaskDetail; done: Done }) {
       {stopped ? <span aria-hidden="true"><StopIcon size={24} /></span> : <span className="rnr-pop" aria-hidden="true"><CheckIcon size={24} /></span>}
       <h2 ref={heading} tabIndex={-1} className="dialog-title">Step completed</h2>
       <p className="rnr-muted">
-        {stopped ? `Your answers were saved, but the workflow stopped at a later step: ${done.recordError ?? 'a step could not run'}. Ask a workflow manager to fix it, then start a new record.`
+        {stopped ? stoppedBody(done.recordError)
           : closed ? `${task.record.title} has closed as ${done.status}.` : `${task.record.title} has moved on.`}
       </p>
       <div className="flex flex-wrap gap-2">
