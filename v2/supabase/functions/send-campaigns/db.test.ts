@@ -212,7 +212,7 @@ Deno.test({
       await sql`insert into member_roles (member_id, role_id) select id, ${role.id} from members where org_id = ${ALPHA} and email like ${`r_-${tag}@render.test`}`
       const [tpl] = await sql`insert into message_templates (org_id, name, subject, body) values (${ALPHA}, ${`Render ${tag}`}, 'Hi {{recipient.name}}', 'Hello {{recipient.name}}.
 
-From {{org.name}}') returning id`
+From {{org.name}} @@recipient-name@@') returning id`
       const [inApp] = await sql`insert into message_templates (org_id, name, channel, subject, body) values (${ALPHA}, ${`Render ${tag} app`}, 'in_app', 'Notice for {{recipient.name}}', 'Read {{recipient.name}}') returning id`
       const make = async (name: string, template: string) => (await sql`
         insert into campaigns (org_id, name, template_id, audience, status, scheduled_at, sent_by)
@@ -228,7 +228,7 @@ From {{org.name}}') returning id`
         const fn = new URL(r.unsubscribe_url)
         assertEquals([fn.origin + fn.pathname, await checkUnsubscribe(UNSUB.secret, fn.searchParams.get('t'))], [UNSUB.url, r.id]) // the token the function verifies
         const page = `${UNSUB.page}?t=${fn.searchParams.get('t')}`
-        assertEquals([r.body_text.endsWith(`campaign emails: ${page}`), r.body_html.includes(`<a href="${page}"`), r.body_text.includes('@@')], [true, true, false])
+        assertEquals([r.body_text.endsWith(`campaign emails: ${page}`), r.body_html.includes(`<a href="${page}"`), r.body_text.includes('@@rnr-'), r.body_text.includes('@@recipient-name@@')], [true, true, false, true])
       }
       const apps = await sql`select recipient_user_id, status, channel, unsubscribe_url, sent_at is not null as sent, subject from messages where campaign_id = ${app} order by subject`
       assertEquals(apps.map((r) => [r.status, r.channel, r.unsubscribe_url, r.sent]), [['sent', 'in_app', null, true], ['sent', 'in_app', null, true]])
@@ -272,6 +272,43 @@ Deno.test({
       assertEquals((await read(retried)).attempts, 3)
     } finally {
       await sql`delete from campaigns where name like ${`Lease ${tag}%`}`
+      await store.end()
+      await sql.end()
+    }
+  },
+})
+
+Deno.test({
+  name: 'real Postgres: the follow-up reaches exactly the people campaign_stats.not_opened counts (QA-P6-5)',
+  ignore: !url,
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const sql = postgres(url!, { max: 1 })
+    const store = pgCampaignStore(url!)
+    const tag = crypto.randomUUID().slice(0, 8)
+    try {
+      const parent = await campaign(sql, `Follow ${tag} parent`, { kind: 'role', roleId: (await sql`select id from roles where org_id = ${ALPHA} and name = 'Member'`)[0].id }, ADMIN)
+      await sql`update campaigns set status = 'sent', audience_snapshot_at = now() where id = ${parent}`
+      const at = (e: string, status: string, over: Record<string, string | null> = {}) => sql`
+        insert into messages (org_id, campaign_id, recipient_email, subject, body_html, body_text, status, opened_at, bounced_at, complained_at)
+        values (${ALPHA}, ${parent}, ${`${e}-${tag}@follow.test`}, 'Hi', 'x', 'x', ${status}, ${over.opened ?? null}, ${over.bounced ?? null}, ${over.complained ?? null})`
+      const now = new Date().toISOString()
+      await at('unopened', 'sent')
+      await at('opened', 'sent', { opened: now })
+      await at('bounced', 'sent', { bounced: now })
+      await at('complained', 'sent', { complained: now })
+      await at('both', 'sent', { opened: now, complained: now })
+      await at('queued', 'queued')
+      await at('failed', 'failed')
+      const child = await campaign(sql, `Follow ${tag} child`, { kind: 'followup', campaignId: parent, who: 'not_opened' }, ADMIN)
+      await sendCampaigns({ authorised: true, store, now: () => new Date(), unsubscribe: UNSUB })
+      const reached = (await sql`select recipient_email::text as e from messages where campaign_id = ${child}`).map((r) => r.e)
+      assertEquals(reached, [`unopened-${tag}@follow.test`])
+      const [stats] = await sql`select not_opened from campaign_stats(${ALPHA}) where campaign_id = ${parent}`
+      assertEquals(stats.not_opened, reached.length)
+    } finally {
+      await sql`delete from campaigns where name like ${`Follow ${tag}%`}`
       await store.end()
       await sql.end()
     }

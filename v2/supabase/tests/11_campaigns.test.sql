@@ -1,5 +1,5 @@
 begin;
-select plan(42);
+select plan(43);
 
 create or replace function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -91,6 +91,7 @@ select is((select count(*)::int from messages where campaign_id = :'camp'), 4, '
 select is((select count(*)::int from messages where campaign_id is null), 0, 'but not workflow messages');
 select results_eq(format($$ select recipients, queued, sent, failed, delivered, opened, clicked, bounced, complained from campaign_stats(%L) where campaign_id = %L $$, :'alpha', :'camp'),
   $$ values (4, 0, 3, 1, 2, 1, 1, 1, 0) $$, 'stats count every message');
+select is((select not_opened from campaign_stats(:'alpha') where campaign_id = :'camp'), 1, 'not_opened counts sent, unopened, not bounced, not complained');
 select results_eq(format($$ select day, opens, clicks from campaign_daily(%L) $$, :'camp'),
   $$ values (0, 1, 0), (1, 0, 1), (2, 0, 0), (3, 0, 0), (4, 0, 0), (5, 0, 0), (6, 0, 0) $$, 'first opens and clicks per day for seven days');
 select throws_ok(format($$ select * from campaign_completion(%L) $$, :'camp'), '42501', null, 'completion needs records.view_all for the workflow');

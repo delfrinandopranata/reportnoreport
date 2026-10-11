@@ -3,6 +3,7 @@ import type { Person } from '../_shared/comms/campaign.ts'
 import type { ReportRecord } from '../_shared/reports/index.ts'
 import type { TemplateRow } from '../advance/notify.ts'
 import type { SavedRow } from '../run-report/handler.ts'
+import { NOT_OPENED } from '../_shared/comms/followup.ts'
 import type { CampaignRow, CampaignStore, CampaignTx, SenderReads } from './store.ts'
 
 const NIL = '00000000-0000-0000-0000-000000000000'
@@ -18,6 +19,9 @@ export function pgCampaignStore(url: string): CampaignStore & { end(): Promise<v
 }
 
 function campaignTx(t: postgres.TransactionSql): CampaignTx {
+  // Built from the shared definition, so the follow-up, the recipient list and campaign_stats.not_opened cannot drift apart.
+  const notOpened = NOT_OPENED.map(([op, col, v]) => (op === 'eq' ? t`${t(col)} = ${v}` : t`${t(col)} is null`))
+    .reduce((a, b) => t`${a} and ${b}`)
   const one = async <R>(q: Promise<readonly unknown[]>) => ((await q)[0] as R | undefined) ?? null
   const person = t`m.user_id as "userId", m.email::text as email, coalesce(nullif(btrim(m.full_name), ''), m.email::text) as name`
   const rows = (r: unknown) => r as Record<string, postgres.ParameterOrJSON<never>>[]
@@ -60,7 +64,7 @@ function campaignTx(t: postgres.TransactionSql): CampaignTx {
     parentRecipients: async (org, id, who) => [...(who === 'not_opened'
       ? await t<{ userId: string | null; email: string }[]>`
           select recipient_user_id as "userId", recipient_email::text as email from messages
-          where campaign_id = ${id} and org_id = ${org} and status = 'sent' and opened_at is null and bounced_at is null and complained_at is null`
+          where campaign_id = ${id} and org_id = ${org} and ${notOpened}`
       : await t<{ userId: string | null; email: string }[]>`
           select m.recipient_user_id as "userId", m.recipient_email::text as email from messages m join campaigns c on c.id = m.campaign_id
           where m.campaign_id = ${id} and m.org_id = ${org} and m.recipient_user_id is not null and m.status = 'sent'

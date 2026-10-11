@@ -72,13 +72,24 @@ export function planRecipients(found: Found, optedOut: ReadonlySet<string>, chan
   return { ok: true, list, excluded }
 }
 
-/** One decimal place; null when there is nothing to divide by, so the screen says so instead of 0% or NaN%. */
-export const pct = (n: number, d: number): number | null => (d > 0 ? Math.round((n / d) * 1000) / 10 : null)
+const LOW = 0.01 // markers that pctText shows as "<1%" and ">99%"; real values are whole tenths, so they cannot collide
+const HIGH = 99.99
+/**
+ * One decimal place; null when there is nothing to divide by, so the screen says so instead of 0% or NaN%. A real share
+ * is never reported as 0, and anything short of all is never reported as 100 (QA-P6-4).
+ */
+export function pct(n: number, d: number): number | null {
+  if (d <= 0) return null
+  if (n > 0 && n / d < 0.01) return LOW
+  if (n < d && n / d > 0.99) return HIGH
+  return Math.round((n / d) * 1000) / 10
+}
 const num = (n: number) => n.toLocaleString('en-GB')
-export const pctText = (p: number | null) => (p === null ? 'No data yet' : `${p.toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`)
+export const pctText = (p: number | null) =>
+  p === null ? 'No data yet' : p === LOW ? '<1%' : p === HIGH ? '>99%' : `${p.toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`
 
-export type Stats = { recipients: number; queued: number; sent: number; failed: number; delivered: number; opened: number; clicked: number; bounced: number; complained: number }
-export const NO_STATS: Stats = { recipients: 0, queued: 0, sent: 0, failed: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0 }
+export type Stats = { recipients: number; queued: number; sent: number; failed: number; delivered: number; opened: number; clicked: number; bounced: number; complained: number; notOpened: number }
+export const NO_STATS: Stats = { recipients: 0, queued: 0, sent: 0, failed: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0, notOpened: 0 }
 export type Tile = { label: string; value: string; caption: string }
 
 /** Delivered is a share of recipients; opened and clicked are shares of delivered (decision 7). */

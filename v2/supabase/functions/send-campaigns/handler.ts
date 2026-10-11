@@ -11,9 +11,14 @@ export type Deps = { authorised: boolean; store: CampaignStore; now(): Date; uns
 export class CampaignProblem extends Error {}
 function fail(message: string): never { throw new CampaignProblem(message) }
 
-/** Stand-ins for the per-person values; the insert replaces them in SQL, so no per-person work runs in the function. */
-export const NAME_TOKEN = '@@recipient-name@@'
-export const LINK_TOKEN = '@@unsubscribe-link@@'
+/**
+ * Stand-ins for the per-person values; the insert replaces them in SQL, so no per-person work runs in the function.
+ * Random per campaign, so no template can contain one by writing it (or guessing it) into its text.
+ */
+const standIns = () => {
+  const nonce = crypto.randomUUID().replaceAll('-', '')
+  return { name: `@@rnr-${nonce}-name@@`, link: `@@rnr-${nonce}-link@@` }
+}
 export const MAX_ATTEMPTS = 3 // runs that may start (and be killed) before the campaign is failed
 export const LEASE_MS = 3 * 60_000 // how long a started run holds the campaign; a killed run is retried after this
 const DUE = 5 // shortcut: five campaigns start per minute; raise when organisations schedule more at the same minute
@@ -71,11 +76,12 @@ async function prepare(tx: CampaignTx, id: string, deps: Deps, now: Date): Promi
   if (!plan.ok) fail(plan.error)
 
   const org = await tx.orgName(c.org_id)
-  const out = render(t, campaignContext(org, NAME_TOKEN))
-  const body = t.channel === 'email' ? withFooter(out, org, LINK_TOKEN) : out
+  const token = standIns()
+  const out = render(t, campaignContext(org, token.name))
+  const body = t.channel === 'email' ? withFooter(out, org, token.link) : out
   await tx.queueAudience({
     campaignId: c.id, orgId: c.org_id, templateId: t.id, channel: t.channel, subject: out.subject || t.name,
-    html: body.html, text: body.text, nameToken: NAME_TOKEN, linkToken: LINK_TOKEN, list: plan.list, now, unsubscribe: deps.unsubscribe,
+    html: body.html, text: body.text, nameToken: token.name, linkToken: token.link, list: plan.list, now, unsubscribe: deps.unsubscribe,
   })
   await tx.finish(c.id, { recipients: plan.list.length, excluded: plan.excluded, channel: t.channel, status: t.channel === 'email' ? 'sending' : 'sent', at: now })
   return true

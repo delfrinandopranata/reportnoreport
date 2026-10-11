@@ -45,14 +45,14 @@ isOneToOne: false
                   ]
                 },"campaigns": {
                   Row: {
-                    "audience": NonNullable<Json>,"audience_snapshot_at": string | null,"channel": string | null,"created_at": string,"created_by": string | null,"error": string | null,"excluded": NonNullable<Json>,"finished_at": string | null,"id": string,"linked_workflow_id": string | null,"name": string,"org_id": string,"recipients": number | null,"scheduled_at": string | null,"sent_by": string | null,"status": string,"template_id": string | null,"updated_at": string,"updated_by": string | null
+                    "attempts": number,"audience": NonNullable<Json>,"audience_snapshot_at": string | null,"channel": string | null,"claimed_until": string | null,"created_at": string,"created_by": string | null,"error": string | null,"excluded": NonNullable<Json>,"finished_at": string | null,"id": string,"linked_workflow_id": string | null,"name": string,"org_id": string,"recipients": number | null,"scheduled_at": string | null,"sent_by": string | null,"status": string,"template_id": string | null,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name": string,"org_id": string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                    "attempts"?: number,"audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"claimed_until"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name": string,"org_id": string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name"?: string,"org_id"?: string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
+                    "attempts"?: number,"audience"?: NonNullable<Json>,"audience_snapshot_at"?: string | null,"channel"?: string | null,"claimed_until"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"excluded"?: NonNullable<Json>,"finished_at"?: string | null,"id"?: string,"linked_workflow_id"?: string | null,"name"?: string,"org_id"?: string,"recipients"?: number | null,"scheduled_at"?: string | null,"sent_by"?: string | null,"status"?: string,"template_id"?: string | null,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -624,7 +624,7 @@ isOneToOne: false
                            },
 "campaign_stats":
 { Args: { "p_org": string }; Returns: {
-              "bounced": number,"campaign_id": string,"clicked": number,"complained": number,"delivered": number,"failed": number,"opened": number,"queued": number,"recipients": number,"sent": number
+              "bounced": number,"campaign_id": string,"clicked": number,"complained": number,"delivered": number,"failed": number,"not_opened": number,"opened": number,"queued": number,"recipients": number,"sent": number
             }[]
                            },
 "can_start":

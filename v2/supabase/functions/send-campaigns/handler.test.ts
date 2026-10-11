@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertMatch } from 'jsr:@std/assert@1'
-import { LEASE_MS, LINK_TOKEN, MAX_ATTEMPTS, NAME_TOKEN, NOT_PREPARED, PROBLEMS, sendCampaigns, type Deps } from './handler.ts'
+import { LEASE_MS, MAX_ATTEMPTS, NOT_PREPARED, PROBLEMS, sendCampaigns, type Deps } from './handler.ts'
 import type { CampaignRow, CampaignStore, CampaignTx, Finish, QueueInput, SenderReads } from './store.ts'
 import { MAX_AUDIENCE, TOO_BIG, type Person } from '../_shared/comms/campaign.ts'
 import { rec } from '../_shared/reports/fixture.ts'
@@ -106,9 +106,9 @@ Deno.test('a role campaign queues one email per member; the template is rendered
   const q = w.inputs[0]
   // Per-person values are filled in by the insert; the handler renders the shared text once around two tokens.
   assertEquals([q.subject, q.unsubscribe], ['News from Alpha School', UNSUB])
-  assertMatch(q.text, new RegExp(`^Hello ${NAME_TOKEN}\n\n--\n`))
-  assert(q.text.endsWith(`Unsubscribe from Alpha School campaign emails: ${LINK_TOKEN}`))
-  assertMatch(q.html, new RegExp(`<a href="${LINK_TOKEN}"[^>]*>Unsubscribe from Alpha School campaign emails</a>`))
+  assert(q.text.startsWith(`Hello ${q.nameToken}\n\n--\n`))
+  assert(q.text.endsWith(`Unsubscribe from Alpha School campaign emails: ${q.linkToken}`))
+  assert(q.html.includes(`<a href="${q.linkToken}"`))
   assertEquals(w.finished, { recipients: 2, excluded: ZERO, channel: 'email', status: 'sending', at: NOW })
   assertEquals(w.campaign.status, 'sending')
 })
@@ -192,8 +192,24 @@ Deno.test('an in-app campaign is queued as sent rows with no footer, and finishe
   const w = world({ templates: [{ ...EMAIL_T, channel: 'in_app' }] })
   await sendCampaigns(deps(w))
   assertEquals(w.messages.map((m) => [m.channel, m.status]), [['in_app', 'sent'], ['in_app', 'sent']])
-  assertEquals([w.inputs[0].channel, w.inputs[0].text.includes('Unsubscribe'), w.inputs[0].html.includes(LINK_TOKEN)], ['in_app', false, false])
+  assertEquals([w.inputs[0].channel, w.inputs[0].text.includes('Unsubscribe'), w.inputs[0].html.includes(w.inputs[0].linkToken)], ['in_app', false, false])
   assertEquals([w.campaign.status, w.finished?.status], ['sent', 'sent'])
+})
+
+Deno.test('the stand-ins for name and link are random per run, so a template that contains the old fixed ones keeps them', async () => {
+  const text = 'Hello {{recipient.name}} @@recipient-name@@ @@unsubscribe-link@@'
+  const run = async () => {
+    const w = world({ templates: [{ ...EMAIL_T, body: text }] })
+    await sendCampaigns(deps(w))
+    return w.inputs[0]
+  }
+  const [a, b] = [await run(), await run()]
+  assert(a.nameToken !== b.nameToken && a.linkToken !== b.linkToken)
+  for (const q of [a, b]) {
+    for (const fixed of ['@@recipient-name@@', '@@unsubscribe-link@@']) assert(q.nameToken !== fixed && q.linkToken !== fixed)
+    assert(q.nameToken !== q.linkToken)
+    assert(q.text.includes(`Hello ${q.nameToken} @@recipient-name@@ @@unsubscribe-link@@`)) // the literal text survives
+  }
 })
 
 Deno.test('a campaign another run claimed sends nothing', async () => {

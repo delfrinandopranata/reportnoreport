@@ -55,12 +55,26 @@ test('percentages are null when the denominator is zero', () => {
   assert.equal(pct(5, 0), null)
   assert.equal(pct(1, 3), 33.3)
   assert.equal(pct(2, 2), 100)
+  assert.equal(pct(0, 5), 0)
+  assert.equal(pctText(pct(0, 5)), '0%')
+  assert.equal(pctText(pct(5, 5)), '100%')
   assert.equal(pctText(null), 'No data yet')
   assert.equal(pctText(33.3), '33.3%')
   const tiles = campaignTiles({ ...NO_STATS, recipients: 3, sent: 3 }, 'email')
   assert.deepEqual(tiles.map((t) => [t.label, t.value]), [
     ['Recipients', '3'], ['Delivered', '0%'], ['Opened', 'No data yet'], ['Clicked', 'No data yet'], ['Not delivered', '0']])
   assert.deepEqual(campaignTiles(NO_STATS, 'in_app').map((t) => t.value), ['0', 'No data yet'])
+})
+
+test('a real share is never shown as 0%, and short of all is never shown as 100% (QA-P6-4)', () => {
+  assert.equal(pctText(pct(1, 2_999)), '<1%')
+  assert.equal(pctText(pct(29, 3_000)), '<1%')
+  assert.equal(pctText(pct(30, 3_000)), '1%')
+  assert.equal(pctText(pct(2_999, 3_000)), '>99%')
+  assert.equal(pctText(pct(2_970, 3_000)), '99%')
+  assert.equal(pctText(pct(3_000, 3_000)), '100%')
+  const tiles = campaignTiles({ ...NO_STATS, recipients: 2_999, sent: 2_999, delivered: 1, opened: 1 }, 'email')
+  assert.deepEqual(tiles.map((t) => t.value).slice(1, 3), ['<1%', '100%']) // opened is 1 of 1 delivered: all of them
 })
 
 test('tiles: opened and clicked are shares of delivered, and sending shows progress', () => {
