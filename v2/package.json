@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-dist.mjs",
     "lint": "oxlint src",
-    "test": "node --test 'src/**/*.test.ts' 'supabase/functions/_shared/**/*.test.ts'",
+    "test": "node --test 'src/**/*.test.ts' 'supabase/functions/_shared/**/*.test.ts' 'scripts/*.test.mjs'",
     "db:types": "supabase gen types typescript --local > src/data/database.types.ts"
   },
   "dependencies": {
