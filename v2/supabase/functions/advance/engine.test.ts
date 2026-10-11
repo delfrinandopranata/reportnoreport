@@ -1,7 +1,7 @@
 import { assertEquals, assertMatch } from 'jsr:@std/assert@1'
 import { BETA_USER, setup } from './testkit.ts'
 import { VALID } from '../_shared/forms/fixture.ts'
-import { F_APPROVAL, MEMBER, ROLE_ADMIN, leave } from '../_shared/workflow/fixture.ts'
+import { ADMIN, F_APPROVAL, MEMBER, ROLE_ADMIN, leave } from '../_shared/workflow/fixture.ts'
 import type { FormNode, TimeNode } from '../_shared/workflow/graph.ts'
 
 const SHORT = { ...VALID, end: '2026-10-12' } // 1 day, so the condition takes "no"
@@ -84,6 +84,23 @@ Deno.test('only the assignee or the person who claimed the task may act', async 
   await start()
   const res = await act(claim(), 'approved', MEMBER)
   assertEquals([res.status, res.body.error], [403, 'Not allowed.'])
+})
+
+Deno.test('a role holder who did not claim the task is told it is assigned to someone else', async () => {
+  const { db, start, act, claim } = setup()
+  db.holders.add(`${MEMBER}:${ROLE_ADMIN}`)
+  await start()
+  const res = await act(claim(), 'approved', MEMBER)
+  assertEquals([res.status, res.body.error], [403, 'This task is assigned to someone else.'])
+})
+Deno.test('a non-assignee on a user-assigned task is told it is assigned to someone else', async () => {
+  const g = leave()
+  ;(g.nodes.find((n) => n.id === 'approve') as FormNode).assignee = { user: ADMIN }
+  const { db, start, act } = setup(g)
+  await start()
+  const res = await act(db.tasks[0].id, 'approved', MEMBER)
+  assertEquals([res.status, res.body.error], [403, 'This task is assigned to someone else.'])
+  assertEquals(db.tasks[0].status, 'open')
 })
 
 Deno.test('two simultaneous approvals advance the record once', async () => {
