@@ -10,8 +10,8 @@ pnpm install
 supabase start
 supabase db reset          # migrations + seed
 cp .env.example .env.local # paste ANON_KEY from `supabase status`
-echo 'CRON_SECRET=local-cron-secret' > supabase/functions/.env.local   # once; matches the Vault secret in seed.sql
-supabase functions serve --env-file supabase/functions/.env.local &    # invite-member, submit-form, advance, resume, save-workflow
+cp supabase/functions/.env.example supabase/functions/.env.local   # once; set CRON_SECRET=local-cron-secret (matches seed.sql)
+supabase functions serve --env-file supabase/functions/.env.local &    # invite-member, submit-form, advance, resume, save-workflow, send-messages
 pnpm dev
 ```
 
@@ -19,14 +19,18 @@ The app is at http://localhost:5173/app/. Public pages: `/`, `/privacy`, `/terms
 
 Seed users (password `password123`): `owner@alpha.test`, `admin@alpha.test`, `member@alpha.test`, `viewer@alpha.test` (Alpha School), `owner@beta.test` (Beta HR). Invite emails land in Mailpit: http://127.0.0.1:54324.
 
+Email: every email is a queued `messages` row. `send-messages` (pg_cron, every minute) sends it through Mailpit locally (`EMAIL_TRANSPORT=mailpit`; read it at http://127.0.0.1:54324) and Resend when hosted. No Resend key is needed locally or for tests.
+
 ## Tests
 
 - `pnpm test` — unit (incl. the shared form logic in `supabase/functions/_shared/forms`)
 - `supabase test db` — RLS, roles, guards, forms and form-file storage
 - `deno test supabase/functions` — Edge Functions, the workflow engine and the shared tests under Deno
 - `RNR_TEST_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres DENO_NO_PACKAGE_JSON=1 deno test --allow-env --allow-net supabase/functions/advance/race.test.ts` — two simultaneous approvals against the local database
+- `RNR_TEST_DB_URL=… deno test --allow-env --allow-net supabase/functions/send-messages/race.test.ts` — two overlapping cron runs remind an overdue task once
+- `RNR_TEST_SUPABASE_URL=http://127.0.0.1:54321 RNR_TEST_ANON_KEY=<anon key> RNR_TEST_DB_URL=… deno test --allow-env --allow-net supabase/functions/_integration/realtime.test.ts` — Realtime sends a user only their own notifications
 
-Hosted projects: set the `CRON_SECRET` function secret (16+ characters) and create the Vault secrets `resume_url` (`https://<ref>.supabase.co/functions/v1/resume`) and `cron_secret` (same value).
+Hosted projects: set the function secrets `CRON_SECRET` (16+ characters), `APP_URL` (`https://reportnoreport.com/app/`), `EMAIL_TRANSPORT=resend`, `EMAIL_FROM` (a sender on a domain verified in Resend) and `RESEND_API_KEY`, and create the Vault secrets `resume_url` (`https://<ref>.supabase.co/functions/v1/resume`), `send_messages_url` (`https://<ref>.supabase.co/functions/v1/send-messages`) and `cron_secret` (same value as `CRON_SECRET`). A missing or malformed email setting stops `send-messages` at boot.
 
 ## Deploy
 
