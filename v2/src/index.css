@@ -146,3 +146,7 @@ dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 8
 .rnr-menu-item[aria-disabled="true"]:hover { background: transparent; }
 
 .rnr-preview { padding: var(--space-3); border: 1px solid var(--line-200); border-radius: var(--radius-lg); background: var(--surface-200); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.rnr-problem { min-width: 16rem; max-width: 28rem; overflow-wrap: anywhere; }
+.rnr-table tbody tr:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+/* sr-only cells are absolutely positioned: without a positioned scroll container they sit at the table's far edge and widen the page. */
+.rnr-card:has(> table.rnr-table) { position: relative; }

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../data/supabase'
 import type { MutableKind, TemplateKind } from './logic'
 import type { PreviewRecord } from './preview'
@@ -109,3 +109,25 @@ export const usePreviewRecords = (orgId: string | null) => useQuery({
     return data as PreviewRecord[]
   },
 })
+
+export type MessageFilter = 'all' | 'failed' | 'queued' | 'sent'
+export type QueueRow = {
+  id: string; recipient_email: string; subject: string; status: 'queued' | 'sent' | 'failed'
+  attempts: number; error: string | null; created_at: string; sent_at: string | null
+}
+export const MESSAGE_LIMIT = 200 // shortcut: newest 200 per filter; add paging when an org's queue outgrows a screen of failures
+
+export const useMessages = (orgId: string | null, filter: MessageFilter) => useQuery({
+  queryKey: ['messages', orgId, filter],
+  enabled: !!orgId,
+  placeholderData: keepPreviousData,
+  queryFn: async () => {
+    let q = supabase.from('messages').select('id, recipient_email, subject, status, attempts, error, created_at, sent_at')
+      .eq('org_id', orgId!).order('created_at', { ascending: false }).limit(MESSAGE_LIMIT)
+    if (filter !== 'all') q = q.eq('status', filter)
+    const { data, error } = await q
+    if (error) throw error
+    return data as QueueRow[]
+  },
+})
+export const retryMessage = (id: string) => supabase.rpc('retry_message', { p_message: id })

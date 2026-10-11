@@ -26,6 +26,7 @@ import { NotificationBell } from './comms/NotificationBell'
 import { SettingsPage } from './comms/SettingsPage'
 import { TemplatesPage } from './comms/TemplatesPage'
 import { TemplateEditor } from './comms/TemplateEditor'
+import { MessagesPage } from './comms/MessagesPage'
 import { Wordmark } from './ui/Wordmark'
 import { Skeleton } from './ui/Skeleton'
 import { useAction } from './ui/useAction'
@@ -65,6 +66,7 @@ function Page({ route }: { route: Route }) {
     case 'settings': return <SettingsPage />
     case 'templates': return <TemplatesPage />
     case 'template': return <TemplateEditor id={route.id} />
+    case 'messages': return <MessagesPage />
     default: return <MembersPage />
   }
 }
@@ -113,6 +115,7 @@ function Shell() {
             {link('#/forms', 'Forms', route.page.startsWith('form'))}
             {can('workflows.manage') && link('#/workflows', 'Workflows', route.page.startsWith('workflow'))}
             {can('comms.manage') && link('#/templates', 'Templates', route.page === 'templates' || route.page === 'template')}
+            {can('comms.manage') && link('#/messages', 'Messages', route.page === 'messages')}
             {link('#/members', 'Members', route.page === 'members')}
             {can('roles.manage') && link('#/roles', 'Roles', route.page === 'roles')}
           </nav>
