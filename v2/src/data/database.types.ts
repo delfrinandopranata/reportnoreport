@@ -43,6 +43,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"form_submissions": {
+                  Row: {
+                    "answers": NonNullable<Json>,"created_at": string,"form_id": string,"id": string,"org_id": string,"submitted_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answers": NonNullable<Json>,"created_at"?: string,"form_id": string,"id"?: string,"org_id": string,"submitted_by": string
+                  }
+                  Update: {
+                    "answers"?: NonNullable<Json>,"created_at"?: string,"form_id"?: string,"id"?: string,"org_id"?: string,"submitted_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "form_submissions_form_id_org_id_fkey"
+      columns: ["form_id","org_id"]
+isOneToOne: false
+      referencedRelation: "forms"
+      referencedColumns: ["id","org_id"]
+    }
+                  ]
+                },"forms": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"name": string,"org_id": string,"schema": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"org_id": string,"schema"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"org_id"?: string,"schema"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "forms_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"member_roles": {
                   Row: {
                     "member_id": string,"role_id": string
@@ -207,6 +247,9 @@ isOneToOne: false
                            },
 "set_member_roles":
 { Args: { "p_member_id": string,"p_role_ids": (string)[] }; Returns: undefined
+                           },
+"storage_path_org":
+{ Args: { "p_name": string }; Returns: string
                            }
           }
           Enums: {
