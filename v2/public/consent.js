@@ -25,7 +25,8 @@
     '.rnr-consent-text{margin:0;flex:1 1 16rem}' +
     '.rnr-consent-text a{color:inherit;text-decoration:underline;text-underline-offset:2px}' +
     '.rnr-consent-actions{display:flex;gap:var(--space-2,8px)}' +
-    '.rnr-consent .rnr-btn{min-height:44px}'
+    '.rnr-consent .rnr-btn{min-height:44px}' +
+    '@media (pointer:coarse){.rnr-consent-text a{display:inline-block;padding:12px 0;margin:-12px 0}}'
   const mount = () => { if (!css.isConnected) document.head.appendChild(css) }
   const hide = () => { bar?.remove(); bar = null }
   const show = () => {

@@ -247,3 +247,11 @@ html.js:not([data-motion="flat"]) .sl-card[data-state="now"] { transform: scale(
 .lp-feat .lp-off { color: var(--ink-3); padding-left: 24px; justify-content: space-between; text-decoration: line-through; text-decoration-color: var(--line-strong); }
 .lp-feat .lp-off .lp-pro { text-decoration: none; padding: 2px 6px; border-radius: var(--r-key); background: var(--soft); color: var(--ink-2); }
 .sl-tick, .lp-hero .rnr-chip, .lp-stage .rnr-chip, .rnr-trend { border-radius: var(--r-key); }
+
+/* touch: every link and button on the public pages gets a 44px hit area; negative margins keep the layout as it was */
+@media (pointer: coarse) {
+  .lp-bar .rnr-btn, .lp-foot .rnr-btn, .lp-wrap .rnr-btn, .lp-main .rnr-btn { min-height: 44px; }
+  .lp-links a { min-height: 44px; }
+  .lp-bar > .rnr-wordmark { padding: 12px 0; margin: -12px 0; }
+  .lp-foot a:not(.rnr-btn) { padding: 12px 0; margin: -12px 0; }
+}
