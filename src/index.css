@@ -1,0 +1,26 @@
+@import "../design/tokens.css";
+@import "../design/components/bundle.css";
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface-000: var(--surface-000);
+  --color-surface-100: var(--surface-100);
+  --color-surface-200: var(--surface-200);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-line-100: var(--line-100);
+  --color-line-200: var(--line-200);
+  --color-line-300: var(--line-300);
+  --color-ink: var(--ink);
+  --color-ink-label: var(--ink-label);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand-solid);
+  --color-brand-ink: var(--brand-solid-ink);
+  --color-in: var(--in);
+  --color-out: var(--out);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body { background: var(--surface-000); color: var(--ink); font-family: var(--font-sans); }
