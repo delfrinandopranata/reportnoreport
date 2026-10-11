@@ -3,10 +3,13 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { findSecrets, findMissingAlt, findPlaceholders, internalRefs, resolveRef } from './check-dist.mjs'
 
-test('flags service-role and secret keys', () => {
-  assert.deepEqual(findSecrets('a "role":"service_role" b'), ['service_role'])
-  assert.deepEqual(findSecrets('x sb_secret_abc123 y'), ['sb_secret_'])
-  assert.deepEqual(findSecrets('anon key only'), [])
+const jwt = (role) => `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ role })).toString('base64url')}.sig_abc`
+
+test('flags real service-role JWTs and secret keys, not the words', () => {
+  assert.deepEqual(findSecrets(`k="${jwt('service_role')}"`), ['service_role JWT'])
+  assert.deepEqual(findSecrets('x sb_secret_abcdefghij123 y'), ['sb_secret_ key'])
+  assert.deepEqual(findSecrets(`k="${jwt('anon')}"`), [])
+  assert.deepEqual(findSecrets('"Refusing: a service-role/secret key", "service_role", "sb_secret_"'), [])
 })
 
 test('flags <img> without alt, accepts alt=""', () => {

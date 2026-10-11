@@ -6,7 +6,13 @@ import { fileURLToPath } from 'node:url'
 const MAX_IMAGE_BYTES = 200 * 1024
 const IMAGE = /\.(png|jpe?g|webp|avif|gif|ico)$/i
 
-export const findSecrets = (text) => ['service_role', 'sb_secret_'].filter((s) => text.includes(s))
+const roleOf = (jwt) => {
+  try { return JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()).role } catch { return undefined }
+}
+export const findSecrets = (text) => [
+  ...((text.match(/eyJ[\w-]+\.eyJ[\w-]+\.[\w-]+/g) ?? []).some((t) => roleOf(t) === 'service_role') ? ['service_role JWT'] : []),
+  ...(/sb_secret_[A-Za-z0-9_-]{10,}/.test(text) ? ['sb_secret_ key'] : []),
+]
 export const findMissingAlt = (html) => (html.match(/<img\b[^>]*>/gi) ?? []).filter((tag) => !/\balt\s*=/i.test(tag))
 export const findPlaceholders = (text) => text.match(/\[(?:Company name|Governing law|TBD|TODO)[^\]]*\]/g) ?? []
 

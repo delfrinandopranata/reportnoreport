@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     return json(403, { error: rolesError.message })
   }
 
-  const { error: mailError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${req.headers.get('origin') ?? ''}/` })
+  const { error: mailError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${req.headers.get('origin') ?? ''}/app/` })
   // An existing auth user cannot be re-invited; they accept on next sign-in via accept_invites().
   if (mailError && !/already been registered/i.test(mailError.message)) {
     await admin.from('members').delete().eq('id', member.id)
