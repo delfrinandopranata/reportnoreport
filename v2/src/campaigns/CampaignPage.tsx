@@ -1,3 +1,4 @@
+import { LoadError } from '../comms/Note'
 import { Skeleton } from '../ui/Skeleton'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
@@ -12,20 +13,13 @@ export function CampaignPage({ id }: { id: string }) {
   const focusLater = useFocusAfterRender()
   const [notice, setNotice] = useNotice()
   if (c.isPending) return <Skeleton rows={[{ w: '40%', h: 32 }, { w: '100%', h: 320 }]} />
-  if (c.isError) {
-    return (
-      <div className="rnr-card gap-3">
-        <p role="alert">This campaign did not load. Check your connection and try again.</p>
-        <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void c.refetch()}>Try again</button></div>
-      </div>
-    )
-  }
+  if (c.isError) return <LoadError what="This campaign" onRetry={() => void c.refetch()} />
   if (!c.data) {
     return (
-      <div className="rnr-card gap-3">
-        <h1 className="page-title">This campaign does not exist</h1>
-        <p className="rnr-muted">It may have been deleted, or it belongs to another organisation.</p>
-        <div><a className="rnr-btn rnr-btn-secondary" href="#/campaigns">Go to campaigns</a></div>
+      <div className="rnr-empty">
+        <h1 className="rnr-heading">This campaign does not exist</h1>
+        <p>It may have been deleted, or it belongs to another organisation.</p>
+        <a className="rnr-btn rnr-btn-secondary" href="#/campaigns">Go to campaigns</a>
       </div>
     )
   }

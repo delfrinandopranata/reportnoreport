@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
+import { FieldError } from '../comms/Note'
 import { XIcon } from '../ui/icons'
 
 export type Review = {
@@ -35,13 +36,13 @@ export function SendDialog({ open, review: r, busy, error, onConfirm, onClose }:
           <dt>When</dt><dd>{r.when}</dd>
         </dl>
         <p className="rnr-muted">{left} {r.later ? 'You can cancel until sending starts.' : 'You cannot cancel it once sending starts.'}</p>
-        {error && <p className="rnr-error" role="alert">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>Cancel</button>
-          <button className="rnr-btn rnr-btn-primary" type="button" aria-busy={busy} onClick={onConfirm}>
-            {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? (r.later ? 'Scheduling…' : 'Sending…') : verb}
-          </button>
-        </div>
+        {error && <FieldError role="alert">{error}</FieldError>}
+      </div>
+      <div className="rnr-dialog-foot">
+        <button className="rnr-btn rnr-btn-secondary" type="button" data-autofocus onClick={onClose}>Cancel</button>
+        <button className="rnr-btn rnr-btn-primary" type="button" aria-busy={busy} onClick={onConfirm}>
+          {busy && <span className="rnr-spin" aria-hidden="true" />}{busy ? (r.later ? 'Scheduling…' : 'Sending…') : verb}
+        </button>
       </div>
     </dialog>
   )

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { CheckIcon, ClockIcon, DownloadIcon, XIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
+import { Note } from '../comms/Note'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -10,6 +12,7 @@ import { RECIPIENT_STATUS, type RecipientRow } from './logic'
 
 const time = (iso: string | null) => (iso ? <When iso={iso} /> : <span className="rnr-muted">Not yet</span>)
 const ICONS = { queued: ClockIcon, sent: CheckIcon, failed: XIcon, bounced: XIcon }
+const TONES = { queued: 'info', sent: 'ok', failed: 'down', bounced: 'down' } as const
 const WORDS = { ...RECIPIENT_STATUS, bounced: 'Bounced' } as Record<string, string>
 const pageText = (page: number, total: number) => `Showing ${((page - 1) * RECIPIENT_PAGE + 1).toLocaleString('en-GB')}–${Math.min(page * RECIPIENT_PAGE, total).toLocaleString('en-GB')} of ${total.toLocaleString('en-GB')}`
 
@@ -18,7 +21,7 @@ function Status({ row }: { row: RecipientRow }) {
   const Icon = ICONS[s]
   return (
     <>
-      <span className="rnr-status"><Icon size={14} />{WORDS[s]}</span>
+      <span className="rnr-status" data-tone={TONES[s]}><Icon size={14} />{WORDS[s]}</span>
       {s === 'queued' && row.error && <p className="rnr-caption">Will try again automatically.</p>}
     </>
   )
@@ -51,58 +54,59 @@ export function RecipientTable({ campaign: c }: { campaign: Campaign }) {
   })
 
   return (
-    <section className="rnr-card gap-3" aria-labelledby="recipients-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 id="recipients-h" className="dialog-title">Recipients</h2>
-        <button type="button" className="rnr-btn rnr-btn-secondary ml-auto" aria-busy={dl.busy} onClick={() => void download()}>
-          {dl.busy ? <span className="rnr-spin" aria-hidden="true" /> : <DownloadIcon />}{dl.busy ? 'Preparing CSV…' : 'Download CSV'}
-        </button>
-      </div>
-      <div className="rnr-seg self-start" role="group" aria-label="Show">
-        {filters.map(([f, label]) => (
-          <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); setPage(1) }}>{label}</button>
-        ))}
-      </div>
-      <p className="rnr-caption">Saves every recipient as {filename}, not just the ones shown here.</p>
-      <p className="rnr-caption" role="status">{dlNote}</p>
-      {dlError && <p className="rnr-error" role="alert">{dlError}</p>}
-      {q.isPending && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
-      {q.isError && (
-        <div className="flex flex-col items-start gap-2">
-          <p className="rnr-error" role="alert">The recipients did not load. Check your connection and try again.</p>
-          <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void q.refetch()}>Try again</button>
+    <FolderCard tab="Recipients" headingId="recipients-h">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="rnr-seg self-start" role="group" aria-label="Show">
+            {filters.map(([f, label]) => (
+              <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); setPage(1) }}>{label}</button>
+            ))}
+          </div>
+          <button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={dl.busy} onClick={() => void download()}>
+            {dl.busy ? <span className="rnr-spin" aria-hidden="true" /> : <DownloadIcon />}{dl.busy ? 'Preparing CSV…' : 'Download CSV'}
+          </button>
         </div>
-      )}
-      {q.data && !q.data.rows.length && <p className="rnr-muted">{empty[filter]}</p>}
-      {q.data && !!q.data.rows.length && (
-        <div className="rnr-table-card" aria-busy={q.isFetching || undefined}>
-          <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Recipients of {c.name}</caption>
-            <thead>
-              {inApp
-                ? <tr><th scope="col">Email</th><th scope="col" className="num">Read</th></tr>
-                : <tr><th scope="col">Email</th><th scope="col">Status</th><th scope="col" className="num">Delivered</th><th scope="col" className="num">Opened</th><th scope="col" className="num">Clicked</th><th scope="col">Reason</th></tr>}
-            </thead>
-            <tbody>
-              {q.data.rows.map((r) => (inApp
-                ? <tr key={r.id}><th scope="row">{r.recipient_email}</th><td className="num whitespace-nowrap">{time(r.opened_at)}</td></tr>
-                : (
-                  <tr key={r.id}>
-                    <th scope="row">{r.recipient_email}</th><td><Status row={r} /></td><td className="num whitespace-nowrap">{time(r.delivered_at)}</td>
-                    <td className="num whitespace-nowrap">{time(r.opened_at)}</td><td className="num whitespace-nowrap">{time(r.clicked_at)}</td>
-                    <td className="rnr-problem">{r.error ?? (r.status === 'failed' ? 'No reason was recorded.' : '')}</td>
-                  </tr>
-                )))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {total > 0 && <nav className="rnr-pager" aria-label="Recipient pages">
-        <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page <= 1 || undefined} onClick={() => page > 1 && setPage(page - 1)}>Previous</button>
-        <span className="rnr-num" aria-live="polite">{pageText(page, total)}</span>
-        <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page >= last || undefined} onClick={() => page < last && setPage(page + 1)}>Next</button>
-        {q.isFetching && <span className="rnr-spin" aria-hidden="true" />}
-      </nav>}
-    </section>
+        <p className="rnr-caption">Saves every recipient as {filename}, not just the ones shown here.</p>
+        <p className="rnr-caption" role="status">{dlNote}</p>
+        {dlError && <Note role="alert">{dlError}</Note>}
+        {q.isPending && <Skeleton rows={[{ w: '100%', h: 160 }]} />}
+        {q.isError && (
+          <div className="flex flex-col items-start gap-2">
+            <Note role="alert">The recipients did not load. Check your connection and try again.</Note>
+            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void q.refetch()}>Try again</button>
+          </div>
+        )}
+        {q.data && !q.data.rows.length && <p className="rnr-muted">{empty[filter]}</p>}
+        {q.data && !!q.data.rows.length && (
+          <div className="rnr-card rnr-table-card" aria-busy={q.isFetching || undefined}>
+            <table className="rnr-table rnr-sticky-first">
+              <caption className="sr-only">Recipients of {c.name}</caption>
+              <thead>
+                {inApp
+                  ? <tr><th scope="col">Email</th><th scope="col" className="num">Read</th></tr>
+                  : <tr><th scope="col">Email</th><th scope="col">Status</th><th scope="col" className="num">Delivered</th><th scope="col" className="num">Opened</th><th scope="col" className="num">Clicked</th><th scope="col">Reason</th></tr>}
+              </thead>
+              <tbody>
+                {q.data.rows.map((r) => (inApp
+                  ? <tr key={r.id}><th scope="row">{r.recipient_email}</th><td className="num whitespace-nowrap">{time(r.opened_at)}</td></tr>
+                  : (
+                    <tr key={r.id}>
+                      <th scope="row">{r.recipient_email}</th><td><Status row={r} /></td><td className="num whitespace-nowrap">{time(r.delivered_at)}</td>
+                      <td className="num whitespace-nowrap">{time(r.opened_at)}</td><td className="num whitespace-nowrap">{time(r.clicked_at)}</td>
+                      <td className="rnr-problem">{r.error ?? (r.status === 'failed' ? 'No reason was recorded.' : '')}</td>
+                    </tr>
+                  )))}
+              </tbody>
+            </table>
+            <nav className="rnr-pager" aria-label="Recipient pages">
+              <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page <= 1 || undefined} onClick={() => page > 1 && setPage(page - 1)}>Previous</button>
+              <span className="rnr-num" aria-live="polite">{pageText(page, total)}</span>
+              <button type="button" className="rnr-btn rnr-btn-ghost" aria-disabled={page >= last || undefined} onClick={() => page < last && setPage(page + 1)}>Next</button>
+              {q.isFetching && <span className="rnr-spin" aria-hidden="true" />}
+            </nav>
+          </div>
+        )}
+      </div>
+    </FolderCard>
   )
 }

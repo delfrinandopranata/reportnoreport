@@ -9,7 +9,10 @@ import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { whenText } from '../ui/dates'
 import { friendlyError } from '../ui/errors'
 import { BackIcon, CheckIcon, PencilIcon, XIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
 import { When } from '../ui/Time'
+import { FieldError, Note } from '../comms/Note'
+import { PageHead } from '../comms/PageHead'
 import { useAction } from '../ui/useAction'
 import { useLeaveGuard } from '../ui/useLeaveGuard'
 import { cancelCampaign, deleteCampaign, scheduleCampaign, updateCampaign, useAudienceSize, useCampaign, type Campaign, type CampaignFields } from './api'
@@ -170,44 +173,49 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
   const whenSummary = later ? `${whenText(new Date(at).toISOString())} (${zone.replaceAll('_', ' ')})` : 'Now'
   const field = (key: SendField | 'link') => problem?.field === key
   const err = (key: SendField | 'link') => (field(key) ? { 'aria-invalid': true as const, 'aria-describedby': `${uid}-${key}-e` } : {})
-  const errMsg = (key: SendField | 'link') => field(key) && !(key === 'audience' && tooBig) && <p id={`${uid}-${key}-e`} className="rnr-error" role="alert">{problem!.message}</p>
+  const errMsg = (key: SendField | 'link') => field(key) && !(key === 'audience' && tooBig) && <FieldError id={`${uid}-${key}-e`} role="alert">{problem!.message}</FieldError>
   const sendLabel = later ? 'Schedule' : 'Send now'
 
   return (
-    <section className="flex max-w-2xl flex-col gap-4" aria-labelledby="campaign-h">
-      <a className="rnr-btn rnr-btn-ghost self-start" href="#/campaigns"><BackIcon />Back to campaigns</a>
-      <h1 id="campaign-h" className="page-title" tabIndex={-1}>{c.name}</h1>
-      {dirty ? <p className="rnr-status"><PencilIcon size={14} />Unsaved changes</p> : <CampaignStatusMark status={c.status} />}
-      <p className="rnr-caption" aria-hidden="true">{notice}</p>
+    <section aria-labelledby="campaign-h">
+      <a className="rnr-crumb mb-2" href="#/campaigns"><BackIcon />Back to campaigns</a>
+      <PageHead id="campaign-h" crumb="Build · Campaigns" title={c.name} accent={false}
+        lede={dirty ? <span className="rnr-status"><PencilIcon size={14} />Unsaved changes</span> : <CampaignStatusMark status={c.status} />} />
+      {notice && <p className="rnr-caption mb-4" aria-hidden="true">{notice}</p>}
+      <div className="flex max-w-160 flex-col gap-6">
 
       {c.status === 'scheduled' && (
-        <section className="rnr-card gap-3" aria-labelledby="sch-h">
-          <h2 id="sch-h" className="dialog-title">Scheduled for <When iso={c.scheduled_at!} /></h2>
-          <dl className="rnr-review">
-            <dt>Template</dt><dd>{templates.data?.find((t) => t.id === c.template_id)?.name ?? 'A template that no longer exists'}</dd>
-            <dt>Audience</dt><dd>{audienceText(savedAudience, names)}</dd>
-            <dt>People</dt><dd>Counted when sending starts</dd>
-            {c.linked_workflow_id && <><dt>Workflow</dt><dd>{names.workflow ?? 'The linked workflow'}</dd></>}
-            <dt>Scheduled by</dt><dd>{c.sent_by === userId ? 'You' : emails.data?.get(c.sent_by ?? '') ?? 'Former member'}</dd>
-          </dl>
-          <p className="rnr-muted">It cannot be edited until the schedule is cancelled. You can cancel until sending starts.</p>
-          <div><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => { setDialogError(null); setConfirm('cancel') }}>Cancel schedule</button></div>
-        </section>
+        <FolderCard tab="Scheduled" headingId="sch-h">
+          <div className="flex flex-col gap-3">
+            <h2 className="rnr-dialog-title">Scheduled for <When iso={c.scheduled_at!} /></h2>
+            <dl className="rnr-review">
+              <dt>Template</dt><dd>{templates.data?.find((t) => t.id === c.template_id)?.name ?? 'A template that no longer exists'}</dd>
+              <dt>Audience</dt><dd>{audienceText(savedAudience, names)}</dd>
+              <dt>People</dt><dd>Counted when sending starts</dd>
+              {c.linked_workflow_id && <><dt>Workflow</dt><dd>{names.workflow ?? 'The linked workflow'}</dd></>}
+              <dt>Scheduled by</dt><dd>{c.sent_by === userId ? 'You' : emails.data?.get(c.sent_by ?? '') ?? 'Former member'}</dd>
+            </dl>
+            <p className="rnr-muted">It cannot be edited until the schedule is cancelled. You can cancel until sending starts.</p>
+            <div><button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => { setDialogError(null); setConfirm('cancel') }}>Cancel schedule</button></div>
+          </div>
+        </FolderCard>
       )}
       {c.status === 'failed' && (
-        <section className="rnr-card gap-3" aria-labelledby="fail-h">
-          <h2 id="fail-h" className="dialog-title">This campaign was not sent</h2>
-          <p className="rnr-status" data-wrap role="alert"><XIcon size={14} />{c.error ?? 'This campaign could not be prepared. Edit it and schedule it again.'}</p>
-          <p className="rnr-muted">Nothing was sent. Edit the campaign, then schedule it again.</p>
-          <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={send.busy} onClick={() => void reopen()}>{send.busy ? 'Opening…' : 'Edit and schedule again'}</button></div>
-          {dialogError && <p className="rnr-error" role="alert">{dialogError}</p>}
-        </section>
+        <FolderCard tab="Not sent" headingId="fail-h">
+          <div className="flex flex-col gap-3">
+            <h2 className="rnr-dialog-title">This campaign was not sent</h2>
+            <Note role="alert">{c.error ?? 'This campaign could not be prepared. Edit it and schedule it again.'}</Note>
+            <p className="rnr-muted">Nothing was sent. Edit the campaign, then schedule it again.</p>
+            <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={send.busy} onClick={() => void reopen()}>{send.busy ? 'Opening…' : 'Edit and schedule again'}</button></div>
+            {dialogError && <FieldError role="alert">{dialogError}</FieldError>}
+          </div>
+        </FolderCard>
       )}
 
       {draft && (
-        <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); void onSave() }} noValidate>
-          <section className="rnr-card gap-4" aria-labelledby={`${uid}-m`}>
-            <h2 id={`${uid}-m`} className="dialog-title">Message</h2>
+        <form className="flex flex-col gap-6" onSubmit={(e) => { e.preventDefault(); void onSave() }} noValidate>
+          <FolderCard tab="Message" headingId={`${uid}-m`}>
+            <div className="flex flex-col gap-4">
             <div className="rnr-field" data-invalid={field('name') || undefined}>
               <label className="rnr-label" htmlFor={`${uid}-n`}>Name</label>
               <input id={`${uid}-n`} className="rnr-input" value={d.name} maxLength={120} onChange={(e) => set({ name: e.target.value })} {...err('name')} />
@@ -223,7 +231,7 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
             ) : (
               <div className="rnr-field" data-invalid={field('template') || undefined}>
                 <label className="rnr-label" htmlFor={`${uid}-t`}>Message template</label>
-                <select id={`${uid}-t`} className="rnr-input" value={d.templateId} onChange={(e) => set({ templateId: e.target.value })}
+                <div className="rnr-select"><select id={`${uid}-t`} className="rnr-input" value={d.templateId} onChange={(e) => set({ templateId: e.target.value })}
                   {...(field('template') ? err('template') : issue ? { 'aria-describedby': `${uid}-ti` } : {})}>
                   <option value="">Choose a template</option>
                   {(['email', 'in_app'] as const).map((ch) => (
@@ -231,7 +239,7 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
                       {templates.data?.filter((t) => t.channel === ch && t.kind !== 'invite').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </optgroup>
                   ))}
-                </select>
+                </select></div>
                 {errMsg('template')}
                 <p id={`${uid}-ti`} className="rnr-hint rnr-hint-warn" aria-live="polite">{issue}</p>
               </div>
@@ -241,10 +249,11 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
                 ? 'Sent as an in-app notice. It shows in the bell and cannot be muted. People without an account are left out.'
                 : 'Sent as an email. Each person also gets the unsubscribe link in the footer.'}</p>
             )}
-          </section>
+            </div>
+          </FolderCard>
 
-          <section className="rnr-card gap-4" aria-labelledby={`${uid}-au`}>
-            <h2 id={`${uid}-au`} className="dialog-title">Audience</h2>
+          <FolderCard tab="Audience" headingId={`${uid}-au`}>
+            <div className="flex flex-col gap-4">
             {d.kind === 'followup' ? (
               <p className="rnr-muted">{savedAudience?.kind === 'followup' && savedAudience.who === 'not_completed'
                 ? <>People from <a href={`#/campaigns/${savedAudience.campaignId}`}>{earlier.data?.name ?? 'the earlier campaign'}</a> who have not finished {names.workflow ?? 'the linked workflow'}.</>
@@ -261,29 +270,29 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
                 {d.kind === 'role' && (roles.data && !roles.data.length ? <p className="rnr-muted">There are no roles yet.</p> : (
                   <div className="rnr-field">
                     <label className="rnr-label" htmlFor={`${uid}-r`}>Role</label>
-                    <select id={`${uid}-r`} className="rnr-input" value={d.roleId} onChange={(e) => set({ roleId: e.target.value })} {...err('audience')}>
+                    <div className="rnr-select"><select id={`${uid}-r`} className="rnr-input" value={d.roleId} onChange={(e) => set({ roleId: e.target.value })} {...err('audience')}>
                       <option value="">Choose a role</option>
                       {roles.data?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
+                    </select></div>
                   </div>
                 ))}
                 {d.kind === 'report' && (reports.data && !reports.data.length ? <p className="rnr-muted">There are no saved reports yet.</p> : (
                   <>
                     <div className="rnr-field">
                       <label className="rnr-label" htmlFor={`${uid}-p`}>Report</label>
-                      <select id={`${uid}-p`} className="rnr-input" value={d.reportId} onChange={(e) => set({ reportId: e.target.value, to: 'starter' })} {...err('audience')}>
+                      <div className="rnr-select"><select id={`${uid}-p`} className="rnr-input" value={d.reportId} onChange={(e) => set({ reportId: e.target.value, to: 'starter' })} {...err('audience')}>
                         <option value="">Choose a report</option>
                         {reports.data?.map((r) => <option key={r.id} value={r.id} disabled={!!r.group_by}>{r.group_by ? `${r.name} (grouped, lists groups not people)` : r.name}</option>)}
-                      </select>
+                      </select></div>
                       <p className="rnr-caption">Grouped reports list groups, not people, so they cannot be used.</p>
                     </div>
                     {d.reportId && (
                       <div className="rnr-field">
                         <label className="rnr-label" htmlFor={`${uid}-s`}>Send to</label>
-                        <select id={`${uid}-s`} className="rnr-input" value={d.to} onChange={(e) => set({ to: e.target.value })} aria-describedby={`${uid}-sh`}>
+                        <div className="rnr-select"><select id={`${uid}-s`} className="rnr-input" value={d.to} onChange={(e) => set({ to: e.target.value })} aria-describedby={`${uid}-sh`}>
                           <option value="starter">The person who started each record</option>
                           {sendTo.options.map((o) => <option key={o.path} value={o.path}>The address in {o.label}</option>)}
-                        </select>
+                        </select></div>
                         <p id={`${uid}-sh`} className="rnr-hint">A started-by recipient must be an active member. An address in an answer can belong to someone without an account.</p>
                         {sendTo.ready && !sendTo.options.length && <p className="rnr-caption">This workflow has no short-text answer that could hold an address.</p>}
                       </div>
@@ -293,33 +302,35 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
                 {errMsg('audience')}
               </>
             )}
-            <p className={`rnr-num ${'refused' in sizeLine ? 'rnr-error' : 'rnr-muted'}`} aria-live="polite" aria-atomic="true">{sizeLine.text}</p>
+            <p className={`rnr-num ${'refused' in sizeLine ? 'rnr-error' : 'rnr-muted'}`} aria-live="polite" aria-atomic="true">{'refused' in sizeLine && <XIcon />}{sizeLine.text}</p>
             {'retry' in sizeLine && <div><button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => void size.refetch()}>Try again</button></div>}
-            {tooBig && <p id={`${uid}-audience-e`} className="rnr-error" role="alert">{TOO_BIG}</p>}
+            {tooBig && <FieldError id={`${uid}-audience-e`} role="alert">{TOO_BIG}</FieldError>}
             <p className="rnr-caption">
               {audience?.kind === 'report' && 'Each record gives one recipient. Records without a usable address are left out. '}
               The list is taken when sending starts. {inApp
                 ? 'People without an account cannot get an in-app notice and are left out, and the report counts them.'
                 : 'People who unsubscribed, have no email address or are listed twice are left out, and the report counts them.'}
             </p>
-          </section>
+            </div>
+          </FolderCard>
 
-          <section className="rnr-card gap-4" aria-labelledby={`${uid}-ct`}>
-            <h2 id={`${uid}-ct`} className="dialog-title">Completion tracking</h2>
+          <FolderCard tab="Completion tracking" headingId={`${uid}-ct`}>
+            <div className="flex flex-col gap-4">
             <div className="rnr-field" data-invalid={field('link') || undefined}>
               <label className="rnr-label" htmlFor={`${uid}-w`}>Linked workflow (optional)</label>
-              <select id={`${uid}-w`} className="rnr-input" value={d.linked} onChange={(e) => set({ linked: e.target.value })}
+              <div className="rnr-select"><select id={`${uid}-w`} className="rnr-input" value={d.linked} onChange={(e) => set({ linked: e.target.value })}
                 aria-describedby={field('link') ? `${uid}-link-e` : `${uid}-wh`} aria-invalid={field('link') || undefined}>
                 <option value="">None</option>
                 {workflows.data?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
+              </select></div>
               <p id={`${uid}-wh`} className="rnr-hint">The report then shows how many recipients started and finished it, and can remind the ones who have not.</p>
               {errMsg('link')}
             </div>
-          </section>
+            </div>
+          </FolderCard>
 
-          <section className="rnr-card gap-4" aria-labelledby={`${uid}-wt`}>
-            <h2 id={`${uid}-wt`} className="dialog-title">When to send</h2>
+          <FolderCard tab="When to send" headingId={`${uid}-wt`}>
+            <div className="flex flex-col gap-4">
             <div className="rnr-seg self-start" role="group" aria-label="When to send">
               <button type="button" aria-pressed={!later} onClick={() => { setLater(false); setProblem(null) }}>Send now</button>
               <button type="button" aria-pressed={later} onClick={() => { setLater(true); setProblem(null) }}>Send later</button>
@@ -334,24 +345,28 @@ export function CampaignEditor({ campaign: c, notice, setNotice, onMoved }: Prop
                 {errMsg('at')}
               </div>
             )}
-          </section>
+            </div>
+          </FolderCard>
 
           {conflict && (
-            <div className="flex flex-col items-start gap-2" role="alert">
-              <p className="rnr-error">{SAVE_CONFLICT}</p>
-              <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => { guard.stay(); void refreshAll() }}>Reload campaign</button>
-            </div>
+            <Note role="alert">
+              <p>{SAVE_CONFLICT}</p>
+              <button type="button" className="rnr-btn rnr-btn-secondary mt-2" onClick={() => { guard.stay(); void refreshAll() }}>Reload campaign</button>
+            </Note>
           )}
-          {error && <p className="rnr-error" role="alert">{error}</p>}
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" className="rnr-btn rnr-btn-secondary" aria-busy={save.busy}>
-              {save.busy && <span className="rnr-spin" aria-hidden="true" />}{save.saved ? <><CheckIcon /><span className="rnr-pop">Saved</span></> : save.busy ? 'Saving…' : 'Save draft'}
-            </button>
-            <button type="button" className="rnr-btn rnr-btn-primary" onClick={review}>{sendLabel}</button>
-            <button type="button" className="rnr-btn rnr-btn-danger ml-auto" onClick={() => { setDialogError(null); setConfirm('delete') }}>Delete draft</button>
+          {error && <Note role="alert">{error}</Note>}
+          <div className="rnr-actions mt-0!">
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="submit" className="rnr-btn rnr-btn-secondary" aria-busy={save.busy}>
+                {save.busy && <span className="rnr-spin" aria-hidden="true" />}{save.saved ? <><CheckIcon /><span className="rnr-pop">Saved</span></> : save.busy ? 'Saving…' : 'Save draft'}
+              </button>
+              <button type="button" className="rnr-btn rnr-btn-primary" onClick={review}>{sendLabel}</button>
+            </div>
+            <button type="button" className="rnr-btn rnr-btn-danger" onClick={() => { setDialogError(null); setConfirm('delete') }}>Delete draft</button>
           </div>
         </form>
       )}
+      </div>
 
       <SendDialog open={confirm === 'send'} busy={send.busy} error={dialogError} onClose={() => setConfirm(null)} onConfirm={() => void confirmSend()}
         review={{ name: d.name.trim() || c.name, template: template ? `${template.name} · ${channelWord(template.channel)}` : 'No template', audience: audienceText(audience, names), people, workflow: linkedName, when: whenSummary, later, inApp }} />

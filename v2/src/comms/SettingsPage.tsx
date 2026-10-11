@@ -2,11 +2,14 @@ import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { FALLBACK, friendlyError } from '../ui/errors'
+import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
 import { AppearanceSettings } from '../ui/AppearanceSettings'
 import { useNotice } from '../ui/useNotice'
 import { setOptOut, useOptOut } from '../campaigns/api'
 import { setEmailPref, usePrefs } from './api'
+import { Note } from './Note'
+import { PageHead } from './PageHead'
 import { KIND_LABELS, MUTABLE_KINDS, type MutableKind } from './logic'
 
 const CAPTIONS: Record<MutableKind, string> = {
@@ -46,41 +49,44 @@ export function SettingsPage() {
   }
 
   return (
-    <section className="flex max-w-2xl flex-col gap-4" aria-labelledby="settings-h">
-      <h1 className="page-title" id="settings-h" tabIndex={-1}>Settings</h1>
+    <section className="max-w-2xl" aria-labelledby="settings-h">
+      <PageHead id="settings-h" title="Settings" />
+      <div className="flex flex-col gap-6">
       <AppearanceSettings />
-      <section className="rnr-card gap-4" aria-labelledby="email-h">
-        <h2 id="email-h" className="dialog-title">Email notifications</h2>
-        <p className="rnr-muted">
-          In-app notifications always arrive in the bell and cannot be turned off. These settings only stop the email copy.
-          They apply in every organisation you belong to. Invitations are always emailed.
-        </p>
-        {prefs.isPending && <Skeleton rows={MUTABLE_KINDS.map(() => ({ w: '220px' }))} />}
-        {prefs.isError && (
-          <div className="flex flex-col items-start gap-2">
-            <p className="rnr-error" role="alert">Your settings did not load. Check your connection and try again.</p>
-            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void prefs.refetch()}>Try again</button>
-          </div>
-        )}
-        {prefs.isSuccess && (
-          <fieldset className="flex flex-col gap-3">
-            <legend className="rnr-fieldset-label">Email me when</legend>
-            {MUTABLE_KINDS.map((k) => (
-              <div key={k} className="flex flex-col">
-                <label className="rnr-check">
-                  <input type="checkbox" checked={prefs.data.get(k) ?? true} aria-describedby={`pref-${k}`}
-                    onChange={(e) => toggle(k, e.target.checked)} />
-                  <span>{KIND_LABELS[k]}</span>
-                </label>
-                <p className="rnr-caption rnr-pref-caption" id={`pref-${k}`}>{CAPTIONS[k]}</p>
-              </div>
-            ))}
-          </fieldset>
-        )}
-        <p className="rnr-caption" role="status">{notice}</p>
-        {error && <p className="rnr-error" role="alert">{error}</p>}
-      </section>
+      <FolderCard tab="Email notifications" headingId="email-h">
+        <div className="flex flex-col gap-4">
+          <p className="rnr-lede">
+            In-app notifications always arrive in the bell and cannot be turned off. These settings only stop the email copy.
+            They apply in every organisation you belong to. Invitations are always emailed.
+          </p>
+          {prefs.isPending && <Skeleton rows={MUTABLE_KINDS.map(() => ({ w: '220px' }))} />}
+          {prefs.isError && (
+            <div className="flex flex-col items-start gap-2">
+              <Note role="alert">Your settings did not load. Check your connection and try again.</Note>
+              <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void prefs.refetch()}>Try again</button>
+            </div>
+          )}
+          {prefs.isSuccess && (
+            <fieldset className="flex flex-col gap-3">
+              <legend className="rnr-fieldset-label mb-2">Email me when</legend>
+              {MUTABLE_KINDS.map((k) => (
+                <div key={k} className="flex flex-col">
+                  <label className="rnr-check">
+                    <input type="checkbox" role="switch" className="rnr-switch" checked={prefs.data.get(k) ?? true} aria-describedby={`pref-${k}`}
+                      onChange={(e) => toggle(k, e.target.checked)} />
+                    <span>{KIND_LABELS[k]}</span>
+                  </label>
+                  <p className="rnr-caption ml-14" id={`pref-${k}`}>{CAPTIONS[k]}</p>
+                </div>
+              ))}
+            </fieldset>
+          )}
+          <p className="rnr-caption" role="status">{notice}</p>
+          {error && <Note role="alert">{error}</Note>}
+        </div>
+      </FolderCard>
       <CampaignEmails />
+      </div>
     </section>
   )
 }
@@ -110,30 +116,31 @@ function CampaignEmails() {
     })
   }
   return (
-    <section className="rnr-card gap-4" aria-labelledby="campaign-emails-h">
-      <h2 id="campaign-emails-h" className="dialog-title">Campaign emails</h2>
-      <p className="rnr-muted">
-        Announcements and reminders that {org} sends to many people at once. Turning this off stops them from {org} only; emails about your own tasks and records still arrive.
-      </p>
-      {optOut.isPending && <Skeleton rows={[{ w: '260px' }]} />}
-      {optOut.isError && (
-        <div className="flex flex-col items-start gap-2">
-          <p className="rnr-error" role="alert">This setting did not load. Check your connection and try again.</p>
-          <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void optOut.refetch()}>Try again</button>
-        </div>
-      )}
-      {optOut.isSuccess && !optOut.data && <p className="rnr-muted">{org} has no email address for you, so it cannot send you campaign emails.</p>}
-      {optOut.isSuccess && optOut.data && (
-        <div className="flex flex-col">
-          <label className="rnr-check">
-            <input type="checkbox" checked={!optOut.data.optedOut} aria-describedby="campaign-emails-c" onChange={(e) => toggle(e.target.checked)} />
-            <span>Campaign emails from {org}</span>
-          </label>
-          <p className="rnr-caption rnr-pref-caption" id="campaign-emails-c">Applies to {optOut.data.email}. Other organisations are not affected.</p>
-        </div>
-      )}
-      <p className="rnr-caption" role="status">{notice}</p>
-      {error && <p className="rnr-error" role="alert">{error}</p>}
-    </section>
+    <FolderCard tab="Campaign emails" headingId="campaign-emails-h">
+      <div className="flex flex-col gap-4">
+        <p className="rnr-lede">
+          Announcements and reminders that {org} sends to many people at once. Turning this off stops them from {org} only; emails about your own tasks and records still arrive.
+        </p>
+        {optOut.isPending && <Skeleton rows={[{ w: '260px' }]} />}
+        {optOut.isError && (
+          <div className="flex flex-col items-start gap-2">
+            <Note role="alert">This setting did not load. Check your connection and try again.</Note>
+            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void optOut.refetch()}>Try again</button>
+          </div>
+        )}
+        {optOut.isSuccess && !optOut.data && <p className="rnr-muted">{org} has no email address for you, so it cannot send you campaign emails.</p>}
+        {optOut.isSuccess && optOut.data && (
+          <div className="flex flex-col">
+            <label className="rnr-check">
+              <input type="checkbox" role="switch" className="rnr-switch" checked={!optOut.data.optedOut} aria-describedby="campaign-emails-c" onChange={(e) => toggle(e.target.checked)} />
+              <span>Campaign emails from {org}</span>
+            </label>
+            <p className="rnr-caption ml-14" id="campaign-emails-c">Applies to {optOut.data.email}. Other organisations are not affected.</p>
+          </div>
+        )}
+        <p className="rnr-caption" role="status">{notice}</p>
+        {error && <Note role="alert">{error}</Note>}
+      </div>
+    </FolderCard>
   )
 }

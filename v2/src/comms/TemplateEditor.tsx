@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
 import { BackIcon, CheckIcon, PencilIcon, StopIcon } from '../ui/icons'
 import { setNavGuard, type Next } from '../ui/navGuard'
+import { FolderCard } from '../ui/FolderCard'
 import { Skeleton } from '../ui/Skeleton'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
@@ -17,6 +18,8 @@ import { insertToken } from './insert'
 import { DATA_PREFIX, KIND_LABELS, isVariable, render } from './logic'
 import { previewContext } from './preview'
 import { LIMITS, validateTemplate, type TemplateErrors } from './validate'
+import { FieldError, Note } from './Note'
+import { PageHead } from './PageHead'
 import { VariableMenu } from './VariableMenu'
 
 type Target = 'subject' | 'body'
@@ -32,11 +35,11 @@ export function TemplateEditor({ id }: { id: string }) {
     setEpoch((n) => n + 1)
   }
   const card = (title: string, text: string, action?: React.ReactNode) => (
-    <div className="rnr-card gap-3 max-w-xl"><h1 className="page-title">{title}</h1><p className="rnr-muted">{text}</p>{action && <div>{action}</div>}</div>
+    <div className="rnr-empty"><h1 className="rnr-heading">{title}</h1><p>{text}</p>{action}</div>
   )
   return (
     <div className="flex flex-col gap-4">
-      <a className="rnr-btn rnr-btn-ghost self-start" href="#/templates"><BackIcon />Back to templates</a>
+      <a className="rnr-crumb mb-2 self-start" href="#/templates"><BackIcon />Back to templates</a>
       {tpl.isPending && <Skeleton rows={[{ w: '240px', h: 32 }, { w: '100%', h: 320 }]} />}
       {tpl.isError && card('This template did not load', 'Check your connection and try again.',
         <button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void tpl.refetch()}>Try again</button>)}
@@ -144,95 +147,103 @@ function Editor({ tpl, reloaded, onReload }: { tpl: TemplateRow; reloaded: boole
         aria-describedby={[hint && `${uid}-${k}-hint`, errors[k] && `${uid}-${k}-err`].filter(Boolean).join(' ') || undefined}
         onFocus={() => { if (k === 'subject') setTarget('subject') }} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
       {hint && <p id={`${uid}-${k}-hint`} className="rnr-hint">{hint}</p>}
-      {errors[k] && <p id={`${uid}-${k}-err`} className="rnr-error">{errors[k]}</p>}
+      {errors[k] && <FieldError id={`${uid}-${k}-err`}>{errors[k]}</FieldError>}
     </div>
   )
 
   return (
     <>
-      <h1 className="page-title" id="tpl-h" tabIndex={-1}>Edit template</h1>
-      {tpl.is_system && <p className="rnr-muted">System template for {KIND_LABELS[tpl.kind]}. You can change its words and channel; it cannot be deleted.</p>}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <form className="rnr-card rnr-card-open gap-4" noValidate onSubmit={(e) => { e.preventDefault(); void submit() }}>
-          {field('name', 'Name')}
-          <div className="rnr-field">
-            <span className="rnr-label" id={`${uid}-ch`}>Channel</span>
-            <div className="rnr-seg self-start" role="group" aria-labelledby={`${uid}-ch`}>
-              {(['email', 'in_app'] as const).map((c) => (
-                <button key={c} type="button" aria-pressed={f.channel === c} onClick={() => setF({ ...f, channel: c })}>{CHANNEL_WORDS[c]}</button>
-              ))}
+      <PageHead id="tpl-h" crumb="Build · Templates" title="Edit template" lede={tpl.is_system ? `System template for ${KIND_LABELS[tpl.kind]}. You can change its words and channel; it cannot be deleted.` : undefined} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <form noValidate onSubmit={(e) => { e.preventDefault(); void submit() }}>
+          <FolderCard tab="Template" headingId={`${uid}-tab`}>
+            <div className="flex flex-col gap-4">
+              {field('name', 'Name')}
+              <div className="rnr-field">
+                <span className="rnr-label" id={`${uid}-ch`}>Channel</span>
+                <div className="rnr-seg self-start" role="group" aria-labelledby={`${uid}-ch`}>
+                  {(['email', 'in_app'] as const).map((c) => (
+                    <button key={c} type="button" aria-pressed={f.channel === c} onClick={() => setF({ ...f, channel: c })}>{CHANNEL_WORDS[c]}</button>
+                  ))}
+                </div>
+                <p className="rnr-hint">
+                  {tpl.kind === 'invite'
+                    ? 'Invitations are always emailed, whatever you choose here.'
+                    : 'Members always get an in-app notification. Email also goes out unless they turned this type off.'}
+                </p>
+              </div>
+              {field('subject', 'Subject', 'One line. Line breaks are removed.', subjectRef)}
+              <div className="rnr-field" data-invalid={errors.body ? true : undefined}>
+                <label className="rnr-label" htmlFor={`${uid}-body`}>Message</label>
+                <textarea id={`${uid}-body`} ref={bodyRef} className="rnr-input" rows={10} maxLength={LIMITS.body} value={f.body} aria-invalid={errors.body ? true : undefined}
+                  aria-describedby={`${uid}-body-hint${errors.body ? ` ${uid}-body-err` : ''}`}
+                  onFocus={() => setTarget('body')} onChange={(e) => setF({ ...f, body: e.target.value })} />
+                <p id={`${uid}-body-hint`} className="rnr-hint">
+                  Plain text. A blank line starts a new paragraph. Variables such as {'{{org.name}}'} are filled in when the message is sent,
+                  and whatever they contain is shown exactly as typed, never as formatting.
+                </p>
+                {errors.body && <FieldError id={`${uid}-body-err`}>{errors.body}</FieldError>}
+              </div>
+              <VariableMenu answers={answerKeys} recordTitle={record?.title ?? null} target={target === 'subject' ? 'subject' : 'message'} onPick={insert} />
+              {unknownShown.length > 0 && (
+                <p className="rnr-status" data-tone="warn" data-wrap aria-live="polite"><StopIcon size={14} />Not a variable, so it will be left empty: {unknownShown.map((u) => `{{${u}}}`).join(', ')}</p>
+              )}
+              {error && <Note role="alert">{error}</Note>}
+              {conflict && (
+                <Note role="alert">
+                  <p>This template was changed by someone else. Reload to see their changes.</p>
+                  <button type="button" className="rnr-btn rnr-btn-secondary mt-2" aria-busy={reloading.busy} onClick={() => void reloading.run(onReload)}>
+                    {reloading.busy && <span className="rnr-spin" aria-hidden="true" />}{reloading.busy ? 'Reloading…' : 'Reload template'}
+                  </button>
+                  <p className="rnr-caption mt-2">Reloading discards your unsaved changes.</p>
+                </Note>
+              )}
+              <div className="rnr-actions">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="submit" className="rnr-btn rnr-btn-primary" aria-busy={save.busy}>
+                    {save.busy && <span className="rnr-spin" aria-hidden="true" />}
+                    {save.saved && !save.busy && <span className="rnr-pop" aria-hidden="true"><CheckIcon /></span>}
+                    {save.busy ? 'Saving…' : save.saved ? 'Saved' : 'Save template'}
+                  </button>
+                  {dirty && <span className="rnr-status"><PencilIcon size={14} />Unsaved changes</span>}
+                </div>
+                {!tpl.is_system && <button type="button" className="rnr-btn rnr-btn-danger" onClick={() => { setDeleteError(null); setDeleting(true) }}>Delete template</button>}
+              </div>
+              <p className="rnr-caption" role="status">{notice}</p>
             </div>
-            <p className="rnr-hint">
-              {tpl.kind === 'invite'
-                ? 'Invitations are always emailed, whatever you choose here.'
-                : 'Members always get an in-app notification. Email also goes out unless they turned this type off.'}
-            </p>
-          </div>
-          {field('subject', 'Subject', 'One line. Line breaks are removed.', subjectRef)}
-          <div className="rnr-field" data-invalid={errors.body ? true : undefined}>
-            <label className="rnr-label" htmlFor={`${uid}-body`}>Message</label>
-            <textarea id={`${uid}-body`} ref={bodyRef} className="rnr-input" rows={10} maxLength={LIMITS.body} value={f.body} aria-invalid={errors.body ? true : undefined}
-              aria-describedby={`${uid}-body-hint${errors.body ? ` ${uid}-body-err` : ''}`}
-              onFocus={() => setTarget('body')} onChange={(e) => setF({ ...f, body: e.target.value })} />
-            <p id={`${uid}-body-hint`} className="rnr-hint">
-              Plain text. A blank line starts a new paragraph. Variables such as {'{{org.name}}'} are filled in when the message is sent,
-              and whatever they contain is shown exactly as typed, never as formatting.
-            </p>
-            {errors.body && <p id={`${uid}-body-err`} className="rnr-error">{errors.body}</p>}
-          </div>
-          <VariableMenu answers={answerKeys} recordTitle={record?.title ?? null} target={target === 'subject' ? 'subject' : 'message'} onPick={insert} />
-          {unknownShown.length > 0 && (
-            <p className="rnr-status" data-wrap aria-live="polite"><StopIcon size={14} />Not a variable, so it will be left empty: {unknownShown.map((u) => `{{${u}}}`).join(', ')}</p>
-          )}
-          {error && <p className="rnr-error" role="alert">{error}</p>}
-          {conflict && (
-            <div className="flex flex-col items-start gap-2" role="alert">
-              <p className="rnr-error">This template was changed by someone else. Reload to see their changes.</p>
-              <button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={reloading.busy} onClick={() => void reloading.run(onReload)}>
-                {reloading.busy && <span className="rnr-spin" aria-hidden="true" />}{reloading.busy ? 'Reloading…' : 'Reload template'}
-              </button>
-              <p className="rnr-caption">Reloading discards your unsaved changes.</p>
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" className="rnr-btn rnr-btn-primary" aria-busy={save.busy}>
-              {save.busy && <span className="rnr-spin" aria-hidden="true" />}
-              {save.saved && !save.busy && <span className="rnr-pop" aria-hidden="true"><CheckIcon /></span>}
-              {save.busy ? 'Saving…' : save.saved ? 'Saved' : 'Save template'}
-            </button>
-            {!tpl.is_system && <button type="button" className="rnr-btn rnr-btn-danger" onClick={() => { setDeleteError(null); setDeleting(true) }}>Delete template</button>}
-            {dirty && <span className="rnr-status"><PencilIcon size={14} />Unsaved changes</span>}
-          </div>
-          <p className="rnr-caption" role="status">{notice}</p>
+          </FolderCard>
         </form>
-        <section className="rnr-card gap-3 lg:sticky lg:top-4 lg:self-start" aria-labelledby={`${uid}-pv`}>
-          <h2 id={`${uid}-pv`} className="dialog-title">Preview</h2>
-          <div className="rnr-field">
-            <label className="rnr-label" htmlFor={`${uid}-rec`}>Record to preview with</label>
-            <select id={`${uid}-rec`} className="rnr-input" value={recordId}
-              onChange={(e) => {
-                setRecordId(e.target.value)
-                const picked = records.data?.find((r) => r.id === e.target.value)
-                setNotice(picked ? `Previewing with ${picked.title}.` : 'Previewing with example values.')
-              }}>
-              {records.isPending
-                ? <option value="">Loading records…</option>
-                : <><option value="">No record (example values)</option>{records.data?.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</>}
-            </select>
-            <p className="rnr-hint">You stand in for the recipient and the step assignee. Links are filled in when the message is sent.</p>
-            {records.isError && <p className="rnr-error">Records to preview with did not load. Example values are shown.</p>}
-            {records.isSuccess && records.data.length === 0 && <p className="rnr-hint">No records to preview with yet. Example values are shown.</p>}
+        <FolderCard tab="Preview" headingId={`${uid}-pv`} className="lg:sticky lg:top-4 lg:self-start">
+          <div className="flex flex-col gap-3">
+            <div className="rnr-field">
+              <label className="rnr-label" htmlFor={`${uid}-rec`}>Record to preview with</label>
+              <div className="rnr-select">
+                <select id={`${uid}-rec`} className="rnr-input" value={recordId}
+                  onChange={(e) => {
+                    setRecordId(e.target.value)
+                    const picked = records.data?.find((r) => r.id === e.target.value)
+                    setNotice(picked ? `Previewing with ${picked.title}.` : 'Previewing with example values.')
+                  }}>
+                  {records.isPending
+                    ? <option value="">Loading records…</option>
+                    : <><option value="">No record (example values)</option>{records.data?.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</>}
+                </select>
+              </div>
+              <p className="rnr-hint">You stand in for the recipient and the step assignee. Links are filled in when the message is sent.</p>
+              {records.isError && <FieldError>Records to preview with did not load. Example values are shown.</FieldError>}
+              {records.isSuccess && records.data.length === 0 && <p className="rnr-hint">No records to preview with yet. Example values are shown.</p>}
+            </div>
+            <div>
+              <p className="rnr-caption">Subject</p>
+              {preview.subject ? <p className="rnr-label">{preview.subject}</p> : <p className="rnr-label rnr-muted">No subject</p>}
+            </div>
+            <div>
+              <p className="rnr-caption">Message</p>
+              <div className="rnr-preview">{preview.text}</div>
+            </div>
+            <p className="rnr-caption">Preview is plain text. The email shows the same words with clickable links.</p>
           </div>
-          <div>
-            <p className="rnr-caption">Subject</p>
-            {preview.subject ? <p className="label">{preview.subject}</p> : <p className="label rnr-muted">No subject</p>}
-          </div>
-          <div>
-            <p className="rnr-caption">Message</p>
-            <div className="rnr-preview">{preview.text}</div>
-          </div>
-          <p className="rnr-caption">Preview is plain text. The email shows the same words with clickable links.</p>
-        </section>
+        </FolderCard>
       </div>
       <ConfirmDialog open={!!leaveTo} title="Leave without saving?" body={`Your changes to ${f.name.trim() || 'this template'} will be lost.`}
         confirmLabel="Leave without saving" busyLabel="Leaving…" busy={false} error={null} onClose={() => setLeaveTo(null)}

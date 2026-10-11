@@ -8,6 +8,7 @@ import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
 import { useFocusAfterRender } from '../ui/useFocusAfterRender'
 import { useNotice } from '../ui/useNotice'
+import { FieldError } from './Note'
 import { announcement, newArrivals } from './arrivals'
 import { NOTIFICATION_LIMIT, type Notification, markAllRead, markRead, useNotificationFeed, useNotifications, useUnreadCount } from './api'
 
@@ -98,11 +99,11 @@ export function NotificationBell({ variant = 'icon' }: { variant?: 'icon' | 'sid
             )}
           </div>
           <p className="rnr-caption rnr-notices-sub">Showing notifications for {orgName}.</p>
-          {error && <p className="rnr-error px-3" role="alert">{error}</p>}
+          {error && <div className="px-3"><FieldError role="alert">{error}</FieldError></div>}
           {list.isPending && <div className="px-3"><Skeleton rows={[{ w: '100%', h: 48 }, { w: '100%', h: 48 }, { w: '100%', h: 48 }]} /></div>}
           {list.isError && (
             <div className="flex flex-col items-start gap-2 px-3">
-              <p className="rnr-error" role="alert">Your notifications did not load. Check your connection and try again.</p>
+              <FieldError role="alert">Your notifications did not load. Check your connection and try again.</FieldError>
               <button type="button" className="rnr-btn rnr-btn-ghost" onClick={() => void list.refetch()}>Try again</button>
             </div>
           )}

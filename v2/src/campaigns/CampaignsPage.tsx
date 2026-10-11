@@ -3,7 +3,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { PlusIcon, XIcon } from '../ui/icons'
+import { NAV_ICONS, PlusIcon, XIcon } from '../ui/icons'
+import { LoadError, Note, FieldError } from '../comms/Note'
+import { PageHead } from '../comms/PageHead'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -60,65 +62,58 @@ export function CampaignsPage() {
   const firstRun = list.isSuccess && !rows.length
   const statsFailed = list.isSuccess && stats.isError
   return (
-    <section className="flex max-w-5xl flex-col gap-4" aria-labelledby="campaigns-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 id="campaigns-h" className="page-title" tabIndex={-1}>Campaigns</h1>
-        {!!rows.length && <button type="button" className="rnr-btn rnr-btn-primary ml-auto" onClick={() => setCreating(true)}><PlusIcon />New campaign<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>}
-      </div>
-      <p className="rnr-caption" role="status">{notice}</p>
-      {list.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
-      {list.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The campaigns did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void list.refetch()}>Try again</button></div>
-        </div>
-      )}
-      {firstRun && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <h3 className="rnr-card-title">Term starts</h3>
-            <p className="rnr-muted">Email · 240 people</p>
+    <section aria-labelledby="campaigns-h">
+      <PageHead id="campaigns-h" crumb="Build · Campaigns" title="Campaigns" accent={false}>
+        {!!rows.length && <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New campaign<kbd className="rnr-kbd" aria-hidden="true">N</kbd></button>}
+      </PageHead>
+      <div className="flex flex-col gap-4">
+        <p className="rnr-caption" role="status">{notice}</p>
+        {list.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
+        {list.isError && <LoadError what="The campaigns" onRetry={() => void list.refetch()} />}
+        {firstRun && (
+          <div className="rnr-empty">
+            <span className="rnr-kind"><NAV_ICONS.campaigns size={20} /></span>
+            <h2>Send your first campaign</h2>
+            <p>Email a role or the people in a report, schedule it, and see who opened it and who finished the workflow.</p>
+            <button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New campaign</button>
           </div>
-          <h2 className="dialog-title">Send your first campaign</h2>
-          <p className="rnr-muted">Email a role or the people in a report, schedule it, and see who opened it and who finished the workflow.</p>
-          <div><button type="button" className="rnr-btn rnr-btn-primary" onClick={() => setCreating(true)}><PlusIcon />New campaign</button></div>
-        </div>
-      )}
-      {statsFailed && <p className="rnr-caption" role="alert">The numbers did not load. Reload the page to try again.</p>}
-      {!!rows.length && (
-        <div className="rnr-card rnr-table-card">
-          <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Campaigns in {orgs.find((o) => o.id === orgId)?.name ?? 'your organisation'}, newest first</caption>
-            <thead><tr>
-              <th scope="col">Name</th><th scope="col">Status</th><th scope="col" className="num">Date</th>
-              <th scope="col" className="num">Delivered</th><th scope="col" className="num">Opened</th><th scope="col" className="num">Clicked</th>
-              <th scope="col"><span className="sr-only">Actions</span></th>
-            </tr></thead>
-            <tbody>
-              {rows.map((c) => {
-                const when = sendDate(c)
-                return (
-                  <tr key={c.id}>
-                    <td>{c.name}</td>
-                    <td><CampaignStatusMark status={c.status} /></td>
-                    <td className="num">{when ? <When iso={when} /> : <span className="rnr-muted">Not scheduled</span>}</td>
-                    <Numbers c={c} stats={stats} />
-                    <td>
-                      <div className="flex justify-end gap-1 whitespace-nowrap">
-                        <a className="rnr-btn rnr-btn-secondary" href={`#/campaigns/${c.id}`} aria-label={`Open ${c.name}`}>Open</a>
-                        {c.status === 'draft' && <button type="button" className="rnr-btn rnr-btn-danger" aria-label={`Delete ${c.name}`} onClick={() => { setDeleteError(null); setDoomed(c) }}>Delete</button>}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {list.data && list.data.total > rows.length && (
-        <p className="rnr-caption">Showing the newest {CAMPAIGN_LIST_LIMIT} of {list.data.total.toLocaleString('en-GB')} campaigns.</p>
-      )}
+        )}
+        {statsFailed && <Note role="alert">The numbers did not load. Reload the page to try again.</Note>}
+        {!!rows.length && (
+          <div className="rnr-card rnr-table-card">
+            <table className="rnr-table rnr-sticky-first">
+              <caption className="sr-only">Campaigns in {orgs.find((o) => o.id === orgId)?.name ?? 'your organisation'}, newest first</caption>
+              <thead><tr>
+                <th scope="col">Name</th><th scope="col">Status</th><th scope="col" className="num">Date</th>
+                <th scope="col" className="num">Delivered</th><th scope="col" className="num">Opened</th><th scope="col" className="num">Clicked</th>
+                <th scope="col"><span className="sr-only">Actions</span></th>
+              </tr></thead>
+              <tbody>
+                {rows.map((c) => {
+                  const when = sendDate(c)
+                  return (
+                    <tr key={c.id}>
+                      <th scope="row">{c.name}</th>
+                      <td><CampaignStatusMark status={c.status} /></td>
+                      <td className="num whitespace-nowrap">{when ? <When iso={when} /> : <span className="rnr-muted">Not scheduled</span>}</td>
+                      <Numbers c={c} stats={stats} />
+                      <td>
+                        <div className="flex justify-end gap-1 whitespace-nowrap">
+                          <a className="rnr-btn rnr-btn-secondary rnr-btn-sm" href={`#/campaigns/${c.id}`} aria-label={`Open ${c.name}`}>Open</a>
+                          {c.status === 'draft' && <button type="button" className="rnr-btn rnr-btn-danger rnr-btn-sm" aria-label={`Delete ${c.name}`} onClick={() => { setDeleteError(null); setDoomed(c) }}>Delete</button>}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {list.data && list.data.total > rows.length && (
+          <p className="rnr-caption">Showing the newest {CAMPAIGN_LIST_LIMIT} of {list.data.total.toLocaleString('en-GB')} campaigns.</p>
+        )}
+      </div>
       {creating && <NewCampaignDialog onClose={() => setCreating(false)} />}
       <ConfirmDialog open={!!doomed} title={`Delete ${doomed?.name ?? ''}?`} body={`${doomed?.name ?? ''} is a draft and will be deleted for everyone. It cannot be recovered.`}
         confirmLabel="Delete draft" busyLabel="Deleting…" busy={removal.busy} error={deleteError}
@@ -166,14 +161,16 @@ function NewCampaignDialog({ onClose }: { onClose(): void }) {
         <h2 id={`${uid}-t`}>New campaign</h2>
         <button className="rnr-icon-btn" type="button" aria-label="Close dialog" onClick={onClose}><XIcon /></button>
       </div>
-      <form className="rnr-dialog-body" onSubmit={submit} noValidate>
-        <div className="rnr-field" data-invalid={!!error || undefined}>
-          <label className="rnr-label" htmlFor={`${uid}-n`}>Name</label>
-          <input id={`${uid}-n`} data-autofocus className="rnr-input" value={name} maxLength={120} aria-invalid={!!error || undefined}
-            aria-describedby={error ? `${uid}-e` : undefined} onChange={(e) => setName(e.target.value)} />
+      <form onSubmit={submit} noValidate>
+        <div className="rnr-dialog-body">
+          <div className="rnr-field" data-invalid={!!error || undefined}>
+            <label className="rnr-label" htmlFor={`${uid}-n`}>Name</label>
+            <input id={`${uid}-n`} data-autofocus className="rnr-input" value={name} maxLength={120} aria-invalid={!!error || undefined}
+              aria-describedby={error ? `${uid}-e` : undefined} onChange={(e) => setName(e.target.value)} />
+          </div>
+          {error && <FieldError id={`${uid}-e`} role="alert">{error}</FieldError>}
         </div>
-        {error && <p id={`${uid}-e`} className="rnr-error" role="alert">{error}</p>}
-        <div className="flex justify-end gap-2">
+        <div className="rnr-dialog-foot">
           <button className="rnr-btn rnr-btn-secondary" type="button" onClick={onClose}>Cancel</button>
           <button className="rnr-btn rnr-btn-primary" type="submit" aria-busy={act.busy}>
             {act.busy && <span className="rnr-spin" aria-hidden="true" />}{act.busy ? 'Creating…' : 'Create campaign'}

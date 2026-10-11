@@ -3,7 +3,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '../rbac/useOrg'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { friendlyError } from '../ui/errors'
-import { PlusIcon } from '../ui/icons'
+import { NAV_ICONS, PlusIcon } from '../ui/icons'
+import { LoadError, Note } from './Note'
+import { PageHead } from './PageHead'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -52,56 +54,50 @@ export function TemplatesPage() {
   })
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="templates-h">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="page-title" id="templates-h" tabIndex={-1}>Message templates</h1>
-        <button className="rnr-btn rnr-btn-primary ml-auto" type="button" aria-busy={create.busy} onClick={() => void add()}>
+    <section aria-labelledby="templates-h">
+      <PageHead id="templates-h" crumb="Build · Templates" title="Message templates">
+        <button className="rnr-btn rnr-btn-primary" type="button" aria-busy={create.busy} onClick={() => void add()}>
           {create.busy ? <span className="rnr-spin" aria-hidden="true" /> : <PlusIcon />}{create.busy ? 'Creating…' : 'New template'}
         </button>
-      </div>
-      {error && <p className="rnr-error" role="alert">{error}</p>}
-      <p className="rnr-caption" role="status">{notice}</p>
-      {templates.isPending && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
-      {templates.isError && (
-        <div className="rnr-card gap-3">
-          <p role="alert">The templates did not load. Check your connection and try again.</p>
-          <div><button className="rnr-btn rnr-btn-secondary" type="button" onClick={() => void templates.refetch()}>Try again</button></div>
-        </div>
-      )}
-      {templates.data && (
-        <div className="rnr-card rnr-table-card">
-          <table className="rnr-table rnr-sticky-first">
-            <caption className="sr-only">Message templates in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
-            <thead><tr><th scope="col">Name</th><th scope="col">Channel</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
-            <tbody>
-              {templates.data.map((t) => (
-                <tr key={t.id}>
-                  <td><span className="label">{t.name}</span>{t.is_system && <> <span className="rnr-chip">System</span></>}</td>
-                  <td>{channelLabel(t.kind, t.channel)}</td>
-                  <td className="num whitespace-nowrap"><When iso={t.updated_at} /></td>
-                  <td>
-                    <div className="flex justify-end gap-1 whitespace-nowrap">
-                      <a className="rnr-btn rnr-btn-secondary" href={`#/templates/${t.id}`} aria-label={`Edit ${t.name}`}>Edit</a>
-                      {!t.is_system && (
-                        <button className="rnr-btn rnr-btn-danger" type="button" aria-label={`Delete ${t.name}`} onClick={() => { setDeleteError(null); setDeleting(t) }}>Delete</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {templates.data && !templates.data.some((t) => !t.is_system) && (
-        <div className="rnr-card gap-3">
-          <div className="rnr-card" data-state="placeholder" aria-hidden="true">
-            <span className="label">Welcome back</span><span className="rnr-muted">Custom · Email and in-app</span>
+      </PageHead>
+      <div className="flex flex-col gap-4">
+        {error && <Note role="alert">{error}</Note>}
+        <p className="rnr-caption" role="status">{notice}</p>
+        {templates.isPending && <Skeleton rows={[{ w: '100%', h: 240 }]} />}
+        {templates.isError && <LoadError what="The templates" onRetry={() => void templates.refetch()} />}
+        {templates.data && (
+          <div className="rnr-card rnr-table-card">
+            <table className="rnr-table rnr-sticky-first">
+              <caption className="sr-only">Message templates in {orgs.find((o) => o.id === orgId)?.name ?? 'this organisation'}</caption>
+              <thead><tr><th scope="col">Name</th><th scope="col">Channel</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+              <tbody>
+                {templates.data.map((t) => (
+                  <tr key={t.id}>
+                    <th scope="row">{t.name}{t.is_system && <> <span className="rnr-chip">System</span></>}</th>
+                    <td>{channelLabel(t.kind, t.channel)}</td>
+                    <td className="num whitespace-nowrap"><When iso={t.updated_at} /></td>
+                    <td>
+                      <div className="flex justify-end gap-1 whitespace-nowrap">
+                        <a className="rnr-btn rnr-btn-secondary rnr-btn-sm" href={`#/templates/${t.id}`} aria-label={`Edit ${t.name}`}>Edit</a>
+                        {!t.is_system && (
+                          <button className="rnr-btn rnr-btn-danger rnr-btn-sm" type="button" aria-label={`Delete ${t.name}`} onClick={() => { setDeleteError(null); setDeleting(t) }}>Delete</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <h2 className="dialog-title">Write your own template</h2>
-          <p className="rnr-muted">System templates cover tasks, approvals and invitations. Create a template of your own to use in a workflow's Send message action.</p>
-        </div>
-      )}
+        )}
+        {templates.data && !templates.data.some((t) => !t.is_system) && (
+          <div className="rnr-empty">
+            <span className="rnr-kind"><NAV_ICONS.templates size={20} /></span>
+            <h2>Write your own template</h2>
+            <p>System templates cover tasks, approvals and invitations. Create a template of your own to use in a workflow's Send message action.</p>
+          </div>
+        )}
+      </div>
       <ConfirmDialog open={!!deleting} title={`Delete ${deleting?.name ?? 'this template'}?`} busy={remove.busy} error={deleteError}
         body={DELETE_TEMPLATE_BODY(deleting?.name ?? 'This template')}
         confirmLabel="Delete template" busyLabel="Deleting…" onConfirm={() => void confirmDelete()} onClose={() => { setDeleting(null); setDeleteError(null) }} />

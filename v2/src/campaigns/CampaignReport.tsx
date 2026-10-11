@@ -7,6 +7,9 @@ import { useReports } from '../reports/api'
 import { useRoles, useWorkflows } from '../workflows/api'
 import { friendlyError } from '../ui/errors'
 import { BackIcon } from '../ui/icons'
+import { FolderCard } from '../ui/FolderCard'
+import { Note } from '../comms/Note'
+import { PageHead } from '../comms/PageHead'
 import { Skeleton } from '../ui/Skeleton'
 import { When } from '../ui/Time'
 import { useAction } from '../ui/useAction'
@@ -79,94 +82,98 @@ export function CampaignReport({ campaign: c, notice, setNotice }: Props) {
   const busyLabel = act.busy ? 'Creating draft…' : null
 
   return (
-    <section className="flex max-w-5xl flex-col gap-4" aria-labelledby="campaign-h">
-      <a className="rnr-btn rnr-btn-ghost self-start" href="#/campaigns"><BackIcon />Back to campaigns</a>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 id="campaign-h" className="page-title" tabIndex={-1}>{c.name}</h1>
-        <CampaignStatusMark status={c.status} />
-      </div>
-      <p className="rnr-caption" aria-hidden="true">{notice}</p>
-      <div className="flex flex-col gap-1">
-        <p className="rnr-muted">
-          Sent by {sentBy}.{c.audience_snapshot_at && <> Sending started <When iso={c.audience_snapshot_at} />.</>}{c.finished_at && <> Finished <When iso={c.finished_at} />.</>}
-        </p>
-        <p className="rnr-caption">{audienceText(audience, names)} · {template} · {channelWord(c.channel)}</p>
-      </div>
-
-      {stats.isPending && <Skeleton rows={[{ w: '100%', h: 96 }]} />}
-      {stats.isError && (
-        <div className="flex flex-col items-start gap-2">
-          <p className="rnr-error" role="alert">The numbers did not load. Check your connection and try again.</p>
-          <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void stats.refetch()}>Try again</button>
+    <section aria-labelledby="campaign-h">
+      <a className="rnr-crumb mb-2" href="#/campaigns"><BackIcon />Back to campaigns</a>
+      <PageHead id="campaign-h" crumb="Build · Campaigns" title={c.name} accent={false} lede={<CampaignStatusMark status={c.status} />} />
+      <div className="flex flex-col gap-6">
+        {notice && <p className="rnr-caption" aria-hidden="true">{notice}</p>}
+        <div className="flex flex-col gap-1">
+          <p className="rnr-muted">
+            Sent by {sentBy}.{c.audience_snapshot_at && <> Sending started <When iso={c.audience_snapshot_at} />.</>}{c.finished_at && <> Finished <When iso={c.finished_at} />.</>}
+          </p>
+          <p className="rnr-caption">{audienceText(audience, names)} · {template} · {channelWord(c.channel)}</p>
         </div>
-      )}
-      {stats.isSuccess && (
-        <>
-          <h2 className="sr-only">Results</h2>
-          <ul className="rnr-campaign-tiles" data-count={tiles.length}>
-            {tiles.map((t) => (
-              <li key={t.label} className="rnr-card" aria-describedby={t.label === 'Opened' ? 'opens-note' : undefined}>
-                <header className="rnr-card-head"><p className="rnr-card-title">{t.label}</p></header>
-                <p className="rnr-kpi rnr-num" data-empty={t.value === NO_DATA || undefined}>{t.value}</p>
-                <p className="rnr-caption">{t.caption}</p>
-              </li>
-            ))}
-          </ul>
-          {inApp ? <p className="rnr-caption">In-app campaigns report reads only: an in-app notice has no delivery, open or click tracking.</p> : <p className="rnr-caption" id="opens-note">{OPENS_NOTE}</p>}
-        </>
-      )}
-      {left && <p className="rnr-caption">{left}</p>}
 
-      <section className="rnr-card gap-3" aria-labelledby="daily-h">
-        <h2 id="daily-h" className="dialog-title">{inApp ? 'Reads over the first 7 days' : 'Opens and clicks over the first 7 days'}</h2>
-        {daily.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
-        {daily.isError && (
+        {stats.isPending && <Skeleton rows={[{ w: '100%', h: 96 }]} />}
+        {stats.isError && (
           <div className="flex flex-col items-start gap-2">
-            <p className="rnr-error" role="alert">The chart did not load. Check your connection and try again.</p>
-            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void daily.refetch()}>Try again</button>
+            <Note role="alert">The numbers did not load. Check your connection and try again.</Note>
+            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void stats.refetch()}>Try again</button>
           </div>
         )}
-        {daily.data && <CampaignChart days={daily.data} inApp={inApp} startedAt={c.audience_snapshot_at} />}
-      </section>
-
-      {c.linked_workflow_id && completion.data === null && (
-        <p className="rnr-caption">Completion needs permission to see every record of {workflow ?? 'the linked workflow'}. Ask an admin for access.</p>
-      )}
-      {completion.isError && (
-        <div className="flex flex-col items-start gap-2">
-          <p className="rnr-error" role="alert">The completion numbers did not load. Check your connection and try again.</p>
-          <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void completion.refetch()}>Try again</button>
-        </div>
-      )}
-      {completion.data && (() => { const cd = completion.data; return (
-        <section className="rnr-card gap-3" aria-labelledby="completion-h">
-          <h2 id="completion-h" className="dialog-title">{workflow ?? 'The linked workflow'}</h2>
-          <div className="flex flex-wrap gap-6">
-            {([['Started', cd.started], ['Finished', cd.finished]] as const).map(([label, n]) => {
-              const share = pct(n, cd.people)
-              return (
-                <div key={label}>
-                  <p className="label">{label}</p>
-                  <p className="rnr-kpi rnr-num" data-empty={share === null || undefined}>{pctText(share)}</p>
-                  <p className="rnr-caption">{n.toLocaleString('en-GB')} of {cd.people.toLocaleString('en-GB')} people</p>
-                </div>
-              )
-            })}
+        {stats.isSuccess && (
+          <div className="flex flex-col gap-3">
+            <h2 className="sr-only">Results</h2>
+            <ul className="rnr-campaign-tiles" data-count={tiles.length}>
+              {tiles.map((t) => (
+                <li key={t.label} className="flex [&>.rnr-folder]:flex [&>.rnr-folder]:w-full [&_.rnr-folder-body]:flex-1" aria-describedby={t.label === 'Opened' ? 'opens-note' : undefined}>
+                  <FolderCard tab={t.label} className="rnr-kpi-tile">
+                    <p className="rnr-kpi-figure rnr-num" data-empty={t.value === NO_DATA || undefined}>{t.value}</p>
+                    <p className="rnr-caption">{t.caption}</p>
+                  </FolderCard>
+                </li>
+              ))}
+            </ul>
+            {inApp ? <p className="rnr-caption">In-app campaigns report reads only: an in-app notice has no delivery, open or click tracking.</p> : <p className="rnr-caption" id="opens-note">{OPENS_NOTE}</p>}
           </div>
-          {sending ? <p className="rnr-caption">Reminders become available once every email has left the queue.</p>
-            : cd.people > cd.finished
-              ? <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={act.busy} onClick={() => void followUp('not_completed')}>{busyLabel ?? 'Remind non-completers'}</button></div>
-              : <p className="rnr-muted">Everyone has finished.</p>}
-        </section>
-      ) })()}
+        )}
+        {left && <p className="rnr-caption">{left}</p>}
 
-      {sending && <p className="rnr-caption">Follow-ups become available once every email has left the queue.</p>}
-      {c.status === 'sent' && stats.isSuccess && (notOpened > 0
-        ? <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={act.busy} onClick={() => void followUp('not_opened')}>{busyLabel ?? (inApp ? 'Send follow-up to not read' : 'Send follow-up to not opened')}</button></div>
-        : <p className="rnr-muted">{inApp ? 'Everyone read it.' : 'Everyone opened it.'}</p>)}
-      {error && <p className="rnr-error" role="alert">{error}</p>}
+        <FolderCard tab="Activity" headingId="daily-h">
+          <div className="flex flex-col gap-3">
+            <h2 className="rnr-dialog-title">{inApp ? 'Reads over the first 7 days' : 'Opens and clicks over the first 7 days'}</h2>
+            {daily.isPending && <Skeleton rows={[{ w: '100%', h: 200 }]} />}
+            {daily.isError && (
+              <div className="flex flex-col items-start gap-2">
+                <Note role="alert">The chart did not load. Check your connection and try again.</Note>
+                <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void daily.refetch()}>Try again</button>
+              </div>
+            )}
+            {daily.data && <CampaignChart days={daily.data} inApp={inApp} startedAt={c.audience_snapshot_at} />}
+          </div>
+        </FolderCard>
 
-      <RecipientTable campaign={c} />
+        {c.linked_workflow_id && completion.data === null && (
+          <p className="rnr-caption">Completion needs permission to see every record of {workflow ?? 'the linked workflow'}. Ask an admin for access.</p>
+        )}
+        {completion.isError && (
+          <div className="flex flex-col items-start gap-2">
+            <Note role="alert">The completion numbers did not load. Check your connection and try again.</Note>
+            <button type="button" className="rnr-btn rnr-btn-secondary" onClick={() => void completion.refetch()}>Try again</button>
+          </div>
+        )}
+        {completion.data && (() => { const cd = completion.data; return (
+          <FolderCard tab="Completion" headingId="completion-h">
+            <div className="flex flex-col gap-3">
+              <h2 className="rnr-dialog-title">{workflow ?? 'The linked workflow'}</h2>
+              <div className="flex flex-wrap gap-8">
+                {([['Started', cd.started], ['Finished', cd.finished]] as const).map(([label, n]) => {
+                  const share = pct(n, cd.people)
+                  return (
+                    <div key={label}>
+                      <p className="rnr-label">{label}</p>
+                      <p className="rnr-kpi-figure rnr-num" data-empty={share === null || undefined}>{pctText(share)}</p>
+                      <p className="rnr-caption">{n.toLocaleString('en-GB')} of {cd.people.toLocaleString('en-GB')} people</p>
+                    </div>
+                  )
+                })}
+              </div>
+              {sending ? <p className="rnr-caption">Reminders become available once every email has left the queue.</p>
+                : cd.people > cd.finished
+                  ? <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={act.busy} onClick={() => void followUp('not_completed')}>{busyLabel ?? 'Remind non-completers'}</button></div>
+                  : <p className="rnr-muted">Everyone has finished.</p>}
+            </div>
+          </FolderCard>
+        ) })()}
+
+        {sending && <p className="rnr-caption">Follow-ups become available once every email has left the queue.</p>}
+        {c.status === 'sent' && stats.isSuccess && (notOpened > 0
+          ? <div><button type="button" className="rnr-btn rnr-btn-secondary" aria-busy={act.busy} onClick={() => void followUp('not_opened')}>{busyLabel ?? (inApp ? 'Send follow-up to not read' : 'Send follow-up to not opened')}</button></div>
+          : <p className="rnr-muted">{inApp ? 'Everyone read it.' : 'Everyone opened it.'}</p>)}
+        {error && <Note role="alert">{error}</Note>}
+
+        <RecipientTable campaign={c} />
+      </div>
     </section>
   )
 }
