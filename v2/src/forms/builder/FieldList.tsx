@@ -4,6 +4,7 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities'
 import type { Field } from '../logic'
 import { DownIcon, GripIcon, UpIcon } from '../../ui/icons'
+import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { TYPE_LABELS } from './builderOps'
 
 type Ctl = 'handle' | 'up' | 'down'
@@ -26,6 +27,7 @@ function meta(f: Field, hasIssue: boolean) {
 
 export function FieldList({ label, fields, selected, issues, onSelect, onMove, onNote }: ListProps) {
   const list = useRef<HTMLOListElement>(null)
+  const focusLater = useFocusAfterRender()
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -36,8 +38,8 @@ export function FieldList({ label, fields, selected, issues, onSelect, onMove, o
   const pos = (id: UniqueIdentifier) => fields.findIndex((f) => f.key === id) + 1
 
   // React re-parents the moved row, so put focus back on the control that was used.
-  const refocus = (key: string, ctl: Ctl) => requestAnimationFrame(() =>
-    list.current?.querySelector<HTMLElement>(`[data-key="${key}"] [data-ctl="${ctl}"]`)?.focus())
+  const refocus = (key: string, ctl: Ctl) => focusLater(() =>
+    list.current?.querySelector<HTMLElement>(`[data-key="${key}"] [data-ctl="${ctl}"]`))
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return
     onMove(fields.findIndex((f) => f.key === active.id), fields.findIndex((f) => f.key === over.id))

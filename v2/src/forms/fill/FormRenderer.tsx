@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { evaluate, type Answers, type Field, type Resolved } from '../logic'
 import { PlusIcon } from '../../ui/icons'
+import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { inputId } from '../paths'
 import { FieldInput } from './FieldInput'
 import type { Uploader } from './FileInput'
@@ -33,6 +34,7 @@ function GroupInput({ field: f, rows, answers, errors, upload, idPrefix, onChang
   const { min, max } = f.repeat ?? { min: 0, max: 50 }
   const id = inputId(idPrefix, f.key)
   const [said, say] = useState('')
+  const focusLater = useFocusAfterRender()
   const hint = [f.help, min === 0 && max === 50 ? '' : `${min}–${max} rows.`].filter(Boolean).join(' ')
   const hasError = Object.keys(errors).some((k) => k === f.key || k.startsWith(`${f.key}.`))
   const setRow = (i: number, key: string, v: unknown) => onChange(rows.map((r, j) => (j === i ? { ...r, [key]: v } : r)))
@@ -40,12 +42,12 @@ function GroupInput({ field: f, rows, answers, errors, upload, idPrefix, onChang
     onChange([...rows, {}])
     say(`Row ${rows.length + 1} added. ${rows.length + 1} rows.`)
     const first = f.fields?.[0]?.key
-    if (first) requestAnimationFrame(() => document.getElementById(inputId(idPrefix, `${f.key}.${rows.length}.${first}`))?.focus())
+    if (first) focusLater(inputId(idPrefix, `${f.key}.${rows.length}.${first}`))
   }
   const remove = (i: number) => {
     onChange(rows.filter((_, j) => j !== i))
     say(`Row removed. ${rows.length - 1} rows.`)
-    requestAnimationFrame(() => document.getElementById(id)?.focus()) // the pressed button is gone
+    focusLater(id) // the pressed Remove button is gone after this render
   }
   return (
     <fieldset id={id} tabIndex={-1} className="rnr-card gap-3" data-invalid={hasError ? true : undefined}

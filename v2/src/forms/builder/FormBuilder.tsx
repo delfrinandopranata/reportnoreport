@@ -7,6 +7,7 @@ import { friendlyError } from '../../ui/errors'
 import { CheckIcon, PencilIcon } from '../../ui/icons'
 import { setNavGuard } from '../../ui/navGuard'
 import { useAction } from '../../ui/useAction'
+import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { useNotice } from '../../ui/useNotice'
 import { validateSchema, type Field, type FieldType } from '../logic'
 import type { LoadedForm } from '../api'
@@ -19,14 +20,6 @@ import { TYPE_LABELS, move, newField } from './builderOps'
 
 type Sel = { key: string; child?: string } | null
 const nameOf = (f: Field) => f.label || TYPE_LABELS[f.type]
-
-/** Wide screens focus the new field's Label input; phones scroll to and focus its settings heading. */
-const focusSettings = (base: string) => requestAnimationFrame(() => {
-  const wide = matchMedia('(min-width: 1024px)').matches
-  const el = document.getElementById(wide ? `${base}-label` : `${base}-h`)
-  el?.focus()
-  if (!wide) el?.scrollIntoView({ block: 'start' })
-})
 
 function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<void> }) {
   const qc = useQueryClient()
@@ -42,6 +35,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
   const [notice, setNotice] = useNotice()
   const save = useAction()
   const reload = useAction()
+  const focusLater = useFocusAfterRender()
   const issues = useMemo(() => validateSchema(fields), [fields])
   const issueRoots = useMemo(() => new Set(issues.map((i) => i.key.split('.')[0])), [issues])
   const dirty = name !== saved.name || fields !== saved.fields
@@ -57,6 +51,13 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
   const top = sel ? fields.find((f) => f.key === sel.key) : undefined
   const child = top && sel?.child ? top.fields?.find((c) => c.key === sel.child) : undefined
   const replace = (key: string, next: Field) => setFields(fields.map((f) => (f.key === key ? next : f)))
+  /** Wide screens focus the new field's Label input; phones scroll to and focus its settings heading. */
+  const focusSettings = (base: string) => focusLater(() => {
+    const wide = matchMedia('(min-width: 1024px)').matches
+    const el = document.getElementById(wide ? `${base}-label` : `${base}-h`)
+    if (!wide) requestAnimationFrame(() => el?.scrollIntoView({ block: 'start' }))
+    return el
+  })
   const select = (s: Sel) => { setSel(s); if (!matchMedia('(min-width: 1024px)').matches && s) focusSettings(s.child ? 'fs-child' : 'fs-top') }
 
   const add = (type: FieldType) => {
@@ -77,14 +78,14 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
     if (!top) return
     setFields(fields.filter((f) => f.key !== top.key)); setSel(null)
     setNote(`${nameOf(top)} removed. ${fields.length - 1} fields left.`)
-    requestAnimationFrame(() => document.getElementById('fields-h')?.focus())
+    focusLater('fields-h')
   }
   const removeChild = () => {
     if (!top || !child) return
     const kids = (top.fields ?? []).filter((x) => x.key !== child.key)
     replace(top.key, { ...top, fields: kids }); setSel({ key: top.key })
     setNote(`${nameOf(child)} removed. ${kids.length} fields left.`)
-    requestAnimationFrame(() => document.getElementById('section-h')?.focus())
+    focusLater('section-h')
   }
 
   const onSave = () => save.run(async () => {
@@ -95,7 +96,7 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
       const [root, kid] = issues[0].key.split('.')
       if (root) {
         setSel(kid ? { key: root, child: kid } : { key: root })
-        requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-key="${root}"] .rnr-pick`)?.focus())
+        focusLater(() => document.querySelector<HTMLElement>(`[data-key="${root}"] .rnr-pick`))
       }
       return false
     }

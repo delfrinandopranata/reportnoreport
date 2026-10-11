@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { pages, resolve, validateAnswers, visiblePages, type Answers, type Field } from '../logic'
 import type { SubmitResult } from '../api'
 import { CheckIcon } from '../../ui/icons'
 import { useAction } from '../../ui/useAction'
+import { useFocusAfterRender } from '../../ui/useFocusAfterRender'
 import { inputId } from '../paths'
 import { FormRenderer } from './FormRenderer'
 import type { Uploader } from './FileInput'
@@ -27,7 +28,8 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
   const [formError, setFormError] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const submit = useAction()
-  const top = useRef<HTMLDivElement>(null)
+  const focusLater = useFocusAfterRender()
+  const topId = `${idPrefix}-top`
   const resolved = useMemo(() => resolve(fields, answers), [fields, answers])
   const visible = useMemo(() => visiblePages(fields, answers), [fields, answers])
 
@@ -43,15 +45,14 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
     const root = first.split('.')[0]
     const ix = visible.findIndex((p) => all[p].some((f) => f.key === root))
     if (ix >= 0) setAt(ix)
-    requestAnimationFrame(() => document.getElementById(inputId(idPrefix, first))?.focus())
+    focusLater(inputId(idPrefix, first))
   }
   const next = () => {
     const r = validateAnswers(fields, answers, { onlyKeys: new Set(page.map((f) => f.key)), filePrefix })
     if (!r.ok) return showErrors(r.errors)
-    setErrors({}); setFormError(null); setAt(current + 1)
-    requestAnimationFrame(() => top.current?.focus())
+    setErrors({}); setFormError(null); setAt(current + 1); focusLater(topId)
   }
-  const back = () => { setErrors({}); setFormError(null); setAt(current - 1); requestAnimationFrame(() => top.current?.focus()) }
+  const back = () => { setErrors({}); setFormError(null); setAt(current - 1); focusLater(topId) }
   const finish = () => submit.run(async () => {
     setFormError(null); setChecked(false)
     const r = validateAnswers(fields, answers, { filePrefix })
@@ -65,14 +66,16 @@ export function FormRunner({ fields, idPrefix, filePrefix, upload, onSubmit, onD
   })
   const change = (a: Answers, key: string) => {
     setAnswers(a); setChecked(false)
-    setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => k !== key && !k.startsWith(`${key}.`))))
+    const rest = Object.fromEntries(Object.entries(errors).filter(([k]) => k !== key && !k.startsWith(`${key}.`)))
+    setErrors(rest)
+    if (!Object.keys(rest).length) setFormError((m) => (m === FIX ? null : m)) // nothing left to fix
   }
 
   return (
     <form noValidate className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); if (last) finish(); else next() }}>
       {anyRequired(fields) && <p className="rnr-caption">Fields marked * are required.</p>}
       {visible.length > 1 && (
-        <div ref={top} tabIndex={-1} className="flex flex-col gap-2">
+        <div id={topId} tabIndex={-1} className="flex flex-col gap-2">
           <p className="rnr-caption">Page {current + 1} of {visible.length}</p>
           <div aria-hidden="true" style={{ height: 4, borderRadius: 'var(--radius-full)', background: 'var(--rnr-track-bg)' }}>
             <div style={{ height: '100%', width: `${((current + 1) / visible.length) * 100}%`, borderRadius: 'inherit', background: 'var(--ink-label)' }} />

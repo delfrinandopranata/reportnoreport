@@ -59,3 +59,8 @@ input[type="file"].rnr-input { height: auto; padding: var(--space-2) var(--space
 @media (pointer: coarse) { .rnr-pick { min-height: var(--touch-min); } }
 dialog.rnr-sheet { margin: auto 0 0; width: 100%; max-width: none; max-height: 80dvh; padding: 0; border-radius: var(--radius-2xl) var(--radius-2xl) 0 0; }
 .rnr-sheet .rnr-dialog-body { overflow-y: auto; }
+
+/* Forms list: below sm the card scrolls sideways and the name stays in view. */
+@media (max-width: 639px) {
+  .rnr-sticky-first th:first-child, .rnr-sticky-first td:first-child { position: sticky; left: 0; background: var(--rnr-card-bg); }
+}

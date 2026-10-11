@@ -25,6 +25,11 @@ export function FormsPage() {
   const [removing, setRemoving] = useState<FormRow | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
   const [notice, setNotice] = useNotice()
+  const deleted = useRef(false)
+  // The row that opened the dialog is gone once the list refreshes, so focus the heading from an effect on the new list.
+  useEffect(() => {
+    if (deleted.current && forms.data) { deleted.current = false; document.getElementById('forms-h')?.focus() }
+  }, [forms.data])
   const refresh = () => qc.invalidateQueries({ queryKey: ['forms', orgId] })
 
   const newForm = () => create.run(async () => {
@@ -53,8 +58,7 @@ export function FormsPage() {
     const { data, error } = await supabase.from('forms').delete().eq('id', removing!.id).select('id')
     if (error) { setRemoveError(friendlyError(error)); return }
     if (!data.length) { setRemoveError('You do not have permission to do that.'); return } // RLS turned it into 0 rows
-    setRemoving(null); setNotice('Form deleted.'); await refresh()
-    document.getElementById('forms-h')?.focus() // the row that opened the dialog is gone
+    setRemoving(null); setNotice('Form deleted.'); deleted.current = true; await refresh()
   })
 
   const firstRun = forms.data?.length === 0
@@ -96,7 +100,7 @@ export function FormsPage() {
       )}
       {!!forms.data?.length && (
         <div className="rnr-card" style={{ padding: 0, overflowX: 'auto' }}>
-          <table className="rnr-table">
+          <table className="rnr-table rnr-sticky-first">
             <caption className="sr-only">Forms in this organisation</caption>
             <thead><tr><th scope="col">Name</th><th scope="col" className="num">Fields</th><th scope="col" className="num">Updated</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useOrg } from '../../rbac/useOrg'
 import { CheckIcon } from '../../ui/icons'
 import { validateSchema } from '../logic'
@@ -13,6 +13,7 @@ function Fill({ form }: { form: LoadedForm }) {
   const [done, setDone] = useState(false)
   const [round, setRound] = useState(0)
   const success = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { if (done) success.current?.focus() }, [done]) // the Submit button that was pressed is unmounted
   const broken = validateSchema(form.schema).length > 0
   const edit = manage && <a className="rnr-btn rnr-btn-secondary" href={`#/forms/${form.id}/edit`}>Edit form</a>
   return (
@@ -48,7 +49,7 @@ function Fill({ form }: { form: LoadedForm }) {
           <FormRunner key={round} fields={form.schema} idPrefix="fill" filePrefix={`${form.org_id}/${userId}/`}
             upload={(blob, name) => uploadFile(form.org_id, userId, blob, name)}
             onSubmit={(answers) => submitAnswers(form.id, answers)}
-            onDone={() => { setDone(true); requestAnimationFrame(() => success.current?.focus()) }} />
+            onDone={() => setDone(true)} />
         </div>
       )}
     </section>
