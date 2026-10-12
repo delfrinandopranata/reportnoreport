@@ -239,6 +239,7 @@ export function KindBadge({ kind }: { kind: Kind }) {
   return (
     <span
       className={`rnr-kind${kind === 'out' ? ' is-out' : ''}`}
+      role="img"
       aria-label={kind === 'in' ? 'In' : 'Out'}
     >
       <Icon name={kind} />

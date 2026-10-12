@@ -760,6 +760,7 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-checklist-item { display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch); padding: var(--space-2) var(--space-3); border-radius: var(--r-ctl); color: var(--ink-2); font: var(--type-body-sm); }
 .rnr-checklist-item > svg { flex: none; width: var(--icon-size); height: var(--icon-size); color: var(--ink-3); }
 .rnr-checklist-item > .rnr-checklist-label { flex: 1 1 auto; min-width: 0; }
+@media (pointer: coarse) { .rnr-checklist-label .rnr-link { display: inline-block; padding: 13px 0; margin: -13px 0; } } /* 44px tap height, same line box */
 .rnr-checklist-state { flex: none; font: var(--type-caption); color: var(--ink-3); }
 .rnr-checklist-item[data-state="done"] > svg { color: var(--series-1); }
 .rnr-checklist-item[data-state="done"] { color: var(--ink-3); }

@@ -54,7 +54,7 @@ export function RecipientTable({ campaign: c }: { campaign: Campaign }) {
   })
 
   return (
-    <FolderCard tab="Recipients" headingId="recipients-h">
+    <FolderCard tab="Recipient list" headingId="recipients-h">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="rnr-seg self-start" role="group" aria-label="Show">

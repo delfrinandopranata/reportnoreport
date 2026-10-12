@@ -32,7 +32,7 @@ export function TagPill({ tag, onRemove }: { tag: string; onRemove?: () => void 
     <span className="rnr-chip">
       {tag}
       {onRemove && (
-        <button type="button" onClick={onRemove} aria-label={`Remove tag ${tag}`} className="-mr-1 grid size-5 place-items-center rounded-(--r-chip) text-ink-3 hover:text-ink print:hidden">
+        <button type="button" onClick={onRemove} aria-label={`Remove tag ${tag}`} className="relative -mr-1 grid size-5 place-items-center rounded-(--r-chip) text-ink-3 hover:text-ink print:hidden after:absolute after:-inset-3 after:content-['']">
           <Icon name="x" className="size-3" />
         </button>
       )}
