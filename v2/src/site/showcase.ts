@@ -1,6 +1,6 @@
 import { PROGRAMMES, ICON, stats, edgeKey, type Programme, type Step } from './programmes'
 import { showState } from './loop'
-import { LANE_W, COL_W, ROW_H, TAIL, pos, cardH, route, pathD, placeLabels } from './layout'
+import { LANE_W, COL_W, ROW_H, TAIL, CARD_W, pos, cardH, route, pathD, placeLabels } from './layout'
 
 const NS = 'http://www.w3.org/2000/svg'
 
@@ -152,7 +152,8 @@ const fitTo = (v: View, min: number, box: HTMLElement = v.fit) => {
   v.fit.style.setProperty('--z', String(Math.max(min, Math.min(1, box.clientWidth / w))))
 }
 
-/** The hero: the busiest programme, live, at the top of the page. */
+/** The hero: the busiest programme, live, in a window narrower than the flow. The stage is scaled to the window's height
+ *  and pans so the cards that are lit (or about to be) stay in view. */
 export function initHero(animate: boolean) {
   const host = document.getElementById('hero-flow')
   if (!host) return null
@@ -160,10 +161,26 @@ export function initHero(animate: boolean) {
   const v = build(p)
   v.root.removeAttribute('role'); v.root.removeAttribute('tabindex')
   host.replaceChildren(v.root)
-  const fit = () => fitTo(v, 0.5, host)
+  const W = parseFloat(v.stage.style.getPropertyValue('--w')), H = parseFloat(v.stage.style.getPropertyValue('--h'))
+  const byId = new Map(p.steps.map((x) => [x.id, x]))
+  let z = 1, lastX = -1
+  const fit = () => { z = host.clientHeight / H; v.fit.style.setProperty('--z', String(z)) }
+  const pan = (ids: string[]) => {
+    const cx = ids.reduce((sum, id) => sum + pos(byId.get(id) as Step).x + CARD_W / 2, 0) / ids.length
+    const view = host.clientWidth / z
+    const x = Math.round(Math.max(0, Math.min(W - view, cx - view * 0.4)))
+    if (x !== lastX) { lastX = x; v.stage.style.translate = `${-x}px 0` }
+  }
   new ResizeObserver(fit).observe(host)
   fit(); restart(v, animate)
-  return { root: host, update: (t: number) => play(v, t) }
+  return {
+    root: host,
+    update: (t: number) => {
+      play(v, t)
+      const st = showState(t, p.beats.length)
+      pan(p.beats[st.edge > 0 ? st.edge : st.visited - 1])
+    },
+  }
 }
 
 export function initShowcase(animate: boolean) {
