@@ -46,7 +46,8 @@ function build(p: Programme): View {
   stage.setAttribute('aria-hidden', 'true')
   stage.style.setProperty('--w', `${W}px`); stage.style.setProperty('--h', `${H}px`)
   p.lanes.forEach((name, i) => {
-    const lane = h('div', 'sl-lane', name)
+    const lane = h('div', 'sl-lane')
+    lane.append(h('span', 'sl-lane-name', name))
     lane.style.setProperty('--y', `${i * ROW_H}px`); lane.style.setProperty('--rh', `${ROW_H}px`)
     stage.append(lane)
   })
@@ -169,7 +170,7 @@ export function initHero(animate: boolean) {
     const cx = ids.reduce((sum, id) => sum + pos(byId.get(id) as Step).x + CARD_W / 2, 0) / ids.length
     const view = host.clientWidth / z
     const x = Math.round(Math.max(0, Math.min(W - view, cx - view * 0.4)))
-    if (x !== lastX) { lastX = x; v.stage.style.translate = `${-x}px 0` }
+    if (x !== lastX) { lastX = x; v.stage.style.translate = `${-x}px 0`; v.stage.style.setProperty('--px', `${x}px`) }
   }
   new ResizeObserver(fit).observe(host)
   fit(); restart(v, animate)
