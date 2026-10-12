@@ -24,7 +24,7 @@
   --warn-bg: rgba(224,148,16,.16);
   --info: #1F5FA8;
   --info-bg: rgba(31,95,168,.1);
-  --focus: #141A2E;
+  --focus: var(--series-1);
   --scrim: rgba(14,18,36,.45);
   --shadow: 20,30,70;
   --wash-op: .5;
@@ -62,7 +62,7 @@
   --warn-bg: rgba(242,185,75,.16);
   --info: #8DB8F2;
   --info-bg: rgba(141,184,242,.16);
-  --focus: #EEF1FA;
+  --focus: var(--series-1);
   --scrim: rgba(0,0,0,.6);
   --shadow: 0,0,0;
   --wash-op: .34;
