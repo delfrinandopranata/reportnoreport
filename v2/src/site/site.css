@@ -39,10 +39,11 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
 .lp-lede { font-size: 19px; line-height: 1.55; color: var(--ink-2); max-width: 30em; margin: var(--space-6) 0 0; }
 .lp-note { margin-top: var(--space-5); }
 /* the flow inside the window pans (showcase.ts initHero); lane names ride along by the same amount so they stay put */
-.lp-win { box-sizing: border-box; padding: var(--space-4); transform-origin: left center; transform: perspective(1400px) rotateY(-9deg) rotateX(4deg) rotate(1deg); }
+.lp-win { box-sizing: border-box; padding: var(--space-4); transform: none; } /* flat on the grid: its edges line up with the header button and the cards below */
 .lp-flow { height: 420px; overflow: hidden; }
 .lp-flow .sl-stage, .lp-flow .sl-lane-name { transition: translate 1.1s var(--ease); }
-.lp-flow .sl-lane-name { position: relative; z-index: 5; translate: var(--px, 0) 0; max-width: 72px; padding: 2px 4px; border-radius: var(--r-key); background: var(--surface); }
+/* a solid lane column that rides with the pan, so cards slide under it instead of peeking out beside the name */
+.lp-flow .sl-lane-name { position: relative; z-index: 5; translate: var(--px, 0) 0; align-self: stretch; display: flex; align-items: center; width: 80px; margin-left: calc(-1 * var(--space-1)); padding-left: var(--space-1); background: linear-gradient(90deg, var(--surface) 84%, transparent); }
 html[data-motion="flat"] .lp-flow .sl-stage, html[data-motion="flat"] .lp-flow .sl-lane-name { transition: none; }
 .lp-win-head { display: flex; align-items: center; gap: var(--space-2); padding: 2px 6px var(--space-3); }
 .lp-win-head i { width: 10px; height: 10px; border-radius: 50%; background: var(--soft); }
@@ -59,7 +60,7 @@ html.js:not([data-motion="flat"]) .lp-dot { opacity: 0; }
 
 /* sections */
 .lp-sec { padding: 96px 0; }
-.lp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.lp-split { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; } /* same columns as the hero, so every right-hand card starts on one line */
 .lp-center { text-align: center; display: grid; justify-items: center; margin-bottom: var(--space-12); }
 .lp-center .lp-h2 { max-width: 16em; }
 .lp-center .lp-lede { margin-top: var(--space-4); }
@@ -259,7 +260,7 @@ html.js:not([data-motion="flat"]) .sl-card[data-state="now"] { transform: scale(
 .lp-flow .sl-list { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* dashboard: KPI tiles with sparklines, then a grid of charts; marks draw in when the window is revealed */
-.lp-dash { margin-top: var(--space-10); padding: var(--space-4); display: grid; gap: var(--space-4); }
+.lp-dash { margin-top: var(--space-10); padding: var(--space-4); display: grid; gap: var(--space-4); transform: none; }
 .lp-filters { display: flex; gap: 6px; margin-left: auto; }
 .lp-filters .rnr-chip { border-radius: var(--r-key); }
 .lp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
