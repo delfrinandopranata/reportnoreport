@@ -1,5 +1,5 @@
-import { initShowcase } from './showcase'
-import { LOOP_MS, loopState, runLine, shouldAnimate } from './loop'
+import { initHero, initShowcase } from './showcase'
+import { shouldAnimate } from './loop'
 
 const root = document.documentElement
 const $ = <T extends Element>(sel: string) => document.querySelector<T>(sel)
@@ -8,21 +8,7 @@ const animate = shouldAnimate(matchMedia('(prefers-reduced-motion: reduce)').mat
 root.classList.add('js')
 if (!animate) root.dataset.motion = 'flat'
 
-/* Ticker: four rows from the start; one new row every 2.4 s while the hero is on screen. */
-const NAMES = ['Aisha K.', 'Ben T.', 'Chen W.', 'Dana R.', 'Eli M.']
-const runs = $<HTMLUListElement>('#runs')
-let runNo = 4821
-const addRun = (fresh: boolean) => {
-  if (!runs) return
-  const n = runNo++
-  const li = document.createElement('li')
-  li.textContent = runLine(n, NAMES[n % NAMES.length], 1 + ((n * 7) % 9))
-  if (fresh) li.className = 'lp-new'
-  runs.prepend(li)
-  while (runs.children.length > 4) runs.lastElementChild?.remove()
-}
-for (let i = 0; i < 4; i++) addRun(false)
-
+const hero = initHero(animate)
 const showcase = initShowcase(animate)
 
 /* Reveals: one observer, each element once. Still mode shows everything at once. */
@@ -47,16 +33,6 @@ function start() {
   }
   const len = (p: SVGPathElement) => p.getTotalLength()
 
-  /* hero: pulse, two trail dots and a halo ride loopState; the stamp thumps at Ask HR */
-  const hero = $('#hero')
-  const paths = { p1: $<SVGPathElement>('#p1'), p2: $<SVGPathElement>('#p2'), p3: $<SVGPathElement>('#p3') }
-  const dots: [SVGElement | null, number, number][] = [
-    [$<SVGElement>('#pulse'), 0, 1], [$<SVGElement>('#halo'), 0, 0.5], [$<SVGElement>('#t1'), 0.07, 0.55], [$<SVGElement>('#t2'), 0.14, 0.3],
-  ]
-  const stamp = $('#stamp')
-  const lens = Object.fromEntries(Object.entries(paths).map(([k, p]) => [k, p ? len(p) : 0]))
-  let stampOn = false
-
   /* approvals: typing, press, stamp, on a 9 s loop */
   const appr = $('#appr')
   const typed = $('#typed')
@@ -68,11 +44,11 @@ function start() {
 
   /* hub: four dots travel the connectors, in and out alternately */
   const hub = $('#hub')
-  const hubPaths = ['#h1', '#h2', '#h3', '#h4'].map((s) => $<SVGPathElement>(s))
+  const hubPaths = [...document.querySelectorAll<SVGPathElement>('#hub .lp-edge')]
   const hubDots = [...document.querySelectorAll<SVGElement>('.lp-hd')]
   const hubLens = hubPaths.map((p) => (p ? len(p) : 0))
 
-  const targets: (Element | null | undefined)[] = [hero, appr, hub, showcase?.root]
+  const targets: (Element | null | undefined)[] = [hero?.root, appr, hub, showcase?.root]
   const seen = new Map<Element, { on: boolean; t0: number }>(targets.flatMap((t) => (t ? [[t, { on: false, t0: 0 }] as const] : [])))
   const vis = new IntersectionObserver((es) => es.forEach((e) => {
     const s = seen.get(e.target)
@@ -80,30 +56,11 @@ function start() {
   }))
   targets.forEach((t) => t && vis.observe(t))
 
-  let nextRun = performance.now() + 2400
   let raf = 0
   const frame = (now: number) => {
     raf = requestAnimationFrame(frame)
-    const h = hero && seen.get(hero)
-    if (h?.on) {
-      const t = now - h.t0
-      const st = loopState(t)
-      // at rest the pulse parks on the branch it took, until the loop is about to restart
-      const rest = st.path === null && t % LOOP_MS < 5200 ? (Math.floor(t / LOOP_MS) % 3 === 2 ? 'p3' : 'p2') : null
-      dots.forEach(([el, delay, o]) => {
-        if (!el) return
-        const key = st.path ?? rest
-        const p = key && paths[key]
-        if (!key || !p) { el.style.opacity = '0'; return }
-        if (st.path) place(el, p, lens[key], st.u - delay, st.u - delay >= 0 ? o : 0)
-        else place(el, p, lens[key], 1, el === dots[0][0] || el === dots[1][0] ? o : 0)
-      })
-      if (st.stamp !== stampOn && stamp) {
-        stampOn = st.stamp
-        if (stampOn) stamp.setAttribute('data-thump', ''); else stamp.removeAttribute('data-thump')
-      }
-      if (now >= nextRun) { nextRun = now + 2400; addRun(true) }
-    }
+    const h = hero && seen.get(hero.root)
+    if (hero && h?.on) hero.update(now - h.t0)
     const a = appr && seen.get(appr)
     if (a?.on && typed && approve && stamp2) {
       const u = (now - a.t0) % APPR_MS
