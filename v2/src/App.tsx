@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './data/supabase'
 import { useQueryClient } from '@tanstack/react-query'
@@ -38,6 +39,14 @@ import { Skeleton } from './ui/Skeleton'
 import { blocksNavigation } from './ui/navGuard'
 import { syncFromSession, useFollowSystem } from './ui/useAppearance'
 
+/** Runs a route change inside a view transition where the browser has one and motion is on, so the main column
+ *  cross-fades (styles: design/components/bundle.css, "page change"). Otherwise the change is instant. */
+function withPageTransition(update: () => void) {
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'flat'
+  if (still || !document.startViewTransition) return update()
+  document.startViewTransition(() => flushSync(update))
+}
+
 const useHash = () => {
   const [hash, setHash] = useState(location.hash || '#/inbox')
   const current = useRef(hash)
@@ -46,7 +55,7 @@ const useHash = () => {
       const next = location.hash || '#/inbox'
       if (blocksNavigation(next)) { history.replaceState(null, '', current.current); return } // the page asks first
       current.current = next
-      setHash(next)
+      withPageTransition(() => setHash(next))
     }
     addEventListener('hashchange', on)
     return () => removeEventListener('hashchange', on)

@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { periodPresets, today, type Kind, type Period } from './ledger'
 import { parseAmount } from './data/mappers'
 import { useMoney } from './data/money'
@@ -233,6 +234,14 @@ export function AccountMenu({
       )}
     </Menu>
   )
+}
+
+/** Runs a route change inside a view transition where the browser has one and motion is on, so the main column
+ *  cross-fades (styles: v2/design/components/bundle.css, "page change"). Otherwise the change is instant. */
+export function withPageTransition(update: () => void) {
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'flat'
+  if (still || !document.startViewTransition) return update()
+  document.startViewTransition(() => flushSync(update))
 }
 
 /** Design-system bar (v2/design/components/Progress). The fill is scaled to value / max through --v, set like the tour's properties. */
