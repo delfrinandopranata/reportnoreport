@@ -34,13 +34,14 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
 .lp-foot-nav { display: none; }
 
 /* hero */
-.lp-hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; padding: 72px 0 96px; }
-.lp-hero-h { margin: var(--space-5) 0 0; font: var(--type-hero); font-size: clamp(40px, 4.6vw, 66px); letter-spacing: var(--tracking-hero); font-variation-settings: "opsz" 72; }
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-10); align-items: start; padding: 40px 0 96px; }
+.lp-hero-h { margin: var(--space-5) 0 0; font: var(--type-hero); font-size: clamp(40px, 6vw, 84px); letter-spacing: var(--tracking-hero); font-variation-settings: "opsz" 72; }
 .lp-lede { font-size: 19px; line-height: 1.55; color: var(--ink-2); max-width: 30em; margin: var(--space-6) 0 0; }
 .lp-note { margin-top: var(--space-5); }
 /* the flow inside the window pans (showcase.ts initHero); lane names ride along by the same amount so they stay put */
 .lp-win { box-sizing: border-box; padding: var(--space-4); transform: none; } /* flat on the grid: its edges line up with the header button and the cards below */
-.lp-flow { height: 420px; overflow: hidden; }
+.lp-hero-copy { max-width: 54rem; }
+.lp-flow { height: clamp(340px, 34vw, 460px); overflow: hidden; } /* the window spans the content width under the headline; the flow scales to this height and pans */
 .lp-flow .sl-stage, .lp-flow .sl-lane-name { transition: translate 1.1s var(--ease); }
 /* a solid lane column that rides with the pan, so cards slide under it instead of peeking out beside the name */
 .lp-flow .sl-lane-name { position: relative; z-index: 5; translate: var(--px, 0) 0; align-self: stretch; display: flex; align-items: center; width: 80px; margin-left: calc(-1 * var(--space-1)); padding-left: var(--space-1); background: linear-gradient(90deg, var(--surface) 84%, transparent); }
