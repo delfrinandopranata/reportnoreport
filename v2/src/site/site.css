@@ -55,7 +55,7 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
 html[data-motion="flat"] .lp-flow .sl-stage, html[data-motion="flat"] .lp-flow .sl-lane-name { transition: none; }
 .lp-win-head { display: flex; align-items: center; gap: var(--space-2); padding: 2px 6px var(--space-3); }
 .lp-win-head i { width: 10px; height: 10px; border-radius: 50%; background: var(--soft); }
-.lp-win-head .rnr-micro { margin-left: var(--space-2); }
+.lp-win-head .rnr-micro { margin-left: var(--space-2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lp-edge { stroke: var(--ink); stroke-opacity: .25; stroke-width: 2; }
 .lp-edge-on { stroke: var(--acc-a); stroke-opacity: 1; }
 .lp-hs2 { right: var(--space-5); top: var(--space-3); }
@@ -329,3 +329,4 @@ html.js:not([data-motion="flat"]) .lp-dash .lp-seg { transition: opacity .8s var
 html.js:not([data-motion="flat"]) .lp-dash.in .lp-seg { opacity: 1; }
 @media (max-width: 1000px) { .lp-kpis { grid-template-columns: 1fr 1fr; } .lp-charts { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 680px) { .lp-kpis, .lp-charts { grid-template-columns: 1fr; } .lp-span2 { grid-column: auto; } .lp-filters { display: none; } }
+@media (max-width: 620px) { .lp-win-head .rnr-micro { letter-spacing: .04em; } }
