@@ -1,24 +1,35 @@
 import type { Programme, Step } from './programmes'
 
-export const LANE_W = 84, COL_W = 128, ROW_H = 108, CARD_W = 98, CARD_H = 78, PAD_Y = 22, MID = 61, TAIL = 44
+/** An edge whose label is one of its source card's options leaves from that option's row, so it needs no label of its own. */
+export const isPort = (st: Step, label?: string) => !!label && !!st.options?.includes(label)
+
+
+export const LANE_W = 84, COL_W = 128, ROW_H = 108, CARD_W = 98, CARD_H = 78, PAD_Y = 22, MID = 61, TAIL = 44, OPT_H = 18, OPT_PAD = 6
 export type Pt = { x: number; y: number }
 export type Rect = { x: number; y: number; w: number; h: number }
 
 export const pos = (st: Step): Pt => ({ x: LANE_W + st.col * COL_W + (COL_W - CARD_W) / 2, y: st.lane * ROW_H + PAD_Y })
-export const cardRect = (st: Step): Rect => ({ ...pos(st), w: CARD_W, h: CARD_H })
+/** Option rows sit at the bottom of the card (see .sl-opts in site.css), so a card grows by one row per option. */
+export const cardH = (st: Step) => CARD_H + (st.options?.length ?? 0) * OPT_H
+export const cardRect = (st: Step): Rect => ({ ...pos(st), w: CARD_W, h: cardH(st) })
+/** Where an option's line leaves the card: the right edge, level with its row. */
+export const portY = (st: Step, label: string) => {
+  const opts = st.options as string[]
+  return pos(st).y + cardH(st) - OPT_PAD - (opts.length - opts.indexOf(label)) * OPT_H + OPT_H / 2
+}
 
 /** A cubic Bezier between two cards: S-curve forward, vertical line within a column, a loop under the lanes going back. */
-export function route(a: Step, b: Step, lanes: number): { p: [Pt, Pt, Pt, Pt]; back: boolean } {
+export function route(a: Step, b: Step, lanes: number, label?: string): { p: [Pt, Pt, Pt, Pt]; back: boolean } {
   const pa = pos(a), pb = pos(b)
   if (b.col > a.col) {
-    const x1 = pa.x + CARD_W, y1 = pa.y + MID, x2 = pb.x, y2 = pb.y + MID, dx = (x2 - x1) / 2
+    const x1 = pa.x + CARD_W, y1 = isPort(a, label) ? portY(a, label as string) : pa.y + MID, x2 = pb.x, y2 = pb.y + MID, dx = (x2 - x1) / 2
     return { p: [{ x: x1, y: y1 }, { x: x1 + dx, y: y1 }, { x: x2 - dx, y: y2 }, { x: x2, y: y2 }], back: false }
   }
   if (b.col === a.col) {
-    const up = b.lane < a.lane, x = pa.x + CARD_W / 2, y1 = up ? pa.y : pa.y + CARD_H, y2 = up ? pb.y + CARD_H : pb.y
+    const up = b.lane < a.lane, x = pa.x + CARD_W / 2, y1 = up ? pa.y : pa.y + cardH(a), y2 = up ? pb.y + cardH(b) : pb.y
     return { p: [{ x, y: y1 }, { x, y: y1 + (y2 - y1) / 3 }, { x, y: y1 + (2 * (y2 - y1)) / 3 }, { x, y: y2 }], back: false }
   }
-  const x1 = pa.x + CARD_W / 2, x2 = pb.x + CARD_W / 2, y1 = pa.y + CARD_H, y2 = pb.y + CARD_H
+  const x1 = pa.x + CARD_W / 2, x2 = pb.x + CARD_W / 2, y1 = pa.y + cardH(a), y2 = pb.y + cardH(b)
   const floor = Math.min(Math.max(y1, y2) + 26, lanes * ROW_H + 8)
   return { p: [{ x: x1, y: y1 }, { x: x1, y: floor }, { x: x2, y: floor }, { x: x2, y: y2 }], back: true }
 }
@@ -41,6 +52,12 @@ export const stampRect = (st: Step): Rect => {
 export const labelSize = (text: string) => ({ w: text.length * 6 + 10, h: 14 })
 const hit = (a: Rect, b: Rect, pad: number) => a.x < b.x + b.w + pad && b.x < a.x + a.w + pad && a.y < b.y + b.h + pad && b.y < a.y + a.h + pad
 
+/** Edges that show their own label; an option's edge is labelled by its row inside the card. */
+export const labelled = (p: Programme) => {
+  const byId = new Map(p.steps.map((s) => [s.id, s]))
+  return p.edges.flatMap(([a, , label], i) => (label && !isPort(byId.get(a) as Step, label) ? [i] : []))
+}
+
 /** Puts each edge label as close to its edge as it can go without touching a card or another label. */
 export function placeLabels(p: Programme): Map<number, Rect> {
   const byId = new Map(p.steps.map((s) => [s.id, s]))
@@ -48,9 +65,9 @@ export function placeLabels(p: Programme): Map<number, Rect> {
   const placed = new Map<number, Rect>()
   const cols = Math.max(...p.steps.map((s) => s.col)) + 1
   const W = LANE_W + cols * COL_W, H = p.lanes.length * ROW_H + TAIL
-  p.edges.forEach(([a, b, label], i) => {
-    if (!label) return
-    const { p: pts } = route(byId.get(a) as Step, byId.get(b) as Step, p.lanes.length)
+  for (const i of labelled(p)) {
+    const [a, b, label] = p.edges[i] as [string, string, string]
+    const { p: pts } = route(byId.get(a) as Step, byId.get(b) as Step, p.lanes.length, label)
     const { w, h } = labelSize(label)
     let best: { r: Rect; cost: number } | null = null
     for (let t = 0.05; t <= 0.951; t += 0.05) {
@@ -64,6 +81,6 @@ export function placeLabels(p: Programme): Map<number, Rect> {
       }
     }
     if (best) placed.set(i, best.r)
-  })
+  }
   return placed
 }

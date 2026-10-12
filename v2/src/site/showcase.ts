@@ -1,6 +1,6 @@
 import { PROGRAMMES, ICON, stats, edgeKey, type Programme, type Step } from './programmes'
 import { showState } from './loop'
-import { LANE_W, COL_W, ROW_H, TAIL, pos, route, pathD, placeLabels } from './layout'
+import { LANE_W, COL_W, ROW_H, TAIL, pos, cardH, route, pathD, placeLabels } from './layout'
 
 const NS = 'http://www.w3.org/2000/svg'
 
@@ -25,7 +25,11 @@ const timerText = (st: Step, k?: number) => {
   return k === undefined ? `${t.n} ${t.unit}s` : `${t.unit === 'day' ? 'Day' : 'Month'} ${k} of ${t.n}`
 }
 
-type View = { p: Programme; cards: Map<string, HTMLElement>; items: Map<string, HTMLElement>; ticks: Map<string, HTMLElement>; paths: Map<string, SVGPathElement>; lens: Map<string, number>; pulse: SVGElement; halo: SVGElement; stage: HTMLElement; fit: HTMLElement; root: HTMLElement }
+type View = {
+  p: Programme; cards: Map<string, HTMLElement>; items: Map<string, HTMLElement>; ticks: Map<string, HTMLElement>; paths: Map<string, SVGPathElement>
+  lens: Map<string, number>; dots: Map<string, SVGElement[]>; stage: HTMLElement; fit: HTMLElement; root: HTMLElement
+  shown: number; lastTick: Map<string, string>
+}
 
 function build(p: Programme): View {
   const cols = Math.max(...p.steps.map((x) => x.col)) + 1
@@ -50,7 +54,7 @@ function build(p: Programme): View {
   const paths = new Map<string, SVGPathElement>(), lens = new Map<string, number>()
   const labels = s('g')
   for (const [a, b] of p.edges) {
-    const r = route(byId.get(a) as Step, byId.get(b) as Step, p.lanes.length)
+    const r = route(byId.get(a) as Step, byId.get(b) as Step, p.lanes.length, p.edges.find((e) => e[0] === a && e[1] === b)?.[2])
     const path = s('path', { d: pathD(r.p), class: `lp-edge${r.back ? ' sl-back' : ''}` }) as SVGPathElement
     svg.append(path); paths.set(edgeKey(a, b), path)
   }
@@ -60,8 +64,12 @@ function build(p: Programme): View {
     t.textContent = label
     labels.append(t)
   }
-  const halo = s('circle', { r: 13, class: 'rnr-halo sl-dot' }), pulse = s('circle', { r: 6, class: 'rnr-pulse sl-dot' })
-  svg.append(halo, pulse)
+  // one pulse per edge, so parallel paths can all move at once
+  const dots = new Map<string, SVGElement[]>()
+  for (const k of paths.keys()) {
+    const pair = [s('circle', { r: 13, class: 'rnr-halo sl-dot' }), s('circle', { r: 6, class: 'rnr-pulse sl-dot' })]
+    svg.append(...pair); dots.set(k, pair)
+  }
   stage.append(svg)
 
   const cards = new Map<string, HTMLElement>(), ticks = new Map<string, HTMLElement>(), items = new Map<string, HTMLElement>()
@@ -69,13 +77,20 @@ function build(p: Programme): View {
   for (const st of p.steps) {
     const c = h('div', 'rnr-folder rnr-folder--node sl-card')
     c.dataset.state = 'idle'
+    c.dataset.type = st.type
     const tab = h('span', 'rnr-folder-tab'); tab.append(icon(ICON[st.type]), st.type)
     const body = h('div', 'rnr-folder-body'); body.append(h('span', 'sl-title', st.title))
     if (st.timer) { const t = h('span', 'rnr-chip sl-tick', timerText(st)); t.dataset.tone = 'accent'; body.append(t); ticks.set(st.id, t) }
+    if (st.options) {
+      c.classList.add('sl-card--opts')
+      const ul = h('ul', 'sl-opts')
+      for (const o of st.options) ul.append(h('li', 'sl-opt', o))
+      body.append(ul)
+    }
     c.append(tab, body)
     if (st.type === 'APPROVAL') c.append(h('span', 'rnr-stamp rnr-stamp--sm sl-stamp', 'APPROVED'))
     const { x, y } = pos(st)
-    c.style.setProperty('--x', `${x}px`); c.style.setProperty('--y', `${y}px`)
+    c.style.setProperty('--x', `${x}px`); c.style.setProperty('--y', `${y}px`); c.style.setProperty('--ch', `${cardH(st)}px`)
     stage.append(c); cards.set(st.id, c)
 
     const li = h('li', 'sl-item'); li.dataset.state = 'idle'
@@ -89,7 +104,66 @@ function build(p: Programme): View {
   stage.append(over)
   fit.append(stage)
   root.append(fit, list)
-  return { p, cards, items, ticks, paths, lens, pulse, halo, stage, fit, root }
+  return { p, cards, items, ticks, paths, lens, dots, stage, fit, root, shown: -1, lastTick: new Map() }
+}
+
+const setState = (v: View, visited: number) => {
+  const seen = new Set(v.p.beats.slice(0, visited).flat()), now = new Set(v.p.beats[visited - 1])
+  for (const [id, el] of [...v.cards, ...v.items]) el.dataset.state = now.has(id) ? 'now' : seen.has(id) ? 'done' : 'idle'
+  for (const [id, el] of v.cards) { const stamp = el.querySelector('.sl-stamp'); if (stamp) stamp.toggleAttribute('data-thump', seen.has(id)) }
+}
+
+/** Still mode: everything lit, nothing moving. */
+const finish = (v: View) => {
+  for (const el of [...v.cards.values(), ...v.items.values()]) el.dataset.state = 'done'
+  for (const pair of v.dots.values()) for (const d of pair) d.style.opacity = '0'
+}
+
+const restart = (v: View, animate: boolean) => {
+  for (const [id, t] of v.ticks) t.textContent = timerText(v.p.steps.find((x) => x.id === id) as Step)
+  if (!animate) return finish(v)
+  for (const [k, path] of v.paths) v.lens.set(k, path.getTotalLength())
+  v.shown = -1; v.lastTick.clear(); setState(v, 1)
+}
+
+/** t = ms since this flow came into view. Every edge from the cards of one beat to the next carries its own pulse. */
+function play(v: View, t: number) {
+  const b = v.p.beats, st = showState(t, b.length)
+  if (st.visited !== v.shown) { v.shown = st.visited; setState(v, v.shown) }
+  const now = new Set(b[st.visited - 1])
+  for (const [id, el] of v.ticks) {
+    const step = v.p.steps.find((x) => x.id === id) as Step, n = (step.timer as NonNullable<Step['timer']>).n
+    const text = now.has(id) && st.slot < 1 && st.edge < 0 ? timerText(step, Math.min(n, Math.floor(st.slot * n) + 1)) : timerText(step)
+    if (v.lastTick.get(id) !== text) { v.lastTick.set(id, text); el.textContent = text }
+  }
+  const moving = new Set<string>()
+  if (st.edge > 0) for (const a of b[st.edge - 1]) for (const c of b[st.edge]) if (a !== c && v.paths.has(edgeKey(a, c))) moving.add(edgeKey(a, c))
+  for (const [k, [halo, pulse]] of v.dots) {
+    if (!moving.has(k)) { halo.style.opacity = pulse.style.opacity = '0'; continue }
+    const pt = (v.paths.get(k) as SVGPathElement).getPointAtLength(st.u * (v.lens.get(k) as number))
+    for (const d of [halo, pulse]) { d.setAttribute('cx', String(pt.x)); d.setAttribute('cy', String(pt.y)) }
+    pulse.style.opacity = '1'; halo.style.opacity = '.5'
+  }
+}
+
+/** Scale the stage to its box; below `min` it keeps that scale and the box scrolls sideways instead. */
+const fitTo = (v: View, min: number, box: HTMLElement = v.fit) => {
+  const w = parseFloat(v.stage.style.getPropertyValue('--w'))
+  v.fit.style.setProperty('--z', String(Math.max(min, Math.min(1, box.clientWidth / w))))
+}
+
+/** The hero: the busiest programme, live, at the top of the page. */
+export function initHero(animate: boolean) {
+  const host = document.getElementById('hero-flow')
+  if (!host) return null
+  const p = PROGRAMMES.reduce((a, b) => (b.steps.length > a.steps.length ? b : a))
+  const v = build(p)
+  v.root.removeAttribute('role'); v.root.removeAttribute('tabindex')
+  host.replaceChildren(v.root)
+  const fit = () => fitTo(v, 0.5, host)
+  new ResizeObserver(fit).observe(host)
+  fit(); restart(v, animate)
+  return { root: host, update: (t: number) => play(v, t) }
 }
 
 export function initShowcase(animate: boolean) {
@@ -100,25 +174,8 @@ export function initShowcase(animate: boolean) {
   if (!host || !tablist || !body || !side) return null
 
   const views = new Map<string, View>()
-  let cur: View | null = null, base = 0, rebase = true, shown = -1
-  const lastTick = new Map<string, string>()
-
-  const fitStage = () => {
-    if (!cur) return
-    const w = parseFloat(cur.stage.style.getPropertyValue('--w'))
-    cur.fit.style.setProperty('--z', String(Math.min(1, cur.fit.clientWidth / w)))
-  }
-  new ResizeObserver(fitStage).observe(body)
-
-  const setState = (v: View, visited: number) => {
-    const seen = new Set(v.p.order.slice(0, visited)), now = v.p.order[visited - 1]
-    for (const [id, el] of [...v.cards, ...v.items]) el.dataset.state = id === now ? 'now' : seen.has(id) ? 'done' : 'idle'
-    for (const [id, el] of v.cards) { const stamp = el.querySelector('.sl-stamp'); if (stamp) stamp.toggleAttribute('data-thump', seen.has(id)) }
-  }
-  const finish = (v: View) => {
-    for (const el of [...v.cards.values(), ...v.items.values()]) el.dataset.state = 'done'
-    v.pulse.style.opacity = v.halo.style.opacity = '0'
-  }
+  let cur: View | null = null, base = 0, rebase = true
+  new ResizeObserver(() => cur && fitTo(cur, 0)).observe(body)
 
   const select = (key: string) => {
     const p = PROGRAMMES.find((x) => x.key === key) as Programme
@@ -133,12 +190,9 @@ export function initShowcase(animate: boolean) {
     side.replaceChildren(h('h3', 'lp-h3', p.name), h('p', 'rnr-muted', p.blurb), (() => {
       const ul = h('ul', 'sl-stats'); for (const x of stats(p)) ul.append(h('li', '', x)); return ul
     })())
-    fitStage()
-    for (const [id, t] of v.ticks) t.textContent = timerText(p.steps.find((x) => x.id === id) as Step)
-    if (animate) {
-      for (const [k, path] of v.paths) v.lens.set(k, path.getTotalLength())
-      shown = -1; rebase = true; lastTick.clear(); setState(v, 1)
-    } else finish(v)
+    fitTo(v, 0)
+    rebase = true
+    restart(v, animate)
   }
 
   const tabs = [...tablist.querySelectorAll<HTMLElement>('[role=tab]')]
@@ -150,31 +204,12 @@ export function initShowcase(animate: boolean) {
       e.preventDefault(); tabs[to].focus(); select(tabs[to].dataset.key as string)
     })
   })
-  select(PROGRAMMES[0].key)
+  select(tabs[0].dataset.key as string)
 
-  /** t = ms since the showcase came into view. */
   const update = (t: number) => {
-    const v = cur
-    if (!v) return
+    if (!cur) return
     if (rebase) { base = t; rebase = false }
-    const o = v.p.order, st = showState(t - base, o.length)
-    if (st.visited !== shown) { shown = st.visited; setState(v, shown) }
-    const now = v.p.steps.find((x) => x.id === o[st.visited - 1]) as Step
-    for (const [id, el] of v.ticks) {
-      const step = v.p.steps.find((x) => x.id === id) as Step, n = (step.timer as NonNullable<Step['timer']>).n
-      const text = now.id === id && st.slot < 1 && st.edge < 0 ? timerText(step, Math.min(n, Math.floor(st.slot * n) + 1)) : timerText(step)
-      if (lastTick.get(id) !== text) { lastTick.set(id, text); el.textContent = text }
-    }
-    if (st.edge > 0) {
-      const key = edgeKey(o[st.edge - 1], o[st.edge]), path = v.paths.get(key)
-      if (path) {
-        const pt = path.getPointAtLength(st.u * (v.lens.get(key) as number))
-        for (const dot of [v.pulse, v.halo]) { dot.setAttribute('cx', String(pt.x)); dot.setAttribute('cy', String(pt.y)) }
-        v.pulse.style.opacity = '1'; v.halo.style.opacity = '.5'
-        return
-      }
-    }
-    v.pulse.style.opacity = v.halo.style.opacity = '0'
+    play(cur, t - base)
   }
   return { root: host, update }
 }
