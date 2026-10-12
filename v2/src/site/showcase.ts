@@ -1,6 +1,6 @@
 import { PROGRAMMES, ICON, stats, edgeKey, type Programme, type Step } from './programmes'
-import { showState } from './loop'
-import { LANE_W, COL_W, ROW_H, TAIL, CARD_W, pos, cardH, route, pathD, placeLabels } from './layout'
+import { HOLD_MS, showState } from './loop'
+import { LANE_W, COL_W, ROW_H, TAIL, CARD_W, pos, cardH, route, pathD, placeLabels, cameraTarget, glide } from './layout'
 
 const NS = 'http://www.w3.org/2000/svg'
 
@@ -128,8 +128,8 @@ const restart = (v: View, animate: boolean) => {
 }
 
 /** t = ms since this flow came into view. Every edge from the cards of one beat to the next carries its own pulse. */
-function play(v: View, t: number) {
-  const b = v.p.beats, st = showState(t, b.length)
+function play(v: View, t: number, lead?: number) {
+  const b = v.p.beats, st = showState(t, b.length, lead)
   if (st.visited !== v.shown) { v.shown = st.visited; setState(v, v.shown) }
   const now = new Set(b[st.visited - 1])
   for (const [id, el] of v.ticks) {
@@ -155,6 +155,9 @@ const fitTo = (v: View, min: number, box: HTMLElement = v.fit) => {
 
 /** The hero: the busiest programme, live, in a window narrower than the flow. The stage is scaled to the window's height
  *  and pans so the cards that are lit (or about to be) stay in view. */
+/** The hero pulse rests only this long on each card, so it reads as one continuous flow. */
+const HERO_LEAD = 120
+
 export function initHero(animate: boolean) {
   const host = document.getElementById('hero-flow')
   if (!host) return null
@@ -164,22 +167,38 @@ export function initHero(animate: boolean) {
   host.replaceChildren(v.root)
   const W = parseFloat(v.stage.style.getPropertyValue('--w')), H = parseFloat(v.stage.style.getPropertyValue('--h'))
   const byId = new Map(p.steps.map((x) => [x.id, x]))
-  let z = 1, lastX = -1
-  const fit = () => { z = host.clientHeight / H; v.fit.style.setProperty('--z', String(z)) }
-  const pan = (ids: string[]) => {
-    const cx = ids.reduce((sum, id) => sum + pos(byId.get(id) as Step).x + CARD_W / 2, 0) / ids.length
-    const view = host.clientWidth / z
-    const x = Math.round(Math.max(0, Math.min(W - view, cx - view * 0.4)))
-    if (x !== lastX) { lastX = x; v.stage.style.translate = `${-x}px 0`; v.stage.style.setProperty('--px', `${x}px`) }
+  const centre = (ids: string[]) => ids.reduce((sum, id) => sum + pos(byId.get(id) as Step).x + CARD_W / 2, 0) / ids.length
+  // on wide screens the window's left part fades behind the headline (site.css), so the lit cards sit further right
+  const wide = matchMedia('(min-width: 901px)')
+  let z = 1, view = 0, x = 0, last = 0, shown = '', backFrom = -1, backAt = 0
+  const fit = () => { z = host.clientHeight / H; view = host.clientWidth / z; v.fit.style.setProperty('--z', String(z)) }
+  const place = () => {
+    const at = `${(-x).toFixed(1)}px 0`
+    if (at === shown) return
+    shown = at; v.stage.style.translate = at; v.stage.style.setProperty('--px', `${x.toFixed(1)}px`)
   }
   new ResizeObserver(fit).observe(host)
   fit(); restart(v, animate)
   return {
     root: host,
+    /** Every frame: the camera glides after the pulse, so the flow drifts continuously instead of hopping per step. */
     update: (t: number) => {
-      play(v, t)
-      const st = showState(t, p.beats.length)
-      pan(p.beats[st.edge > 0 ? st.edge : st.visited - 1])
+      play(v, t, HERO_LEAD)
+      const st = showState(t, p.beats.length, HERO_LEAD), b = p.beats
+      const from = centre(b[st.visited - 1]), to = st.edge > 0 ? centre(b[st.edge]) : from
+      // during the end hold the camera eases back to the first card (smoothstep over the hold), so the next loop starts without a jump
+      const end = st.visited === b.length && st.edge < 0
+      if (end) {
+        if (backFrom < 0) { backFrom = x; backAt = t }
+        const k = Math.min(1, (t - backAt) / (HOLD_MS - 200))
+        x = backFrom * (1 - k * k * (3 - 2 * k))
+      } else {
+        backFrom = -1
+        const target = cameraTarget(from, to, st.u, view, W, wide.matches ? 0.62 : 0.4)
+        x = last === 0 ? target : glide(x, target, Math.min(64, t - last))
+      }
+      last = t
+      place()
     },
   }
 }
