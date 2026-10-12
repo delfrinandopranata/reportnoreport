@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { periodPresets, today, type Kind, type Period } from './ledger'
 import { parseAmount } from './data/mappers'
 import { useMoney } from './data/money'
@@ -25,7 +25,7 @@ export function Icon({ name, className = 'size-4' }: { name: keyof typeof GLYPH;
   )
 }
 
-/** The name in Fraunces with the second R struck through (v2/design/components/Wordmark). */
+/** The name in Newsreader with the second R struck through (v2/design/components/Wordmark). */
 export function Wordmark({ href, size = 'md' }: { href?: string; size?: 'md' | 'lg' }) {
   const mark = (
     <>
@@ -232,6 +232,19 @@ export function AccountMenu({
         </>
       )}
     </Menu>
+  )
+}
+
+/** Design-system bar (v2/design/components/Progress). The fill is scaled to value / max through --v, set like the tour's properties. */
+export function ProgressBar({ value, max, label, decorative = false, className = '' }: { value: number; max: number; label?: string; decorative?: boolean; className?: string }) {
+  const fill = useRef<HTMLSpanElement>(null)
+  const v = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0
+  useLayoutEffect(() => { fill.current?.style.setProperty('--v', String(v)) }, [v])
+  return (
+    <div className={`rnr-progress ${className}`.trim()} role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value}
+      aria-label={label} aria-hidden={decorative || undefined}>
+      <span ref={fill} className="rnr-progress-fill" />
+    </div>
   )
 }
 

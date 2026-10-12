@@ -1,12 +1,12 @@
 # Wordmark
 
-The name set in type: "ReportNoReport" in Fraunces with the second "R" struck through. Classes `rnr-wordmark`, `rnr-wordmark-rr`, `rnr-strike`; React: `Wordmark({ href? })`.
+The name set in type: "ReportNoReport" in Newsreader with the second "R" struck through. Classes `rnr-wordmark`, `rnr-wordmark-rr`, `rnr-strike`; React: `Wordmark({ href? })`.
 
 ## Anatomy
 ```html
 <span class="rnr-wordmark" data-draw role="img" aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span>
 ```
-Fraunces 500, 20px, −0.02em, SOFT 100, opsz 36. Strike: `--strike` 3.2 stroke, round caps, `stroke-dasharray: 60`.
+Newsreader 500, 20px, −0.02em, opsz 36. Strike: `--strike` 3.2 stroke, round caps, `stroke-dasharray: 60`.
 
 ## Motion
 With `data-draw` the strike is drawn once (0.7s, after 0.5s). Drawn already under `data-motion="flat"` and reduced motion. No loop.

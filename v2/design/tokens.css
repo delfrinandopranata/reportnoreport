@@ -484,7 +484,7 @@
 /* ---------- type, shape, space, motion, layers, sizes ---------- */
 :root {
   --font-ui: "Hanken Grotesk Variable", "Hanken Grotesk Fallback", system-ui, sans-serif;
-  --font-display: "Fraunces Variable", "Fraunces Fallback", Georgia, serif;
+  --font-display: "Newsreader Variable", "Newsreader Fallback", Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --type-hero: 450 clamp(52px, 7vw, 96px)/1.02 var(--font-display);
   --tracking-hero: -0.03em;
@@ -549,7 +549,6 @@
   --t-bars: 1100ms;
   --t-stagger: 50ms;
   --ease: cubic-bezier(.2,.7,.2,1);
-  --ease-spring: cubic-bezier(.34,1.56,.64,1);
   --z-base: 0;
   --z-sticky: 10;
   --z-side: 20;

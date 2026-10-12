@@ -43,5 +43,5 @@ test('external font hosts are refused', () => {
   assert.deepEqual(findExternalFonts('<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">'),
     ['https://fonts.googleapis.com/css2?family=Inter&display=swap'])
   assert.deepEqual(findExternalFonts('@font-face{src:url(https://fonts.gstatic.com/s/inter/v1.woff2)}'), ['https://fonts.gstatic.com/s/inter/v1.woff2'])
-  assert.deepEqual(findExternalFonts('@font-face{src:url(/assets/fraunces-latin-wght-normal-AbC123.woff2)}'), [])
+  assert.deepEqual(findExternalFonts('@font-face{src:url(/assets/newsreader-latin-opsz-normal-AbC123.woff2)}'), [])
 })

@@ -34,7 +34,7 @@ export const COMPONENTS = [
   ['Canvas', 'Workflow canvas', 'Node card, handle, edge'],
   ['FormBuilder', 'Form builder blocks', 'Palette, blocks, drop slot, sign pad'],
   ['AppearancePanel', 'Appearance panel', 'Theme, density and 8 accents'],
-  ['Wordmark', 'Wordmark', 'Fraunces with the strike'],
+  ['Wordmark', 'Wordmark', 'Newsreader with the strike'],
   ['Landing', 'Landing primitives', 'Wash, window, reveal, pulse'],
   ['Icon', 'Icons', 'Phosphor regular, 20 nav / 16 inline'],
   ['LedgerTable', 'Ledger table', 'v1: running balance, in / out marks, resizable columns'],

@@ -6,7 +6,7 @@ import { useMoney } from './data/money'
 import { useBalances, useClients, useLedger, useRecentTxns } from './data/queries'
 import type { Span, WidgetType } from './Dashboard'
 import { LoadError, Skeleton, useGate } from './clients/shared'
-import { Avatar, btn, Icon, KindBadge, TxnForm } from './ui'
+import { Avatar, btn, Icon, KindBadge, ProgressBar, TxnForm } from './ui'
 
 const ALL_TIME = '1900-01-01'
 
@@ -191,7 +191,7 @@ function Balances() {
               <a href={`#clients/${r.id}`} className="rnr-link min-w-0 truncate pointer-coarse:py-2.5">{r.name}</a>
               <span className="rnr-amt" data-neg={r.net < 0 || undefined}>{money.format(r.net)}</span>
             </div>
-            <progress className="rnr-progress mt-1.5 h-1.5" value={Math.abs(r.net)} max={max} aria-hidden />
+            <ProgressBar className="mt-1.5 h-1.5" value={Math.abs(r.net)} max={max} decorative />
           </div>
         </li>
       ))}

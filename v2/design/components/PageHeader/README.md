@@ -3,7 +3,7 @@
 `rnr-page-head`, `rnr-page-title`, `rnr-micro`, `rnr-lede`, `rnr-page-actions`, `rnr-crumb`.
 
 ## Anatomy
-Back link (`rnr-crumb`, 44px, arrow icon) above, then: micro mono crumb ("Work · Leave approval") · title (`rnr-page-title`: Fraunces 450, `clamp(36px, 4vw + 20px, 64px)`, one `<h1>` per view, **one italic accent word at most**) · lede (`rnr-lede`, `--ink-2`, ≤ 34em) · actions on the right (the one primary lives here).
+Back link (`rnr-crumb`, 44px, arrow icon) above, then: micro mono crumb ("Work · Leave approval") · title (`rnr-page-title`: Newsreader 450, `clamp(36px, 4vw + 20px, 64px)`, one `<h1>` per view, **one italic accent word at most**) · lede (`rnr-lede`, `--ink-2`, ≤ 34em) · actions on the right (the one primary lives here).
 Alignment: left for list and detail pages; `data-align="center"` for auth and public pages.
 
 ## Which titles get an italic word

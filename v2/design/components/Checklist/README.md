@@ -3,7 +3,7 @@
 The onboarding checklist on the dashboard. `rnr-folder` > `.rnr-checklist-summary` (`rnr-progress` + count) + `ol.rnr-checklist` > `li.rnr-checklist-item[data-state]`.
 
 ## Anatomy
-Summary row: "3 of 6 done" (`rnr-caption`) and a native `progress`. Each item: state icon (20px) · label (link or button to the task) · state word (`.rnr-checklist-state`). Items are 44px high with radius 10 (concentric in the folder).
+Summary row: "3 of 6 done" (`rnr-caption`) and a `rnr-progress` bar. Each item: state icon (20px) · label (link or button to the task) · state word (`.rnr-checklist-state`). Items are 44px high with radius 10 (concentric in the folder).
 
 ## States (icon + word, never colour alone)
 `done` (check-circle, "Done", label `--ink-3`) · `current` (arrow-right, "Next", `--tint` background, label ink, 500 weight) · `todo` (circle, no word needed; the label is the action) · `skipped` (minus-circle, "Skipped"). All complete: the folder is replaced by one line, "You're all set." with a "Hide checklist" ghost button.
