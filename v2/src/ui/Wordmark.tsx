@@ -8,7 +8,7 @@ const mark = (
   </>
 )
 
-/** The name in Fraunces with the second R struck through (design/components/Wordmark). `lg` is the auth pages' size. */
+/** The name in Newsreader with the second R struck through (design/components/Wordmark). `lg` is the auth pages' size. */
 export function Wordmark({ href, size = 'md' }: { href?: string; size?: 'md' | 'lg' }) {
   const cls = `rnr-wordmark${size === 'lg' ? ' text-[32px]' : ''}`
   return href

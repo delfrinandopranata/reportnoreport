@@ -1,6 +1,6 @@
 /* src/site/site.css: public pages only (landing, privacy, terms, 404, unsubscribe). Spec: docs/superpowers/design/phase-7-screens.md §5 */
-@import "@fontsource-variable/fraunces/full.css";
-@import "@fontsource-variable/fraunces/full-italic.css";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
 @import "@fontsource-variable/hanken-grotesk/index.css";
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
@@ -9,14 +9,14 @@
 @import "tailwindcss";
 
 /* metric-matched fallbacks so the swap to the real faces does not move the headline (CLS) */
-@font-face { font-family: "Fraunces Fallback"; src: local("Georgia"); size-adjust: 89.7%; ascent-override: 109%; descent-override: 29%; line-gap-override: 0%; }
+@font-face { font-family: "Newsreader Fallback"; src: local("Georgia"); size-adjust: 101.4%; ascent-override: 73%; descent-override: 25.6%; line-gap-override: 0%; }
 @font-face { font-family: "Hanken Grotesk Fallback"; src: local("Arial"), local("Liberation Sans"), local("Helvetica"); size-adjust: 99.5%; ascent-override: 100.5%; descent-override: 30.2%; line-gap-override: 0%; }
 
 html, body { overflow-x: clip; }
 body { margin: 0; background: var(--canvas); color: var(--ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--r-control-sm); }
 .lp-defs { position: absolute; }
-.lp-h1 { margin: 0 0 var(--space-3); font: var(--type-page); letter-spacing: var(--tracking-hero); font-variation-settings: "SOFT" 100, "opsz" 144; }
+.lp-h1 { margin: 0 0 var(--space-3); font: var(--type-page); letter-spacing: var(--tracking-hero); font-variation-settings: "opsz" 72; }
 .lp-h2 { margin: var(--space-4) 0 0; font: var(--type-section); letter-spacing: var(--tracking-section); max-width: 12em; }
 .lp-h3 { margin: 0; font: var(--type-title); }
 .rnr-display em { font-style: italic; }
@@ -34,8 +34,8 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
 .lp-foot-nav { display: none; }
 
 /* hero */
-.lp-hero { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; padding: 72px 0 96px; }
-.lp-hero-h { margin: var(--space-5) 0 0; font: var(--type-hero); font-size: clamp(44px, 5.4vw, 84px); letter-spacing: var(--tracking-hero); font-variation-settings: "SOFT" 100, "opsz" 144; }
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; padding: 72px 0 96px; }
+.lp-hero-h { margin: var(--space-5) 0 0; font: var(--type-hero); font-size: clamp(40px, 4.6vw, 66px); letter-spacing: var(--tracking-hero); font-variation-settings: "opsz" 72; }
 .lp-lede { font-size: 19px; line-height: 1.55; color: var(--ink-2); max-width: 30em; margin: var(--space-6) 0 0; }
 .lp-note { margin-top: var(--space-5); }
 /* the flow inside the window pans (showcase.ts initHero); lane names ride along by the same amount so they stay put */

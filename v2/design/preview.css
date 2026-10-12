@@ -11,7 +11,7 @@ body { margin: 0; font: var(--type-body); color: var(--ink); background: var(--c
 .pv-nav a { color: var(--link); }
 main.pv { max-width: 1120px; margin: 0 auto; padding: 32px 24px 96px; }
 .pv-sec { margin: 0 0 56px; scroll-margin-top: 90px; }
-.pv-sec > h2 { margin: 0 0 4px; font: var(--type-heading); font-variation-settings: "SOFT" 100, "opsz" 72; }
+.pv-sec > h2 { margin: 0 0 4px; font: var(--type-heading); font-variation-settings: "opsz" 72; }
 .pv-sec > .pv-sub { margin: 0 0 20px; font: var(--type-caption); color: var(--ink-3); }
 .pv-sec > .pv-sub a { color: var(--link); }
 .pv-h { margin: 28px 0 10px; font: var(--type-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); }

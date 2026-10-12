@@ -177,14 +177,14 @@ function Builder({ form, onReload }: { form: LoadedForm; onReload(): Promise<voi
               onRemove={removeChild} />
           )}
         </div>
-        <aside aria-labelledby="preview-h" className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+        <section aria-labelledby="preview-h" className="min-w-0 lg:sticky lg:top-4 lg:self-start">
           <FolderCard tab={<h2 id="preview-h">Preview</h2>}>
             <div className="grid gap-3">
               <p className="rnr-caption">Changes appear here as you edit. Nothing you enter is saved.</p>
               <FormRunner fields={fields} idPrefix="preview" />
             </div>
           </FolderCard>
-        </aside>
+        </section>
       </div>
       <ConfirmDialog open={!!leaveTo} title="Leave without saving?" body={`Your changes to ${name.trim() || 'this form'} will be lost.`}
         confirmLabel="Leave without saving" busyLabel="Leaving…" busy={false} error={null}

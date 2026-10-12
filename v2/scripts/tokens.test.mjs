@@ -32,7 +32,11 @@ export const contrast = (fg, bg) => {
   return (a + 0.05) / (b + 0.05)
 }
 
-const palette = (a, t) => ({ ...tokens.theme[t], ...tokens.accent[a][t] })
+/** A token may point at another (focus is var(--series-1), the accent's 3:1 shade); resolve one level so the contrast maths sees a colour. */
+const palette = (a, t) => {
+  const p = { ...tokens.theme[t], ...tokens.accent[a][t] }
+  return Object.fromEntries(Object.entries(p).map(([k, v]) => [k, typeof v === 'string' && v.startsWith('var(--') ? p[v.slice(6, -1)] : v]))
+}
 
 test('contrast maths matches WCAG reference values', () => {
   assert.equal(contrast('#000000', '#FFFFFF').toFixed(2), '21.00')

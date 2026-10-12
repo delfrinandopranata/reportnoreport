@@ -5,7 +5,7 @@ import { ClientsPage } from './ClientsPage'
 import { ContractsPage } from './contracts/ContractsPage'
 import { StatementPage } from './Statement'
 import { Dashboard } from './Dashboard'
-import { Avatar, btn, Icon, Dialog, ThemeToggle, Wordmark } from './ui'
+import { Avatar, btn, Icon, Dialog, ThemeToggle, withPageTransition, Wordmark } from './ui'
 import { useSession } from './data/session'
 import { ROLE_LABEL } from './users/rules'
 import { currentItem, navItems, phoneItems, type NavItem } from './nav'
@@ -117,7 +117,7 @@ export default function App() {
   const removeSampleErrorMsg = removeSample.error instanceof Error ? removeSample.error.message : (removeSample.error ? String(removeSample.error) : '')
 
   useEffect(() => {
-    const onHash = () => setRoute(readRoute())
+    const onHash = () => withPageTransition(() => setRoute(readRoute()))
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [])

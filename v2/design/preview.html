@@ -405,8 +405,8 @@
 <h2 id="Progress-h">Progress and spinner</h2>
 <p class="pv-sub">Native progress element · <a href="components/Progress/README.md">Spec (README)</a></p>
 <div class="pv-col" style="max-width:420px">
-<label class="rnr-caption" for="pg1">Rendering PDF, 60%</label><progress class="rnr-progress" id="pg1" max="100" value="60">60%</progress>
-<label class="rnr-caption" for="pg2">Importing records</label><progress class="rnr-progress" id="pg2">Working</progress>
+<span class="rnr-caption" id="pg1-l">Rendering PDF, 60%</span><div class="rnr-progress" id="pg1" role="progressbar" aria-labelledby="pg1-l" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60"><span class="rnr-progress-fill" style="--v:0.6"></span></div>
+<span class="rnr-caption" id="pg2-l">Importing records</span><div class="rnr-progress" id="pg2" role="progressbar" aria-labelledby="pg2-l"><span class="rnr-progress-fill"></span></div>
 <div class="pv-row"><span class="rnr-spin" role="status" aria-label="Loading"></span><span class="rnr-caption">Spinner: 16px, for buttons and inline waits</span></div>
 </div>
 
@@ -581,9 +581,9 @@
 </section>
 <section class="pv-sec" id="Wordmark" aria-labelledby="Wordmark-h">
 <h2 id="Wordmark-h">Wordmark</h2>
-<p class="pv-sub">Fraunces with the strike · <a href="components/Wordmark/README.md">Spec (README)</a></p>
+<p class="pv-sub">Newsreader with the strike · <a href="components/Wordmark/README.md">Spec (README)</a></p>
 <div class="pv-col"><div class="pv-row" style="gap:32px"><span class="rnr-wordmark" data-draw role="img" aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span><span style="font-size:40px;display:inline-flex"><span class="rnr-wordmark" role="img" aria-label="ReportNoReport">Report<span>No</span><span class="rnr-wordmark-rr">R<svg class="rnr-strike" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20C8 14 14 8 22 3"/></svg></span>eport</span></span></div>
-<p class="pv-state">The strike is drawn once (0.7s after a 0.5s delay) and is drawn already under flat motion. Fraunces 500, SOFT 100, opsz 36, −0.02em. The strike colour is <code>--strike</code> (3:1 on the canvas in every combination). The name is announced as one word: <code>role="img" aria-label="ReportNoReport"</code>.</p></div>
+<p class="pv-state">The strike is drawn once (0.7s after a 0.5s delay) and is drawn already under flat motion. Newsreader 500, opsz 36, −0.02em. The strike colour is <code>--strike</code> (3:1 on the canvas in every combination). The name is announced as one word: <code>role="img" aria-label="ReportNoReport"</code>.</p></div>
 
 </section>
 <section class="pv-sec" id="Landing" aria-labelledby="Landing-h">
@@ -721,7 +721,7 @@
 <h2 id="Checklist-h">Checklist</h2>
 <p class="pv-sub">v1: onboarding steps with done / next / skipped · <a href="components/Checklist/README.md">Spec (README)</a></p>
 <section class="rnr-folder" style="max-width:520px"><span class="rnr-folder-tab">Get started</span><div class="rnr-folder-body">
-<div class="rnr-checklist-summary"><span class="rnr-caption" aria-live="polite">3 of 6 done</span><progress class="rnr-progress" max="6" value="3" aria-label="Setup progress, 3 of 6">3 of 6</progress></div>
+<div class="rnr-checklist-summary"><span class="rnr-caption" aria-live="polite">3 of 6 done</span><div class="rnr-progress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="3" aria-label="Setup progress, 3 of 6"><span class="rnr-progress-fill" style="--v:0.5"></span></div>3 of 6</div>
 <ol class="rnr-checklist">
 <li class="rnr-checklist-item" data-state="done"><svg class="ic" aria-hidden="true"><use href="#i-check-circle"/></svg><span class="rnr-checklist-label">Add your organisation</span><span class="rnr-checklist-state">Done</span></li>
 <li class="rnr-checklist-item" data-state="done"><svg class="ic" aria-hidden="true"><use href="#i-check-circle"/></svg><span class="rnr-checklist-label">Upload your logo</span><span class="rnr-checklist-state">Done</span></li>
@@ -741,7 +741,7 @@
 <h3 class="pv-h">Drag over</h3>
 <div class="rnr-dropzone" data-over="true"><svg class="ic" aria-hidden="true"><use href="#i-upload-simple"/></svg><p>Release to upload</p><p class="rnr-hint">PDF, PNG or JPG, up to 10 MB each</p></div>
 <h3 class="pv-h">Uploading</h3>
-<div class="rnr-dropzone" aria-busy="true"><p role="status">Uploading 2 of 3…</p><progress class="rnr-progress" max="100" value="60" aria-label="Upload progress">60%</progress></div>
+<div class="rnr-dropzone" aria-busy="true"><p role="status">Uploading 2 of 3…</p><div class="rnr-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60" aria-label="Upload progress"><span class="rnr-progress-fill" style="--v:0.6"></span></div>60%</div>
 <h3 class="pv-h">Error</h3>
 <div class="rnr-dropzone" data-invalid="true"><svg class="ic" aria-hidden="true"><use href="#i-warning-circle"/></svg><p role="alert">That file is too large. Choose one under 10 MB.</p><button class="rnr-btn rnr-btn-secondary" type="button">Choose files</button></div>
 <h3 class="pv-h">Disabled</h3>

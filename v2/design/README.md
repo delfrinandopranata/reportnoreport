@@ -77,17 +77,17 @@ Changes made to the mockup's values while writing the test: the step-number / ar
 
 ## 4. Typography
 Three families, self-hosted (SIL OFL 1.1, no runtime font host):
-- **Fraunces** (display; weight 450, `"SOFT" 100`, `"opsz"` set per size; italic for one accent word). Needs the `full` fontsource files (`@fontsource-variable/fraunces/full.css` and `full-italic.css`): the default import is weight-only and silently ignores `font-variation-settings`.
+- **Newsreader** (display; weight 450, `"opsz"` set per size; italic for one accent word). Needs the `opsz` fontsource files (`@fontsource-variable/newsreader/opsz.css` and `opsz-italic.css`): the default import is weight-only and silently ignores the `opsz` setting; opsz tops out at 72.
 - **Hanken Grotesk** (UI).
 - **IBM Plex Mono** (figures, micro labels, stamp; tabular numerals).
-Metric-matched fallback faces (`Fraunces Fallback` over Georgia at 89.7%, `Hanken Grotesk Fallback` over Arial at 99.5%, measured) keep the font swap under CLS 0.05; see `fonts/fonts.css`.
+Metric-matched fallback faces (`Newsreader Fallback` over Georgia at 101.4%, `Hanken Grotesk Fallback` over Arial at 99.5%, measured) keep the font swap under CLS 0.05; see `fonts/fonts.css`.
 
 | Style | Family | Size / line | Weight | Tracking | Use |
 |---|---|---|---|---|---|
-| hero | Fraunces | clamp(52, 7vw, 96) / 1.02 | 450 | −0.03em | Landing headline |
-| section | Fraunces | clamp(40, 5vw, 68) / 1.05 | 450 | −0.02em | Landing sections |
-| page | Fraunces | clamp(36, 4vw + 20, 64) / 1.04 | 450 | −0.02em | Page title (one per view) |
-| heading | Fraunces | 28 / 34 | 450 | −0.01em | Large card and panel headings |
+| hero | Newsreader | clamp(52, 7vw, 96) / 1.02 | 450 | −0.03em | Landing headline |
+| section | Newsreader | clamp(40, 5vw, 68) / 1.05 | 450 | −0.02em | Landing sections |
+| page | Newsreader | clamp(36, 4vw + 20, 64) / 1.04 | 450 | −0.02em | Page title (one per view) |
+| heading | Newsreader | 28 / 34 | 450 | −0.01em | Large card and panel headings |
 | title | Hanken | 18 / 26 | 600 | −0.005em | Dialog and card titles |
 | title-sm | Hanken | 16 / 24 | 600 | 0 | Small titles |
 | kpi | Plex Mono | 40 / 44 | 500 | −0.02em | KPI figure |
@@ -99,7 +99,7 @@ Metric-matched fallback faces (`Fraunces Fallback` over Georgia at 89.7%, `Hanke
 | figure | Plex Mono | 14 / 20 | 400 | 0 | Numbers in tables and charts |
 | micro | Plex Mono | 11 / 1 | 500 | .14em, caps | Folder tabs, group labels, table headers |
 | stamp | Plex Mono | 12 / 1 | 500 | .16em, caps | Stamp |
-| wordmark | Fraunces | 20 / 1 | 500 | −0.02em | Wordmark |
+| wordmark | Newsreader | 20 / 1 | 500 | −0.02em | Wordmark |
 Each is `--type-<name>` (a `font` shorthand) and `--tracking-<name>`. One page title per view. Every number in a table, KPI, field or chart axis is tabular. Text sits on `--ink`, `--ink-2` or `--ink-3` only.
 
 ## 5. Shape, paper and the folder tab
@@ -124,11 +124,11 @@ Each is `--type-<name>` (a `font` shorthand) and `--tracking-<name>`. One page t
 | **Dashboard** | `rnr-page-head` → KPI tiles in `rnr-grid` → widgets in `rnr-grid` (1 / 2 / 4 columns, spans 1, 2, 4); edit mode shows handles and the menu path. |
 | **Settings** | Folders stacked in `max-w` form width: Appearance first, then Email notifications, Campaign emails; each folder is one concern. |
 | **Auth** | No sidebar. Wordmark on top, `rnr-page-head` (`data-align="center"`), one `rnr-paper` form card (640 max). |
-| **Public page** | Landing chrome (header, footer), light theme only; legal pages are `.rnr-prose` on paper with Fraunces headings, max 70ch; 404 and unsubscribe are one folder card. |
+| **Public page** | Landing chrome (header, footer), light theme only; legal pages are `.rnr-prose` on paper with Newsreader headings, max 70ch; 404 and unsubscribe are one folder card. |
 Shell: sidebar folder (desktop) or top bar + phone bar + drawer (< 768px); skip link first; the page heading takes focus after navigation.
 
 ## 7. Motion
-Tokens: `--t-fast` 150ms, `--t-base` 240ms, `--t-slow` 700ms, `--t-bars` 1100ms, `--t-stagger` 50ms, `--ease` cubic-bezier(.2,.7,.2,1), `--ease-spring` for confirmations only.
+Tokens: `--t-fast` 150ms, `--t-base` 240ms, `--t-slow` 700ms, `--t-bars` 1100ms, `--t-stagger` 50ms, `--ease` cubic-bezier(.2,.7,.2,1). No overshoot or spring easing anywhere.
 - **Full** (default): primary buttons lift 2px on hover and scale .97 on press; dialogs rise 8px; sheets and drawers slide; toasts rise; the wordmark strike is drawn once; a dragged widget tilts 1°; hovering one chart datum dims the others to 40%.
 - **Flat**: `data-motion="flat"` is set before first paint whenever the OS prefers reduced motion (and `@media (prefers-reduced-motion: reduce)` enforces it in CSS): every duration is 0, no lift, tilt, slide, shimmer, drift, pulse, ticker, typing or stamp animation; the strike is drawn; content is visible. Spinners slow to 1.4s but never stop (feedback).
 - Hover styles apply only under `@media (hover: hover)`. Never hide a primary action behind hover.
@@ -193,7 +193,7 @@ Authoritative specs in `components/<Name>/README.md`: Button · Field (input, te
 | `--opacity-disabled/placeholder/dim` | unchanged |
 | `--font-sans` | `--font-ui` (new `--font-display`; `--font-mono` is now IBM Plex Mono) |
 | `--rnr-control-h`, `--rnr-card-pad`, `--rnr-row-pad` | `--ctl-h`, `--card-pad`, `--row-pad` |
-| `--rnr-t`, `-t-hover`, `-t-enter`, `-t-exit`, `--rnr-lift`, `--rnr-ease`, `--rnr-spring` | `--t`, `--t-fast`, `--t-base`, `--t-fast`, `--lift`, `--ease`, `--ease-spring` |
+| `--rnr-t`, `-t-hover`, `-t-enter`, `-t-exit`, `--rnr-lift`, `--rnr-ease`, `--rnr-spring` | `--t`, `--t-fast`, `--t-base`, `--t-fast`, `--lift`, `--ease`, `--ease` |
 | `--rnr-card-bg/border/shadow`, `--rnr-field-bg`, `--rnr-track-bg` | `--surface` / `--line`, none, `--field`, `--soft` |
 
 ### Attributes

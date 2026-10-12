@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Icon, btn } from '../ui'
+import { Icon, ProgressBar, btn } from '../ui'
 import { nextFocusIndex, summarise, type ChecklistItem } from './summary'
 import sprite from '../../v2/design/icons/sprite.svg?url'
 
@@ -65,7 +65,7 @@ export function Checklist({ items, onSkip, onRestore, onDismiss }: ChecklistProp
           <span className="rnr-caption" aria-live="polite" aria-atomic="true">
             {summary.doneCount} of {summary.totalCount} done
           </span>
-          <progress className="rnr-progress" max={summary.totalCount} value={summary.doneCount} aria-label={`Setup progress, ${summary.doneCount} of ${summary.totalCount}`} />
+          <ProgressBar max={summary.totalCount} value={summary.doneCount} label={`Setup progress, ${summary.doneCount} of ${summary.totalCount}`} />
           <button ref={dismiss} type="button" onClick={onDismiss} className={`${btn.ghost} rnr-btn-sm`} aria-label="Dismiss checklist">
             <Icon name="x" className="size-4" />
           </button>

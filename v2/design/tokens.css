@@ -24,7 +24,7 @@
   --warn-bg: rgba(224,148,16,.16);
   --info: #1F5FA8;
   --info-bg: rgba(31,95,168,.1);
-  --focus: #141A2E;
+  --focus: var(--series-1);
   --scrim: rgba(14,18,36,.45);
   --shadow: 20,30,70;
   --wash-op: .5;
@@ -62,7 +62,7 @@
   --warn-bg: rgba(242,185,75,.16);
   --info: #8DB8F2;
   --info-bg: rgba(141,184,242,.16);
-  --focus: #EEF1FA;
+  --focus: var(--series-1);
   --scrim: rgba(0,0,0,.6);
   --shadow: 0,0,0;
   --wash-op: .34;
@@ -484,7 +484,7 @@
 /* ---------- type, shape, space, motion, layers, sizes ---------- */
 :root {
   --font-ui: "Hanken Grotesk Variable", "Hanken Grotesk Fallback", system-ui, sans-serif;
-  --font-display: "Fraunces Variable", "Fraunces Fallback", Georgia, serif;
+  --font-display: "Newsreader Variable", "Newsreader Fallback", Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --type-hero: 450 clamp(52px, 7vw, 96px)/1.02 var(--font-display);
   --tracking-hero: -0.03em;
@@ -549,7 +549,6 @@
   --t-bars: 1100ms;
   --t-stagger: 50ms;
   --ease: cubic-bezier(.2,.7,.2,1);
-  --ease-spring: cubic-bezier(.34,1.56,.64,1);
   --z-base: 0;
   --z-sticky: 10;
   --z-side: 20;

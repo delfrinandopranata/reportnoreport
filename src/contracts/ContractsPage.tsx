@@ -156,7 +156,7 @@ export function ContractsPage() {
           </table>
         ) : (
           <div className="rnr-empty m-4">
-            <h3>No contracts yet</h3>
+            <h2>No contracts yet</h2>
           </div>
         )}
       </div>

@@ -114,8 +114,8 @@
 <h2 id="Progress-h">Progress and spinner</h2>
 <p class="pv-sub">Native progress element · <a href="README.md">Spec (README)</a></p>
 <div class="pv-col" style="max-width:420px">
-<label class="rnr-caption" for="pg1">Rendering PDF, 60%</label><progress class="rnr-progress" id="pg1" max="100" value="60">60%</progress>
-<label class="rnr-caption" for="pg2">Importing records</label><progress class="rnr-progress" id="pg2">Working</progress>
+<span class="rnr-caption" id="pg1-l">Rendering PDF, 60%</span><div class="rnr-progress" id="pg1" role="progressbar" aria-labelledby="pg1-l" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60"><span class="rnr-progress-fill" style="--v:0.6"></span></div>
+<span class="rnr-caption" id="pg2-l">Importing records</span><div class="rnr-progress" id="pg2" role="progressbar" aria-labelledby="pg2-l"><span class="rnr-progress-fill"></span></div>
 <div class="pv-row"><span class="rnr-spin" role="status" aria-label="Loading"></span><span class="rnr-caption">Spinner: 16px, for buttons and inline waits</span></div>
 </div>
 

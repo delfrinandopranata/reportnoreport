@@ -27,11 +27,11 @@
 .rnr-muted { color: var(--ink-3); }
 .rnr-caption { font: var(--type-caption); letter-spacing: var(--tracking-caption); color: var(--ink-3); }
 .rnr-micro { margin: 0; font: var(--type-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); }
-.rnr-display { font-family: var(--font-display); font-weight: 450; letter-spacing: -.02em; line-height: 1.04; font-variation-settings: "SOFT" 100, "opsz" 144; }
+.rnr-display { font-family: var(--font-display); font-weight: 450; letter-spacing: -.02em; line-height: 1.04; font-variation-settings: "opsz" 72; }
 .rnr-display em { font-style: italic; }
-.rnr-page-title { margin: 0; font: var(--type-page); letter-spacing: var(--tracking-page); font-variation-settings: "SOFT" 100, "opsz" 144; text-wrap: balance; }
+.rnr-page-title { margin: 0; font: var(--type-page); letter-spacing: var(--tracking-page); font-variation-settings: "opsz" 72; text-wrap: balance; }
 .rnr-page-title em { font-style: italic; }
-.rnr-heading { margin: 0; font: var(--type-heading); letter-spacing: var(--tracking-heading); font-variation-settings: "SOFT" 100, "opsz" 72; }
+.rnr-heading { margin: 0; font: var(--type-heading); letter-spacing: var(--tracking-heading); font-variation-settings: "opsz" 72; }
 .rnr-dialog-title { margin: 0; font: var(--type-title); letter-spacing: var(--tracking-title); }
 .rnr-lede { margin: 0; max-width: 34em; color: var(--ink-2); }
 .rnr-link, .rnr-prose a { color: var(--link); text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1px; }
@@ -40,6 +40,7 @@
 .rnr-scrim { background: var(--scrim); }
 .rnr-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--acc-a) 26%, transparent); color: var(--ink); }
 :where(*, ::before, ::after) { box-sizing: border-box; }
 @supports (corner-shape: squircle) {
   :where(*, ::before, ::after) { corner-shape: squircle; }
@@ -139,12 +140,17 @@ body:has(dialog[open]) { overflow: hidden; }
 textarea.rnr-input { min-height: 96px; padding: var(--space-3) var(--space-4); resize: vertical; }
 input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-input:hover:not(:disabled):not([readonly]) { border-color: var(--ink-3); }
-.rnr-input:focus-visible { border-color: var(--focus); }
+/* focus: a 2px ring in the accent's own colour (--focus = --series-1, 3:1 or better on every surface, tokens.test) and a soft accent glow, no outline box */
+.rnr-input:focus, .rnr-field select:focus, .rnr-field textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus), 0 0 0 5px var(--tint); }
+.rnr-input[aria-invalid="true"]:focus, .rnr-field:has(:user-invalid) .rnr-input:focus { border-color: var(--down); box-shadow: 0 0 0 1px var(--down), 0 0 0 5px var(--down-bg); }
+.rnr-input, .rnr-field select, .rnr-field textarea { caret-color: var(--focus); }
 .rnr-input:disabled { background: var(--soft); color: var(--ink-3); border-color: var(--line); cursor: not-allowed; }
 .rnr-input[aria-invalid="true"], .rnr-field:has(:user-invalid) .rnr-input { border-color: var(--down); box-shadow: inset 0 0 0 1px var(--down); }
 .rnr-field[data-invalid="true"] > .rnr-label, fieldset[data-invalid="true"] > legend, .rnr-field:has(:user-invalid) > .rnr-label { color: var(--down); }
 .rnr-error, .rnr-error-text { display: flex; align-items: flex-start; gap: var(--space-2); font: var(--type-caption); font-weight: 500; color: var(--down); }
 .rnr-error-text { display: none; }
+.rnr-error, .rnr-error-text { animation: rnr-drop var(--t-fast) var(--ease) both; }
+@keyframes rnr-drop { from { opacity: 0; transform: translateY(-4px); } }
 .rnr-field:has(:user-invalid) > .rnr-error-text { display: flex; }
 .rnr-error svg, .rnr-error-text svg { flex: none; width: var(--icon-size-sm); height: var(--icon-size-sm); margin-top: 1px; }
 .rnr-select { position: relative; display: block; }
@@ -169,9 +175,11 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-check input:not(.rnr-switch)[type="checkbox"] { border-radius: var(--r-key); }
 .rnr-check input[type="radio"], .rnr-radio { border-radius: 50%; }
 .rnr-check input:not(.rnr-switch):checked, .rnr-check input:not(.rnr-switch):indeterminate { background: var(--acc-a); border-color: var(--acc-a); }
-.rnr-check input:not(.rnr-switch)[type="checkbox"]:checked::after { content: ""; width: 5px; height: 10px; margin-top: -2px; border: solid var(--on-acc); border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.rnr-check input:not(.rnr-switch)[type="checkbox"]:indeterminate::after { content: ""; width: 10px; height: 2px; background: var(--on-acc); }
-.rnr-check input[type="radio"]:checked::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--on-acc); }
+.rnr-check input:not(.rnr-switch)[type="checkbox"]:checked::after { content: ""; width: 5px; height: 10px; margin-top: -2px; border: solid var(--on-acc); border-width: 0 2px 2px 0; transform: rotate(45deg); animation: rnr-tick var(--t-fast) var(--ease) both; }
+.rnr-check input:not(.rnr-switch)[type="checkbox"]:indeterminate::after { content: ""; width: 10px; height: 2px; background: var(--on-acc); animation: rnr-ink var(--t-fast) var(--ease) both; }
+.rnr-check input[type="radio"]:checked::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--on-acc); animation: rnr-dot var(--t-fast) var(--ease) both; }
+@keyframes rnr-tick { from { opacity: 0; transform: rotate(45deg) scale(.4); } }
+@keyframes rnr-dot { from { transform: scale(0); } }
 .rnr-check input:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .rnr-check:has(input:disabled) { color: var(--ink-3); cursor: not-allowed; }
 .rnr-check input[aria-invalid="true"] { border-color: var(--down); }
@@ -212,7 +220,7 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 
 /* ---------- prose (legal pages) ---------- */
 .rnr-prose { max-width: 70ch; font: var(--type-body); color: var(--ink); }
-.rnr-prose h1, .rnr-prose h2, .rnr-prose h3 { font-family: var(--font-display); font-weight: 450; font-variation-settings: "SOFT" 100, "opsz" 72; letter-spacing: -.01em; line-height: 1.15; margin: var(--space-8) 0 var(--space-3); }
+.rnr-prose h1, .rnr-prose h2, .rnr-prose h3 { font-family: var(--font-display); font-weight: 450; font-variation-settings: "opsz" 72; letter-spacing: -.01em; line-height: 1.15; margin: var(--space-8) 0 var(--space-3); }
 .rnr-prose h2 { font-size: 28px; }
 .rnr-prose h3 { font-size: 22px; }
 .rnr-prose p, .rnr-prose ul, .rnr-prose ol { margin: 0 0 var(--space-4); }
@@ -223,7 +231,8 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-tab { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--ctl-h); padding: 0 var(--space-4); border: 0; border-radius: var(--r-ctl) var(--r-ctl) 0 0; background: transparent;
   color: var(--ink-3); font: var(--type-button); white-space: nowrap; cursor: pointer; }
 .rnr-tab[aria-selected="true"] { color: var(--ink); }
-.rnr-tab[aria-selected="true"]::after { content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: -1px; height: 3px; border-radius: var(--r-bar) var(--r-bar) 0 0; background: var(--strike); }
+.rnr-tab[aria-selected="true"]::after { content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: -1px; height: 3px; border-radius: var(--r-bar) var(--r-bar) 0 0; background: var(--strike); animation: rnr-ink var(--t-base) var(--ease) both; }
+@keyframes rnr-ink { from { transform: scaleX(0); } }
 .rnr-tab:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 @media (hover: hover) { .rnr-tab:not([aria-selected="true"]):not(:disabled):hover { background: var(--hover); color: var(--ink); } }
 .rnr-tabpanel { padding-top: var(--space-5); }
@@ -285,6 +294,10 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 
 /* ---------- menu, popover, tooltip ---------- */
 /* Menu 14, items 14 - 4px padding = 10: concentric. */
+.rnr-menu, .rnr-popover { transform-origin: top right; animation: rnr-menu-in var(--t-fast) var(--ease) both; }
+@keyframes rnr-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+.rnr-tip { animation: rnr-fade var(--t-fast) var(--ease) both; }
+@keyframes rnr-fade { from { opacity: 0; } }
 .rnr-menu { width: 224px; max-width: calc(100vw - 2rem); padding: var(--space-1); border: 0; border-radius: var(--r-card); background: var(--surface); color: var(--ink); box-shadow: var(--sh-menu); }
 .rnr-menu--wide { width: min(320px, calc(100vw - 2rem)); max-height: 20rem; overflow-y: auto; }
 .rnr-menu-anchor { position: relative; }
@@ -309,22 +322,42 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 
 /* ---------- dialog, sheet, drawer ---------- */
 .rnr-dialog { width: calc(100% - 2rem); max-width: 480px; margin: auto; padding: 0; border: 0; border-radius: var(--r-panel); background: var(--surface); color: var(--ink); box-shadow: var(--sh-dialog); overflow: hidden; }
-.rnr-dialog:not([open]) { display: none; }
-.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
-.rnr-dialog[open] { animation: rnr-rise var(--t-base) var(--ease) both; }
+.rnr-dialog { --away: translateY(8px) scale(.98); transition: opacity 160ms var(--ease), transform 160ms var(--ease), overlay 160ms allow-discrete, display 160ms allow-discrete; }
+.rnr-dialog:not([open]) { display: none; opacity: 0; transform: var(--away); }
+.rnr-dialog[open] { transition-duration: var(--t-base); }
+@starting-style { .rnr-dialog[open] { opacity: 0; transform: var(--away); } }
+.rnr-dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); opacity: 0; transition: opacity 160ms var(--ease), overlay 160ms allow-discrete, display 160ms allow-discrete; }
+.rnr-dialog[open]::backdrop { opacity: 1; transition-duration: var(--t-base); }
+@starting-style { .rnr-dialog[open]::backdrop { opacity: 0; } }
 .rnr-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-5) var(--space-6) var(--space-3); }
 .rnr-dialog-body { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-6) var(--space-6); }
 .rnr-dialog-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6); border-top: 1px solid var(--soft); }
 .rnr-sheet { max-width: none; max-height: 80dvh; margin: auto 0 0; border-radius: var(--r-panel) var(--r-panel) 0 0; }
 .rnr-sheet .rnr-dialog-body { overflow-y: auto; }
-.rnr-sheet[open] { animation: rnr-sheet-in var(--t-base) var(--ease) both; }
+.rnr-sheet { --away: translateY(100%); }
 .rnr-drawer { width: min(320px, 88vw); max-width: none; height: 100dvh; max-height: none; margin: 0 auto 0 0; border-radius: 0 var(--r-panel) var(--r-panel) 0; background: var(--side); flex-direction: column; gap: var(--space-4); padding: var(--space-4); overflow-y: auto; }
-.rnr-drawer[open] { display: flex; animation: rnr-drawer-in var(--t-base) var(--ease) both; }
+.rnr-drawer { --away: translateX(-100%); }
+.rnr-drawer[open] { display: flex; }
 @keyframes rnr-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes rnr-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
-@keyframes rnr-drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .rnr-dialog[open], .rnr-sheet[open], .rnr-drawer[open] { animation: none; } }
-[data-motion="flat"] .rnr-dialog[open], [data-motion="flat"] .rnr-sheet[open], [data-motion="flat"] .rnr-drawer[open] { animation: none; }
+@media (prefers-reduced-motion: reduce) { .rnr-dialog { --away: none; } } /* fade only: the change of state stays visible */
+[data-motion="flat"] .rnr-dialog, [data-motion="flat"] .rnr-dialog::backdrop { transition: none; }
+
+/* ---------- page change: the main column cross-fades and settles; the shell around it holds still ---------- */
+#main { view-transition-name: rnr-main; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 120ms; }
+::view-transition-old(rnr-main) { animation: rnr-vt-out 120ms var(--ease) both; }
+::view-transition-new(rnr-main) { animation: rnr-vt-in var(--t-base) var(--ease) both; }
+@keyframes rnr-vt-out { to { opacity: 0; } }
+@keyframes rnr-vt-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* reduced motion keeps the fades that say something changed and drops the movement; flat motion drops them all */
+@media (prefers-reduced-motion: reduce) {
+  .rnr-chart-bar, .rnr-tab[aria-selected="true"]::after, .rnr-check input::after { animation: none; }
+  .rnr-menu, .rnr-popover, .rnr-error, .rnr-error-text { animation-name: rnr-fade; }
+  ::view-transition-new(rnr-main) { animation-name: rnr-fade; }
+}
+[data-motion="flat"] :is(.rnr-chart-bar, .rnr-chart-line, .rnr-chart-dot, .rnr-chart-mark, .rnr-menu, .rnr-popover, .rnr-tip, .rnr-error, .rnr-error-text),
+[data-motion="flat"] .rnr-check input::after, [data-motion="flat"] .rnr-tab[aria-selected="true"]::after { animation: none; }
 
 /* ---------- toast and notice ---------- */
 .rnr-toasts { position: fixed; z-index: var(--z-toast); right: var(--space-4); bottom: var(--space-4); display: grid; gap: var(--space-2); width: min(360px, calc(100vw - 2rem)); }
@@ -359,20 +392,22 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-step[data-error] .rnr-step-n { background: var(--down-bg); color: var(--down); box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* ---------- progress, skeleton, empty state ---------- */
-.rnr-progress { appearance: none; display: block; width: 100%; height: 8px; border: 0; border-radius: var(--r-bar); background: var(--soft); overflow: hidden; }
-.rnr-progress::-webkit-progress-bar { background: var(--soft); }
-.rnr-progress::-webkit-progress-value { background: var(--acc); border-radius: var(--r-bar); transition: width var(--t-slow) var(--ease); }
-.rnr-progress::-moz-progress-bar { background: var(--acc); border-radius: var(--r-bar); }
-.rnr-progress:indeterminate { background: linear-gradient(90deg, var(--soft) 0 30%, var(--acc-a) 30% 60%, var(--soft) 60%) 0 0 / 200% 100%; animation: rnr-indeterminate 1.4s linear infinite; }
+.rnr-progress { position: relative; display: block; width: 100%; height: 8px; border-radius: var(--r-bar); background: var(--soft); overflow: hidden; }
+/* the fill is scaled, not resized, so the change runs on the compositor; --v is value / max (0..1) */
+.rnr-progress-fill { --v: 0; position: absolute; inset: 0; border-radius: inherit; background: var(--acc); transform-origin: left; transform: scaleX(var(--v)); transition: transform var(--t-slow) var(--ease); }
+.rnr-progress:not([aria-valuenow]) { background: linear-gradient(90deg, var(--soft) 0 30%, var(--acc-a) 30% 60%, var(--soft) 60%) 0 0 / 200% 100%; animation: rnr-indeterminate 1.4s linear infinite; }
+.rnr-progress:not([aria-valuenow]) .rnr-progress-fill { display: none; }
+@media (forced-colors: active) { .rnr-progress { border: 1px solid CanvasText; } .rnr-progress-fill { background: Highlight; } }
 @keyframes rnr-indeterminate { to { background-position: -200% 0; } }
 .rnr-skeleton { position: relative; overflow: hidden; border-radius: var(--r-control-sm); background: var(--soft); }
 .rnr-skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, var(--hover), transparent); animation: rnr-shimmer 1.2s linear infinite; }
 @keyframes rnr-shimmer { to { transform: translateX(100%); } }
-[data-motion="flat"] .rnr-skeleton::after, [data-motion="flat"] .rnr-progress:indeterminate { animation: none; }
-@media (prefers-reduced-motion: reduce) { .rnr-skeleton::after, .rnr-progress:indeterminate { animation: none; } }
+[data-motion="flat"] .rnr-skeleton::after, [data-motion="flat"] .rnr-progress:not([aria-valuenow]) { animation: none; }
+[data-motion="flat"] .rnr-progress-fill { transition: none; }
+@media (prefers-reduced-motion: reduce) { .rnr-skeleton::after, .rnr-progress:not([aria-valuenow]) { animation: none; } .rnr-progress-fill { transition: none; } }
 .rnr-empty { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-10) var(--space-6); border: 1.5px dashed var(--line-strong); border-radius: var(--r-card); text-align: center; }
 .rnr-empty > .rnr-kind { width: 44px; height: 44px; }
-.rnr-empty h2, .rnr-empty h3 { margin: 0; font: var(--type-heading); font-size: 24px; line-height: 30px; font-variation-settings: "SOFT" 100, "opsz" 48; }
+.rnr-empty h2, .rnr-empty h3 { margin: 0; font: var(--type-heading); font-size: 24px; line-height: 30px; font-variation-settings: "opsz" 48; }
 .rnr-empty p { margin: 0; max-width: 32em; color: var(--ink-2); }
 
 /* ---------- shell: sidebar in a folder, top bar, phone bar, drawer ---------- */
@@ -482,7 +517,9 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-chart-zero { stroke: var(--ink-3); stroke-width: 1; }
 .rnr-chart-axis { fill: var(--ink-3); font: 400 11px/14px var(--font-mono); }
 .rnr-chart-value { fill: var(--ink); font: 500 11px/14px var(--font-mono); }
-.rnr-chart-bar { fill: var(--series-1); }
+.rnr-chart-bar { fill: var(--series-1); transform-box: fill-box; transform-origin: 50% 100%; animation: rnr-grow 600ms var(--ease) both; }
+.rnr-chart-line, .rnr-chart-dot, .rnr-chart-mark { animation: rnr-fade 400ms var(--ease) 200ms both; }
+@keyframes rnr-grow { from { transform: scaleY(0); } }
 .rnr-chart-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .rnr-chart-dot { fill: var(--series-1); stroke: var(--surface); stroke-width: 2; }
 .rnr-chart-line[data-series="out"] { stroke: var(--series-2); stroke-dasharray: 6 4; }
@@ -587,8 +624,8 @@ input[type="file"].rnr-input { padding: var(--space-3) var(--space-4); }
 .rnr-pref-caption { margin-left: var(--space-6); }
 @media (max-width: 480px) { .rnr-swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* ---------- wordmark: Fraunces, the second R struck through ---------- */
-.rnr-wordmark { position: relative; display: inline-flex; text-transform: none; align-items: center; color: var(--ink); font: var(--type-wordmark); letter-spacing: var(--tracking-wordmark); font-variation-settings: "SOFT" 100, "opsz" 36; text-decoration: none; white-space: nowrap; }
+/* ---------- wordmark: Newsreader, the second R struck through ---------- */
+.rnr-wordmark { position: relative; display: inline-flex; text-transform: none; align-items: center; color: var(--ink); font: var(--type-wordmark); letter-spacing: var(--tracking-wordmark); font-variation-settings: "opsz" 36; text-decoration: none; white-space: nowrap; }
 .rnr-wordmark-rr { position: relative; display: inline-block; }
 .rnr-strike { position: absolute; left: -8%; top: 8%; width: 130%; height: 90%; overflow: visible; pointer-events: none; }
 .rnr-strike path { fill: none; stroke: var(--strike); stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 60; stroke-dashoffset: 0; }
@@ -624,8 +661,8 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 [data-motion="flat"] .rnr-wash-blob { animation: none; }
 [data-motion="flat"] .rnr-rise, [data-motion="flat"] .rnr-stamp[data-thump] { transition: none; animation: none; }
 [data-motion="flat"] html.js .rnr-rise:not(.in), html[data-motion="flat"].js .rnr-rise:not(.in) { opacity: 1; transform: none; }
-@keyframes rnr-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
-.rnr-pop { animation: rnr-pop var(--t-base) var(--ease-spring) both; }
+@keyframes rnr-pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.rnr-pop { animation: rnr-pop var(--t-base) var(--ease) both; }
 [data-motion="flat"] .rnr-pop { animation: none; }
 @media (prefers-reduced-motion: reduce) { .rnr-pop { animation: none; } }
 
@@ -760,6 +797,7 @@ html.js .rnr-rise:not(.in) { opacity: 0; transform: translateY(14px); }
 .rnr-checklist-item { display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch); padding: var(--space-2) var(--space-3); border-radius: var(--r-ctl); color: var(--ink-2); font: var(--type-body-sm); }
 .rnr-checklist-item > svg { flex: none; width: var(--icon-size); height: var(--icon-size); color: var(--ink-3); }
 .rnr-checklist-item > .rnr-checklist-label { flex: 1 1 auto; min-width: 0; }
+@media (pointer: coarse) { .rnr-checklist-label .rnr-link { display: inline-block; padding: 13px 0; margin: -13px 0; } } /* 44px tap height, same line box */
 .rnr-checklist-state { flex: none; font: var(--type-caption); color: var(--ink-3); }
 .rnr-checklist-item[data-state="done"] > svg { color: var(--series-1); }
 .rnr-checklist-item[data-state="done"] { color: var(--ink-3); }

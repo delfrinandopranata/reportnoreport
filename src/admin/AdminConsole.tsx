@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Avatar, btn, Dialog, Icon, Menu, menuItemClass, Wordmark } from '../ui'
+import { Avatar, btn, Dialog, Icon, Menu, menuItemClass, withPageTransition, Wordmark } from '../ui'
 import { AppearancePanel } from '../settings/AppearanceSettings'
 import { useAppearance } from '../useAppearance'
 import { FirmsTable } from './FirmsTable'
@@ -70,9 +70,7 @@ export function AdminConsole({ profileId, name, onSignOut }: { profileId: string
   })
 
   useEffect(() => {
-    const onHash = () => {
-      setRouteState(readRoute())
-    }
+    const onHash = () => withPageTransition(() => setRouteState(readRoute()))
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [])
