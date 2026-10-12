@@ -19,3 +19,8 @@ test('a programme lights one card per slot and the pulse travels between them', 
   assert.deepEqual(showState(3 * 900 + 100, 4), { visited: 4, edge: -1, u: 0, slot: 1 })
   assert.equal(showState(3 * 900 + 2800, 4).visited, 1)
 })
+
+test('a short lead keeps the hero pulse moving almost the whole slot', () => {
+  assert.equal(showState(100, 4, 120).edge, -1)
+  assert.deepEqual(showState(120 + 390, 4, 120), { visited: 1, edge: 1, u: 0.5, slot: 510 / 900 })
+})

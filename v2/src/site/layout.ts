@@ -84,3 +84,12 @@ export function placeLabels(p: Programme): Map<number, Rect> {
   }
   return placed
 }
+
+/** Where the hero camera aims: the centre of the lit cards, gliding toward the next beat's cards as the pulse travels
+ *  (u 0..1), placed `focus` of the way across a `view`-wide window and clamped to the stage. */
+export function cameraTarget(from: number, to: number, u: number, view: number, stageW: number, focus: number): number {
+  const cx = from + (to - from) * u
+  return Math.max(0, Math.min(stageW - view, cx - view * focus))
+}
+/** Frame-rate independent ease toward the target: about 63% of the gap closes every `tau` ms. */
+export const glide = (x: number, target: number, dt: number, tau = 450) => x + (target - x) * (1 - Math.exp(-dt / tau))

@@ -41,7 +41,7 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
 /* the flow inside the window pans (showcase.ts initHero); lane names ride along by the same amount so they stay put */
 .lp-win { box-sizing: border-box; padding: var(--space-4); transform: none; } /* flat on the grid: its edges line up with the header button and the cards below */
 .lp-hero-copy { max-width: 54rem; }
-.lp-flow { height: clamp(340px, 34vw, 460px); overflow: hidden; } /* the flow scales to this height and pans */
+.lp-flow { height: clamp(340px, 38vw, 540px); overflow: hidden; } /* the flow scales to this height and pans */
 /* wide screens: the live window sits behind the headline on the right, and fades out where the text crosses it */
 @media (min-width: 901px) {
   .lp-hero > * { grid-area: 1 / 1; }
@@ -49,10 +49,10 @@ body { margin: 0; background: var(--canvas); color: var(--ink); }
   .lp-win { width: 68%; justify-self: end; margin-top: var(--space-6);
     -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / .16) 0 22%, #000 54%); mask-image: linear-gradient(90deg, rgb(0 0 0 / .16) 0 22%, #000 54%); }
 }
-.lp-flow .sl-stage, .lp-flow .sl-lane-name { transition: translate 1.1s var(--ease); }
+.lp-flow .sl-stage, .lp-flow .sl-lane-name { will-change: translate; } /* moved every frame by initHero */
 /* a solid lane column that rides with the pan, so cards slide under it instead of peeking out beside the name */
 .lp-flow .sl-lane-name { position: relative; z-index: 5; translate: var(--px, 0) 0; align-self: stretch; display: flex; align-items: center; width: 80px; margin-left: calc(-1 * var(--space-1)); padding-left: var(--space-1); background: linear-gradient(90deg, var(--surface) 84%, transparent); }
-html[data-motion="flat"] .lp-flow .sl-stage, html[data-motion="flat"] .lp-flow .sl-lane-name { transition: none; }
+html[data-motion="flat"] .lp-flow .sl-stage, html[data-motion="flat"] .lp-flow .sl-lane-name { will-change: auto; }
 .lp-win-head { display: flex; align-items: center; gap: var(--space-2); padding: 2px 6px var(--space-3); }
 .lp-win-head i { width: 10px; height: 10px; border-radius: 50%; background: var(--soft); }
 .lp-win-head .rnr-micro { margin-left: var(--space-2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
