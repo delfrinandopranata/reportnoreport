@@ -169,7 +169,9 @@ export function initHero(animate: boolean) {
   const pan = (ids: string[]) => {
     const cx = ids.reduce((sum, id) => sum + pos(byId.get(id) as Step).x + CARD_W / 2, 0) / ids.length
     const view = host.clientWidth / z
-    const x = Math.round(Math.max(0, Math.min(W - view, cx - view * 0.4)))
+    // on wide screens the window's left part fades behind the headline (site.css), so the lit cards sit further right
+    const focus = matchMedia('(min-width: 901px)').matches ? 0.62 : 0.4
+    const x = Math.round(Math.max(0, Math.min(W - view, cx - view * focus)))
     if (x !== lastX) { lastX = x; v.stage.style.translate = `${-x}px 0`; v.stage.style.setProperty('--px', `${x}px`) }
   }
   new ResizeObserver(fit).observe(host)
